@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -9,14 +9,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Shield, AlertCircle, Pencil, Upload, Package, Sun as Gun, Eye } from "lucide-react";
+import { Shield, AlertCircle, Pencil, Upload, Package, Sun as Gun, Eye, Store, BookOpen, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Database } from "@/lib/database.types";
 import Link from "next/link";
+import { format } from "date-fns";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+
+interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  published: boolean;
+  created_at: string;
+}
 
 interface Listing {
   id: string;
@@ -26,6 +35,13 @@ interface Listing {
   price: number;
   status: string;
   created_at: string;
+}
+
+interface Retailer {
+  id: string;
+  business_name: string;
+  logo_url: string | null;
+  location: string;
 }
 
 const profileSchema = z.object({
@@ -42,14 +58,6 @@ function formatPrice(price: number) {
   }).format(price);
 }
 
-function formatDate(dateString: string) {
-  return new Date(dateString).toLocaleDateString('en-MT', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-}
-
 function slugify(text: string) {
   return text
     .toLowerCase()
@@ -63,6 +71,8 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [retailer, setRetailer] = useState<Retailer | null>(null);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingLicense, setUploadingLicense] = useState(false);
@@ -113,8 +123,34 @@ export default function ProfilePage() {
           throw listingsError;
         }
 
+        // Fetch user's blog posts
+        const { data: blogData, error: blogError } = await supabase
+          .from("blog_posts")
+          .select("id, title, slug, published, created_at")
+          .eq("author_id", userId)
+          .order("created_at", { ascending: false });
+
+        if (blogError) {
+          console.error("Blog posts fetch error:", blogError.message);
+          throw blogError;
+        }
+
+        // Fetch user's retailer profile
+        const { data: retailerData, error: retailerError } = await supabase
+          .from("retailers")
+          .select("id, business_name, logo_url, location")
+          .eq("owner_id", userId)
+          .single();
+
+        if (retailerError && retailerError.code !== 'PGRST116') {
+          console.error("Retailer fetch error:", retailerError.message);
+          throw retailerError;
+        }
+
         setProfile(profileData);
-        setListings(listingsData);
+        setListings(listingsData || []);
+        setBlogPosts(blogData || []);
+        setRetailer(retailerData);
         form.reset({
           phone: profileData.phone || "",
           address: profileData.address || "",
@@ -230,32 +266,26 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleListingStatusChange(listingId: string, newStatus: string) {
+  async function handleDeletePost(postId: string) {
     try {
       const { error } = await supabase
-        .from("listings")
-        .update({ status: newStatus })
-        .eq("id", listingId);
+        .from("blog_posts")
+        .delete()
+        .eq("id", postId);
 
       if (error) throw error;
 
-      setListings(prevListings =>
-        prevListings.map(listing =>
-          listing.id === listingId
-            ? { ...listing, status: newStatus }
-            : listing
-        )
-      );
+      setBlogPosts(prevPosts => prevPosts.filter(post => post.id !== postId));
 
       toast({
-        title: "Status updated",
-        description: `Listing status has been updated to ${newStatus}.`,
+        title: "Post deleted",
+        description: "Your blog post has been deleted successfully",
       });
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update listing status.",
+        title: "Delete failed",
+        description: error instanceof Error ? error.message : "Failed to delete post",
       });
     }
   }
@@ -279,6 +309,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Profile Information */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div>
@@ -352,7 +383,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Seller Status Card */}
+        {/* Seller Status */}
         <Card>
           <CardHeader>
             <CardTitle>Seller Status</CardTitle>
@@ -399,27 +430,132 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Listings Management Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>My Listings</CardTitle>
-              <CardDescription>Manage your marketplace listings</CardDescription>
-            </div>
-            <Link href="/marketplace/create">
-              <Button>
-                <Package className="h-4 w-4 mr-2" />
-                Create Listing
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {listings.length === 0 ? (
-              <div className="text-center py-8">
-                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">You haven`&#39;`t created any listings yet.</p>
+        {/* Retailer Profile - Only show if exists */}
+        {retailer && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>My Retailer Profile</CardTitle>
+                <CardDescription>Manage your business presence on MaltaGuns</CardDescription>
               </div>
-            ) : (
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  {retailer.logo_url ? (
+                    <img
+                      src={retailer.logo_url}
+                      alt={retailer.business_name}
+                      className="w-16 h-16 object-contain rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                      <Store className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="font-semibold text-lg">{retailer.business_name}</h3>
+                    <p className="text-sm text-muted-foreground">{retailer.location}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Link href={`/retailers/${retailer.id}`}>
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Page
+                    </Button>
+                  </Link>
+                  <Link href={`/retailers/${retailer.id}/edit`}>
+                    <Button variant="outline" size="sm">
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit Profile
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Blog Posts - Only show if user has posts */}
+        {blogPosts.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>My Blog Posts</CardTitle>
+                <CardDescription>Manage your blog posts</CardDescription>
+              </div>
+              <Link href="/blog/create">
+                <Button>
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Write Post
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {blogPosts.map((post) => (
+                  <Card key={post.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{post.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(post.created_at), 'PPP')}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={post.published ? "default" : "secondary"}>
+                            {post.published ? "Published" : "Draft"}
+                          </Badge>
+                          <div className="flex gap-2">
+                            <Link href={`/blog/${post.slug}`}>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                            </Link>
+                            <Link href={`/blog/${post.slug}/edit`}>
+                              <Button variant="outline" size="sm">
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button>
+                            </Link>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeletePost(post.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Listings - Only show if user has listings */}
+        {listings.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>My Listings</CardTitle>
+                <CardDescription>Manage your marketplace listings</CardDescription>
+              </div>
+              <Link href="/marketplace/create">
+                <Button>
+                  <Package className="h-4 w-4 mr-2" />
+                  Create Listing
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
                 {listings.map((listing) => (
                   <Card key={listing.id}>
@@ -434,7 +570,7 @@ export default function ProfilePage() {
                           <div>
                             <h3 className="font-semibold">{listing.title}</h3>
                             <p className="text-sm text-muted-foreground">
-                              Created {formatDate(listing.created_at)}
+                              Created {format(new Date(listing.created_at), 'PPP')}
                             </p>
                           </div>
                         </div>
@@ -469,9 +605,9 @@ export default function ProfilePage() {
                   </Card>
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

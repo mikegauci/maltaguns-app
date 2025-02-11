@@ -14,12 +14,6 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
 import { ArrowLeft } from "lucide-react"
 
-// List of authorized user IDs
-const AUTHORIZED_RETAILER_CREATORS = [
-  'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
-  '1a95bbf9-3bca-414d-a99f-1f9c72c15588'
-]
-
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
@@ -35,36 +29,11 @@ const retailerSchema = z.object({
 
 type RetailerForm = z.infer<typeof retailerSchema>
 
-export default function CreateRetailerPage() {
+export default function EditRetailerPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [uploadingLogo, setUploadingLogo] = useState(false)
-  const [isAuthorized, setIsAuthorized] = useState(false)
-
-  useEffect(() => {
-    async function checkAuthorization() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
-        router.push('/login')
-        return
-      }
-
-      if (!AUTHORIZED_RETAILER_CREATORS.includes(session.user.id)) {
-        toast({
-          variant: "destructive",
-          title: "Unauthorized",
-          description: "You are not authorized to create retailer profiles.",
-        })
-        router.push('/retailers')
-        return
-      }
-
-      setIsAuthorized(true)
-    }
-
-    checkAuthorization()
-  }, [router, toast])
 
   const form = useForm<RetailerForm>({
     resolver: zodResolver(retailerSchema),
@@ -75,8 +44,60 @@ export default function CreateRetailerPage() {
       email: "",
       description: "",
       website: "",
+      logoUrl: ""
     }
   })
+
+  useEffect(() => {
+    async function loadRetailer() {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession()
+        if (!sessionData.session?.user) {
+          router.push("/login")
+          return
+        }
+
+        const { data: retailer, error } = await supabase
+          .from("retailers")
+          .select("*")
+          .eq("id", params.id)
+          .single()
+
+        if (error) throw error
+
+        if (retailer.owner_id !== sessionData.session.user.id) {
+          toast({
+            variant: "destructive",
+            title: "Unauthorized",
+            description: "You can only edit your own retailer profile.",
+          })
+          router.push("/profile")
+          return
+        }
+
+        form.reset({
+          businessName: retailer.business_name,
+          location: retailer.location,
+          phone: retailer.phone || "",
+          email: retailer.email || "",
+          description: retailer.description || "",
+          website: retailer.website || "",
+          logoUrl: retailer.logo_url || ""
+        })
+      } catch (error) {
+        console.error("Error loading retailer:", error)
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load retailer details.",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadRetailer()
+  }, [params.id, router, form, toast])
 
   async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {
@@ -148,45 +169,45 @@ export default function CreateRetailerPage() {
         throw new Error("Not authenticated")
       }
 
-      // Double-check authorization
-      if (!AUTHORIZED_RETAILER_CREATORS.includes(sessionData.session.user.id)) {
-        throw new Error("Not authorized to create retailer profiles")
-      }
-
       const { error } = await supabase
         .from("retailers")
-        .insert({
-          owner_id: sessionData.session.user.id,
+        .update({
           business_name: data.businessName,
           logo_url: data.logoUrl,
           location: data.location,
           phone: data.phone,
           email: data.email,
           description: data.description,
-          website: data.website || null
+          website: data.website || null,
+          updated_at: new Date().toISOString()
         })
+        .eq("id", params.id)
 
       if (error) throw error
 
       toast({
-        title: "Business profile created",
-        description: "Your retailer profile has been created successfully"
+        title: "Profile updated",
+        description: "Your retailer profile has been updated successfully"
       })
 
-      router.push("/retailers")
+      router.push("/profile")
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Failed to create profile",
-        description: error instanceof Error ? error.message : "Something went wrong"
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update profile"
       })
     } finally {
       setIsLoading(false)
     }
   }
 
-  if (!isAuthorized) {
-    return null // Component will redirect in useEffect
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
   }
 
   return (
@@ -195,19 +216,19 @@ export default function CreateRetailerPage() {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => router.push("/retailers")}
+            onClick={() => router.push("/profile")}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to retailers
+            Back to profile
           </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Create Retailer Profile</CardTitle>
+            <CardTitle>Edit Retailer Profile</CardTitle>
             <CardDescription>
-              Add your firearms business to the MaltaGuns directory
+              Update your business information on MaltaGuns
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -338,7 +359,7 @@ export default function CreateRetailerPage() {
                 />
 
                 <Button type="submit" className="w-full" disabled={isLoading || uploadingLogo}>
-                  {isLoading ? "Creating profile..." : "Create Profile"}
+                  {isLoading ? "Updating profile..." : "Update Profile"}
                 </Button>
               </form>
             </Form>

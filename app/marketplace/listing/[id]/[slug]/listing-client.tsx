@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock } from "lucide-react"
+import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock, Pencil } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 
@@ -116,23 +116,26 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
   const router = useRouter()
   const [selectedImage, setSelectedImage] = useState<string>(listing.thumbnail)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session)
+      setIsOwner(session?.user.id === listing.seller_id)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session)
+      setIsOwner(session?.user.id === listing.seller_id)
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [listing.seller_id])
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={() => router.push('/marketplace')}
@@ -141,6 +144,16 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to marketplace
           </Button>
+
+          {isOwner && (
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/marketplace/listing/${listing.id}/edit`)}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Listing
+            </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

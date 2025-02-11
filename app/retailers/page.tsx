@@ -8,6 +8,12 @@ import { Store, MapPin, Phone, Mail, Globe, Plus } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 
+// List of authorized user IDs
+const AUTHORIZED_RETAILER_CREATORS = [
+  'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
+  '1a95bbf9-3bca-414d-a99f-1f9c72c15588'
+]
+
 interface Retailer {
   id: string
   business_name: string
@@ -23,11 +29,17 @@ export default function RetailersPage() {
   const router = useRouter()
   const [retailers, setRetailers] = useState<Retailer[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
     async function fetchRetailers() {
       try {
+        // Check authorization
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session?.user) {
+          setIsAuthorized(AUTHORIZED_RETAILER_CREATORS.includes(session.user.id))
+        }
+
         const { data, error } = await supabase
           .from('retailers')
           .select('*')
@@ -41,11 +53,6 @@ export default function RetailersPage() {
         setIsLoading(false)
       }
     }
-
-    // Check authentication status
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session)
-    })
 
     fetchRetailers()
   }, [])
@@ -69,21 +76,17 @@ export default function RetailersPage() {
           </p>
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end">
-          <Button
-            onClick={() => {
-              if (!isAuthenticated) {
-                router.push('/login')
-                return
-              }
-              router.push('/retailers/create')
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Your Business
-          </Button>
-        </div>
+        {/* Actions - Only show if authorized */}
+        {isAuthorized && (
+          <div className="flex justify-end">
+            <Link href="/retailers/create">
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your Business
+              </Button>
+            </Link>
+          </div>
+        )}
 
         {/* Retailers Grid */}
         {retailers.length === 0 ? (

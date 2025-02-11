@@ -2,24 +2,95 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Sun as Gun } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Sun as Gun, Store, Calendar, BookOpen, Package, Shield, Users } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
+import { format } from "date-fns"
+
+interface Event {
+  id: string
+  title: string
+  start_date: string
+  location: string
+  type: string
+  poster_url: string | null
+}
+
+interface Listing {
+  id: string
+  title: string
+  price: number
+  thumbnail: string
+  type: 'firearms' | 'non_firearms'
+}
+
+interface BlogPost {
+  id: string
+  title: string
+  slug: string
+  featured_image: string | null
+  created_at: string
+  author: {
+    username: string
+  }
+}
 
 export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [latestEvents, setLatestEvents] = useState<Event[]>([])
+  const [recentListings, setRecentListings] = useState<Listing[]>([])
+  const [latestPosts, setLatestPosts] = useState<BlogPost[]>([])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsAuthenticated(!!session)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session)
-    })
+    // Fetch latest events
+    supabase
+      .from('events')
+      .select('*')
+      .gte('start_date', new Date().toISOString())
+      .order('start_date', { ascending: true })
+      .limit(3)
+      .then(({ data }) => {
+        if (data) setLatestEvents(data)
+      })
 
-    return () => subscription.unsubscribe()
+    // Fetch recent listings (limited to 3)
+    supabase
+      .from('listings')
+      .select('*')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(3)
+      .then(({ data }) => {
+        if (data) setRecentListings(data)
+      })
+
+    // Fetch latest blog posts
+    supabase
+      .from('blog_posts')
+      .select(`
+        *,
+        author:profiles(username)
+      `)
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(3)
+      .then(({ data }) => {
+        if (data) setLatestPosts(data)
+      })
   }, [])
+
+  function formatPrice(price: number) {
+    return new Intl.NumberFormat('en-MT', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(price)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,65 +123,219 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="py-24 sm:py-32">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl lg:text-center">
-            <h2 className="text-base font-semibold leading-7 text-primary">Everything You Need</h2>
-            <p className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-              A Complete Platform for Firearm Enthusiasts
-            </p>
-          </div>
-          <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-            <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-3">
-              {/* Marketplace Feature */}
-              <div className="flex flex-col">
-                <div className="mb-6">
-                  <div className="rounded-lg bg-primary/10 p-2 w-10 h-10 flex items-center justify-center">
-                    <Gun className="h-6 w-6 text-primary" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Marketplace</h3>
-                  <p className="text-muted-foreground">
-                    Buy and sell firearms and accessories in a secure, verified environment.
-                  </p>
-                </div>
-              </div>
-
-              {/* Blog Feature */}
-              <div className="flex flex-col">
-                <div className="mb-6">
-                  <div className="rounded-lg bg-primary/10 p-2 w-10 h-10 flex items-center justify-center">
-                    <Gun className="h-6 w-6 text-primary rotate-45" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Expert Articles</h3>
-                  <p className="text-muted-foreground">
-                    Stay informed with our comprehensive blog covering reviews, tips, and industry news.
-                  </p>
-                </div>
-              </div>
-
-              {/* Community Feature */}
-              <div className="flex flex-col">
-                <div className="mb-6">
-                  <div className="rounded-lg bg-primary/10 p-2 w-10 h-10 flex items-center justify-center">
-                    <Gun className="h-6 w-6 text-primary -rotate-45" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">Verified Community</h3>
-                  <p className="text-muted-foreground">
-                    Connect with verified members and licensed sellers in a trusted environment.
-                  </p>
-                </div>
-              </div>
+      {/* Recent Listings Section */}
+      <section className="py-16 bg-accent/50">
+        <div className="container mx-auto px-6">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Recent Listings</h2>
+              <p className="text-muted-foreground">Latest additions to our marketplace</p>
             </div>
+            <Link href="/marketplace">
+              <Button variant="outline">View All Listings</Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {recentListings.map((listing) => (
+              <Link key={listing.id} href={`/marketplace/listing/${listing.id}`}>
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="aspect-video relative overflow-hidden">
+                    <img
+                      src={listing.thumbnail}
+                      alt={listing.title}
+                      className="object-cover w-full h-full"
+                    />
+                  </div>
+                  <CardContent className="p-4">
+                    <Badge variant="secondary" className="mb-2">
+                      {listing.type === 'firearms' ? 'Firearms' : 'Accessories'}
+                    </Badge>
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-1">{listing.title}</h3>
+                    <p className="text-lg font-bold text-primary">{formatPrice(listing.price)}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* Upcoming Events Section */}
+      <section className="py-16">
+        <div className="container mx-auto px-6">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
+              <p className="text-muted-foreground">Join the latest community events</p>
+            </div>
+            <Link href="/events">
+              <Button variant="outline">View All Events</Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {latestEvents.map((event) => (
+              <Link key={event.id} href={`/events/${event.id}`}>
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                  {event.poster_url ? (
+                    <div className="aspect-video relative overflow-hidden">
+                      <img
+                        src={event.poster_url}
+                        alt={event.title}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-muted flex items-center justify-center">
+                      <Calendar className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  )}
+                  <CardContent className="p-4">
+                    <Badge className="mb-2">{event.type}</Badge>
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">{event.title}</h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>{format(new Date(event.start_date), 'PPP')}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Latest Blog Posts Section */}
+      <section className="py-16 bg-accent/50">
+        <div className="container mx-auto px-6">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Latest Articles</h2>
+              <p className="text-muted-foreground">Expert insights and community news</p>
+            </div>
+            <Link href="/blog">
+              <Button variant="outline">View All Articles</Button>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {latestPosts.map((post) => (
+              <Link key={post.id} href={`/blog/${post.slug}`}>
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                  {post.featured_image ? (
+                    <div className="aspect-video relative overflow-hidden">
+                      <img
+                        src={post.featured_image}
+                        alt={post.title}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-video bg-muted flex items-center justify-center">
+                      <BookOpen className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  )}
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">{post.title}</h3>
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>By {post.author.username}</span>
+                      <span>{format(new Date(post.created_at), 'MMM d, yyyy')}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="py-24">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold mb-4">Everything You Need</h2>
+            <p className="text-lg text-muted-foreground">
+              A complete platform designed for the firearms community
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card>
+              <CardContent className="p-6">
+                <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <Package className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Marketplace</h3>
+                <p className="text-muted-foreground">
+                  Buy and sell firearms and accessories in a secure, verified environment.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Verified Sellers</h3>
+                <p className="text-muted-foreground">
+                  All sellers are verified with proper licensing and documentation.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <Calendar className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Events</h3>
+                <p className="text-muted-foreground">
+                  Discover and participate in local shooting events and competitions.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold text-lg mb-2">Community</h3>
+                <p className="text-muted-foreground">
+                  Connect with fellow enthusiasts and share your passion for firearms.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-primary">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-3xl font-bold text-primary-foreground mb-4">
+            Join the MaltaGuns Community Today
+          </h2>
+          <p className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
+            Create an account to start buying, selling, and connecting with the firearms community in Malta.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <Link href="/register">
+              <Button size="lg" variant="secondary">
+                Create Account
+              </Button>
+            </Link>
+            <Link href="/marketplace">
+              <Button 
+                size="lg" variant="secondary">
+                Browse Marketplace
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }

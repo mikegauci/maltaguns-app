@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import { Sun as Gun, Store } from "lucide-react";
+import { Sun as Gun, Store, BookOpen } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
@@ -54,6 +54,12 @@ export function Header() {
           </Link>
           <Link href="/events">
             <Button variant="ghost">Events</Button>
+          </Link>
+          <Link href="/blog">
+            <Button variant="ghost">
+              <BookOpen className="h-4 w-4 mr-2" />
+              Blog
+            </Button>
           </Link>
           
           {user ? (
