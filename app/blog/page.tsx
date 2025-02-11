@@ -106,39 +106,7 @@ export default function BlogPage() {
           </div>
         )}
 
-        {/* Featured Post */}
-        {posts.length > 0 && (
-          <Link href={`/blog/${posts[0].slug}`}>
-            <Card className="hover:shadow-lg transition-shadow overflow-hidden">
-              <div className="aspect-[21/9] relative overflow-hidden bg-muted">
-                {posts[0].featured_image ? (
-                  <img
-                    src={posts[0].featured_image}
-                    alt={posts[0].title}
-                    className="object-cover w-full h-full"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-muted">
-                    <BookOpen className="h-12 w-12 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-              <CardContent className="p-8">
-                <div className="max-w-3xl mx-auto">
-                  <div className="text-sm text-muted-foreground mb-3">
-                    {format(new Date(posts[0].created_at), 'MMMM d, yyyy')} • By {posts[0].author.username}
-                  </div>
-                  <h2 className="text-3xl font-bold mb-4">{posts[0].title}</h2>
-                  <p className="text-muted-foreground text-lg">
-                    {truncateText(posts[0].content, 40)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        )}
-
-        {/* Blog Posts Grid */}
+        {/* Blog Posts Grid - 3 posts per row on large screens */}
         {posts.length === 0 ? (
           <Card className="p-6 text-center">
             <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
@@ -146,7 +114,7 @@ export default function BlogPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.slice(1).map((post) => (
+            {posts.map((post) => (
               <Link key={post.id} href={`/blog/${post.slug}`}>
                 <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden">
                   <div className="aspect-video relative overflow-hidden bg-muted">
