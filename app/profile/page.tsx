@@ -306,6 +306,33 @@ export default function ProfilePage() {
     );
   }
 
+  async function handleListingStatusChange(id: string, value: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from("listings")
+        .update({ status: value })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setListings(prevListings =>
+        prevListings.map(listing =>
+          listing.id === id ? { ...listing, status: value } : listing
+        )
+      );
+
+      toast({
+        title: "Listing updated",
+        description: "The status of your listing has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update listing status.",
+      });
+    }
+  }
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">

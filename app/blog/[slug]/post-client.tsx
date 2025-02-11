@@ -12,6 +12,7 @@ interface BlogPost {
   id: string
   title: string
   content: string
+  slug: string
   featured_image: string | null
   published: boolean
   created_at: string
