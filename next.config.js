@@ -1,8 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: { appDir: true },
-  output: "standalone", 
-  trailingSlash: true,
+  // Remove static export mode to allow dynamic API routes.
+  // output: "export",
+  images: {
+    unoptimized: true,
+  },
 };
 
 module.exports = nextConfig;

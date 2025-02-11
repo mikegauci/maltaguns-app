@@ -61,6 +61,7 @@ export default function CreateFirearmsListing() {
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [credits, setCredits] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null);
 
   const form = useForm<FirearmsForm>({
     resolver: zodResolver(firearmsSchema),
@@ -77,19 +78,21 @@ export default function CreateFirearmsListing() {
   useEffect(() => {
     async function checkCredits() {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session } } = await supabase.auth.getSession();
         if (!session?.user) {
-          router.push("/login")
-          return
+          router.push("/login");
+          return;
         }
+        // Set the userId from the session
+        setUserId(session.user.id);
 
         // Check if coming back from Stripe
-        const sessionId = searchParams.get("session_id")
+        const sessionId = searchParams.get("session_id");
         if (sessionId) {
           toast({
             title: "Payment successful!",
             description: "Your credits have been added to your account.",
-          })
+          });
         }
 
         // Get user's credits
@@ -97,23 +100,23 @@ export default function CreateFirearmsListing() {
           .from("credits")
           .select("amount")
           .eq("user_id", session.user.id)
-          .single()
+          .single();
 
-        setCredits(userCredits?.amount || 0)
+        setCredits(userCredits?.amount || 0);
 
         // Show credit dialog if user has no credits
         if (!userCredits?.amount) {
-          setShowCreditDialog(true)
+          setShowCreditDialog(true);
         }
       } catch (error) {
-        console.error("Error checking credits:", error)
+        console.error("Error checking credits:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    checkCredits()
-  }, [router, searchParams, toast])
+    checkCredits();
+  }, [router, searchParams, toast]);
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {
@@ -435,15 +438,19 @@ export default function CreateFirearmsListing() {
           </CardContent>
         </Card>
 
-        <CreditDialog 
-          open={showCreditDialog} 
-          onOpenChange={setShowCreditDialog}
-          onSuccess={() => {
-            setShowCreditDialog(false)
-            router.refresh()
-          }}
-        />
-        </div>
+
+        {userId && (
+          <CreditDialog 
+            open={showCreditDialog} 
+            onOpenChange={setShowCreditDialog}
+            userId={userId}
+            onSuccess={() => {
+              setShowCreditDialog(false);
+              router.refresh();
+            }}
+          />
+        )}
+      </div>
       </div>
     )
   }
