@@ -1,0 +1,449 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import * as z from "zod"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/lib/supabase"
+import { ArrowLeft } from "lucide-react"
+import { CreditDialog } from "@/components/credit-dialog"
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILES = 6
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+
+const firearmsCategories = {
+  "airguns": "Airguns",
+  "revolvers": "Revolvers",
+  "pistols": "Pistols",
+  "rifles": "Rifles",
+  "carbines": "Carbines",
+  "shotguns": "Shotguns",
+  "black_powder": "Black powder",
+  "replica_deactivated": "Replica or Deactivated",
+  "crossbow": "Crossbow",
+  "schedule_1": "Schedule 1 (automatic)"
+} as const
+
+const firearmsSchema = z.object({
+  category: z.enum(["airguns", "revolvers", "pistols", "rifles", "carbines", "shotguns", "black_powder", "replica_deactivated", "crossbow", "schedule_1"]),
+  calibre: z.string().min(1, "Calibre is required"),
+  title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title must not exceed 100 characters"),
+  description: z.string().min(10, "Description must be at least 10 characters").max(2000, "Description must not exceed 2000 characters"),
+  price: z.number().min(0, "Price must be a positive number"),
+  images: z.array(z.any()).min(1, "At least one image is required").max(MAX_FILES, `Maximum ${MAX_FILES} images allowed`)
+})
+
+type FirearmsForm = z.infer<typeof firearmsSchema>
+
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/--+/g, "-")
+}
+
+export default function CreateFirearmsListing() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const { toast } = useToast()
+  const [uploading, setUploading] = useState(false)
+  const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [showCreditDialog, setShowCreditDialog] = useState(false)
+  const [credits, setCredits] = useState<number>(0)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const form = useForm<FirearmsForm>({
+    resolver: zodResolver(firearmsSchema),
+    defaultValues: {
+      category: "airguns",
+      calibre: "",
+      title: "",
+      description: "",
+      price: 0,
+      images: []
+    }
+  })
+
+  useEffect(() => {
+    async function checkCredits() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) {
+          router.push("/login")
+          return
+        }
+
+        // Check if coming back from Stripe
+        const sessionId = searchParams.get("session_id")
+        if (sessionId) {
+          toast({
+            title: "Payment successful!",
+            description: "Your credits have been added to your account.",
+          })
+        }
+
+        // Get user's credits
+        const { data: userCredits } = await supabase
+          .from("credits")
+          .select("amount")
+          .eq("user_id", session.user.id)
+          .single()
+
+        setCredits(userCredits?.amount || 0)
+
+        // Show credit dialog if user has no credits
+        if (!userCredits?.amount) {
+          setShowCreditDialog(true)
+        }
+      } catch (error) {
+        console.error("Error checking credits:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkCredits()
+  }, [router, searchParams, toast])
+
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    try {
+      const files = Array.from(event.target.files || [])
+      
+      if (files.length + uploadedImages.length > MAX_FILES) {
+        toast({
+          variant: "destructive",
+          title: "Too many files",
+          description: `Maximum ${MAX_FILES} images allowed`
+        })
+        return
+      }
+
+      for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+          toast({
+            variant: "destructive",
+            title: "File too large",
+            description: `${file.name} exceeds 5MB limit`
+          })
+          return
+        }
+
+        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+          toast({
+            variant: "destructive",
+            title: "Invalid file type",
+            description: `${file.name} is not a supported image format`
+          })
+          return
+        }
+      }
+
+      setUploading(true)
+      const { data: sessionData } = await supabase.auth.getSession()
+      
+      if (!sessionData.session?.user.id) {
+        throw new Error("Not authenticated")
+      }
+
+      const uploadedUrls: string[] = []
+
+      for (const file of files) {
+        const fileExt = file.name.split(".").pop()
+        const fileName = `${sessionData.session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
+        const filePath = `listings/${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from("listings")
+          .upload(filePath, file)
+
+        if (uploadError) throw uploadError
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("listings")
+          .getPublicUrl(filePath)
+
+        uploadedUrls.push(publicUrl)
+      }
+
+      setUploadedImages([...uploadedImages, ...uploadedUrls])
+      form.setValue("images", [...uploadedImages, ...uploadedUrls])
+
+      toast({
+        title: "Images uploaded",
+        description: "Your images have been uploaded successfully"
+      })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload images"
+      })
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function onSubmit(data: FirearmsForm) {
+    try {
+      if (credits < 1) {
+        setShowCreditDialog(true)
+        return
+      }
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user.id) {
+        throw new Error("Not authenticated")
+      }
+
+      // Create the listing
+      const { data: listing, error: listingError } = await supabase
+        .from("listings")
+        .insert({
+          seller_id: session.user.id,
+          type: "firearms",
+          category: data.category,
+          calibre: data.calibre,
+          title: data.title,
+          description: data.description,
+          price: data.price,
+          images: data.images,
+          thumbnail: data.images[0]
+        })
+        .select()
+        .single()
+
+      if (listingError) throw listingError
+
+      // Deduct one credit
+      const { error: creditError } = await supabase
+        .from("credits")
+        .update({ 
+          amount: credits - 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", session.user.id)
+
+      if (creditError) throw creditError
+
+      // Record the transaction
+      await supabase
+        .from("credit_transactions")
+        .insert({
+          user_id: session.user.id,
+          amount: -1,
+          type: "listing_creation"
+        })
+
+      setCredits(credits - 1)
+
+      toast({
+        title: "Listing created",
+        description: "Your listing has been created successfully"
+      })
+
+      router.push(`/marketplace/listing/${listing.id}/${slugify(listing.title)}`)
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Failed to create listing",
+        description: error instanceof Error ? error.message : "Something went wrong"
+      })
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6 flex items-center justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => router.push("/marketplace/create")}
+            className="flex items-center text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to listing types
+          </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Credits remaining:</span>
+            <span className="font-semibold">{credits}</span>
+          </div>
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Firearms Listing</CardTitle>
+            <CardDescription>
+              List your firearm for sale on the marketplace
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(firearmsCategories).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="calibre"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Calibre</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 9mm" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter a descriptive title" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Provide detailed information about the firearm"
+                          className="min-h-[120px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field: { onChange, ...field } }) => (
+                    <FormItem>
+                      <FormLabel>Price (€)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          onChange={(e) => {
+                            const value = e.target.value === "" ? 0 : parseFloat(e.target.value)
+                            onChange(value)
+                          }}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="images"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Images</FormLabel>
+                      <FormControl>
+                        <div className="space-y-4">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleImageUpload}
+                            disabled={uploading}
+                          />
+                          {uploadedImages.length > 0 && (
+                            <div className="grid grid-cols-3 gap-4">
+                              {uploadedImages.map((url, index) => (
+                                <img
+                                  key={url}
+                                  src={url}
+                                  alt={`Preview ${index + 1}`}
+                                  className="w-full h-32 object-cover rounded-lg"
+                                />
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-sm text-muted-foreground">
+                            Upload up to 6 images (max 5MB each). First image will be the thumbnail.
+                          </p>
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" className="w-full" disabled={uploading}>
+                  {uploading ? "Uploading images..." : "Create Listing"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        <CreditDialog 
+          open={showCreditDialog} 
+          onOpenChange={setShowCreditDialog}
+          onSuccess={() => {
+            setShowCreditDialog(false)
+            router.refresh()
+          }}
+        />
+        </div>
+      </div>
+    )
+  }
