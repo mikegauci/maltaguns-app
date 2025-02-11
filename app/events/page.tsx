@@ -11,7 +11,6 @@ import { Calendar as CalendarIcon, MapPin, Clock, Plus, ChevronLeft, ChevronRigh
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { format, addMonths, subMonths, isBefore, startOfDay } from "date-fns"
-import { CreateEventDialog } from "./create-event-dialog"
 
 interface Event {
   id: string
@@ -35,7 +34,6 @@ export default function EventsPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [calendarEvents, setCalendarEvents] = useState<Event[]>([])
 
   useEffect(() => {
@@ -278,7 +276,7 @@ export default function EventsPage() {
                   router.push('/login')
                   return
                 }
-                setShowCreateDialog(true)
+                router.push('/events/create')
               }}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -323,15 +321,6 @@ export default function EventsPage() {
           </div>
         </div>
       </div>
-
-      <CreateEventDialog 
-        open={showCreateDialog} 
-        onOpenChange={setShowCreateDialog}
-        onSuccess={() => {
-          setShowCreateDialog(false)
-          router.refresh()
-        }}
-      />
     </div>
   )
 }

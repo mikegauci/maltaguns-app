@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
-import { Sun as Gun } from "lucide-react";
+import { Sun as Gun, Store } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
@@ -45,6 +45,12 @@ export function Header() {
         <nav className="flex items-center gap-4">
           <Link href="/marketplace">
             <Button variant="ghost">Marketplace</Button>
+          </Link>
+          <Link href="/retailers">
+            <Button variant="ghost">
+              <Store className="h-4 w-4 mr-2" />
+              Retailers
+            </Button>
           </Link>
           <Link href="/events">
             <Button variant="ghost">Events</Button>

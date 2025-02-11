@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Remove static export mode to allow dynamic API routes.
-  // output: "export",
+  // Removed static export mode to enable dynamic functionality.
   images: {
     unoptimized: true,
   },
