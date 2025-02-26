@@ -23,6 +23,7 @@ interface ListingDetails extends Listing {
     phone: string | null;
   };
   images: string[];
+  status: string;
 }
 
 // Force dynamic rendering (disable static export)

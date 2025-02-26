@@ -119,10 +119,9 @@ export default function CreateListing() {
         <AlertDialog open={showLicenseDialog} onOpenChange={setShowLicenseDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>License Required</AlertDialogTitle>
+              <AlertDialogTitle>License upload required</AlertDialogTitle>
               <AlertDialogDescription>
-                To create firearms listings, you need to upload your firearms license for verification.
-                Would you like to upload your license now?
+                To sell firearms on Maltaguns, we must first verify that you are infact licensed. please upload a picture of your latest license on your profile. This is only required once and your account will then be certified for future firearm sales
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

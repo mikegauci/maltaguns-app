@@ -2,10 +2,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { loadStripe } from "@stripe/stripe-js";
+import { useRouter } from "next/navigation";
 
 // Initialize Stripe with your publishable key.
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
@@ -31,6 +32,7 @@ interface CreditDialogProps {
 }
 
 export function CreditDialog({ open, onOpenChange, userId, onSuccess }: CreditDialogProps) {
+  const router = useRouter();
   useEffect(() => { void stripePromise; }, []);
 
   const handlePurchase = async (priceId: string) => {
@@ -56,10 +58,24 @@ export function CreditDialog({ open, onOpenChange, userId, onSuccess }: CreditDi
     }
   };
 
+  const handleReturnHome = () => {
+    router.push("/");
+    onOpenChange(false);
+  };
+
+  // Prevent closing the dialog when clicking outside or pressing escape
+  const handleOpenChange = (newOpen: boolean) => {
+    // Only allow the dialog to be closed programmatically through our buttons
+    if (newOpen === false) {
+      return;
+    }
+    onOpenChange(newOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+        <DialogHeader className="flex flex-col space-y-1.5 text-center sm:text-left">
           <DialogTitle>Purchase Credits</DialogTitle>
           <DialogDescription>Choose a credit package to start creating listings</DialogDescription>
         </DialogHeader>
@@ -79,6 +95,15 @@ export function CreditDialog({ open, onOpenChange, userId, onSuccess }: CreditDi
             </Card>
           ))}
         </div>
+        <DialogFooter className="mt-6">
+          <Button 
+            variant="outline" 
+            onClick={handleReturnHome}
+            className="w-full"
+          >
+            Return to Home
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

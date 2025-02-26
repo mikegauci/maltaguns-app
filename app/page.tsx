@@ -95,26 +95,31 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <div className="relative isolate px-6 pt-14 lg:px-8">
-        <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
+      <div className="relative isolate">
+        <div className="absolute inset-0 overflow-hidden">
+          <img 
+            src="/maltaguns-hero.jpg"
+            alt="MaltaGuns Hero"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-black/75"></div>
+        </div>
+        <div className="relative mx-auto max-w-2xl py-32 sm:py-48 lg:py-56 px-6 lg:px-8">
           <div className="text-center">
-            <div className="mb-8 flex justify-center">
-              <Gun className="h-12 w-12 text-primary" />
-            </div>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6">
+            <h1 className="text-6xl font-bold sm:text-6xl mb-6 text-white">
               Welcome to MaltaGuns
             </h1>
-            <p className="text-lg leading-8 text-muted-foreground mb-8">
+            <p className="text-lg leading-8 text-white/80 mb-8">
               Your premier destination for the firearms community in Malta. Browse listings, read expert articles, and connect with fellow enthusiasts.
             </p>
             <div className="flex items-center justify-center gap-x-6">
               <Link href={isAuthenticated ? "/marketplace/create" : "/register"}>
-                <Button size="lg">
+                <Button size="lg" className="bg-white text-black border-white hover:bg-white/20">
                   {isAuthenticated ? "Post Listing" : "Join the Community"}
                 </Button>
               </Link>
               <Link href="/marketplace">
-                <Button variant="outline" size="lg">
+                <Button variant="outline" size="lg" className="bg-white/10 text-white border-white hover:bg-white/20">
                   Browse Marketplace
                 </Button>
               </Link>

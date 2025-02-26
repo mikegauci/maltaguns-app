@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, X } from "lucide-react"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
@@ -181,6 +181,18 @@ export default function CreateNonFirearmsListing() {
       setUploading(false)
     }
   }
+
+  const handleDeleteImage = (indexToDelete: number) => {
+    const newImages = [...uploadedImages];
+    newImages.splice(indexToDelete, 1);
+    setUploadedImages(newImages);
+    form.setValue("images", newImages);
+    
+    toast({
+      title: "Image removed",
+      description: "The image has been removed from your listing"
+    });
+  };
 
   async function onSubmit(data: NonFirearmsForm) {
     try {
@@ -362,22 +374,51 @@ export default function CreateNonFirearmsListing() {
                       <FormLabel>Images</FormLabel>
                       <FormControl>
                         <div className="space-y-4">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={handleImageUpload}
-                            disabled={uploading}
-                          />
+                          <div className="flex flex-col items-start">
+                            <label 
+                              htmlFor="image-upload" 
+                              className={`cursor-pointer px-4 py-2 rounded-md text-sm font-medium transition-colors
+                                ${uploadedImages.length >= MAX_FILES 
+                                  ? "bg-muted text-muted-foreground cursor-not-allowed opacity-70" 
+                                  : uploadedImages.length > 0 
+                                    ? "bg-primary text-primary-foreground hover:bg-primary/90" 
+                                    : "bg-primary text-primary-foreground hover:bg-primary/90"}`}
+                            >
+                              {uploadedImages.length >= MAX_FILES 
+                                ? "Maximum Images Reached" 
+                                : uploadedImages.length > 0 
+                                  ? "Add More Images" 
+                                  : "Choose Files"}
+                            </label>
+                            <Input
+                              id="image-upload"
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={handleImageUpload}
+                              disabled={uploading || uploadedImages.length >= MAX_FILES}
+                              className="hidden"
+                            />
+                          </div>
                           {uploadedImages.length > 0 && (
                             <div className="grid grid-cols-3 gap-4">
                               {uploadedImages.map((url, index) => (
-                                <img
-                                  key={url}
-                                  src={url}
-                                  alt={`Preview ${index + 1}`}
-                                  className="w-full h-32 object-cover rounded-lg"
-                                />
+                                <div key={url} className="relative group">
+                                  <img
+                                    src={url}
+                                    alt={`Preview ${index + 1}`}
+                                    className="w-full h-32 object-cover rounded-lg"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteImage(index)}
+                                    className="absolute top-1 right-1 bg-black bg-opacity-50 rounded-full p-1 
+                                              text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                    aria-label="Delete image"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </button>
+                                </div>
                               ))}
                             </div>
                           )}
@@ -391,7 +432,11 @@ export default function CreateNonFirearmsListing() {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={uploading}>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                  disabled={uploading}
+                >
                   {uploading ? "Uploading images..." : "Create Listing"}
                 </Button>
               </form>

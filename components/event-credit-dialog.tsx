@@ -1,9 +1,10 @@
 "use client";
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { loadStripe } from "@stripe/stripe-js";
+import { useRouter } from "next/navigation";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -15,6 +16,8 @@ interface EventCreditDialogProps {
 }
 
 export function EventCreditDialog({ open, onOpenChange, userId, onSuccess }: EventCreditDialogProps) {
+  const router = useRouter();
+  
   const handlePurchase = async () => {
     try {
       const res = await fetch("/api/create-event-checkout-session", {
@@ -38,8 +41,22 @@ export function EventCreditDialog({ open, onOpenChange, userId, onSuccess }: Eve
     }
   };
 
+  // Prevent closing the dialog when clicking outside or pressing escape
+  const handleOpenChange = (newOpen: boolean) => {
+    // Only allow the dialog to be closed programmatically through our buttons
+    if (newOpen === false) {
+      return;
+    }
+    onOpenChange(newOpen);
+  };
+
+  const handleBackToEvents = () => {
+    router.push("/events");
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Purchase Event Credits</DialogTitle>
@@ -57,6 +74,15 @@ export function EventCreditDialog({ open, onOpenChange, userId, onSuccess }: Eve
             Purchase
           </Button>
         </Card>
+        <DialogFooter className="mt-6">
+          <Button 
+            variant="outline" 
+            onClick={handleBackToEvents}
+            className="w-full border-black text-black hover:bg-gray-100"
+          >
+            Back to Events
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

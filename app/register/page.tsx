@@ -19,7 +19,10 @@ const phoneRegex = /^\+?[1-9]\d{1,14}$/
 const registerSchema = z.object({
   username: z.string()
     .min(3, "Username must be at least 3 characters")
-    .max(50, "Username must not exceed 50 characters"),
+    .max(50, "Username must not exceed 50 characters")
+    .refine(value => !value.includes('@') && !value.includes('.'), {
+      message: "Username cannot contain '@' or '.' characters"
+    }),
   email: z.string().email("Invalid email address"),
   password: z.string()
     .min(8, "Password must be at least 8 characters")
@@ -214,7 +217,14 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="johndoe" {...field} />
+                      <Input 
+                        placeholder="johndoe" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          form.trigger("username");
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -228,7 +238,15 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="john@example.com" {...field} />
+                      <Input 
+                        type="email" 
+                        placeholder="john@example.com" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          form.trigger("email");
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -242,7 +260,17 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input 
+                        type="password" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          form.trigger("password");
+                          if (form.getValues("confirmPassword")) {
+                            form.trigger("confirmPassword");
+                          }
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -256,7 +284,14 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input 
+                        type="password" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          form.trigger("confirmPassword");
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -266,15 +301,34 @@ export default function Register() {
               <FormField
                 control={form.control}
                 name="birthday"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Birthday</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  // Calculate min and max dates
+                  const today = new Date();
+                  const maxDate = new Date(today);
+                  maxDate.setFullYear(today.getFullYear() - 18);
+                  
+                  const minDate = new Date(today);
+                  minDate.setFullYear(today.getFullYear() - 100);
+                  
+                  return (
+                    <FormItem>
+                      <FormLabel>Birthday</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="date" 
+                          max={maxDate.toISOString().split('T')[0]}
+                          min={minDate.toISOString().split('T')[0]}
+                          {...field} 
+                          onChange={(e) => {
+                            field.onChange(e);
+                            form.trigger("birthday");
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
@@ -284,7 +338,14 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="+356 1234 5678" {...field} />
+                      <Input 
+                        placeholder="+356 1234 5678" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          form.trigger("phone");
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -298,7 +359,14 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="123 Main St, Valletta" {...field} />
+                      <Input 
+                        placeholder="123 Main St, Valletta" 
+                        {...field} 
+                        onChange={(e) => {
+                          field.onChange(e);
+                          form.trigger("address");
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -313,7 +381,12 @@ export default function Register() {
                     <FormControl>
                       <Checkbox
                         checked={field.value}
-                        onCheckedChange={field.onChange}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (checked && form.getValues("licenseImage")) {
+                            form.trigger("licenseImage");
+                          }
+                        }}
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">

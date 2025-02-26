@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock, Pencil } from "lucide-react"
+import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock, Pencil, Calendar, User, ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
+import { format } from "date-fns"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface ListingDetails {
   id: string
@@ -27,6 +29,7 @@ interface ListingDetails {
     phone: string | null
   }
   images: string[]
+  status: string
 }
 
 function formatPrice(price: number) {
@@ -117,6 +120,8 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
   const [selectedImage, setSelectedImage] = useState<string>(listing.thumbnail)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const allImages = [listing.thumbnail, ...listing.images].filter(Boolean)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -132,6 +137,14 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
     return () => subscription.unsubscribe()
   }, [listing.seller_id])
 
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length)
+  }
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length)
+  }
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
@@ -141,7 +154,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
             onClick={() => router.push('/marketplace')}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="mr-2 h-4 w-4" />
+            <ChevronLeft className="mr-2 h-4 w-4" />
             Back to marketplace
           </Button>
 
@@ -162,24 +175,47 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
             {/* Images Section */}
             <Card>
               <CardContent className="p-0">
-                <div className="aspect-video relative overflow-hidden">
+                <div className="relative">
                   <img
-                    src={selectedImage}
+                    src={allImages[currentImageIndex]}
                     alt={listing.title}
                     className="object-contain w-full h-full"
                   />
+                  {listing.status === 'sold' && (
+                    <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
+                  )}
+                  {allImages.length > 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90"
+                        onClick={prevImage}
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90"
+                        onClick={nextImage}
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
             <div className="grid grid-cols-6 gap-4">
-              {listing.images.map((image, index) => (
+              {allImages.map((image, index) => (
                 <div
                   key={index}
                   className={`aspect-video cursor-pointer overflow-hidden rounded-lg border-2 ${
-                    selectedImage === image ? 'border-primary' : 'border-transparent'
+                    index === currentImageIndex ? 'border-primary' : 'border-transparent'
                   }`}
-                  onClick={() => setSelectedImage(image)}
+                  onClick={() => setCurrentImageIndex(index)}
                 >
                   <img
                     src={image}
@@ -221,11 +257,9 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                   </p>
                 </div>
 
-                <div>
-                  <h2 className="text-lg font-semibold mb-2">Description</h2>
-                  <p className="text-muted-foreground whitespace-pre-wrap">
-                    {listing.description}
-                  </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+                  <Calendar className="h-4 w-4" />
+                  <span>Listed on {format(new Date(listing.created_at), 'PPP')}</span>
                 </div>
               </CardContent>
             </Card>
@@ -278,17 +312,17 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                           <span>+356 •••• ••••</span>
                         </div>
                       </div>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80">
+                      <div className="inset-0 flex flex-col items-center justify-center bg-background/80">
                         <Lock className="h-8 w-8 text-muted-foreground mb-2" />
                         <p className="text-sm text-center text-muted-foreground mb-4">
                           Create a verified account to view seller information
                         </p>
-                        <div className="flex gap-2">
-                          <Link href="/register">
-                            <Button>Register Now</Button>
+                        <div className="flex flex-col gap-2 w-full">
+                          <Link href="/register" className="w-full">
+                            <Button className="w-full">Register to Contact Seller</Button>
                           </Link>
-                          <Link href="/login">
-                            <Button variant="outline">Login</Button>
+                          <Link href="/login" className="w-full">
+                            <Button variant="outline" className="w-full">Login</Button>
                           </Link>
                         </div>
                       </div>

@@ -454,7 +454,7 @@ export default function CreateEventPage() {
                   name="price"
                   render={({ field: { onChange, ...field } }) => (
                     <FormItem>
-                      <FormLabel>Price (Optional)</FormLabel>
+                      <FormLabel>Price (€)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 

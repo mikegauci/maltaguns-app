@@ -19,6 +19,8 @@ interface Listing {
   type: 'firearms' | 'non_firearms'
   thumbnail: string
   created_at: string
+  status: string
+  updated_at: string
 }
 
 function slugify(text: string) {
@@ -120,14 +122,28 @@ export default function Marketplace() {
   useEffect(() => {
     async function fetchListings() {
       try {
+        // Get current date
+        const now = new Date()
+        
+        // Calculate date 7 days ago
+        const sevenDaysAgo = new Date()
+        sevenDaysAgo.setDate(now.getDate() - 7)
+        
+        // Format for Supabase query
+        const sevenDaysAgoStr = sevenDaysAgo.toISOString()
+        
+        // Fetch active listings and sold listings less than 7 days old
         const { data, error } = await supabase
           .from('listings')
           .select('*')
-          .eq('status', 'active')
+          .or(`status.eq.active,and(status.eq.sold,updated_at.gt.${sevenDaysAgoStr})`)
           .order('created_at', { ascending: false })
 
         if (error) throw error
-        setListings(data || [])
+        
+        // Filter out inactive listings
+        const filteredListings = data ? data.filter(listing => listing.status !== 'inactive') : []
+        setListings(filteredListings)
       } catch (error) {
         console.error('Error fetching listings:', error)
       } finally {
@@ -198,6 +214,9 @@ export default function Marketplace() {
                       alt={listing.title}
                       className="object-cover w-full h-full"
                     />
+                    {listing.status === 'sold' && (
+                      <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
+                    )}
                   </div>
                   <CardContent className="p-6">
                     <div className="flex items-center gap-2 mb-3">
