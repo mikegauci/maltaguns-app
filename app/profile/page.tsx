@@ -53,6 +53,15 @@ interface BlogPost {
   created_at: string;
 }
 
+interface RetailerBlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  published: boolean;
+  created_at: string;
+  retailer_id: string;
+}
+
 interface Listing {
   id: string;
   title: string;
@@ -99,6 +108,7 @@ export default function ProfilePage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [retailer, setRetailer] = useState<Retailer | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [retailerBlogPosts, setRetailerBlogPosts] = useState<RetailerBlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingLicense, setUploadingLicense] = useState(false);
@@ -177,10 +187,27 @@ export default function ProfilePage() {
           throw retailerError;
         }
 
+        // Fetch retailer blog posts if retailer exists
+        let retailerPostsData = [];
+        if (retailerData) {
+          const { data: retailerPosts, error: retailerPostsError } = await supabase
+            .from("retailer_blog_posts")
+            .select("id, title, slug, published, created_at, retailer_id")
+            .eq("retailer_id", retailerData.id)
+            .order("created_at", { ascending: false });
+
+          if (retailerPostsError) {
+            console.error("Retailer blog posts fetch error:", retailerPostsError.message);
+          } else {
+            retailerPostsData = retailerPosts || [];
+          }
+        }
+
         setProfile(profileData);
         setListings(listingsData || []);
         setBlogPosts(blogData || []);
         setRetailer(retailerData);
+        setRetailerBlogPosts(retailerPostsData);
         form.reset({
           phone: profileData.phone || "",
           address: profileData.address || "",
@@ -429,6 +456,33 @@ export default function ProfilePage() {
         title: "Remove failed",
         description:
           error instanceof Error ? error.message : "Failed to remove license.",
+      });
+    }
+  }
+
+  async function handleDeleteRetailerPost(postId: string) {
+    try {
+      const { error } = await supabase
+        .from("retailer_blog_posts")
+        .delete()
+        .eq("id", postId);
+
+      if (error) throw error;
+
+      setRetailerBlogPosts((prevPosts) =>
+        prevPosts.filter((post) => post.id !== postId)
+      );
+
+      toast({
+        title: "Post deleted",
+        description: "Your retailer blog post has been deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Delete failed",
+        description:
+          error instanceof Error ? error.message : "Failed to delete post",
       });
     }
   }
@@ -682,6 +736,71 @@ export default function ProfilePage() {
                     </Button>
                   </Link>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Retailer Blog Posts - Only show if user has a retailer and posts */}
+        {retailer && retailerBlogPosts.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>My Retailer Posts</CardTitle>
+                <CardDescription>Manage your retailer blog posts</CardDescription>
+              </div>
+              <Link href={`/retailers/${retailer.id}/blog/create`}>
+                <Button>
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Write Retailer Post
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {retailerBlogPosts.map((post) => (
+                  <Card key={post.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{post.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(post.created_at), "PPP")}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={post.published ? "default" : "secondary"}
+                          >
+                            {post.published ? "Published" : "Draft"}
+                          </Badge>
+                          <div className="flex gap-2">
+                            <Link href={`/retailers/${retailer.id}/blog/${post.slug}`}>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                            </Link>
+                            <Link href={`/retailers/${retailer.id}/blog/${post.slug}/edit`}>
+                              <Button variant="outline" size="sm">
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button>
+                            </Link>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteRetailerPost(post.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
             </CardContent>
           </Card>
