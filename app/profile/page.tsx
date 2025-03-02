@@ -188,7 +188,7 @@ export default function ProfilePage() {
         }
 
         // Fetch retailer blog posts if retailer exists
-        let retailerPostsData = [];
+        let retailerPostsData: RetailerBlogPost[] = [];
         if (retailerData) {
           const { data: retailerPosts, error: retailerPostsError } = await supabase
             .from("retailer_blog_posts")
@@ -199,7 +199,7 @@ export default function ProfilePage() {
           if (retailerPostsError) {
             console.error("Retailer blog posts fetch error:", retailerPostsError.message);
           } else {
-            retailerPostsData = retailerPosts || [];
+            retailerPostsData = retailerPosts as RetailerBlogPost[] || [];
           }
         }
 
