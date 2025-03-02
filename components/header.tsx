@@ -5,12 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
-import { Sun as Gun, Store, BookOpen, Menu, X } from "lucide-react";
+import { SearchBar } from "@/components/search";
+import { Store, BookOpen, Menu, X } from "lucide-react";
 
 export function Header() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -43,6 +43,11 @@ export function Header() {
             <img src="/maltaguns.png" alt="MaltaGuns Logo" className="h-8 w-auto" />
           </Link>
 
+          {/* Mobile search bar - visible only on mobile */}
+          <div className="flex-1 mx-4 md:hidden">
+            <SearchBar disableShortcut={true} />
+          </div>
+
           <button
             className="md:hidden"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -51,6 +56,10 @@ export function Header() {
           </button>
 
           <nav className="hidden md:flex items-center gap-4">
+            {/* Desktop search bar - now before Marketplace */}
+            <div className="hidden md:block">
+              <SearchBar disableShortcut={false} />
+            </div>
             <Link href="/marketplace">
               <Button variant="ghost">Marketplace</Button>
             </Link>
@@ -94,7 +103,7 @@ export function Header() {
       </header>
 
       {menuOpen && (
-        <nav className="md:hidden bg-black border-b">
+        <nav className="md:hidden bg-background border-b">
           <div className="container mx-auto px-4 py-3 flex flex-col gap-4">
             <Link href="/marketplace">
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>Marketplace</Button>
