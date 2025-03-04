@@ -93,11 +93,36 @@ export default function CreateEventPage() {
         }
 
         // Then fetch the credits
-        const { data: userCredits } = await supabase
+        const { data: userCredits, error: creditsError } = await supabase
           .from("credits_events")
           .select("amount")
           .eq("user_id", session.user.id)
           .single()
+          
+        if (creditsError) {
+          console.error("Error fetching event credits:", creditsError)
+          
+          // Try to create the record if it doesn't exist
+          if (creditsError.code === 'PGRST116') { // Record not found
+            console.log("No event credits record found, creating one")
+            const { error: insertError } = await supabase
+              .from("credits_events")
+              .insert({ 
+                user_id: session.user.id,
+                amount: 0,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              
+            if (insertError) {
+              console.error("Error creating event credits record:", insertError)
+            } else {
+              console.log("Created event credits record")
+            }
+          }
+        } else {
+          console.log("Found event credits:", userCredits?.amount || 0)
+        }
 
         const creditAmount = userCredits?.amount || 0
         setCredits(creditAmount)

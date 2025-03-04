@@ -5,13 +5,24 @@ import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin"
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(request: Request) {
+  console.log("Webhook received")
   const sig = request.headers.get("stripe-signature") || ""
   const rawBody = await request.text()
+
+  // Trim any whitespace from the webhook secret
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim()
+  
+  if (!webhookSecret) {
+    console.error("Webhook secret is not defined")
+    return NextResponse.json({ error: "Webhook secret is not configured" }, { status: 500 })
+  }
 
   let event: Stripe.Event
 
   try {
-    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    console.log("Attempting to verify webhook signature")
+    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
+    console.log("Webhook signature verified successfully")
   } catch (err: any) {
     console.error("Webhook signature verification failed:", err)
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
@@ -40,9 +51,11 @@ export async function POST(request: Request) {
 
     const userId = profile.id
     const amountPaid = session.amount_total ? session.amount_total / 100 : 0
+    console.log("Amount paid:", amountPaid, "for user:", userId)
 
     // Handle different types of credits
     if (amountPaid === 25) {
+      console.log("Processing event credit purchase")
       // Event credit purchase
       const { error: upsertError } = await supabase
         .from("credits_events")
@@ -71,20 +84,29 @@ export async function POST(request: Request) {
         console.error("Error recording transaction:", transactionError)
         return NextResponse.json({ error: "Error recording transaction" }, { status: 500 })
       }
+      
+      console.log("Successfully processed event credit purchase")
     } else {
+      console.log("Processing regular credit purchase")
       // Regular listing credits
+      let creditsToAdd = 0
+      if (amountPaid === 15) creditsToAdd = 1
+      else if (amountPaid === 50) creditsToAdd = 10
+      else if (amountPaid === 100) creditsToAdd = 20
+      
+      console.log("Credits to add:", creditsToAdd)
+      
+      // Update both the credits table and the profiles table
+      
+      // 1. Update the credits table
       const { data: existingCredits, error: creditsError } = await supabase
         .from("credits")
         .select("amount")
         .eq("user_id", userId)
         .single()
 
-      let creditsToAdd = 0
-      if (amountPaid === 15) creditsToAdd = 1
-      else if (amountPaid === 50) creditsToAdd = 10
-      else if (amountPaid === 100) creditsToAdd = 20
-
       if (existingCredits) {
+        console.log("Updating existing credits record:", existingCredits.amount, "+", creditsToAdd)
         const { error: updateError } = await supabase
           .from("credits")
           .update({ 
@@ -93,8 +115,12 @@ export async function POST(request: Request) {
           })
           .eq("user_id", userId)
 
-        if (updateError) throw updateError
+        if (updateError) {
+          console.error("Error updating credits:", updateError)
+          throw updateError
+        }
       } else {
+        console.log("Creating new credits record with amount:", creditsToAdd)
         const { error: insertError } = await supabase
           .from("credits")
           .insert({
@@ -102,7 +128,36 @@ export async function POST(request: Request) {
             amount: creditsToAdd
           })
 
-        if (insertError) throw insertError
+        if (insertError) {
+          console.error("Error inserting credits:", insertError)
+          throw insertError
+        }
+      }
+      
+      // 2. Update the profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("credits")
+        .eq("id", userId)
+        .single()
+        
+      if (profileError) {
+        console.error("Error fetching profile:", profileError)
+      } else {
+        console.log("Updating profile credits:", profile.credits, "+", creditsToAdd)
+        const { error: updateProfileError } = await supabase
+          .from("profiles")
+          .update({ 
+            credits: (profile.credits || 0) + creditsToAdd,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", userId)
+          
+        if (updateProfileError) {
+          console.error("Error updating profile credits:", updateProfileError)
+        } else {
+          console.log("Successfully updated profile credits")
+        }
       }
 
       // Record the transaction
@@ -119,6 +174,8 @@ export async function POST(request: Request) {
         console.error("Error recording transaction:", transactionError)
         return NextResponse.json({ error: "Error recording transaction" }, { status: 500 })
       }
+      
+      console.log("Successfully processed regular credit purchase")
     }
   }
 

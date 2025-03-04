@@ -102,7 +102,40 @@ export default function CreateFirearmsListing() {
           .eq("user_id", session.user.id)
           .single();
 
-        setCredits(userCredits?.amount || 0);
+        // If no credits found in the credits table, try the profiles table as fallback
+        if (!userCredits) {
+          console.log("No credits found in credits table, checking profiles table");
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("credits")
+            .eq("id", session.user.id)
+            .single();
+            
+          if (profileData?.credits) {
+            console.log("Found credits in profiles table:", profileData.credits);
+            setCredits(profileData.credits);
+            
+            // If we found credits in profiles but not in credits table, sync them
+            const { error: syncError } = await supabase
+              .from("credits")
+              .upsert({ 
+                user_id: session.user.id, 
+                amount: profileData.credits,
+                updated_at: new Date().toISOString()
+              });
+              
+            if (syncError) {
+              console.error("Error syncing credits:", syncError);
+            } else {
+              console.log("Synced credits from profiles to credits table");
+            }
+          } else {
+            setCredits(0);
+          }
+        } else {
+          console.log("Found credits in credits table:", userCredits.amount);
+          setCredits(userCredits.amount || 0);
+        }
 
         // Show credit dialog if user has no credits
         if (!userCredits?.amount) {
