@@ -96,53 +96,48 @@ export default function CreateFirearmsListing() {
         }
 
         // Get user's credits
-        const { data: userCredits } = await supabase
+        const { data: userCredits, error: creditsError } = await supabase
           .from("credits")
           .select("amount")
           .eq("user_id", session.user.id)
           .single();
 
-        // If no credits found in the credits table, try the profiles table as fallback
-        if (!userCredits) {
-          console.log("No credits found in credits table, checking profiles table");
-          const { data: profileData } = await supabase
-            .from("profiles")
-            .select("credits")
-            .eq("id", session.user.id)
-            .single();
+        if (creditsError && creditsError.code !== 'PGRST116') {
+          // Real error, not just "not found"
+          console.error("Error fetching credits:", creditsError);
+          setCredits(0);
+        } else if (!userCredits) {
+          // No credits found, create a new record with 0 credits
+          console.log("No credits found, creating new record");
+          
+          const { error: insertError } = await supabase
+            .from("credits")
+            .insert({ 
+              user_id: session.user.id, 
+              amount: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
             
-          if (profileData?.credits) {
-            console.log("Found credits in profiles table:", profileData.credits);
-            setCredits(profileData.credits);
-            
-            // If we found credits in profiles but not in credits table, sync them
-            const { error: syncError } = await supabase
-              .from("credits")
-              .upsert({ 
-                user_id: session.user.id, 
-                amount: profileData.credits,
-                updated_at: new Date().toISOString()
-              });
-              
-            if (syncError) {
-              console.error("Error syncing credits:", syncError);
-            } else {
-              console.log("Synced credits from profiles to credits table");
-            }
-          } else {
-            setCredits(0);
+          if (insertError) {
+            console.error("Error creating credits record:", insertError);
           }
+          
+          setCredits(0);
+          setShowCreditDialog(true);
         } else {
+          // Credits found
           console.log("Found credits in credits table:", userCredits.amount);
           setCredits(userCredits.amount || 0);
-        }
-
-        // Show credit dialog if user has no credits
-        if (!userCredits?.amount) {
-          setShowCreditDialog(true);
+          
+          // Show credit dialog if user has no credits
+          if (!userCredits.amount) {
+            setShowCreditDialog(true);
+          }
         }
       } catch (error) {
         console.error("Error checking credits:", error);
+        setCredits(0);
       } finally {
         setIsLoading(false);
       }

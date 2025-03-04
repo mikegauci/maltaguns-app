@@ -117,9 +117,7 @@ export async function POST(request: Request) {
       
       console.log("Credits to add:", creditsToAdd)
       
-      // Update both the credits table and the profiles table
-      
-      // 1. Update the credits table
+      // Update the credits table
       const { data: existingCredits, error: creditsError } = await supabase
         .from("credits")
         .select("amount")
@@ -155,39 +153,14 @@ export async function POST(request: Request) {
         }
       }
       
-      // 2. Update the profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("credits")
-        .eq("id", userId)
-        .single()
-        
-      if (profileError) {
-        console.error("Error fetching profile:", profileError)
-      } else {
-        console.log("Updating profile credits:", profile.credits, "+", creditsToAdd)
-        const { error: updateProfileError } = await supabase
-          .from("profiles")
-          .update({ 
-            credits: (profile.credits || 0) + creditsToAdd,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", userId)
-          
-        if (updateProfileError) {
-          console.error("Error updating profile credits:", updateProfileError)
-        } else {
-          console.log("Successfully updated profile credits")
-        }
-      }
-
       // Record the transaction
       const { error: transactionError } = await supabase
         .from("credit_transactions")
         .insert({
           user_id: userId,
           amount: creditsToAdd,
-          type: "listing_credit_purchase",
+          type: "completed", // Changed from "listing_credit_purchase" to "completed" for consistency
+          credit_type: "listing", // Added credit_type to indicate this is a listing credit
           stripe_payment_id: session.id
         })
 
