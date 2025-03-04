@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock, Pencil, Calendar, User, ChevronLeft, ChevronRight } from "lucide-react"
+import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock, Pencil, Calendar, User, ChevronLeft, ChevronRight, Star } from "lucide-react"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { supabase } from "@/lib/supabase"
+import { FeatureCreditDialog } from "@/components/feature-credit-dialog"
+import { AuthChangeEvent, Session } from '@supabase/supabase-js'
 
 interface ListingDetails {
   id: string
@@ -117,25 +119,60 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
 
 export default function ListingClient({ listing }: { listing: ListingDetails }) {
   const router = useRouter()
-  const [selectedImage, setSelectedImage] = useState<string>(listing.thumbnail)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isOwner, setIsOwner] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const allImages = [listing.thumbnail, ...listing.images].filter(Boolean)
+  const [isOwner, setIsOwner] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
+  const [isFeatured, setIsFeatured] = useState(false)
+  const [showFeatureDialog, setShowFeatureDialog] = useState(false)
+  
+  const allImages = listing.images && listing.images.length > 0 
+    ? listing.images 
+    : [listing.thumbnail]
+  
+  const currentImage = allImages[currentImageIndex]
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session)
-      setIsOwner(session?.user.id === listing.seller_id)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session)
-      setIsOwner(session?.user.id === listing.seller_id)
-    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        setUserId(session?.user.id || null)
+        setIsOwner(session?.user.id === listing.seller_id)
+      }
+    )
 
     return () => subscription.unsubscribe()
   }, [listing.seller_id])
+
+  useEffect(() => {
+    async function checkOwnership() {
+      const { data } = await supabase.auth.getSession()
+      const currentUserId = data.session?.user.id
+      setUserId(currentUserId || null)
+      setIsOwner(currentUserId === listing.seller_id)
+    }
+    
+    async function checkIfFeatured() {
+      if (listing.id) {
+        const now = new Date().toISOString();
+        const { data, error } = await supabase
+          .from('featured_listings')
+          .select('*')
+          .eq('listing_id', listing.id)
+          .gt('end_date', now)
+          .maybeSingle();
+        
+        if (error) {
+          console.error("Error checking if listing is featured:", error);
+          setIsFeatured(false);
+          return;
+        }
+        
+        setIsFeatured(!!data);
+      }
+    }
+    
+    checkOwnership()
+    checkIfFeatured()
+  }, [listing.id, listing.seller_id])
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length)
@@ -159,15 +196,47 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
           </Button>
 
           {isOwner && (
-            <Button
-              variant="outline"
-              onClick={() => router.push(`/marketplace/listing/${listing.id}/edit`)}
-            >
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit Listing
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/marketplace/listing/${listing.id}/edit`)}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Listing
+              </Button>
+              
+              {!isFeatured && (
+                <Button
+                  variant="default"
+                  onClick={() => setShowFeatureDialog(true)}
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  Feature Listing
+                </Button>
+              )}
+              
+              {isFeatured && (
+                <Badge className="flex items-center px-3 py-1 bg-red-500 text-white hover:bg-red-600">
+                  <Star className="h-4 w-4 mr-2" />
+                  Featured
+                </Badge>
+              )}
+            </div>
           )}
         </div>
+
+        {/* Feature Credit Dialog */}
+        {userId && (
+          <FeatureCreditDialog
+            open={showFeatureDialog}
+            onOpenChange={setShowFeatureDialog}
+            userId={userId}
+            listingId={listing.id}
+            onSuccess={() => {
+              setIsFeatured(true)
+            }}
+          />
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content Section (3 columns) */}
@@ -177,7 +246,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
               <CardContent className="p-0">
                 <div className="relative">
                   <img
-                    src={allImages[currentImageIndex]}
+                    src={currentImage}
                     alt={listing.title}
                     className="object-contain w-full h-full"
                   />
@@ -272,7 +341,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                 <CardTitle>Seller Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isAuthenticated ? (
+                {userId ? (
                   <>
                     <p className="font-semibold">{listing.seller.username}</p>
                     {listing.seller.email && (

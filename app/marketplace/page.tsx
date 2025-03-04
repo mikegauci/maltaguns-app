@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package } from "lucide-react"
+import { Sun as Gun, Package, Star } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 
@@ -21,6 +21,7 @@ interface Listing {
   created_at: string
   status: string
   updated_at: string
+  is_featured?: boolean
 }
 
 function slugify(text: string) {
@@ -116,7 +117,8 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
 
 
 export default function Marketplace() {
-  const [listings, setListings] = useState<Listing[]>([])
+  const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
+  const [regularListings, setRegularListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -143,7 +145,35 @@ export default function Marketplace() {
         
         // Filter out inactive listings
         const filteredListings = data ? data.filter(listing => listing.status !== 'inactive') : []
-        setListings(filteredListings)
+        
+        // Fetch featured listings
+        const { data: featuredData, error: featuredError } = await supabase
+          .from('featured_listings')
+          .select('listing_id')
+          .gt('end_date', new Date().toISOString())
+        
+        if (featuredError) throw featuredError
+        
+        // Create a set of featured listing IDs for quick lookup
+        const featuredIds = new Set(featuredData?.map(item => item.listing_id) || [])
+        
+        // Separate featured and regular listings
+        const featured: Listing[] = []
+        const regular: Listing[] = []
+        
+        filteredListings.forEach(listing => {
+          if (featuredIds.has(listing.id)) {
+            featured.push({
+              ...listing,
+              is_featured: true
+            })
+          } else {
+            regular.push(listing)
+          }
+        })
+        
+        setFeaturedListings(featured)
+        setRegularListings(regular)
       } catch (error) {
         console.error('Error fetching listings:', error)
       } finally {
@@ -153,6 +183,65 @@ export default function Marketplace() {
 
     fetchListings()
   }, [])
+
+  // Function to render a listing card
+  const renderListingCard = (listing: Listing) => (
+    <Link 
+      key={listing.id} 
+      href={`/marketplace/listing/${listing.id}/${slugify(listing.title)}`}
+    >
+      <Card className={`overflow-hidden hover:shadow-lg transition-shadow ${listing.is_featured ? 'border-2 border-red-500' : ''}`}>
+        <div className="aspect-video relative overflow-hidden">
+          <img
+            src={listing.thumbnail}
+            alt={listing.title}
+            className="object-cover w-full h-full"
+          />
+          {listing.status === 'sold' && (
+            <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
+          )}
+          {listing.is_featured && (
+            <Badge className="absolute top-2 left-2 bg-red-500 text-white hover:bg-red-600">
+              <Star className="h-3 w-3 mr-1" /> Featured
+            </Badge>
+          )}
+        </div>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-3">
+            {listing.type === 'firearms' ? (
+              <Gun className="h-4 w-4" />
+            ) : (
+              <Package className="h-4 w-4" />
+            )}
+            <Badge variant="secondary">
+              {getCategoryLabel(listing.category, listing.type)}
+            </Badge>
+            {listing.subcategory && (
+              <Badge variant="outline">
+                {getSubcategoryLabel(listing.category, listing.subcategory)}
+              </Badge>
+            )}
+          </div>
+          <h3 className="text-lg font-semibold mb-2 line-clamp-1">
+            {listing.title}
+          </h3>
+          <p className="text-muted-foreground mb-4 line-clamp-2">
+            {listing.description}
+          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-lg font-bold">
+              {formatPrice(listing.price)}
+            </p>
+            {listing.type === 'firearms' && listing.calibre && (
+              <Badge variant="secondary">
+                {listing.calibre}
+              </Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
+  )
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -183,7 +272,7 @@ export default function Marketplace() {
               </Card>
             ))}
           </div>
-        ) : listings.length === 0 ? (
+        ) : featuredListings.length === 0 && regularListings.length === 0 ? (
           <Card className="p-6 text-center">
             <CardHeader>
               <CardTitle>No Listings Found</CardTitle>
@@ -201,59 +290,29 @@ export default function Marketplace() {
             </CardFooter>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {listings.map((listing) => (
-              <Link 
-                key={listing.id} 
-                href={`/marketplace/listing/${listing.id}/${slugify(listing.title)}`}
-              >
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-video relative overflow-hidden">
-                    <img
-                      src={listing.thumbnail}
-                      alt={listing.title}
-                      className="object-cover w-full h-full"
-                    />
-                    {listing.status === 'sold' && (
-                      <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
-                    )}
-                  </div>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      {listing.type === 'firearms' ? (
-                        <Gun className="h-4 w-4" />
-                      ) : (
-                        <Package className="h-4 w-4" />
-                      )}
-                      <Badge variant="secondary">
-                        {getCategoryLabel(listing.category, listing.type)}
-                      </Badge>
-                      {listing.subcategory && (
-                        <Badge variant="outline">
-                          {getSubcategoryLabel(listing.category, listing.subcategory)}
-                        </Badge>
-                      )}
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2 line-clamp-1">
-                      {listing.title}
-                    </h3>
-                    <p className="text-muted-foreground mb-4 line-clamp-2">
-                      {listing.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-lg font-bold">
-                        {formatPrice(listing.price)}
-                      </p>
-                      {listing.type === 'firearms' && listing.calibre && (
-                        <Badge variant="secondary">
-                          {listing.calibre}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+          <div className="space-y-8">
+            {featuredListings.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4 flex items-center">
+                  <Star className="h-5 w-5 mr-2 text-red-500" />
+                  Featured Listings
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {featuredListings.map(renderListingCard)}
+                </div>
+              </div>
+            )}
+            
+            {regularListings.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">
+                  {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {regularListings.map(renderListingCard)}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

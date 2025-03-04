@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin"
+import { handleFeatureCreditPurchase } from "../webhook-handler"
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
 export async function POST(request: Request) {
-  console.log("Webhook received")
+  console.log("[WEBHOOK-SINGULAR] Received webhook request at /api/webhook")
   const sig = request.headers.get("stripe-signature") || ""
   const rawBody = await request.text()
 
@@ -13,31 +14,36 @@ export async function POST(request: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim()
   
   if (!webhookSecret) {
-    console.error("Webhook secret is not defined")
+    console.error("[WEBHOOK-SINGULAR] Webhook secret is not defined")
     return NextResponse.json({ error: "Webhook secret is not configured" }, { status: 500 })
   }
 
   let event: Stripe.Event
 
   try {
-    console.log("Attempting to verify webhook signature")
+    console.log("[WEBHOOK-SINGULAR] Attempting to verify webhook signature")
     event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
-    console.log("Webhook signature verified successfully")
+    console.log("[WEBHOOK-SINGULAR] Webhook signature verified successfully")
+    console.log("[WEBHOOK-SINGULAR] Event type:", event.type)
   } catch (err: any) {
-    console.error("Webhook signature verification failed:", err)
+    console.error("[WEBHOOK-SINGULAR] Webhook signature verification failed:", err)
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
   }
 
   if (event.type === "checkout.session.completed") {
+    console.log("[WEBHOOK-SINGULAR] Processing checkout.session.completed event")
     const session = event.data.object as Stripe.Checkout.Session
+    console.log("[WEBHOOK-SINGULAR] Session ID:", session.id)
+    console.log("[WEBHOOK-SINGULAR] Session metadata:", session.metadata)
     const customerEmail = session.customer_email
 
     if (!customerEmail) {
-      console.error("Customer email not found in session")
+      console.error("[WEBHOOK-SINGULAR] Customer email not found in session")
       return NextResponse.json({ error: "Customer email not found" }, { status: 400 })
     }
 
     // Get user ID from email
+    console.log("[WEBHOOK-SINGULAR] Looking up user ID for email:", customerEmail)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id")
@@ -45,17 +51,31 @@ export async function POST(request: Request) {
       .single()
 
     if (profileError || !profile?.id) {
-      console.error("User not found for email:", customerEmail)
+      console.error("[WEBHOOK-SINGULAR] User not found for email:", customerEmail, "Error:", profileError)
       return NextResponse.json({ error: "User not found" }, { status: 400 })
     }
 
     const userId = profile.id
     const amountPaid = session.amount_total ? session.amount_total / 100 : 0
-    console.log("Amount paid:", amountPaid, "for user:", userId)
+    console.log("[WEBHOOK-SINGULAR] Amount paid:", amountPaid, "for user:", userId)
 
+    // Check if this is a feature credit purchase (€5)
+    if (amountPaid === 5 || (session.metadata && session.metadata.creditType === 'featured')) {
+      console.log("[WEBHOOK-SINGULAR] Processing feature credit purchase")
+      
+      // Use the shared utility function to handle feature credit purchases
+      const result = await handleFeatureCreditPurchase(userId, 1, session.id)
+      
+      if (!result.success) {
+        console.error("[WEBHOOK-SINGULAR] Feature credit purchase failed:", result.error)
+        return NextResponse.json({ error: result.error }, { status: 500 })
+      }
+      
+      console.log("[WEBHOOK-SINGULAR] Successfully processed feature credit purchase")
+    }
     // Handle different types of credits
-    if (amountPaid === 25) {
-      console.log("Processing event credit purchase")
+    else if (amountPaid === 25) {
+      console.log("[WEBHOOK-SINGULAR] Processing event credit purchase")
       
       // First, check if the user already has event credits
       const { data: existingCredits, error: fetchError } = await supabase
@@ -96,8 +116,9 @@ export async function POST(request: Request) {
         .insert({
           user_id: userId,
           amount: 1,
-          type: "completed", // Changed from "event_credit_purchase" to "completed" for consistency
+          status: "completed", // Changed from "type" to "status" for consistency
           credit_type: "event", // Added credit_type to indicate this is an event credit
+          description: "Purchase of 1 event credit",
           stripe_payment_id: session.id
         })
 
@@ -108,7 +129,7 @@ export async function POST(request: Request) {
       
       console.log("Successfully processed event credit purchase")
     } else {
-      console.log("Processing regular credit purchase")
+      console.log("[WEBHOOK-SINGULAR] Processing regular credit purchase")
       // Regular listing credits
       let creditsToAdd = 0
       if (amountPaid === 15) creditsToAdd = 1
@@ -117,9 +138,9 @@ export async function POST(request: Request) {
       
       console.log("Credits to add:", creditsToAdd)
       
-      // Update the credits table
+      // Update the firearms_credits table
       const { data: existingCredits, error: creditsError } = await supabase
-        .from("credits")
+        .from("firearms_credits")
         .select("amount")
         .eq("user_id", userId)
         .single()
@@ -127,7 +148,7 @@ export async function POST(request: Request) {
       if (existingCredits) {
         console.log("Updating existing credits record:", existingCredits.amount, "+", creditsToAdd)
         const { error: updateError } = await supabase
-          .from("credits")
+          .from("firearms_credits")
           .update({ 
             amount: existingCredits.amount + creditsToAdd,
             updated_at: new Date().toISOString()
@@ -141,7 +162,7 @@ export async function POST(request: Request) {
       } else {
         console.log("Creating new credits record with amount:", creditsToAdd)
         const { error: insertError } = await supabase
-          .from("credits")
+          .from("firearms_credits")
           .insert({
             user_id: userId,
             amount: creditsToAdd
@@ -159,8 +180,9 @@ export async function POST(request: Request) {
         .insert({
           user_id: userId,
           amount: creditsToAdd,
-          type: "completed", // Changed from "listing_credit_purchase" to "completed" for consistency
-          credit_type: "listing", // Added credit_type to indicate this is a listing credit
+          status: "completed", // Changed from "type" to "status" for consistency
+          credit_type: "firearms", // Changed from "listing" to "firearms" for consistency
+          description: `Purchase of ${creditsToAdd} firearms credits`,
           stripe_payment_id: session.id
         })
 
@@ -171,7 +193,10 @@ export async function POST(request: Request) {
       
       console.log("Successfully processed regular credit purchase")
     }
+  } else {
+    console.log("[WEBHOOK-SINGULAR] Ignoring non-checkout.session.completed event")
   }
 
+  console.log("[WEBHOOK-SINGULAR] Webhook processing completed")
   return NextResponse.json({ received: true })
 }
