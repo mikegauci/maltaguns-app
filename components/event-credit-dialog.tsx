@@ -34,7 +34,12 @@ export function EventCreditDialog({ open, onOpenChange, userId, onSuccess }: Eve
       const data = await res.json();
       const stripe = await stripePromise;
       if (!stripe) throw new Error("Stripe failed to load");
-      const { error } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+      
+      // Add success URL parameter to redirect back to the create page with success=true
+      const { error } = await stripe.redirectToCheckout({ 
+        sessionId: data.sessionId
+      });
+      
       if (error) console.error("Stripe checkout error:", error);
     } catch (error) {
       console.error("Payment error:", error);

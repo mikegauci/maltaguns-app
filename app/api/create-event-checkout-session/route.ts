@@ -30,8 +30,8 @@ export async function POST(request: Request) {
       }],
       mode: 'payment',
       customer_email: profile.email,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/events`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/events`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/events/create?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/events/create`,
     });
 
     // Record the pending transaction
@@ -41,6 +41,7 @@ export async function POST(request: Request) {
         user_id: userId,
         amount: 1,
         type: "event_credit_pending",
+        credit_type: "event",
         stripe_payment_id: session.id,
       });
 

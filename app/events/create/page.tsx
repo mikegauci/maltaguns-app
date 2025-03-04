@@ -16,6 +16,9 @@ import { supabase } from "@/lib/supabase"
 import { EventCreditDialog } from "@/components/event-credit-dialog"
 import { ArrowLeft } from "lucide-react"
 
+// Force dynamic rendering to avoid hydration issues
+export const dynamic = "force-dynamic";
+
 const eventTypes = [
   "Course or Training",
   "Local Shooting Event",
@@ -55,6 +58,39 @@ export default function CreateEventPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [hasCredits, setHasCredits] = useState(false)
   const [credits, setCredits] = useState<number>(0)
+  const [refreshing, setRefreshing] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
+  
+  // Set isMounted to true when component mounts
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+  
+  // Check for success parameter in URL (after Stripe redirect)
+  useEffect(() => {
+    // Only run if we're in the browser
+    if (typeof window === 'undefined') return;
+    
+    const url = new URL(window.location.href)
+    const success = url.searchParams.get('success')
+    const sessionId = url.searchParams.get('session_id')
+    
+    if (success === 'true' && sessionId) {
+      // Show success toast
+      toast({
+        title: "Payment successful!",
+        description: "Your event credit has been added to your account.",
+      })
+      
+      // Remove the query parameters from the URL
+      url.searchParams.delete('success')
+      url.searchParams.delete('session_id')
+      window.history.replaceState({}, '', url.toString())
+      
+      // Force refresh credits
+      checkCredits(true)
+    }
+  }, [])
 
   const form = useForm<EventForm>({
     resolver: zodResolver(eventSchema),
@@ -68,31 +104,33 @@ export default function CreateEventPage() {
     }
   })
 
-  useEffect(() => {
-    async function checkCredits() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) {
-          router.push("/login")
-          return
-        }
+  async function checkCredits(forceRefresh = false) {
+    try {
+      // Only run if we're in the browser
+      if (typeof window === 'undefined') return;
+      
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) {
+        router.push("/login")
+        return
+      }
 
-        setUserId(session.user.id)
+      setUserId(session.user.id)
 
-        // First, ensure the credits_events record exists
-        const { error: upsertError } = await supabase
-          .from("credits_events")
-          .upsert({ 
-            user_id: session.user.id,
-            amount: 0
-          })
+      if (forceRefresh) {
+        console.log("Force refreshing credits")
+      }
 
-        if (upsertError) {
-          console.error("Error upserting credits:", upsertError)
-          return
-        }
-
-        // Then fetch the credits
+      // Direct query to get credits from the database
+      // This bypasses any potential caching issues
+      const { data, error } = await supabase.rpc('get_user_credits', {
+        user_id_param: session.user.id
+      })
+      
+      if (error) {
+        console.error("Error fetching credits:", error)
+        
+        // Fallback to the old method if RPC fails
         const { data: userCredits, error: creditsError } = await supabase
           .from("credits_events")
           .select("amount")
@@ -120,24 +158,60 @@ export default function CreateEventPage() {
               console.log("Created event credits record")
             }
           }
+          
+          // Set credits to 0 if we couldn't fetch them
+          setCredits(0)
+          setHasCredits(false)
+          
+          // Show credit dialog if no credits
+          if (!forceRefresh && isMounted) {
+            setShowCreditDialog(true)
+          }
         } else {
-          console.log("Found event credits:", userCredits?.amount || 0)
+          const creditAmount = userCredits?.amount || 0
+          console.log("Found event credits (fallback method):", creditAmount)
+          setCredits(creditAmount)
+          setHasCredits(creditAmount > 0)
+          
+          // Only show credit dialog if mounted and no credits
+          if (creditAmount === 0 && !forceRefresh && isMounted) {
+            setShowCreditDialog(true)
+          }
         }
-
-        const creditAmount = userCredits?.amount || 0
-        setCredits(creditAmount)
-        setHasCredits(creditAmount > 0)
-
-        if (creditAmount === 0) {
-          setShowCreditDialog(true)
+      } else {
+        // Successfully got credits from RPC
+        if (data && data.length > 0) {
+          const eventCredits = data[0].event_credits || 0
+          console.log("Found event credits (RPC method):", eventCredits)
+          setCredits(eventCredits)
+          setHasCredits(eventCredits > 0)
+          
+          // Only show credit dialog if mounted and no credits
+          if (eventCredits === 0 && !forceRefresh && isMounted) {
+            setShowCreditDialog(true)
+          }
+        } else {
+          console.log("No credits data returned from RPC")
+          setCredits(0)
+          setHasCredits(false)
+          
+          // Show credit dialog if no credits
+          if (!forceRefresh && isMounted) {
+            setShowCreditDialog(true)
+          }
         }
-      } catch (error) {
-        console.error("Error checking credits:", error)
       }
+    } catch (error) {
+      console.error("Error checking credits:", error)
     }
+  }
 
-    checkCredits()
-  }, [router])
+  useEffect(() => {
+    // Only run checkCredits after component is mounted
+    if (isMounted) {
+      checkCredits()
+    }
+  }, [isMounted, router])
 
   async function handlePosterUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {
@@ -273,6 +347,27 @@ export default function CreateEventPage() {
     }
   }
 
+  // Function to force refresh credits
+  const forceRefreshCredits = async () => {
+    setRefreshing(true)
+    try {
+      await checkCredits(true)
+      toast({
+        title: "Credits refreshed",
+        description: "Your event credits have been refreshed.",
+      })
+    } catch (error) {
+      console.error("Error refreshing credits:", error)
+      toast({
+        variant: "destructive",
+        title: "Refresh failed",
+        description: "Failed to refresh your event credits. Please try again.",
+      })
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
@@ -288,6 +383,15 @@ export default function CreateEventPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Event Credits remaining:</span>
             <span className="font-semibold">{credits}</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={forceRefreshCredits} 
+              disabled={refreshing}
+              className="ml-2 h-7 px-2"
+            >
+              {refreshing ? "Refreshing..." : "Refresh"}
+            </Button>
           </div>
         </div>
 
@@ -537,16 +641,19 @@ export default function CreateEventPage() {
           </CardContent>
         </Card>
 
-        {userId && (
-          <EventCreditDialog
-            open={showCreditDialog}
-            onOpenChange={setShowCreditDialog}
-            userId={userId}
-            onSuccess={() => {
-              setShowCreditDialog(false)
-              setHasCredits(true)
-            }}
-          />
+        {/* Only render dialog when component is mounted and suppress hydration warnings */}
+        {isMounted && userId && (
+          <div suppressHydrationWarning>
+            <EventCreditDialog
+              open={showCreditDialog}
+              onOpenChange={setShowCreditDialog}
+              userId={userId}
+              onSuccess={() => {
+                setShowCreditDialog(false)
+                setHasCredits(true)
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

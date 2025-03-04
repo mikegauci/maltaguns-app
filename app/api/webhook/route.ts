@@ -56,19 +56,39 @@ export async function POST(request: Request) {
     // Handle different types of credits
     if (amountPaid === 25) {
       console.log("Processing event credit purchase")
-      // Event credit purchase
+      
+      // First, check if the user already has event credits
+      const { data: existingCredits, error: fetchError } = await supabase
+        .from("credits_events")
+        .select("amount")
+        .eq("user_id", userId)
+        .single()
+        
+      if (fetchError && fetchError.code !== 'PGRST116') { // Not found is ok
+        console.error("Error fetching event credits:", fetchError)
+        return NextResponse.json({ error: "Failed to fetch event credits" }, { status: 500 })
+      }
+      
+      const currentAmount = existingCredits?.amount || 0
+      const newAmount = currentAmount + 1
+      console.log("Current event credits:", currentAmount, "New amount:", newAmount)
+      
+      // Now update or insert the record with the incremented amount
       const { error: upsertError } = await supabase
         .from("credits_events")
         .upsert({ 
           user_id: userId,
-          amount: 1,
-          updated_at: new Date().toISOString()
+          amount: newAmount,
+          updated_at: new Date().toISOString(),
+          created_at: existingCredits ? undefined : new Date().toISOString() // Only set created_at for new records
         })
 
       if (upsertError) {
         console.error("Error updating event credits:", upsertError)
         return NextResponse.json({ error: "Error updating event credits" }, { status: 500 })
       }
+      
+      console.log("Successfully updated event credits to:", newAmount)
 
       // Record the transaction
       const { error: transactionError } = await supabase
@@ -76,7 +96,8 @@ export async function POST(request: Request) {
         .insert({
           user_id: userId,
           amount: 1,
-          type: "event_credit_purchase",
+          type: "completed", // Changed from "event_credit_purchase" to "completed" for consistency
+          credit_type: "event", // Added credit_type to indicate this is an event credit
           stripe_payment_id: session.id
         })
 
