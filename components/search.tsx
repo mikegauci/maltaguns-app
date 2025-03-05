@@ -56,19 +56,21 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
+    // Build the search query
+    const params = new URLSearchParams();
+    
+    // Only add search term if it's not empty
     if (searchTerm.trim()) {
-      // Build the search query
-      const params = new URLSearchParams();
       params.append("q", searchTerm.trim());
-      
-      if (category !== "all") {
-        params.append("category", category);
-      }
-      
-      // Navigate to search results page
-      router.push(`/marketplace/search?${params.toString()}`);
-      setIsOpen(false);
     }
+    
+    if (category !== "all") {
+      params.append("category", category);
+    }
+    
+    // Navigate to search results page
+    router.push(`/marketplace/search?${params.toString()}`);
+    setIsOpen(false);
   };
 
   // Handle keyboard shortcuts

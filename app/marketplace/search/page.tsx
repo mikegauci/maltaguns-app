@@ -127,44 +127,32 @@ export default function SearchResults() {
   
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [type, setType] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchSearchResults() {
       setIsLoading(true);
       
       try {
-        if (!query) {
-          setListings([]);
-          return;
-        }
-
         // Parse the category parameter
-        let type: string | null = null;
-        let category: string | null = null;
+        let typeValue: string | null = null;
+        let categoryValue: string | null = null;
 
         if (categoryParam !== 'all') {
           if (categoryParam === 'firearms' || categoryParam === 'non_firearms') {
-            type = categoryParam;
+            typeValue = categoryParam;
           } else if (categoryParam.startsWith('firearms-')) {
-            type = 'firearms';
-            category = categoryParam.replace('firearms-', '');
+            typeValue = 'firearms';
+            categoryValue = categoryParam.replace('firearms-', '');
           } else if (categoryParam.startsWith('non_firearms-')) {
-            type = 'non_firearms';
-            category = categoryParam.replace('non_firearms-', '');
+            typeValue = 'non_firearms';
+            categoryValue = categoryParam.replace('non_firearms-', '');
           }
         }
 
-        // Create search terms including singular/plural forms
-        const searchTerms = [query.toLowerCase()];
-        const words = query.toLowerCase().split(/\s+/);
-        
-        // Add singular forms of plural words
-        words.forEach(word => {
-          const singular = singularize(word);
-          if (singular !== word) {
-            searchTerms.push(singular);
-          }
-        });
+        setType(typeValue);
+        setCategory(categoryValue);
 
         // Build the query
         let supabaseQuery = supabase
@@ -173,21 +161,36 @@ export default function SearchResults() {
           .eq('status', 'active');
 
         // Add type filter if specified
-        if (type) {
-          supabaseQuery = supabaseQuery.eq('type', type);
+        if (typeValue) {
+          supabaseQuery = supabaseQuery.eq('type', typeValue);
         }
 
         // Add category filter if specified
-        if (category) {
-          supabaseQuery = supabaseQuery.eq('category', category);
+        if (categoryValue) {
+          supabaseQuery = supabaseQuery.eq('category', categoryValue);
         }
 
-        // Add search terms for title and description
-        const searchConditions = searchTerms.map(term => 
-          `title.ilike.%${term}%,description.ilike.%${term}%`
-        ).join(',');
-        
-        supabaseQuery = supabaseQuery.or(searchConditions);
+        // Only add search conditions if query is not empty
+        if (query) {
+          // Create search terms including singular/plural forms
+          const searchTerms = [query.toLowerCase()];
+          const words = query.toLowerCase().split(/\s+/);
+          
+          // Add singular forms of plural words
+          words.forEach(word => {
+            const singular = singularize(word);
+            if (singular !== word) {
+              searchTerms.push(singular);
+            }
+          });
+
+          // Add search terms for title and description
+          const searchConditions = searchTerms.map(term => 
+            `title.ilike.%${term}%,description.ilike.%${term}%`
+          ).join(',');
+          
+          supabaseQuery = supabaseQuery.or(searchConditions);
+        }
 
         // Execute the query
         const { data, error } = await supabaseQuery;
@@ -219,11 +222,17 @@ export default function SearchResults() {
                 </Button>
               </Link>
             </div>
-            <h1 className="text-2xl mb-4 font-bold">Search Results</h1>
+            <h1 className="text-2xl mb-4 font-bold">
+              {isLoading ? 'Loading...' : 
+                query ? 'Search Results' : 
+                category ? `${getCategoryLabel(category, type as 'firearms' | 'non_firearms')}` : 
+                type ? (type === 'firearms' ? 'Firearms' : 'Non-Firearms') : 
+                'All Listings'}
+            </h1>
             <p className="text-muted-foreground">
-              {isLoading 
-                ? 'Searching...' 
-                : `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"`}
+              {isLoading ? 'Searching...' : 
+                query ? `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"` :
+                `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`}
             </p>
           </div>
         </div>
