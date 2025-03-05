@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package, Star } from "lucide-react"
+import { Sun as Gun, Package, Star, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 
@@ -22,6 +22,13 @@ interface Listing {
   status: string
   updated_at: string
   is_featured?: boolean
+}
+
+interface CategoryListingsProps {
+  type?: 'firearms' | 'non_firearms'
+  category?: string
+  title: string
+  description?: string
 }
 
 function slugify(text: string) {
@@ -115,8 +122,7 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
   return categorySubcategories[subcategory as keyof typeof categorySubcategories] || subcategory;
 }
 
-
-export default function Marketplace() {
+export default function CategoryListings({ type, category, title, description }: CategoryListingsProps) {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
   const [regularListings, setRegularListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -134,13 +140,28 @@ export default function Marketplace() {
         // Format for Supabase query
         const sevenDaysAgoStr = sevenDaysAgo.toISOString()
         
-        // Fetch active listings and sold listings less than 7 days old
-        const { data, error } = await supabase
+        // Start building the query
+        let query = supabase
           .from('listings')
           .select('*')
           .or(`status.eq.active,and(status.eq.sold,updated_at.gt.${sevenDaysAgoStr})`)
-          .order('created_at', { ascending: false })
-
+        
+        // Add type filter if provided
+        if (type) {
+          query = query.eq('type', type)
+        }
+        
+        // Add category filter if provided
+        if (category) {
+          query = query.eq('category', category)
+        }
+        
+        // Order by created_at
+        query = query.order('created_at', { ascending: false })
+        
+        // Execute the query
+        const { data, error } = await query
+        
         if (error) throw error
         
         // Filter out inactive listings
@@ -184,7 +205,7 @@ export default function Marketplace() {
     }
 
     fetchListings()
-  }, [])
+  }, [type, category])
 
   // Function to render a listing card
   const renderListingCard = (listing: Listing) => (
@@ -245,81 +266,30 @@ export default function Marketplace() {
     </Link>
   )
 
-  // Category navigation data
-  const categories = [
-    {
-      title: "Firearms",
-      icon: <Gun className="h-5 w-5" />,
-      href: "/marketplace/firearms",
-      subcategories: [
-        { name: "Pistols", href: "/marketplace/firearms/pistols" },
-        { name: "Rifles", href: "/marketplace/firearms/rifles" },
-        { name: "Shotguns", href: "/marketplace/firearms/shotguns" },
-        { name: "Revolvers", href: "/marketplace/firearms/revolvers" },
-        { name: "Airguns", href: "/marketplace/firearms/airguns" },
-        { name: "Carbines", href: "/marketplace/firearms/carbines" },
-        { name: "Black Powder", href: "/marketplace/firearms/black-powder" },
-        { name: "Replica/Deactivated", href: "/marketplace/firearms/replica-deactivated" },
-        { name: "Crossbow", href: "/marketplace/firearms/crossbow" },
-        { name: "Schedule 1", href: "/marketplace/firearms/schedule-1" },
-      ]
-    },
-    {
-      title: "Non-Firearms",
-      icon: <Package className="h-5 w-5" />,
-      href: "/marketplace/non-firearms",
-      subcategories: [
-        { name: "Airsoft", href: "/marketplace/non-firearms/airsoft" },
-        { name: "Reloading", href: "/marketplace/non-firearms/reloading" },
-        { name: "Militaria", href: "/marketplace/non-firearms/militaria" },
-        { name: "Accessories", href: "/marketplace/non-firearms/accessories" },
-      ]
-    }
-  ]
-
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Marketplace</h1>
-            <p className="text-muted-foreground">Browse verified listings from licensed sellers</p>
+        <div className="flex flex-col space-y-4 mb-8">
+          <div className="flex items-center">
+            <Link href="/marketplace">
+              <Button variant="outline" size="sm" className="mr-4">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Marketplace
+              </Button>
+            </Link>
           </div>
-          <Link href="/marketplace/create">
-            <Button>
-              <Gun className="mr-2 h-4 w-4" />
-              Post Listing
-            </Button>
-          </Link>
-        </div>
-
-        {/* Category Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-          {categories.map((category) => (
-            <Card key={category.title} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  {category.icon}
-                  <Link href={category.href} className="hover:underline">
-                    {category.title}
-                  </Link>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2">
-                  {category.subcategories.map((subcategory) => (
-                    <Link 
-                      key={subcategory.name} 
-                      href={subcategory.href}
-                      className="text-sm text-muted-foreground hover:text-primary hover:underline"
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">{title}</h1>
+              {description && <p className="text-muted-foreground">{description}</p>}
+            </div>
+            <Link href="/marketplace/create">
+              <Button>
+                <Gun className="mr-2 h-4 w-4" />
+                Post Listing
+              </Button>
+            </Link>
+          </div>
         </div>
         
         {isLoading ? (
@@ -340,7 +310,7 @@ export default function Marketplace() {
             <CardHeader>
               <CardTitle>No Listings Found</CardTitle>
               <CardDescription>
-                Be the first to post a listing in the marketplace!
+                Be the first to post a listing in this category!
               </CardDescription>
             </CardHeader>
             <CardFooter className="justify-center">
@@ -381,4 +351,4 @@ export default function Marketplace() {
       </div>
     </div>
   )
-}
+} 
