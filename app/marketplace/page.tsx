@@ -162,14 +162,16 @@ export default function Marketplace() {
         const regular: Listing[] = []
         
         filteredListings.forEach(listing => {
+          // Add to featured if it's in the featured IDs set
           if (featuredIds.has(listing.id)) {
             featured.push({
               ...listing,
               is_featured: true
             })
-          } else {
-            regular.push(listing)
-          }
+          } 
+          
+          // Always add to regular listings - this ensures a listing appears in both sections if featured
+          regular.push(listing)
         })
         
         setFeaturedListings(featured)
