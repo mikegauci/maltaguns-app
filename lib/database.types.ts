@@ -79,6 +79,134 @@ export interface Database {
           updated_at?: string;
         };
       };
+      listings: {
+        Row: {
+          id: string;
+          seller_id: string;
+          type: string;
+          category: string;
+          subcategory: string | null;
+          calibre: string | null;
+          title: string;
+          description: string;
+          price: number;
+          images: string; // PostgreSQL array literal string format: {url1,url2,...}
+          thumbnail: string | null;
+          status: string;
+          created_at: string;
+          updated_at: string;
+          is_featured: boolean;
+          featured_at: string | null;
+          featured_until: string | null;
+        };
+        Insert: {
+          id?: string;
+          seller_id: string;
+          type: string;
+          category: string;
+          subcategory?: string | null;
+          calibre?: string | null;
+          title: string;
+          description: string;
+          price: number;
+          images?: string;
+          thumbnail?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+          is_featured?: boolean;
+          featured_at?: string | null;
+          featured_until?: string | null;
+        };
+        Update: {
+          id?: string;
+          seller_id?: string;
+          type?: string;
+          category?: string;
+          subcategory?: string | null;
+          calibre?: string | null;
+          title?: string;
+          description?: string;
+          price?: number;
+          images?: string;
+          thumbnail?: string | null;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+          is_featured?: boolean;
+          featured_at?: string | null;
+          featured_until?: string | null;
+        };
+      };
+      featured_listings: {
+        Row: {
+          id: string;
+          listing_id: string;
+          user_id: string;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: {
+          id?: string;
+          listing_id: string;
+          user_id: string;
+          created_at?: string;
+          expires_at: string;
+        };
+        Update: {
+          id?: string;
+          listing_id?: string;
+          user_id?: string;
+          created_at?: string;
+          expires_at?: string;
+        };
+      };
+      credits: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          amount?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      credit_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          type: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount: number;
+          type: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          amount?: number;
+          type?: string;
+          created_at?: string;
+        };
+      };
     };
     Views: {};
     Functions: {};

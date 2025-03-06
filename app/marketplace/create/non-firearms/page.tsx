@@ -18,6 +18,7 @@ import { ArrowLeft, X } from "lucide-react"
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
 
 const categories = {
   "airsoft": "Airsoft",
@@ -71,8 +72,8 @@ const nonFirearmsSchema = z.object({
   subcategory: z.string().min(1, "Subcategory is required"),
   title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title must not exceed 100 characters"),
   description: z.string().min(10, "Description must be at least 10 characters").max(2000, "Description must not exceed 2000 characters"),
-  price: z.number().min(0, "Price must be a positive number"),
-  images: z.array(z.any()).min(1, "At least one image is required").max(MAX_FILES, `Maximum ${MAX_FILES} images allowed`)
+  price: z.coerce.number().min(1, "Price must be at least €1"),
+  images: z.array(z.any()).max(MAX_FILES, `Maximum ${MAX_FILES} images allowed`).optional().default([])
 })
 
 type NonFirearmsForm = z.infer<typeof nonFirearmsSchema>
@@ -138,7 +139,12 @@ export default function CreateNonFirearmsListing() {
       }
 
       setUploading(true)
-      const { data: sessionData } = await supabase.auth.getSession()
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
       
       if (!sessionData.session?.user.id) {
         throw new Error("Not authenticated")
@@ -151,11 +157,19 @@ export default function CreateNonFirearmsListing() {
         const fileName = `${sessionData.session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `listings/${fileName}`
 
+        console.log("Attempting to upload file:", filePath)
+        
         const { error: uploadError } = await supabase.storage
           .from("listings")
-          .upload(filePath, file)
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false
+          })
 
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error("Upload error:", uploadError)
+          throw new Error("Upload failed: " + uploadError.message)
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from("listings")
@@ -172,6 +186,7 @@ export default function CreateNonFirearmsListing() {
         description: "Your images have been uploaded successfully"
       })
     } catch (error) {
+      console.error("Image upload error:", error)
       toast({
         variant: "destructive",
         title: "Upload failed",
@@ -196,37 +211,58 @@ export default function CreateNonFirearmsListing() {
 
   async function onSubmit(data: NonFirearmsForm) {
     try {
-      const { data: sessionData } = await supabase.auth.getSession()
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
       
       if (!sessionData.session?.user.id) {
         throw new Error("Not authenticated")
       }
 
-      const { data: listing, error } = await supabase
+      // Get all image URLs
+      const imageUrls = data.images.map(img => typeof img === 'string' ? img : img.toString());
+      
+      console.log("Attempting to create listing with simplified data");
+      
+      // Create a simplified listing object
+      const listingData = {
+        seller_id: sessionData.session.user.id,
+        type: "non_firearms",
+        category: data.category,
+        subcategory: data.subcategory,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        // Format the images as a PostgreSQL array literal, use default image if no images provided
+        images: imageUrls.length > 0 ? `{${imageUrls.map(url => `"${url}"`).join(',')}}` : `{"${DEFAULT_LISTING_IMAGE}"}`,
+        thumbnail: imageUrls[0] || DEFAULT_LISTING_IMAGE
+      };
+      
+      console.log("Creating listing with data:", listingData);
+      
+      // Create the listing
+      const { data: listing, error: listingError } = await supabase
         .from("listings")
-        .insert({
-          seller_id: sessionData.session.user.id,
-          type: "non_firearms",
-          category: data.category,
-          subcategory: data.subcategory,
-          title: data.title,
-          description: data.description,
-          price: data.price,
-          images: data.images,
-          thumbnail: data.images[0]
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
+        .insert(listingData)
+        .select('id, title')
+        .single();
+        
+      if (listingError) {
+        console.error("Error creating listing:", listingError);
+        throw listingError;
+      }
+      
       toast({
         title: "Listing created",
         description: "Your listing has been created successfully"
-      })
-
-      router.push(`/marketplace/listing/${listing.id}/${slugify(listing.title)}`)
+      });
+      
+      router.push(`/marketplace/listing/${slugify(listing.title)}`);
     } catch (error) {
+      console.error("Submit error:", error)
       toast({
         variant: "destructive",
         title: "Failed to create listing",
@@ -423,7 +459,7 @@ export default function CreateNonFirearmsListing() {
                             </div>
                           )}
                           <p className="text-sm text-muted-foreground">
-                            Upload up to 6 images (max 5MB each). First image will be the thumbnail.
+                            Upload up to 6 images (max 5MB each). First image will be used as thumbnail. If no image is uploaded, a default image will be used.
                           </p>
                         </div>
                       </FormControl>

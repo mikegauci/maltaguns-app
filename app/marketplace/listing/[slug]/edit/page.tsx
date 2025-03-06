@@ -18,6 +18,7 @@ import { ArrowLeft } from "lucide-react"
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
 
 const firearmsCategories = {
   "airguns": "Airguns",
@@ -100,6 +101,43 @@ const listingSchema = z.object({
 
 type ListingForm = z.infer<typeof listingSchema>
 
+// Add this helper function to parse image URLs from PostgreSQL array string
+function parseImageUrls(images: string): string[] {
+  try {
+    // Handle PostgreSQL array format: {"url1","url2"}
+    if (typeof images === 'string' && images.startsWith('{') && images.endsWith('}')) {
+      // Remove the curly braces and split by commas
+      const content = images.substring(1, images.length - 1);
+      // Handle empty array
+      if (!content) return [];
+      
+      // Split by commas, but respect quotes
+      return content.split(',')
+        .map(url => url.trim())
+        .map(url => url.startsWith('"') && url.endsWith('"') 
+          ? url.substring(1, url.length - 1) 
+          : url);
+    }
+    
+    // If it's already an array, return it
+    if (Array.isArray(images)) {
+      return images;
+    }
+    
+    // Try parsing as JSON if it's not in PostgreSQL format
+    try {
+      const parsed = JSON.parse(images);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // If all else fails, return an empty array
+      return [];
+    }
+  } catch (error) {
+    console.error("Error parsing image URLs:", error);
+    return [];
+  }
+}
+
 export default function EditListing({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -169,7 +207,10 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         setListingId(listing.id)
         setSelectedType(listing.type)
         setSelectedCategory(listing.category)
-        setExistingImages(listing.images || [])
+        
+        // Parse the images from PostgreSQL format
+        const parsedImages = parseImageUrls(listing.images);
+        setExistingImages(parsedImages)
 
         // Set form values
         form.reset({
@@ -183,8 +224,7 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         })
 
         // Create preview URLs for existing images
-        const previews = (listing.images || []).map((url: string) => url)
-        setPreviewUrls(previews)
+        setPreviewUrls(parsedImages)
       } catch (error) {
         console.error("Error loading listing:", error)
         toast({
@@ -198,62 +238,44 @@ export default function EditListing({ params }: { params: { slug: string } }) {
     }
 
     loadListing()
-  }, [params.slug, router, toast, form])
+  }, [params.slug, router, supabase, form])
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files
-    if (!files || files.length === 0) return
-
-    const totalImages = existingImages.length - imagesToDelete.length + newImages.length + files.length
-    if (totalImages > MAX_FILES) {
+    const files = Array.from(event.target.files || [])
+    
+    if (files.length + previewUrls.length > MAX_FILES) {
       toast({
-        title: "Too many images",
-        description: `You can upload a maximum of ${MAX_FILES} images`,
+        title: "Too many files",
+        description: `Maximum ${MAX_FILES} images allowed`,
         variant: "destructive",
       })
       return
     }
-
-    const newFilesArray = Array.from(files)
-    const validFiles = newFilesArray.filter(file => {
+    
+    for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
         toast({
           title: "File too large",
-          description: `${file.name} is larger than 5MB`,
+          description: `${file.name} exceeds 5MB limit`,
           variant: "destructive",
         })
-        return false
+        return
       }
+      
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         toast({
           title: "Invalid file type",
-          description: `${file.name} is not a valid image type`,
+          description: `${file.name} is not a supported image format`,
           variant: "destructive",
         })
-        return false
+        return
       }
-      return true
-    })
-
-    if (validFiles.length === 0) return
-
-    // Add new files to state
-    setNewImages(prev => [...prev, ...validFiles])
-
-    // Create preview URLs for new files
-    const newPreviews = await Promise.all(
-      validFiles.map(file => {
-        return new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => {
-            resolve(reader.result as string)
-          }
-          reader.readAsDataURL(file)
-        })
-      })
-    )
-
+    }
+    
+    // Create preview URLs for the new images
+    const newPreviews = files.map(file => URL.createObjectURL(file))
     setPreviewUrls(prev => [...prev, ...newPreviews])
+    setNewImages(prev => [...prev, ...files])
   }
 
   function handleRemoveImage(index: number) {
@@ -288,12 +310,12 @@ export default function EditListing({ params }: { params: { slug: string } }) {
           const filePath = `listings/${listingId}/${fileName}`
           
           const { error: uploadError } = await supabase.storage
-            .from('images')
+            .from('listings')
             .upload(filePath, file)
             
           if (uploadError) throw uploadError
           
-          const { data: urlData } = supabase.storage.from('images').getPublicUrl(filePath)
+          const { data: urlData } = supabase.storage.from('listings').getPublicUrl(filePath)
           uploadedImageUrls.push(urlData.publicUrl)
           
           // Update progress
@@ -306,16 +328,31 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       // 2. Delete images marked for deletion
       if (imagesToDelete.length > 0) {
         for (const imageUrl of imagesToDelete) {
-          const path = imageUrl.split('/').slice(-2).join('/')
-          await supabase.storage.from('images').remove([path])
+          // Don't delete the default image
+          if (imageUrl === DEFAULT_LISTING_IMAGE) continue;
+          
+          // Extract the path from the URL
+          const urlParts = imageUrl.split('/');
+          const bucketIndex = urlParts.findIndex(part => part === 'listings');
+          if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
+            const path = urlParts.slice(bucketIndex + 1).join('/');
+            await supabase.storage.from('listings').remove([path]);
+          }
         }
       }
       
       // 3. Combine remaining existing images with new uploaded images
-      const remainingExistingImages = existingImages.filter(url => !imagesToDelete.includes(url))
-      const allImages = [...remainingExistingImages, ...uploadedImageUrls]
+      const remainingExistingImages = Array.isArray(existingImages) 
+        ? existingImages.filter(url => !imagesToDelete.includes(url))
+        : [];
+      const allImages = [...remainingExistingImages, ...uploadedImageUrls];
       
-      // 4. Update the listing in the database
+      // 4. Format the images as a PostgreSQL array literal, use default image if no images
+      const formattedImages = allImages.length > 0 
+        ? `{${allImages.map(url => `"${url}"`).join(',')}}`
+        : `{"${DEFAULT_LISTING_IMAGE}"}`;
+      
+      // 5. Update the listing in the database
       const { error: updateError } = await supabase
         .from('listings')
         .update({
@@ -326,8 +363,8 @@ export default function EditListing({ params }: { params: { slug: string } }) {
           category: data.category,
           subcategory: data.subcategory || null,
           calibre: data.calibre || null,
-          images: allImages,
-          thumbnail: allImages[0] || null,
+          images: formattedImages,
+          thumbnail: allImages[0] || DEFAULT_LISTING_IMAGE,
           updated_at: new Date().toISOString(),
         })
         .eq('id', listingId)
@@ -337,18 +374,17 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       setUploadProgress(100)
       
       toast({
-        title: "Success",
-        description: "Listing updated successfully",
+        title: "Listing updated",
+        description: "Your listing has been updated successfully"
       })
-      
-      // Redirect to the listing page
+
       router.push(`/marketplace/listing/${slugify(data.title)}`)
     } catch (error) {
-      console.error('Error updating listing:', error)
+      console.error("Submit error:", error)
       toast({
-        title: "Error",
-        description: "Failed to update listing",
         variant: "destructive",
+        title: "Failed to update listing",
+        description: error instanceof Error ? error.message : "Something went wrong"
       })
     } finally {
       setIsUploading(false)

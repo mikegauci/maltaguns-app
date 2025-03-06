@@ -11,7 +11,11 @@ import { format } from "date-fns"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { supabase } from "@/lib/supabase"
 import { FeatureCreditDialog } from "@/components/feature-credit-dialog"
+import { ReportListingDialog } from "@/components/report-listing-dialog"
 import { AuthChangeEvent, Session } from '@supabase/supabase-js'
+
+// Default image to use when no images are provided
+const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
 
 interface ListingDetails {
   id: string
@@ -29,7 +33,7 @@ interface ListingDetails {
     username: string
     email: string | null
     phone: string | null
-  }
+  } | null
   images: string[]
   status: string
 }
@@ -128,16 +132,67 @@ function slugify(text: string) {
 export default function ListingClient({ listing }: { listing: ListingDetails }) {
   const router = useRouter()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [isOwner, setIsOwner] = useState(false)
-  const [userId, setUserId] = useState<string | null>(null)
   const [isFeatured, setIsFeatured] = useState(false)
   const [showFeatureDialog, setShowFeatureDialog] = useState(false)
-  
-  const allImages = listing.images && listing.images.length > 0 
-    ? listing.images 
-    : [listing.thumbnail]
-  
-  const currentImage = allImages[currentImageIndex]
+  const [isOwner, setIsOwner] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [userId, setUserId] = useState<string | null>(null)
+
+  // Use the first image from the listing, or the default if none are available
+  const images = listing.images.length > 0 ? listing.images : [DEFAULT_LISTING_IMAGE]
+
+  // Function to check if the current user is the owner of the listing
+  async function checkOwnership() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        setUserId(session.user.id)
+        setIsOwner(session.user.id === listing.seller_id)
+      } else {
+        setIsOwner(false)
+      }
+    } catch (error) {
+      console.error("Error checking ownership:", error)
+      setIsOwner(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Function to check if the listing is featured
+  async function checkIfFeatured() {
+    try {
+      const { data, error } = await supabase
+        .from('featured_listings')
+        .select('*')
+        .eq('listing_id', listing.id)
+        .single()
+      
+      if (error) {
+        if (error.code !== 'PGRST116') { // PGRST116 is the error code for "no rows returned"
+          console.error("Error checking featured status:", error)
+        }
+        setIsFeatured(false)
+        return
+      }
+      
+      setIsFeatured(!!data)
+    } catch (error) {
+      console.error("Error checking featured status:", error)
+      setIsFeatured(false)
+    }
+  }
+
+  useEffect(() => {
+    // Reset image index when listing changes
+    setCurrentImageIndex(0)
+    
+    // Check if the current user is the owner of the listing
+    checkOwnership()
+    
+    // Check if the listing is featured
+    checkIfFeatured()
+  }, [listing.id])
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -150,44 +205,12 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
     return () => subscription.unsubscribe()
   }, [listing.seller_id])
 
-  useEffect(() => {
-    async function checkOwnership() {
-      const { data } = await supabase.auth.getSession()
-      const currentUserId = data.session?.user.id
-      setUserId(currentUserId || null)
-      setIsOwner(currentUserId === listing.seller_id)
-    }
-    
-    async function checkIfFeatured() {
-      if (listing.id) {
-        const now = new Date().toISOString();
-        const { data, error } = await supabase
-          .from('featured_listings')
-          .select('*')
-          .eq('listing_id', listing.id)
-          .gt('end_date', now)
-          .maybeSingle();
-        
-        if (error) {
-          console.error("Error checking if listing is featured:", error);
-          setIsFeatured(false);
-          return;
-        }
-        
-        setIsFeatured(!!data);
-      }
-    }
-    
-    checkOwnership()
-    checkIfFeatured()
-  }, [listing.id, listing.seller_id])
-
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % allImages.length)
+    setCurrentImageIndex((prev) => (prev + 1) % images.length)
   }
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length)
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
   }
 
   return (
@@ -207,10 +230,12 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
             <div className="flex gap-2">
               <Button
                 variant="outline"
+                size="sm"
+                className="ml-2"
                 onClick={() => router.push(`/marketplace/listing/${slugify(listing.title)}/edit`)}
               >
                 <Pencil className="h-4 w-4 mr-2" />
-                Edit Listing
+                Edit
               </Button>
               
               {!isFeatured && (
@@ -254,14 +279,14 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
               <CardContent className="p-0">
                 <div className="relative">
                   <img
-                    src={currentImage}
+                    src={images[currentImageIndex]}
                     alt={listing.title}
                     className="object-contain w-full h-full"
                   />
                   {listing.status === 'sold' && (
                     <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
                   )}
-                  {allImages.length > 1 && (
+                  {images.length > 1 && (
                     <>
                       <Button
                         variant="ghost"
@@ -286,7 +311,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
             </Card>
 
             <div className="grid grid-cols-6 gap-4">
-              {allImages.map((image, index) => (
+              {images.map((image, index) => (
                 <div
                   key={index}
                   className={`aspect-video cursor-pointer overflow-hidden rounded-lg border-2 ${
@@ -338,6 +363,12 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                   <Calendar className="h-4 w-4" />
                   <span>Listed on {format(new Date(listing.created_at), 'PPP')}</span>
                 </div>
+
+                {/* Description Section */}
+                <div className="border-t pt-4">
+                  <h2 className="text-xl font-semibold mb-3">Description</h2>
+                  <p className="text-gray-700 whitespace-pre-line">{listing.description}</p>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -349,7 +380,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                 <CardTitle>Seller Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {userId ? (
+                {listing.seller ? (
                   <>
                     <p className="font-semibold">{listing.seller.username}</p>
                     {listing.seller.email && (
@@ -374,6 +405,8 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                         </a>
                       </div>
                     )}
+                    {/* Add Report Listing button */}
+                    {!isOwner && <ReportListingDialog listingId={listing.id} />}
                   </>
                 ) : (
                   <div className="space-y-4">
@@ -389,7 +422,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                           <span>+356 •••• ••••</span>
                         </div>
                       </div>
-                      <div className="inset-0 flex flex-col items-center justify-center bg-background/80">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80">
                         <Lock className="h-8 w-8 text-muted-foreground mb-2" />
                         <p className="text-sm text-center text-muted-foreground mb-4">
                           Create a verified account to view seller information
