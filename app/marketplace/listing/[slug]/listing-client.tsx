@@ -117,6 +117,14 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
   return categorySubcategories[subcategory as keyof typeof categorySubcategories] || subcategory;
 }
 
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/--+/g, '-')
+}
+
 export default function ListingClient({ listing }: { listing: ListingDetails }) {
   const router = useRouter()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -199,7 +207,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => router.push(`/marketplace/listing/${listing.id}/edit`)}
+                onClick={() => router.push(`/marketplace/listing/${slugify(listing.title)}/edit`)}
               >
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit Listing

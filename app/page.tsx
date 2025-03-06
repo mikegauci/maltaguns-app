@@ -9,6 +9,14 @@ import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
 
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/--+/g, '-')
+}
+
 interface Event {
   id: string
   title: string
@@ -143,7 +151,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {recentListings.map((listing) => (
-              <Link key={listing.id} href={`/marketplace/listing/${listing.id}`}>
+              <Link key={listing.id} href={`/marketplace/listing/${slugify(listing.title)}`}>
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="aspect-video relative overflow-hidden">
                     <img

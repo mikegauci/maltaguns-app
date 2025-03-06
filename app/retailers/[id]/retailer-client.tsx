@@ -229,7 +229,7 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
               {retailer.listings.map((listing) => (
                 <Link 
                   key={listing.id} 
-                  href={`/marketplace/listing/${listing.id}/${slugify(listing.title)}`}
+                  href={`/marketplace/listing/${slugify(listing.title)}`}
                 >
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="aspect-video relative overflow-hidden">
