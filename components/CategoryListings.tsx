@@ -232,17 +232,31 @@ export default function CategoryListings({ type, category, title, description }:
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-3">
             {listing.type === 'firearms' ? (
-              <Gun className="h-4 w-4" />
+              <Link href="/marketplace/firearms" className="inline-flex" onClick={(e) => e.stopPropagation()}>
+                <Gun className="h-4 w-4" />
+              </Link>
             ) : (
-              <Package className="h-4 w-4" />
+              <Link href="/marketplace/non-firearms" className="inline-flex" onClick={(e) => e.stopPropagation()}>
+                <Package className="h-4 w-4" />
+              </Link>
             )}
-            <Badge variant="secondary">
-              {getCategoryLabel(listing.category, listing.type)}
-            </Badge>
-            {listing.subcategory && (
-              <Badge variant="outline">
-                {getSubcategoryLabel(listing.category, listing.subcategory)}
+            <Link 
+              href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Badge variant="secondary" className="hover:bg-secondary/80 cursor-pointer">
+                {getCategoryLabel(listing.category, listing.type)}
               </Badge>
+            </Link>
+            {listing.subcategory && (
+              <Link 
+                href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}/${listing.subcategory}`}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Badge variant="outline" className="hover:bg-muted cursor-pointer">
+                  {getSubcategoryLabel(listing.category, listing.subcategory)}
+                </Badge>
+              </Link>
             )}
           </div>
           <h3 className="text-lg font-semibold mb-2 line-clamp-1">
