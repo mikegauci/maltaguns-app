@@ -308,7 +308,7 @@ export default function SearchResults() {
                   {featuredListings.map((listing) => (
                     <Link 
                       key={listing.id} 
-                      href={`/marketplace/listing/${listing.id}/${slugify(listing.title)}`}
+                      href={`/marketplace/listing/${slugify(listing.title)}`}
                     >
                       <Card className="overflow-hidden hover:shadow-lg transition-shadow border-2 border-red-500">
                         <div className="aspect-video relative overflow-hidden">
@@ -382,7 +382,7 @@ export default function SearchResults() {
                   {listings.map((listing) => (
                     <Link 
                       key={listing.id} 
-                      href={`/marketplace/listing/${listing.id}/${slugify(listing.title)}`}
+                      href={`/marketplace/listing/${slugify(listing.title)}`}
                     >
                       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                         <div className="aspect-video relative overflow-hidden">

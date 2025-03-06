@@ -926,9 +926,7 @@ export default function ProfilePage() {
                           </select>
                           <div className="flex gap-2">
                             <Link
-                              href={`/marketplace/listing/${
-                                listing.id
-                              }/${slugify(listing.title)}`}
+                              href={`/marketplace/listing/${slugify(listing.title)}`}
                             >
                               <Button variant="outline" size="sm">
                                 <Eye className="h-4 w-4 mr-2" />
@@ -947,7 +945,7 @@ export default function ProfilePage() {
                               </Button>
                             ) : (
                               <Link
-                                href={`/marketplace/listing/${listing.id}/edit`}
+                                href={`/marketplace/listing/${slugify(listing.title)}/edit`}
                               >
                                 <Button variant="outline" size="sm">
                                   <Pencil className="h-4 w-4 mr-2" />

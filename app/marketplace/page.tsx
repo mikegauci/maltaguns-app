@@ -190,7 +190,7 @@ export default function Marketplace() {
   const renderListingCard = (listing: Listing) => (
     <Link 
       key={listing.id} 
-      href={`/marketplace/listing/${listing.id}/${slugify(listing.title)}`}
+      href={`/marketplace/listing/${slugify(listing.title)}`}
     >
       <Card className={`overflow-hidden hover:shadow-lg transition-shadow ${listing.is_featured ? 'border-2 border-red-500' : ''}`}>
         <div className="aspect-video relative overflow-hidden">
