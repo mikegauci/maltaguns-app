@@ -428,7 +428,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
                     <FormItem>
                       <FormLabel>Email Address (Optional)</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="contact@example.com" {...field} />
+                        <Input type="email" placeholder="info@maltaguns.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -318,7 +318,7 @@ export default function EditRetailerPage({ params }: { params: { id: string } })
                       <FormItem>
                         <FormLabel>Email Address</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="contact@example.com" {...field} />
+                          <Input type="email" placeholder="info@maltaguns.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
