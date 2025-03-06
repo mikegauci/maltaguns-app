@@ -27,6 +27,7 @@ interface Listing {
 interface CategoryListingsProps {
   type?: 'firearms' | 'non_firearms'
   category?: string
+  subcategory?: string
   title: string
   description?: string
 }
@@ -122,7 +123,7 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
   return categorySubcategories[subcategory as keyof typeof categorySubcategories] || subcategory;
 }
 
-export default function CategoryListings({ type, category, title, description }: CategoryListingsProps) {
+export default function CategoryListings({ type, category, subcategory, title, description }: CategoryListingsProps) {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
   const [regularListings, setRegularListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -154,6 +155,11 @@ export default function CategoryListings({ type, category, title, description }:
         // Add category filter if provided
         if (category) {
           query = query.eq('category', category)
+        }
+        
+        // Add subcategory filter if provided
+        if (subcategory) {
+          query = query.eq('subcategory', subcategory)
         }
         
         // Order by created_at
@@ -205,7 +211,7 @@ export default function CategoryListings({ type, category, title, description }:
     }
 
     fetchListings()
-  }, [type, category])
+  }, [type, category, subcategory])
 
   // Function to render a listing card
   const renderListingCard = (listing: Listing) => (
@@ -250,7 +256,7 @@ export default function CategoryListings({ type, category, title, description }:
             </Link>
             {listing.subcategory && (
               <Link 
-                href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}/${listing.subcategory}`}
+                href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}/${listing.subcategory.replace(/_/g, '-')}`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <Badge variant="outline" className="hover:bg-muted cursor-pointer">

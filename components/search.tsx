@@ -64,10 +64,10 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
       } else if (category === "non_firearms") {
         router.push(`/marketplace/non-firearms`);
       } else if (category.startsWith("firearms-")) {
-        const subcategory = category.replace("firearms-", "");
+        const subcategory = category.replace("firearms-", "").replace(/_/g, '-');
         router.push(`/marketplace/firearms/${subcategory}`);
       } else if (category.startsWith("non_firearms-")) {
-        const subcategory = category.replace("non_firearms-", "");
+        const subcategory = category.replace("non_firearms-", "").replace(/_/g, '-');
         router.push(`/marketplace/non-firearms/${subcategory}`);
       }
       setIsOpen(false);

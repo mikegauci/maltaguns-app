@@ -229,7 +229,7 @@ export default function Marketplace() {
             </Link>
             {listing.subcategory && (
               <Link 
-                href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}/${listing.subcategory}`}
+                href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}/${listing.subcategory.replace(/_/g, '-')}`}
                 onClick={(e) => e.stopPropagation()}
               >
                 <Badge variant="outline" className="hover:bg-muted cursor-pointer">
