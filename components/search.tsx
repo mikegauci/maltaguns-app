@@ -56,21 +56,45 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
   const handleSearch = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    // Build the search query
-    const params = new URLSearchParams();
+    // If search term is empty and a category is selected, redirect to category page
+    if (!searchTerm.trim() && category !== "all") {
+      // Parse the category parameter to determine the URL
+      if (category === "firearms") {
+        router.push(`/marketplace/firearms`);
+      } else if (category === "non_firearms") {
+        router.push(`/marketplace/non-firearms`);
+      } else if (category.startsWith("firearms-")) {
+        const subcategory = category.replace("firearms-", "");
+        router.push(`/marketplace/firearms/${subcategory}`);
+      } else if (category.startsWith("non_firearms-")) {
+        const subcategory = category.replace("non_firearms-", "");
+        router.push(`/marketplace/non-firearms/${subcategory}`);
+      }
+      setIsOpen(false);
+      return;
+    }
     
-    // Only add search term if it's not empty
+    // If search term is empty and All Categories is selected, redirect to search page
+    if (!searchTerm.trim() && category === "all") {
+      router.push(`/marketplace/search`);
+      setIsOpen(false);
+      return;
+    }
+    
+    // Only proceed with search URL if there's a search term
     if (searchTerm.trim()) {
+      // Build the search query
+      const params = new URLSearchParams();
       params.append("q", searchTerm.trim());
+      
+      if (category !== "all") {
+        params.append("category", category);
+      }
+      
+      // Navigate to search results page
+      router.push(`/marketplace/search?${params.toString()}`);
+      setIsOpen(false);
     }
-    
-    if (category !== "all") {
-      params.append("category", category);
-    }
-    
-    // Navigate to search results page
-    router.push(`/marketplace/search?${params.toString()}`);
-    setIsOpen(false);
   };
 
   // Handle keyboard shortcuts
