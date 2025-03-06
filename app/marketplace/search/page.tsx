@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Target, Package, ArrowLeft } from "lucide-react";
+import { Target, Package, ArrowLeft, Star } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -21,6 +21,7 @@ interface Listing {
   thumbnail: string;
   created_at: string;
   status: string;
+  is_featured?: boolean;
 }
 
 function formatPrice(price: number) {
@@ -126,6 +127,7 @@ export default function SearchResults() {
   const categoryParam = searchParams.get('category') || 'all';
   
   const [listings, setListings] = useState<Listing[]>([]);
+  const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [type, setType] = useState<string | null>(null);
   const [category, setCategory] = useState<string | null>(null);
@@ -170,10 +172,10 @@ export default function SearchResults() {
           supabaseQuery = supabaseQuery.eq('category', categoryValue);
         }
 
-        // Only add search conditions if query is not empty
+        // Create search terms including singular/plural forms if query exists
+        let searchTerms: string[] = [];
         if (query) {
-          // Create search terms including singular/plural forms
-          const searchTerms = [query.toLowerCase()];
+          searchTerms = [query.toLowerCase()];
           const words = query.toLowerCase().split(/\s+/);
           
           // Add singular forms of plural words
@@ -183,7 +185,10 @@ export default function SearchResults() {
               searchTerms.push(singular);
             }
           });
+        }
 
+        // Only add search conditions if query is not empty
+        if (query) {
           // Add search terms for title and description
           const searchConditions = searchTerms.map(term => 
             `title.ilike.%${term}%,description.ilike.%${term}%`
@@ -197,10 +202,37 @@ export default function SearchResults() {
 
         if (error) throw error;
         
-        setListings(data || []);
+        // Fetch featured listings
+        const { data: featuredData, error: featuredError } = await supabase
+          .from('featured_listings')
+          .select('listing_id')
+          .gt('end_date', new Date().toISOString());
+        
+        if (featuredError) throw featuredError;
+        
+        // Create a set of featured listing IDs for quick lookup
+        const featuredIds = new Set(featuredData?.map(item => item.listing_id) || []);
+        
+        // Filter and mark featured listings
+        const featured: Listing[] = [];
+        const regular: Listing[] = [];
+        
+        (data || []).forEach(listing => {
+          if (featuredIds.has(listing.id)) {
+            featured.push({
+              ...listing,
+              is_featured: true
+            });
+          }
+          regular.push(listing);
+        });
+        
+        setFeaturedListings(featured);
+        setListings(regular);
       } catch (error) {
         console.error('Error searching listings:', error);
         setListings([]);
+        setFeaturedListings([]);
       } finally {
         setIsLoading(false);
       }
@@ -250,7 +282,7 @@ export default function SearchResults() {
               </Card>
             ))}
           </div>
-        ) : listings.length === 0 ? (
+        ) : listings.length === 0 && featuredListings.length === 0 ? (
           <Card className="p-6 text-center">
             <CardContent className="pt-6">
               <h3 className="text-lg font-semibold mb-2">No listings found</h3>
@@ -265,60 +297,125 @@ export default function SearchResults() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {listings.map((listing) => (
-              <Link 
-                key={listing.id} 
-                href={`/marketplace/listing/${listing.id}/${slugify(listing.title)}`}
-              >
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-video relative overflow-hidden">
-                    <img
-                      src={listing.thumbnail}
-                      alt={listing.title}
-                      className="object-cover w-full h-full"
-                    />
-                    {listing.status === 'sold' && (
-                      <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
-                    )}
+          <>
+            {featuredListings.length > 0 && (
+              <div className="mb-10">
+                <div className="flex items-center gap-2 mb-6">
+                  <Star className="h-5 w-5 text-red-500" />
+                  <h2 className="text-xl font-bold">Featured Listings</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {featuredListings.map((listing) => (
+                    <Link 
+                      key={listing.id} 
+                      href={`/marketplace/listing/${listing.id}/${slugify(listing.title)}`}
+                    >
+                      <Card className="overflow-hidden hover:shadow-lg transition-shadow border-2 border-red-500">
+                        <div className="aspect-video relative overflow-hidden">
+                          <img
+                            src={listing.thumbnail}
+                            alt={listing.title}
+                            className="object-cover w-full h-full"
+                          />
+                          {listing.status === 'sold' && (
+                            <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
+                          )}
+                          <Badge className="absolute top-2 left-2 bg-red-500 text-white">Featured</Badge>
+                        </div>
+                        <CardContent className="p-6">
+                          <div className="flex items-center gap-2 mb-3">
+                            {listing.type === 'firearms' ? (
+                              <Target className="h-4 w-4" />
+                            ) : (
+                              <Package className="h-4 w-4" />
+                            )}
+                            <Badge variant="secondary">
+                              {getCategoryLabel(listing.category, listing.type)}
+                            </Badge>
+                            {listing.subcategory && (
+                              <Badge variant="outline">
+                                {getSubcategoryLabel(listing.category, listing.subcategory)}
+                              </Badge>
+                            )}
+                          </div>
+                          <h3 className="text-lg font-semibold mb-2 line-clamp-1">
+                            {listing.title}
+                          </h3>
+                          <p className="text-muted-foreground mb-4 line-clamp-2">
+                            {listing.description}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-lg font-bold">
+                              {formatPrice(listing.price)}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {listings.length > 0 && (
+              <div>
+                {featuredListings.length > 0 && (
+                  <div className="flex items-center gap-2 mb-6">
+                    <h2 className="text-xl font-bold">All Results</h2>
                   </div>
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      {listing.type === 'firearms' ? (
-                        <Target className="h-4 w-4" />
-                      ) : (
-                        <Package className="h-4 w-4" />
-                      )}
-                      <Badge variant="secondary">
-                        {getCategoryLabel(listing.category, listing.type)}
-                      </Badge>
-                      {listing.subcategory && (
-                        <Badge variant="outline">
-                          {getSubcategoryLabel(listing.category, listing.subcategory)}
-                        </Badge>
-                      )}
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2 line-clamp-1">
-                      {listing.title}
-                    </h3>
-                    <p className="text-muted-foreground mb-4 line-clamp-2">
-                      {listing.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <p className="text-lg font-bold">
-                        {formatPrice(listing.price)}
-                      </p>
-                      {listing.type === 'firearms' && listing.calibre && (
-                        <Badge variant="secondary">
-                          {listing.calibre}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {listings.map((listing) => (
+                    <Link 
+                      key={listing.id} 
+                      href={`/marketplace/listing/${listing.id}/${slugify(listing.title)}`}
+                    >
+                      <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                        <div className="aspect-video relative overflow-hidden">
+                          <img
+                            src={listing.thumbnail}
+                            alt={listing.title}
+                            className="object-cover w-full h-full"
+                          />
+                          {listing.status === 'sold' && (
+                            <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
+                          )}
+                        </div>
+                        <CardContent className="p-6">
+                          <div className="flex items-center gap-2 mb-3">
+                            {listing.type === 'firearms' ? (
+                              <Target className="h-4 w-4" />
+                            ) : (
+                              <Package className="h-4 w-4" />
+                            )}
+                            <Badge variant="secondary">
+                              {getCategoryLabel(listing.category, listing.type)}
+                            </Badge>
+                            {listing.subcategory && (
+                              <Badge variant="outline">
+                                {getSubcategoryLabel(listing.category, listing.subcategory)}
+                              </Badge>
+                            )}
+                          </div>
+                          <h3 className="text-lg font-semibold mb-2 line-clamp-1">
+                            {listing.title}
+                          </h3>
+                          <p className="text-muted-foreground mb-4 line-clamp-2">
+                            {listing.description}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-lg font-bold">
+                              {formatPrice(listing.price)}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
