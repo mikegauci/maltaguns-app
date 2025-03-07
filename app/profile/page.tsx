@@ -139,6 +139,7 @@ export default function ProfilePage() {
         }
 
         const userId = userData.user.id;
+        console.log("Current user ID:", userId);
 
         // Fetch profile
         const { data: profileData, error: profileError } = await supabase
@@ -161,7 +162,7 @@ export default function ProfilePage() {
 
         if (listingsError) {
           console.error("Listings fetch error:", listingsError.message);
-          throw listingsError;
+          // Continue even if there's an error
         }
 
         // Fetch user's blog posts
@@ -173,55 +174,82 @@ export default function ProfilePage() {
 
         if (blogError) {
           console.error("Blog posts fetch error:", blogError.message);
-          throw blogError;
+          // Continue even if there's an error
         }
 
-        // Fetch user's retailer profile
-        const { data: retailerData, error: retailerError } = await supabase
+        // SIMPLIFIED APPROACH: Directly fetch retailer data
+        console.log("Fetching retailer for user ID:", userId);
+        const { data: retailersData, error: retailerError } = await supabase
           .from("retailers")
-          .select("id, business_name, logo_url, location, slug")
-          .eq("owner_id", userId)
-          .single();
+          .select("*")
+          .eq("owner_id", userId);
 
-        if (retailerError && retailerError.code !== "PGRST116") {
-          console.error("Retailer fetch error:", retailerError.message);
-          throw retailerError;
-        }
-
-        // Fetch retailer blog posts if retailer exists
+        // Initialize variables for retailer and posts
+        let currentRetailer = null;
         let retailerPostsData: RetailerBlogPost[] = [];
-        if (retailerData) {
-          const { data: retailerPosts, error: retailerPostsError } = await supabase
+
+        if (retailerError) {
+          console.error("Retailer fetch error:", retailerError.message);
+        } else if (retailersData && retailersData.length > 0) {
+          // Use the first retailer (in case user has multiple)
+          currentRetailer = retailersData[0];
+          console.log("Found retailer:", currentRetailer);
+
+          // Ensure we have a slug
+          if (!currentRetailer.slug) {
+            const slug = slugify(currentRetailer.business_name);
+            const { error: updateError } = await supabase
+              .from("retailers")
+              .update({ slug })
+              .eq("id", currentRetailer.id);
+
+            if (updateError) {
+              console.error("Error updating retailer slug:", updateError);
+            } else {
+              currentRetailer.slug = slug;
+            }
+          }
+
+          // Fetch retailer blog posts
+          const { data: postsData, error: postsError } = await supabase
             .from("retailer_blog_posts")
-            .select("id, title, slug, published, created_at, retailer_id")
-            .eq("retailer_id", retailerData.id)
+            .select("*")
+            .eq("retailer_id", currentRetailer.id)
             .order("created_at", { ascending: false });
 
-          if (retailerPostsError) {
-            console.error("Retailer blog posts fetch error:", retailerPostsError.message);
-          } else {
-            retailerPostsData = retailerPosts as RetailerBlogPost[] || [];
+          if (postsError) {
+            console.error("Retailer blog posts fetch error:", postsError.message);
+          } else if (postsData) {
+            console.log("Found retailer posts:", postsData.length, postsData);
+            retailerPostsData = postsData as RetailerBlogPost[];
           }
         }
 
+        // Update state with all fetched data
         setProfile(profileData);
         setListings(listingsData || []);
         setBlogPosts(blogData || []);
-        setRetailer(retailerData);
+        setRetailer(currentRetailer);
         setRetailerBlogPosts(retailerPostsData);
+        
         form.reset({
           phone: profileData.phone || "",
           address: profileData.address || "",
         });
       } catch (error) {
         console.error("Error loading profile:", error);
+        toast({
+          variant: "destructive",
+          title: "Error loading profile",
+          description: "We encountered an error loading your profile information. Please refresh the page and try again.",
+        });
       } finally {
         setLoading(false);
       }
     }
 
     loadProfile();
-  }, [router, form]);
+  }, [router, form, toast]);
 
   async function handleLicenseUpload(
     event: React.ChangeEvent<HTMLInputElement>
@@ -461,29 +489,30 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleDeleteRetailerPost(postId: string) {
+  async function handleDeleteRetailer() {
     try {
+      if (!retailer?.id) return;
+
       const { error } = await supabase
-        .from("retailer_blog_posts")
+        .from("retailers")
         .delete()
-        .eq("id", postId);
+        .eq("id", retailer.id);
 
       if (error) throw error;
 
-      setRetailerBlogPosts((prevPosts) =>
-        prevPosts.filter((post) => post.id !== postId)
-      );
+      setRetailer(null);
+      setRetailerBlogPosts([]);
 
       toast({
-        title: "Post deleted",
-        description: "Your retailer blog post has been deleted successfully",
+        title: "Retailer deleted",
+        description: "Your retailer profile has been deleted successfully",
       });
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Delete failed",
         description:
-          error instanceof Error ? error.message : "Failed to delete post",
+          error instanceof Error ? error.message : "Failed to delete retailer",
       });
     }
   }
@@ -689,7 +718,7 @@ export default function ProfilePage() {
           )}
         </Card>
 
-        {/* Retailer Profile - Only show if exists */}
+        {/* Retailer Profile */}
         {retailer && (
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -719,23 +748,40 @@ export default function ProfilePage() {
                       {retailer.business_name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {retailer.location}
+                      {retailer.location || 'No location specified'}
                     </p>
+                    {!retailer.slug && (
+                      <p className="text-xs text-red-500">Missing slug - please edit your profile</p>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <Link href={`/retailers/${retailer.id}`}>
+                <div className="flex gap-2 flex-wrap">
+                  <Link href={`/retailers/${retailer.slug || retailer.id}`}>
                     <Button variant="outline" size="sm">
                       <Eye className="h-4 w-4 mr-2" />
                       View Page
                     </Button>
                   </Link>
-                  <Link href={`/retailers/${retailer.id}/edit`}>
+                  <Link href={`/retailers/${retailer.slug || retailer.id}/edit`}>
                     <Button variant="outline" size="sm">
                       <Pencil className="h-4 w-4 mr-2" />
                       Edit Profile
                     </Button>
                   </Link>
+                  <Link href={`/retailers/${retailer.slug || retailer.id}/blog/create`}>
+                    <Button variant="outline" size="sm">
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      New Blog Post
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={handleDeleteRetailer}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Retailer
+                  </Button>
                 </div>
               </div>
             </CardContent>
