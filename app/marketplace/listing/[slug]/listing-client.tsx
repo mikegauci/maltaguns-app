@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock, Pencil, Calendar, User, ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock, Pencil, Calendar, User, ChevronLeft, ChevronRight, Star, Store, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -48,6 +48,7 @@ function formatPrice(price: number) {
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
   const firearmsCategories: Record<string, string> = {
     airguns: "Airguns",
+    ammunition: "Ammunition",
     revolvers: "Revolvers",
     pistols: "Pistols",
     rifles: "Rifles",
@@ -137,6 +138,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
   const [isOwner, setIsOwner] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
+  const [isRetailer, setIsRetailer] = useState(false)
 
   // Use the first image from the listing, or the default if none are available
   const images = listing.images.length > 0 ? listing.images : [DEFAULT_LISTING_IMAGE]
@@ -183,6 +185,32 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
     }
   }
 
+  // Function to check if seller is a retailer
+  async function checkIfRetailer() {
+    try {
+      if (!listing.seller_id) return;
+      
+      const { data, error } = await supabase
+        .from('retailers')
+        .select('id')
+        .eq('owner_id', listing.seller_id)
+        .single();
+      
+      if (error) {
+        if (error.code !== 'PGRST116') { // PGRST116 is the error code for "no rows returned"
+          console.error("Error checking retailer status:", error);
+        }
+        setIsRetailer(false);
+        return;
+      }
+      
+      setIsRetailer(!!data);
+    } catch (error) {
+      console.error("Error checking retailer status:", error);
+      setIsRetailer(false);
+    }
+  }
+
   useEffect(() => {
     // Reset image index when listing changes
     setCurrentImageIndex(0)
@@ -192,7 +220,10 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
     
     // Check if the listing is featured
     checkIfFeatured()
-  }, [listing.id])
+    
+    // Check if seller is a retailer
+    checkIfRetailer()
+  }, [listing.id, listing.seller_id])
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -382,7 +413,17 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
               <CardContent className="space-y-4">
                 {listing.seller ? (
                   <>
-                    <p className="font-semibold">{listing.seller.username}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold">{listing.seller.username}</p>
+                      {isRetailer && (
+                        <Link href={`/retailers/${listing.seller_id}`}>
+                          <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1 cursor-pointer">
+                            <CheckCircle className="h-3 w-3" />
+                            Verified Retailer
+                          </Badge>
+                        </Link>
+                      )}
+                    </div>
                     {listing.seller.email && (
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-muted-foreground" />

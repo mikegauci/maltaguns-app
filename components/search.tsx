@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search as SearchIcon } from "lucide-react";
+import { Search as SearchIcon, X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -23,15 +23,16 @@ const categories = {
   all: "All Categories",
   firearms: {
     airguns: "Airguns",
-    revolvers: "Revolvers",
-    pistols: "Pistols",
-    rifles: "Rifles",
-    carbines: "Carbines",
-    shotguns: "Shotguns",
+    ammunition: "Ammunition",
     black_powder: "Black powder",
-    replica_deactivated: "Replica or Deactivated",
+    carbines: "Carbines",
     crossbow: "Crossbow",
-    schedule_1: "Schedule 1 (automatic)"
+    pistols: "Pistols",
+    replica_deactivated: "Replica or Deactivated",
+    revolvers: "Revolvers",
+    rifles: "Rifles",
+    schedule_1: "Schedule 1 (automatic)",
+    shotguns: "Shotguns"
   },
   non_firearms: {
     airsoft: "Airsoft",
@@ -97,6 +98,14 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
     }
   };
 
+  // Function to clear search term
+  const clearSearch = () => {
+    setSearchTerm("");
+    if (searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  };
+
   // Handle keyboard shortcuts
   useEffect(() => {
     // Skip setting up the keyboard shortcut if disabled
@@ -144,29 +153,41 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="firearms" className="font-semibold">Firearms</SelectItem>
+                <SelectItem value="all" className="font-medium pl-6">All Categories</SelectItem>
+                <SelectItem value="firearms" className="font-medium pl-8">Firearms</SelectItem>
                 {Object.entries(categories.firearms).map(([value, label]) => (
-                  <SelectItem key={value} value={`firearms-${value}`} className="pl-6">
+                  <SelectItem key={value} value={`firearms-${value}`} className="pl-12">
                     {label}
                   </SelectItem>
                 ))}
-                <SelectItem value="non_firearms" className="font-semibold">Non-Firearms</SelectItem>
+
+                <SelectItem value="non_firearms" className="font-medium pl-8">Non-Firearms</SelectItem>
                 {Object.entries(categories.non_firearms).map(([value, label]) => (
-                  <SelectItem key={value} value={`non_firearms-${value}`} className="pl-6">
+                  <SelectItem key={value} value={`non_firearms-${value}`} className="pl-12">
                     {label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <div className="flex gap-2">
-              <Input
-                ref={searchInputRef}
-                placeholder="Search listings..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
-              />
+              <div className="flex-1 relative">
+                <Input
+                  ref={searchInputRef}
+                  placeholder="Search listings..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-8 w-full"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={clearSearch}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
               <Button type="submit">
                 <SearchIcon className="h-4 w-4" />
               </Button>

@@ -21,10 +21,10 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
 
 const categories = {
+  "accessories": "Accessories",
   "airsoft": "Airsoft",
-  "reloading": "Reloading",
   "militaria": "Militaria",
-  "accessories": "Accessories"
+  "reloading": "Reloading"
 } as const
 
 const subcategories = {
@@ -36,39 +36,39 @@ const subcategories = {
     "other": "Other"
   },
   "reloading": {
-    "presses": "Presses",
     "dies": "Dies",
-    "tools": "Tools",
-    "tumblers_media": "Tumblers & Media",
+    "other": "Other",
+    "presses": "Presses",
     "primers_heads": "Primers & Heads",
-    "other": "Other"
+    "tools": "Tools",
+    "tumblers_media": "Tumblers & Media"
   },
   "militaria": {
-    "uniforms": "Uniforms",
     "helmets": "Helmets",
-    "swords_bayonets_knives": "Swords, Bayonets & Knives",
     "medals_badges": "Medals & Badges",
-    "other": "Other"
+    "other": "Other",
+    "swords_bayonets_knives": "Swords, Bayonets & Knives",
+    "uniforms": "Uniforms"
   },
   "accessories": {
-    "cleaning_maintenance": "Cleaning & Maintenance",
-    "bipods_stands": "Bipods & Stands",
-    "slings_holsters": "Slings & Holsters",
-    "scopes_sights_optics": "Scopes, Sights & Optics",
-    "magazines": "Magazines",
-    "books_manuals": "Books & Manuals",
-    "hunting_equipment": "Hunting Equipment",
-    "safes_cabinets": "Safes & Cabinets",
     "ammo_boxes": "Ammo Boxes",
-    "gun_cases": "Gun Cases",
-    "safety_equipment": "Safety Equipment",
+    "bipods_stands": "Bipods & Stands",
+    "books_manuals": "Books & Manuals",
+    "cleaning_maintenance": "Cleaning & Maintenance",
     "grips": "Grips",
-    "other": "Other"
+    "gun_cases": "Gun Cases",
+    "hunting_equipment": "Hunting Equipment",
+    "magazines": "Magazines",
+    "other": "Other",
+    "safes_cabinets": "Safes & Cabinets",
+    "safety_equipment": "Safety Equipment",
+    "scopes_sights_optics": "Scopes, Sights & Optics",
+    "slings_holsters": "Slings & Holsters"
   }
 } as const
 
 const nonFirearmsSchema = z.object({
-  category: z.enum(["airsoft", "reloading", "militaria", "accessories"]),
+  category: z.enum(["accessories", "airsoft", "militaria", "reloading"]),
   subcategory: z.string().min(1, "Subcategory is required"),
   title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title must not exceed 100 characters"),
   description: z.string().min(10, "Description must be at least 10 characters").max(2000, "Description must not exceed 2000 characters"),

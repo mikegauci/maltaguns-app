@@ -23,19 +23,20 @@ const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
 
 const firearmsCategories = {
   "airguns": "Airguns",
-  "revolvers": "Revolvers",
-  "pistols": "Pistols",
-  "rifles": "Rifles",
-  "carbines": "Carbines",
-  "shotguns": "Shotguns",
+  "ammunition": "Ammunition",
   "black_powder": "Black powder",
-  "replica_deactivated": "Replica or Deactivated",
+  "carbines": "Carbines",
   "crossbow": "Crossbow",
-  "schedule_1": "Schedule 1 (automatic)"
+  "pistols": "Pistols",
+  "replica_deactivated": "Replica or Deactivated",
+  "revolvers": "Revolvers",
+  "rifles": "Rifles",
+  "schedule_1": "Schedule 1 (automatic)",
+  "shotguns": "Shotguns"
 } as const
 
 const firearmsSchema = z.object({
-  category: z.enum(["airguns", "revolvers", "pistols", "rifles", "carbines", "shotguns", "black_powder", "replica_deactivated", "crossbow", "schedule_1"]),
+  category: z.enum(["airguns", "ammunition", "black_powder", "carbines", "crossbow", "pistols", "replica_deactivated", "revolvers", "rifles", "schedule_1", "shotguns"]),
   calibre: z.string().min(1, "Calibre is required"),
   title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title must not exceed 100 characters"),
   description: z.string().min(10, "Description must be at least 10 characters").max(2000, "Description must not exceed 2000 characters"),
@@ -62,7 +63,8 @@ export default function CreateFirearmsListing() {
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [credits, setCredits] = useState<number>(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null)
+  const [isRetailer, setIsRetailer] = useState(false)
 
   const form = useForm<FirearmsForm>({
     resolver: zodResolver(firearmsSchema),
@@ -86,6 +88,17 @@ export default function CreateFirearmsListing() {
         }
         // Set the userId from the session
         setUserId(session.user.id);
+
+        // Check if user is a retailer
+        const { data: retailerData, error: retailerError } = await supabase
+          .from("retailers")
+          .select("id")
+          .eq("owner_id", session.user.id)
+          .single();
+          
+        if (!retailerError && retailerData) {
+          setIsRetailer(true);
+        }
 
         // Check if coming back from Stripe
         const sessionId = searchParams.get("session_id");
@@ -396,11 +409,13 @@ export default function CreateFirearmsListing() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {Object.entries(firearmsCategories).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
+                          {Object.entries(firearmsCategories)
+                            .filter(([value]) => value !== "ammunition" || isRetailer)
+                            .map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />

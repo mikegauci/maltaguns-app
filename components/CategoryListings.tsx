@@ -50,6 +50,7 @@ function formatPrice(price: number) {
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
   const firearmsCategories: Record<string, string> = {
     airguns: "Airguns",
+    ammunition: "Ammunition",
     revolvers: "Revolvers",
     pistols: "Pistols",
     rifles: "Rifles",

@@ -22,15 +22,16 @@ const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
 
 const firearmsCategories = {
   "airguns": "Airguns",
-  "revolvers": "Revolvers",
-  "pistols": "Pistols",
-  "rifles": "Rifles",
-  "carbines": "Carbines",
-  "shotguns": "Shotguns",
+  "ammunition": "Ammunition",
   "black_powder": "Black powder",
-  "replica_deactivated": "Replica or Deactivated",
+  "carbines": "Carbines",
   "crossbow": "Crossbow",
-  "schedule_1": "Schedule 1 (automatic)"
+  "pistols": "Pistols",
+  "replica_deactivated": "Replica or Deactivated",
+  "revolvers": "Revolvers",
+  "rifles": "Rifles",
+  "schedule_1": "Schedule 1 (automatic)",
+  "shotguns": "Shotguns"
 } as const
 
 const nonFirearmsCategories = {

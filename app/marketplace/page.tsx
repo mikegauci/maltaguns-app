@@ -42,6 +42,7 @@ function formatPrice(price: number) {
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
   const firearmsCategories: Record<string, string> = {
     airguns: "Airguns",
+    ammunition: "Ammunition",
     revolvers: "Revolvers",
     pistols: "Pistols",
     rifles: "Rifles",
@@ -266,16 +267,17 @@ export default function Marketplace() {
       icon: <Gun className="h-5 w-5" />,
       href: "/marketplace/firearms",
       subcategories: [
-        { name: "Pistols", href: "/marketplace/firearms/pistols" },
-        { name: "Rifles", href: "/marketplace/firearms/rifles" },
-        { name: "Shotguns", href: "/marketplace/firearms/shotguns" },
-        { name: "Revolvers", href: "/marketplace/firearms/revolvers" },
         { name: "Airguns", href: "/marketplace/firearms/airguns" },
-        { name: "Carbines", href: "/marketplace/firearms/carbines" },
+        { name: "Ammunition", href: "/marketplace/firearms/ammunition" },
         { name: "Black Powder", href: "/marketplace/firearms/black-powder" },
-        { name: "Replica/Deactivated", href: "/marketplace/firearms/replica-deactivated" },
+        { name: "Carbines", href: "/marketplace/firearms/carbines" },
         { name: "Crossbow", href: "/marketplace/firearms/crossbow" },
+        { name: "Pistols", href: "/marketplace/firearms/pistols" },
+        { name: "Replica/Deactivated", href: "/marketplace/firearms/replica-deactivated" },
+        { name: "Revolvers", href: "/marketplace/firearms/revolvers" },
+        { name: "Rifles", href: "/marketplace/firearms/rifles" },
         { name: "Schedule 1", href: "/marketplace/firearms/schedule-1" },
+        { name: "Shotguns", href: "/marketplace/firearms/shotguns" },
       ]
     },
     {
