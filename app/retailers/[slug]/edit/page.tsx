@@ -260,17 +260,21 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
   }
 
   return (
-    <div className="container py-10">
-      <Button
-        variant="ghost"
-        onClick={() => router.push(`/retailers/${params.slug}`)}
-        className="flex items-center text-muted-foreground hover:text-foreground mb-6"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Retailer
-      </Button>
+      <div className="min-h-screen bg-background p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            onClick={() => router.push("/profile")}
+            className="flex items-center text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to profile
+          </Button>
+        </div>
 
-      <Card className="max-w-2xl mx-auto">
+
+      <Card>
         <CardHeader>
           <CardTitle>Edit Retailer Profile</CardTitle>
           <CardDescription>
@@ -411,6 +415,7 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
           </Form>
         </CardContent>
       </Card>
+    </div>
     </div>
   )
 }
