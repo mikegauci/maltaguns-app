@@ -25,9 +25,13 @@ interface Retailer {
   id: string
   business_name: string
   logo_url: string | null
+  slug: string
 }
 
-export default function RetailerBlogPostPage({ params }: { params: { id: string, slug: string } }) {
+export default function RetailerBlogPostPage({ params }: { params: { slug: string, postSlug: string } }) {
+  const retailerSlug = params.slug;
+  const postSlug = params.postSlug;
+  
   const router = useRouter()
   const [post, setPost] = useState<BlogPost | null>(null)
   const [retailer, setRetailer] = useState<Retailer | null>(null)
@@ -40,12 +44,27 @@ export default function RetailerBlogPostPage({ params }: { params: { id: string,
         // Get current user
         const { data: { session } } = await supabase.auth.getSession()
         
+        // First fetch the retailer to get its ID
+        const { data: retailerData, error: retailerError } = await supabase
+          .from("retailers")
+          .select("*")
+          .eq("slug", retailerSlug)
+          .single()
+          
+        if (retailerError || !retailerData) {
+          console.error("Error fetching retailer:", retailerError)
+          router.push("/retailers")
+          return
+        }
+        
+        setRetailer(retailerData)
+        
         // Fetch blog post from retailer_blog_posts table
         const { data: postData, error: postError } = await supabase
           .from("retailer_blog_posts")
           .select("*")
-          .eq("slug", params.slug)
-          .eq("retailer_id", params.id)
+          .eq("slug", postSlug)
+          .eq("retailer_id", retailerData.id)
           .single()
 
         if (postError) {
@@ -53,7 +72,7 @@ export default function RetailerBlogPostPage({ params }: { params: { id: string,
         }
         
         if (!postData) {
-          router.push(`/retailers/${params.id}`);
+          router.push(`/retailers/${retailerData.slug}`);
           return;
         }
 
@@ -65,33 +84,20 @@ export default function RetailerBlogPostPage({ params }: { params: { id: string,
 
         setPost(postWithAuthor);
 
-        // Fetch retailer details
-        const { data: retailerData, error: retailerError } = await supabase
-          .from("retailers")
-          .select("id, business_name, logo_url, owner_id")
-          .eq("id", params.id)
-          .single()
-
-        if (retailerError) {
-          throw retailerError;
-        }
-        
-        setRetailer(retailerData)
-
         // Check if user is the owner
         if (session?.user && retailerData.owner_id === session.user.id) {
           setIsOwner(true)
         }
       } catch (error) {
         console.error("Error fetching data:", error)
-        router.push(`/retailers/${params.id}`)
+        router.push(`/retailers/${retailer?.slug || ''}`)
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchData()
-  }, [params.id, params.slug, router])
+  }, [retailerSlug, postSlug, router])
 
   if (isLoading) {
     return (
@@ -115,7 +121,7 @@ export default function RetailerBlogPostPage({ params }: { params: { id: string,
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => router.push(`/retailers/${params.id}`)}
+            onClick={() => router.push(`/retailers/${retailer.slug}`)}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -123,7 +129,7 @@ export default function RetailerBlogPostPage({ params }: { params: { id: string,
           </Button>
 
           {isOwner && (
-            <Link href={`/retailers/${params.id}/blog/${params.slug}/edit`}>
+            <Link href={`/retailers/${retailer.slug}/blog/${params.postSlug}/edit`}>
               <Button variant="outline">
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit Post
@@ -146,7 +152,7 @@ export default function RetailerBlogPostPage({ params }: { params: { id: string,
 
             <div className="p-6 md:p-8">
               <div className="flex items-center gap-4 mb-6">
-                <Link href={`/retailers/${params.id}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+                <Link href={`/retailers/${retailer.slug}`} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
                   <Store className="h-4 w-4" />
                   <span>{retailer.business_name}</span>
                 </Link>

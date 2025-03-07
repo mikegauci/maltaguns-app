@@ -20,6 +20,7 @@ interface Retailer {
   description: string | null
   website: string | null
   owner_id: string
+  slug: string
   listings: {
     id: string
     title: string
@@ -141,7 +142,7 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
           {isOwner && (
             <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground">Retailer Owner Dashboard:</p>
-              <Link href={`/retailers/${retailer.id}/blog/create`}>
+              <Link href={`/retailers/${retailer.slug}/blog/create`}>
                 <Button className="bg-primary">
                   <Pencil className="h-4 w-4 mr-2" />
                   Create New Post
@@ -262,7 +263,7 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Latest Articles</h2>
             {isOwner && (
-              <Link href={`/retailers/${retailer.id}/blog/create`}>
+              <Link href={`/retailers/${retailer.slug}/blog/create`}>
                 <Button>
                   <Pencil className="h-4 w-4 mr-2" />
                   Create New Post
@@ -274,7 +275,7 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
           {blogPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {blogPosts.map((post) => (
-                <Link key={post.id} href={`/retailers/${retailer.id}/blog/${post.slug}`}>
+                <Link key={post.id} href={`/retailers/${retailer.slug}/blog/${post.slug}`}>
                   <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden">
                     <div className="aspect-video relative overflow-hidden bg-muted">
                       {post.featured_image ? (

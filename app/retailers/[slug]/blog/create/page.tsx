@@ -11,11 +11,12 @@ import { ArrowLeft } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 
-export default function CreateRetailerBlogPost({ params }: { params: { id: string } }) {
+export default function CreateRetailerBlogPost({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [retailerId, setRetailerId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -33,24 +34,37 @@ export default function CreateRetailerBlogPost({ params }: { params: { id: strin
           description: "You must be logged in to create a blog post.",
           variant: "destructive",
         })
-        router.push(`/retailers/${params.id}`)
+        router.push(`/retailers/${params.slug}`)
         return
       }
 
-      // Check if user is the owner of this retailer
-      const { data: retailer } = await supabase
+      // First get the retailer ID from the slug
+      const { data: retailer, error: retailerError } = await supabase
         .from("retailers")
-        .select("owner_id")
-        .eq("id", params.id)
+        .select("*")
+        .eq("slug", params.slug)
         .single()
 
-      if (!retailer || retailer.owner_id !== session.user.id) {
+      if (retailerError || !retailer) {
+        toast({
+          title: "Retailer not found",
+          description: "The retailer you're trying to create a blog post for doesn't exist.",
+          variant: "destructive",
+        })
+        router.push("/retailers")
+        return
+      }
+
+      setRetailerId(retailer.id)
+
+      // Check if user is the owner of this retailer
+      if (retailer.owner_id !== session.user.id) {
         toast({
           title: "Unauthorized",
           description: "You don't have permission to create blog posts for this retailer.",
           variant: "destructive",
         })
-        router.push(`/retailers/${params.id}`)
+        router.push(`/retailers/${params.slug}`)
         return
       }
 
@@ -58,7 +72,7 @@ export default function CreateRetailerBlogPost({ params }: { params: { id: strin
     }
 
     checkAuthorization()
-  }, [params.id, router, toast])
+  }, [params.slug, router, toast])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -87,10 +101,10 @@ export default function CreateRetailerBlogPost({ params }: { params: { id: strin
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!isAuthorized) {
+    if (!retailerId) {
       toast({
-        title: "Unauthorized",
-        description: "You don't have permission to create blog posts for this retailer.",
+        title: "Error",
+        description: "Retailer information is missing.",
         variant: "destructive",
       })
       return
@@ -108,92 +122,56 @@ export default function CreateRetailerBlogPost({ params }: { params: { id: strin
     setIsLoading(true)
 
     try {
-      // Get current user
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) throw new Error("User not authenticated")
-
-      // Generate slug
+      // Generate slug from title
       const slug = slugify(formData.title)
-
-      // Upload image if provided
-      let featuredImagePath = null
+      
+      // Upload featured image if provided
+      let featured_image = null
       if (formData.featuredImage) {
         const fileExt = formData.featuredImage.name.split('.').pop()
-        const fileName = `retailer-${params.id}-${Date.now()}.${fileExt}`
-        const filePath = `blog/${fileName}`
-
+        const fileName = `${Date.now()}.${fileExt}`
+        const filePath = `retailer-blog/${retailerId}/${fileName}`
+        
         const { error: uploadError } = await supabase.storage
-          .from('blog')
+          .from('blog-images')
           .upload(filePath, formData.featuredImage)
-
+          
         if (uploadError) throw uploadError
-
+        
         const { data: { publicUrl } } = supabase.storage
-          .from('blog')
+          .from('blog-images')
           .getPublicUrl(filePath)
-
-        featuredImagePath = publicUrl
-      }
-
-      // Create blog post in the retailer_blog_posts table
-      const blogPostData = {
-        title: formData.title,
-        slug,
-        content: formData.content,
-        featured_image: featuredImagePath,
-        published: true,
-        author_id: session.user.id,
-        retailer_id: params.id
-      };
-      
-      // First, get the user's profile to ensure it exists
-      const { data: userProfile, error: profileError } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', session.user.id)
-        .single();
-        
-      if (profileError) {
-        // If profile doesn't exist, create a default one
-        if (profileError.code === 'PGRST116') {
-          const { error: insertProfileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              username: session.user.email?.split('@')[0] || 'user',
-              email: session.user.email
-            });
-            
-          if (insertProfileError) {
-            console.error("Error creating user profile:", insertProfileError);
-          }
-        }
+          
+        featured_image = publicUrl
       }
       
-      // Insert the blog post
-      const { data: insertedPost, error: insertError } = await supabase
+      // Create blog post
+      const { data: post, error: postError } = await supabase
         .from('retailer_blog_posts')
-        .insert(blogPostData)
-        .select();
+        .insert({
+          title: formData.title,
+          content: formData.content,
+          featured_image,
+          slug,
+          published: true,
+          retailer_id: retailerId,
+        })
+        .select()
         
-      if (insertError) {
-        console.error("Error creating blog post:", insertError);
-        throw insertError;
-      }
-
+      if (postError) throw postError
+      
       toast({
         title: "Blog post created",
         description: "Your blog post has been published successfully.",
       })
-
-      // Force a refresh by using replace instead of push
-      router.refresh();
-      router.replace(`/retailers/${params.id}`);
+      
+      // Redirect to the retailer page
+      router.push(`/retailers/${params.slug}`)
     } catch (error) {
       console.error("Error creating blog post:", error)
       toast({
         title: "Error",
-        description: "Failed to create blog post. Please try again.",
+        description: "There was a problem creating your blog post. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -214,7 +192,7 @@ export default function CreateRetailerBlogPost({ params }: { params: { id: strin
       <div className="max-w-3xl mx-auto space-y-6">
         <Button
           variant="ghost"
-          onClick={() => router.push(`/retailers/${params.id}`)}
+          onClick={() => router.push(`/retailers/${params.slug}`)}
           className="flex items-center text-muted-foreground hover:text-foreground mb-4"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

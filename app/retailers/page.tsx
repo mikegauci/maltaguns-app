@@ -23,6 +23,7 @@ interface Retailer {
   email: string | null
   description: string | null
   website: string | null
+  slug: string
 }
 
 export default function RetailersPage() {
@@ -97,7 +98,7 @@ export default function RetailersPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {retailers.map((retailer) => (
-              <Link key={retailer.id} href={`/retailers/${retailer.id}`}>
+              <Link key={retailer.id} href={`/retailers/${retailer.slug || retailer.id}`}>
                 <Card className="h-full hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-4">

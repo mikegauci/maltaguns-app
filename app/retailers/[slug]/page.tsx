@@ -14,6 +14,7 @@ interface Retailer {
   description: string | null;
   website: string | null;
   owner_id: string;
+  slug: string;
 }
 
 interface RetailerDetails extends Retailer {
@@ -44,7 +45,7 @@ export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 export const revalidate = 0; // Disable cache
 
-export default async function RetailerPage({ params }: { params: { id: string } }) {
+export default async function RetailerPage({ params }: { params: { slug: string } }) {
   // Force cache revalidation
   headers();
   
@@ -52,7 +53,7 @@ export default async function RetailerPage({ params }: { params: { id: string } 
   const { data: retailer, error: retailerError } = await supabase
     .from("retailers")
     .select("*")
-    .eq("id", params.id)
+    .eq("slug", params.slug)
     .single();
 
   if (retailerError || !retailer) {
@@ -75,7 +76,7 @@ export default async function RetailerPage({ params }: { params: { id: string } 
   let { data: blogPosts, error: blogPostsError } = await supabase
     .from("retailer_blog_posts")
     .select("*")
-    .eq("retailer_id", params.id)
+    .eq("retailer_id", retailer.id)
     .eq("published", true)
     .order("created_at", { ascending: false });
 
@@ -85,7 +86,7 @@ export default async function RetailerPage({ params }: { params: { id: string } 
       const { data: adminBlogPosts, error: adminError } = await supabaseAdmin
         .from("retailer_blog_posts")
         .select("*")
-        .eq("retailer_id", params.id)
+        .eq("retailer_id", retailer.id)
         .eq("published", true)
         .order("created_at", { ascending: false });
       
@@ -118,7 +119,7 @@ export default async function RetailerPage({ params }: { params: { id: string } 
         featured_image: null,
         published: true,
         author_id: null, // Set to null to avoid foreign key issues
-        retailer_id: params.id,
+        retailer_id: retailer.id,
         created_at: new Date().toISOString()
       };
       

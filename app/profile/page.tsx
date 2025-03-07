@@ -77,6 +77,7 @@ interface Retailer {
   business_name: string;
   logo_url: string | null;
   location: string;
+  slug: string;
 }
 
 const profileSchema = z.object({
@@ -178,7 +179,7 @@ export default function ProfilePage() {
         // Fetch user's retailer profile
         const { data: retailerData, error: retailerError } = await supabase
           .from("retailers")
-          .select("id, business_name, logo_url, location")
+          .select("id, business_name, logo_url, location, slug")
           .eq("owner_id", userId)
           .single();
 
@@ -749,7 +750,7 @@ export default function ProfilePage() {
                 <CardTitle>My Retailer Posts</CardTitle>
                 <CardDescription>Manage your retailer blog posts</CardDescription>
               </div>
-              <Link href={`/retailers/${retailer.id}/blog/create`}>
+              <Link href={`/retailers/${retailer.slug}/blog/create`}>
                 <Button>
                   <BookOpen className="h-4 w-4 mr-2" />
                   Write Retailer Post
@@ -775,13 +776,13 @@ export default function ProfilePage() {
                             {post.published ? "Published" : "Draft"}
                           </Badge>
                           <div className="flex gap-2">
-                            <Link href={`/retailers/${retailer.id}/blog/${post.slug}`}>
+                            <Link href={`/retailers/${retailer.slug}/blog/${post.slug}`}>
                               <Button variant="outline" size="sm">
                                 <Eye className="h-4 w-4 mr-2" />
                                 View
                               </Button>
                             </Link>
-                            <Link href={`/retailers/${retailer.id}/blog/${post.slug}/edit`}>
+                            <Link href={`/retailers/${retailer.slug}/blog/${post.slug}/edit`}>
                               <Button variant="outline" size="sm">
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
