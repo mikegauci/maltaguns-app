@@ -141,7 +141,6 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
           
           {isOwner && (
             <div className="flex items-center gap-2">
-              <p className="text-sm text-muted-foreground">Retailer Owner Dashboard:</p>
               <Link href={`/retailers/${retailer.slug}/blog/create`}>
                 <Button className="bg-primary">
                   <Pencil className="h-4 w-4 mr-2" />

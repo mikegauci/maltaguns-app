@@ -17,6 +17,7 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
   const [isLoading, setIsLoading] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [retailerId, setRetailerId] = useState<string | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -37,6 +38,9 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
         router.push(`/retailers/${params.slug}`)
         return
       }
+
+      // Store user ID for later use
+      setUserId(session.user.id)
 
       // First get the retailer ID from the slug
       const { data: retailer, error: retailerError } = await supabase
@@ -101,10 +105,10 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!retailerId) {
+    if (!retailerId || !userId) {
       toast({
         title: "Error",
-        description: "Retailer information is missing.",
+        description: "User or retailer information is missing.",
         variant: "destructive",
       })
       return
@@ -132,20 +136,21 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
         const fileName = `${Date.now()}.${fileExt}`
         const filePath = `retailer-blog/${retailerId}/${fileName}`
         
+        // Using 'retailers' bucket instead of 'blog-images'
         const { error: uploadError } = await supabase.storage
-          .from('blog-images')
+          .from('retailers')
           .upload(filePath, formData.featuredImage)
           
         if (uploadError) throw uploadError
         
         const { data: { publicUrl } } = supabase.storage
-          .from('blog-images')
+          .from('retailers')
           .getPublicUrl(filePath)
           
         featured_image = publicUrl
       }
       
-      // Create blog post
+      // Create blog post with author_id
       const { data: post, error: postError } = await supabase
         .from('retailer_blog_posts')
         .insert({
@@ -155,6 +160,7 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
           slug,
           published: true,
           retailer_id: retailerId,
+          author_id: userId,
         })
         .select()
         

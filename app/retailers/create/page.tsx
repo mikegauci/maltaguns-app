@@ -41,6 +41,7 @@ export default function CreateRetailerPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [logoFile, setLogoFile] = useState<File | null>(null)
 
   useEffect(() => {
     async function checkAuthorization() {
@@ -78,6 +79,15 @@ export default function CreateRetailerPage() {
     }
   })
 
+  // Function to convert business name to slug
+  const slugify = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/--+/g, '-')
+  }
+
   async function handleLogoUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {
       const file = event.target.files?.[0]
@@ -102,6 +112,7 @@ export default function CreateRetailerPage() {
       }
 
       setUploadingLogo(true)
+      setLogoFile(file)
 
       const { data: sessionData } = await supabase.auth.getSession()
       if (!sessionData.session?.user.id) {
@@ -153,17 +164,42 @@ export default function CreateRetailerPage() {
         throw new Error("Not authorized to create retailer profiles")
       }
 
+      // Generate slug from business name
+      const slug = slugify(data.businessName)
+
+      // Ensure logo is uploaded if provided
+      let logo_url = data.logoUrl
+      if (logoFile && !logo_url) {
+        // If we have a logo file but no URL, try to upload it again
+        const fileExt = logoFile.name.split('.').pop()
+        const fileName = `${sessionData.session.user.id}-${Date.now()}.${fileExt}`
+        const filePath = `retailers/${fileName}`
+        
+        const { error: uploadError } = await supabase.storage
+          .from('retailers')
+          .upload(filePath, logoFile)
+          
+        if (uploadError) throw uploadError
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('retailers')
+          .getPublicUrl(filePath)
+          
+        logo_url = publicUrl
+      }
+
       const { error } = await supabase
         .from("retailers")
         .insert({
           owner_id: sessionData.session.user.id,
           business_name: data.businessName,
-          logo_url: data.logoUrl,
+          logo_url: logo_url,
           location: data.location,
           phone: data.phone,
           email: data.email,
           description: data.description,
-          website: data.website || null
+          website: data.website || null,
+          slug: slug // Add the slug
         })
 
       if (error) throw error
@@ -173,7 +209,8 @@ export default function CreateRetailerPage() {
         description: "Your retailer profile has been created successfully"
       })
 
-      router.push("/retailers")
+      // Redirect to the new retailer page using the slug
+      router.push(`/retailers/${slug}`)
     } catch (error) {
       toast({
         variant: "destructive",
