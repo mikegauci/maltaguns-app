@@ -107,6 +107,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [retailers, setRetailers] = useState<Retailer[]>([]);
   const [retailer, setRetailer] = useState<Retailer | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [retailerBlogPosts, setRetailerBlogPosts] = useState<RetailerBlogPost[]>([]);
@@ -178,50 +179,58 @@ export default function ProfilePage() {
         }
 
         // SIMPLIFIED APPROACH: Directly fetch retailer data
-        console.log("Fetching retailer for user ID:", userId);
+        console.log("Fetching retailers for user ID:", userId);
         const { data: retailersData, error: retailerError } = await supabase
           .from("retailers")
           .select("*")
           .eq("owner_id", userId);
 
-        // Initialize variables for retailer and posts
-        let currentRetailer = null;
+        // Initialize variables for retailer posts
         let retailerPostsData: RetailerBlogPost[] = [];
 
         if (retailerError) {
           console.error("Retailer fetch error:", retailerError.message);
         } else if (retailersData && retailersData.length > 0) {
-          // Use the first retailer (in case user has multiple)
-          currentRetailer = retailersData[0];
-          console.log("Found retailer:", currentRetailer);
+          console.log("Found retailers:", retailersData.length, retailersData);
+          
+          // Store all retailers
+          setRetailers(retailersData);
+          
+          // Also keep the first retailer in the single retailer state for backwards compatibility
+          const currentRetailer = retailersData[0];
+          setRetailer(currentRetailer);
 
-          // Ensure we have a slug
-          if (!currentRetailer.slug) {
-            const slug = slugify(currentRetailer.business_name);
-            const { error: updateError } = await supabase
-              .from("retailers")
-              .update({ slug })
-              .eq("id", currentRetailer.id);
+          // Check and fix slugs for all retailers
+          for (const retailer of retailersData) {
+            if (!retailer.slug) {
+              const slug = slugify(retailer.business_name);
+              const { error: updateError } = await supabase
+                .from("retailers")
+                .update({ slug })
+                .eq("id", retailer.id);
 
-            if (updateError) {
-              console.error("Error updating retailer slug:", updateError);
-            } else {
-              currentRetailer.slug = slug;
+              if (updateError) {
+                console.error("Error updating retailer slug:", updateError);
+              } else {
+                retailer.slug = slug;
+              }
             }
           }
 
-          // Fetch retailer blog posts
-          const { data: postsData, error: postsError } = await supabase
-            .from("retailer_blog_posts")
-            .select("*")
-            .eq("retailer_id", currentRetailer.id)
-            .order("created_at", { ascending: false });
+          // Fetch blog posts for all retailers
+          for (const retailer of retailersData) {
+            const { data: postsData, error: postsError } = await supabase
+              .from("retailer_blog_posts")
+              .select("*")
+              .eq("retailer_id", retailer.id)
+              .order("created_at", { ascending: false });
 
-          if (postsError) {
-            console.error("Retailer blog posts fetch error:", postsError.message);
-          } else if (postsData) {
-            console.log("Found retailer posts:", postsData.length, postsData);
-            retailerPostsData = postsData as RetailerBlogPost[];
+            if (postsError) {
+              console.error(`Retailer blog posts fetch error for ${retailer.business_name}:`, postsError.message);
+            } else if (postsData && postsData.length > 0) {
+              console.log(`Found ${postsData.length} posts for retailer ${retailer.business_name}`);
+              retailerPostsData = [...retailerPostsData, ...postsData as RetailerBlogPost[]];
+            }
           }
         }
 
@@ -229,7 +238,6 @@ export default function ProfilePage() {
         setProfile(profileData);
         setListings(listingsData || []);
         setBlogPosts(blogData || []);
-        setRetailer(currentRetailer);
         setRetailerBlogPosts(retailerPostsData);
         
         form.reset({
@@ -489,19 +497,26 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleDeleteRetailer() {
+  async function handleDeleteRetailer(retailerId: string) {
     try {
-      if (!retailer?.id) return;
-
+      // Confirm deletion
+      if (!window.confirm("Are you sure you want to delete this retailer profile? This action cannot be undone.")) {
+        return;
+      }
+      
       const { error } = await supabase
         .from("retailers")
         .delete()
-        .eq("id", retailer.id);
+        .eq("id", retailerId);
 
       if (error) throw error;
 
-      setRetailer(null);
-      setRetailerBlogPosts([]);
+      setRetailers((prevRetailers) =>
+        prevRetailers.filter((retailer) => retailer.id !== retailerId)
+      );
+      setRetailerBlogPosts((prevPosts) =>
+        prevPosts.filter((post) => post.retailer_id !== retailerId)
+      );
 
       toast({
         title: "Retailer deleted",
@@ -513,6 +528,33 @@ export default function ProfilePage() {
         title: "Delete failed",
         description:
           error instanceof Error ? error.message : "Failed to delete retailer",
+      });
+    }
+  }
+
+  async function handleDeleteRetailerPost(postId: string) {
+    try {
+      const { error } = await supabase
+        .from("retailer_blog_posts")
+        .delete()
+        .eq("id", postId);
+
+      if (error) throw error;
+
+      setRetailerBlogPosts((prevPosts) =>
+        prevPosts.filter((post) => post.id !== postId)
+      );
+
+      toast({
+        title: "Post deleted",
+        description: "Your retailer blog post has been deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Delete failed",
+        description:
+          error instanceof Error ? error.message : "Failed to delete post",
       });
     }
   }
@@ -718,139 +760,177 @@ export default function ProfilePage() {
           )}
         </Card>
 
-        {/* Retailer Profile */}
-        {retailer && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <div>
-                <CardTitle>My Retailer Profile</CardTitle>
+        {/* Retailer Profiles - Show all retailers */}
+        {retailers.length > 0 ? (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>My Retailer Profiles</CardTitle>
                 <CardDescription>
                   Manage your business presence on MaltaGuns
                 </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  {retailer.logo_url ? (
-                    <img
-                      src={retailer.logo_url}
-                      alt={retailer.business_name}
-                      className="w-16 h-16 object-contain rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                      <Store className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-semibold text-lg">
-                      {retailer.business_name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {retailer.location || 'No location specified'}
-                    </p>
-                    {!retailer.slug && (
-                      <p className="text-xs text-red-500">Missing slug - please edit your profile</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Link href={`/retailers/${retailer.slug || retailer.id}`}>
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-2" />
-                      View Page
-                    </Button>
-                  </Link>
-                  <Link href={`/retailers/${retailer.slug || retailer.id}/edit`}>
-                    <Button variant="outline" size="sm">
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit Profile
-                    </Button>
-                  </Link>
-                  <Link href={`/retailers/${retailer.slug || retailer.id}/blog/create`}>
-                    <Button variant="outline" size="sm">
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      New Blog Post
-                    </Button>
-                  </Link>
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={handleDeleteRetailer}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Retailer
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Retailer Blog Posts - Only show if user has a retailer and posts */}
-        {retailer && retailerBlogPosts.length > 0 && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <div>
-                <CardTitle>My Retailer Posts</CardTitle>
-                <CardDescription>Manage your retailer blog posts</CardDescription>
-              </div>
-              <Link href={`/retailers/${retailer.slug}/blog/create`}>
-                <Button>
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Write Retailer Post
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {retailerBlogPosts.map((post) => (
-                  <Card key={post.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{post.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(post.created_at), "PPP")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={post.published ? "default" : "secondary"}
-                          >
-                            {post.published ? "Published" : "Draft"}
-                          </Badge>
-                          <div className="flex gap-2">
-                            <Link href={`/retailers/${retailer.slug}/blog/${post.slug}`}>
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-2" />
-                                View
-                              </Button>
-                            </Link>
-                            <Link href={`/retailers/${retailer.slug}/blog/${post.slug}/edit`}>
-                              <Button variant="outline" size="sm">
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteRetailerPost(post.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {retailers.map((retailerItem) => (
+                  <div key={retailerItem.id} className="border rounded-lg p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        {retailerItem.logo_url ? (
+                          <img
+                            src={retailerItem.logo_url}
+                            alt={retailerItem.business_name}
+                            className="w-16 h-16 object-contain rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                            <Store className="h-8 w-8 text-muted-foreground" />
                           </div>
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {retailerItem.business_name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {retailerItem.location || 'No location specified'}
+                          </p>
+                          {!retailerItem.slug && (
+                            <p className="text-xs text-red-500">Missing slug - please edit your profile</p>
+                          )}
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <div className="flex gap-2 flex-wrap">
+                        <Link href={`/retailers/${retailerItem.slug || retailerItem.id}`}>
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Page
+                          </Button>
+                        </Link>
+                        <Link href={`/retailers/${retailerItem.slug || retailerItem.id}/edit`}>
+                          <Button variant="outline" size="sm">
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit Profile
+                          </Button>
+                        </Link>
+                        <Link href={`/retailers/${retailerItem.slug || retailerItem.id}/blog/create`}>
+                          <Button variant="outline" size="sm">
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            New Blog Post
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDeleteRetailer(retailerItem.id)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Retailer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Retailer Blog Posts - Only show if user has posts */}
+            {retailerBlogPosts.length > 0 && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                  <div>
+                    <CardTitle>My Retailer Posts</CardTitle>
+                    <CardDescription>Manage your retailer blog posts</CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {retailerBlogPosts.map((post) => (
+                      <Card key={post.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-semibold">{post.title}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(post.created_at), "PPP")}
+                              </p>
+                              {/* Show which retailer this post belongs to */}
+                              {retailers.length > 1 && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {retailers.find(r => r.id === post.retailer_id)?.business_name || 'Unknown retailer'}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant={post.published ? "default" : "secondary"}
+                              >
+                                {post.published ? "Published" : "Draft"}
+                              </Badge>
+                              <div className="flex gap-2">
+                                {/* Find the retailer this post belongs to for URL */}
+                                {(() => {
+                                  const postRetailer = retailers.find(r => r.id === post.retailer_id);
+                                  const retailerPath = postRetailer ? 
+                                    `/retailers/${postRetailer.slug || postRetailer.id}` : 
+                                    '/retailers';
+                                  return (
+                                    <>
+                                      <Link href={`${retailerPath}/blog/${post.slug}`}>
+                                        <Button variant="outline" size="sm">
+                                          <Eye className="h-4 w-4 mr-2" />
+                                          View
+                                        </Button>
+                                      </Link>
+                                      <Link href={`${retailerPath}/blog/${post.slug}/edit`}>
+                                        <Button variant="outline" size="sm">
+                                          <Pencil className="h-4 w-4 mr-2" />
+                                          Edit
+                                        </Button>
+                                      </Link>
+                                    </>
+                                  );
+                                })()}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeleteRetailerPost(post.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        ) : (
+          profile?.is_seller && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Create Retailer Profile</CardTitle>
+                <CardDescription>
+                  Set up your business profile on MaltaGuns
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4">
+                  As a verified seller, you can create a retailer profile to showcase
+                  your business and post updates for potential customers.
+                </p>
+                <Link href="/retailers/create">
+                  <Button>
+                    <Store className="h-4 w-4 mr-2" />
+                    Create Retailer Profile
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )
         )}
 
         {/* Blog Posts - Only show if user has posts */}
