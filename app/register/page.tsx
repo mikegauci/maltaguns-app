@@ -8,11 +8,12 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const phoneRegex = /^\+?[1-9]\d{1,14}$/
 
@@ -28,18 +29,22 @@ const registerSchema = z.object({
     .min(8, "Password must be at least 8 characters")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character"),
+    .regex(/[0-9]/, "Password must contain at least one number"),
   confirmPassword: z.string(),
-  birthday: z.string()
-    .refine((date) => {
-      const age = (new Date().getTime() - new Date(date).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
-      return age >= 18
-    }, "You must be at least 18 years old"),
+  birthday: z.string().refine(value => {
+    const date = new Date(value);
+    const today = new Date();
+    const minAgeDate = new Date(today);
+    minAgeDate.setFullYear(today.getFullYear() - 18);
+    return date <= minAgeDate;
+  }, {
+    message: "You must be at least 18 years old",
+  }),
   phone: z.string().regex(phoneRegex, "Invalid phone number format"),
   address: z.string().min(5, "Address must be at least 5 characters"),
   interestedInSelling: z.boolean().default(false),
   licenseImage: z.any().optional(),
+  contactPreference: z.enum(["email", "phone", "both"]).default("both"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -70,6 +75,7 @@ export default function Register() {
       phone: "",
       address: "",
       interestedInSelling: false,
+      contactPreference: "both",
     },
   })
 
@@ -167,6 +173,7 @@ export default function Register() {
           address: data.address,
           is_seller: data.interestedInSelling,
           license_image: data.interestedInSelling ? data.licenseImage : null,
+          contact_preference: data.contactPreference,
         })
 
       if (profileError) throw profileError
@@ -381,12 +388,7 @@ export default function Register() {
                     <FormControl>
                       <Checkbox
                         checked={field.value}
-                        onCheckedChange={(checked) => {
-                          field.onChange(checked);
-                          if (checked && form.getValues("licenseImage")) {
-                            form.trigger("licenseImage");
-                          }
-                        }}
+                        onCheckedChange={field.onChange}
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
@@ -398,38 +400,69 @@ export default function Register() {
                 )}
               />
 
-              {watchInterestedInSelling && (
-                <FormField
-                  control={form.control}
-                  name="licenseImage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Firearms License</FormLabel>
+              {/* Contact Preference - shown for all users */}
+              <FormField
+                control={form.control}
+                name="contactPreference"
+                render={({ field }) => (
+                  <FormItem className="border p-4 rounded-md">
+                    <FormLabel className="font-medium">Contact Preference</FormLabel>
+                    <FormDescription>
+                      Choose which contact information will be visible to others
+                    </FormDescription>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <div className="space-y-2">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLicenseUpload}
-                            disabled={uploadingLicense}
-                          />
-                          <Input type="hidden" {...field} />
-                          {uploadingLicense && (
-                            <p className="text-sm text-muted-foreground">
-                              Uploading license...
-                            </p>
-                          )}
-                          {field.value && (
-                            <p className="text-sm text-muted-foreground">
-                              License uploaded successfully
-                            </p>
-                          )}
-                        </div>
+                        <SelectTrigger className="mt-2">
+                          <SelectValue placeholder="Select your contact preference" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        <SelectItem value="email">Email only</SelectItem>
+                        <SelectItem value="phone">Phone number only</SelectItem>
+                        <SelectItem value="both">Both email and phone</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Only show license upload when checkbox is checked */}
+              {watchInterestedInSelling && (
+                <div className="space-y-4 p-4 border rounded-md bg-muted/30">
+                  <h3 className="font-medium">Seller Information</h3>
+                  
+                  {/* License Upload */}
+                  <FormField
+                    control={form.control}
+                    name="licenseImage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Firearms License</FormLabel>
+                        <FormControl>
+                          <div className="space-y-2">
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleLicenseUpload}
+                              disabled={uploadingLicense}
+                            />
+                            <Input type="hidden" {...field} />
+                            {uploadingLicense && (
+                              <p className="text-sm text-muted-foreground">
+                                Uploading license...
+                              </p>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
 
               <Button

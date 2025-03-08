@@ -33,6 +33,7 @@ interface ListingDetails {
     username: string
     email: string | null
     phone: string | null
+    contact_preference?: "email" | "phone" | "both"
   } | null
   images: string[]
   status: string
@@ -164,11 +165,13 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
   // Function to check if the listing is featured
   async function checkIfFeatured() {
     try {
+      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('featured_listings')
         .select('*')
         .eq('listing_id', listing.id)
-        .single()
+        .gt('end_date', now)
+        .maybeSingle();
       
       if (error) {
         if (error.code !== 'PGRST116') { // PGRST116 is the error code for "no rows returned"
@@ -411,10 +414,10 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                 <CardTitle>Seller Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {listing.seller ? (
+                {userId ? (
                   <>
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold">{listing.seller.username}</p>
+                      <p className="font-semibold">{listing.seller?.username}</p>
                       {isRetailer && (
                         <Link href={`/retailers/${listing.seller_id}`}>
                           <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1 cursor-pointer">
@@ -424,7 +427,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                         </Link>
                       )}
                     </div>
-                    {listing.seller.email && (
+                    {listing.seller?.email && (listing.seller?.contact_preference === "email" || listing.seller?.contact_preference === "both" || !listing.seller?.contact_preference) && (
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-muted-foreground" />
                         <a
@@ -435,7 +438,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                         </a>
                       </div>
                     )}
-                    {listing.seller.phone && (
+                    {listing.seller?.phone && (listing.seller?.contact_preference === "phone" || listing.seller?.contact_preference === "both" || !listing.seller?.contact_preference) && (
                       <div className="flex items-center gap-2">
                         <Phone className="h-4 w-4 text-muted-foreground" />
                         <a
@@ -451,7 +454,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                   </>
                 ) : (
                   <div className="space-y-4">
-                    <div className="relative">
+                    <div className="relative min-h-[200px]">
                       <div className="blur-sm">
                         <p className="font-semibold">••••••••••</p>
                         <div className="flex items-center gap-2 mt-2">
@@ -463,7 +466,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                           <span>+356 •••• ••••</span>
                         </div>
                       </div>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80">
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
                         <Lock className="h-8 w-8 text-muted-foreground mb-2" />
                         <p className="text-sm text-center text-muted-foreground mb-4">
                           Create a verified account to view seller information

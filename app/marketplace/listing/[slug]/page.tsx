@@ -21,6 +21,7 @@ interface ListingDetails extends Listing {
     username: string;
     email: string | null;
     phone: string | null;
+    contact_preference?: "email" | "phone" | "both";
   } | null;
   images: string[];
   status: string;
@@ -66,7 +67,7 @@ export default async function ListingPage({ params }: { params: { slug: string }
         // Then get the seller info separately
         const { data: sellerData, error: sellerError } = await supabase
           .from("profiles")
-          .select('username, email, phone')
+          .select('username, email, phone, contact_preference')
           .eq('id', listingData.seller_id)
           .single();
           
@@ -125,7 +126,7 @@ export default async function ListingPage({ params }: { params: { slug: string }
     // Get the seller info separately
     const { data: sellerData, error: sellerError } = await supabase
       .from("profiles")
-      .select('username, email, phone')
+      .select('username, email, phone, contact_preference')
       .eq('id', bestMatch.seller_id)
       .single();
       

@@ -76,7 +76,8 @@ export async function POST(request: Request) {
     // Calculate start and end dates
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 7); // 7 days from now
+    endDate.setDate(endDate.getDate() + 30); // 30 days from now
+    // endDate.setMinutes(endDate.getMinutes() + 5); // 5 minutes from now - for testing
 
     // Begin transaction
     // 1. Insert into featured_listings

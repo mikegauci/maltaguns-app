@@ -675,7 +675,7 @@ export default function ProfilePage() {
               <Shield className="h-5 w-5 text-primary" />
               <span className="font-medium">Status:</span>
               <Badge variant={profile.is_seller ? "default" : "secondary"}>
-                {profile.is_seller ? "Seller" : "No license verified"}
+                {profile.is_seller ? "Verified Gun Seller" : "No license verified"}
               </Badge>
             </div>
 
