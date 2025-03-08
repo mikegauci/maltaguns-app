@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -472,22 +472,42 @@ export default function CreateFirearmsListing() {
                 <FormField
                   control={form.control}
                   name="price"
-                  render={({ field: { onChange, ...field } }) => (
+                  render={({ field: { onChange, value, ...fieldProps } }) => (
                     <FormItem>
                       <FormLabel>Price (€)</FormLabel>
                       <FormControl>
                         <Input 
-                          type="number"
-                          min="0"
-                          step="0.01"
+                          type="text" 
+                          inputMode="decimal"
+                          placeholder="Enter price"
                           onChange={(e) => {
-                            const value = e.target.value === "" ? 0 : parseFloat(e.target.value)
-                            onChange(value)
+                            // Allow empty input for typing
+                            const inputValue = e.target.value;
+                            
+                            // If empty, set to empty string in the UI but pass 0 to the form
+                            if (inputValue === "") {
+                              onChange(0);
+                              return;
+                            }
+                            
+                            // Remove leading zeros
+                            const cleanedValue = inputValue.replace(/^0+(?=\d)/, '');
+                            e.target.value = cleanedValue;
+                            
+                            // Parse as float if valid number
+                            const parsed = parseFloat(cleanedValue);
+                            if (!isNaN(parsed)) {
+                              onChange(parsed);
+                            }
                           }}
-                          {...field}
+                          value={value === 0 ? "" : value}
+                          {...fieldProps}
                         />
                       </FormControl>
                       <FormMessage />
+                      <FormDescription>
+                        Price must be at least €1
+                      </FormDescription>
                     </FormItem>
                   )}
                 />
