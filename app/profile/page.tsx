@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -35,6 +35,11 @@ import {
   Trash2,
   RefreshCw,
   X,
+  Info,
+  ArrowLeft,
+  CheckCircle,
+  Mail,
+  Phone
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -50,6 +55,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -78,6 +89,8 @@ interface Listing {
   price: number;
   status: string;
   created_at: string;
+  expires_in_days?: number;
+  is_near_expiration?: boolean;
 }
 
 interface Retailer {
@@ -125,6 +138,7 @@ export default function ProfilePage() {
   const [uploadingLicense, setUploadingLicense] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<string | null>(null);
+  const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -176,6 +190,27 @@ export default function ProfilePage() {
           console.error("Listings fetch error:", listingsError.message);
           // Continue even if there's an error
         }
+
+        // Calculate expiration days for each listing
+        const processedListings = (listingsData || []).map(listing => {
+          // Listings are valid for 30 days from creation
+          const createdDate = new Date(listing.created_at);
+          const expirationDate = new Date(createdDate);
+          expirationDate.setDate(createdDate.getDate() + 30);
+          
+          // Calculate days until expiration
+          const today = new Date();
+          const timeDiff = expirationDate.getTime() - today.getTime();
+          const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+          
+          return {
+            ...listing,
+            // If days remaining is negative, set it to 0 (already expired)
+            expires_in_days: Math.max(0, daysRemaining),
+            // Mark listings as near expiration if they have 3 days or fewer remaining
+            is_near_expiration: daysRemaining <= 3 && daysRemaining > 0
+          };
+        });
 
         // Fetch user's blog posts
         const { data: blogData, error: blogError } = await supabase
@@ -247,7 +282,7 @@ export default function ProfilePage() {
 
         // Update state with all fetched data
         setProfile(profileData);
-        setListings(listingsData || []);
+        setListings(processedListings);
         setBlogPosts(blogData || []);
         setRetailerBlogPosts(retailerPostsData);
         
@@ -269,6 +304,33 @@ export default function ProfilePage() {
 
     loadProfile();
   }, [router, form, toast]);
+
+  // Add a document click listener to close tooltip when clicking outside
+  useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      // Close tooltip when clicking outside
+      if (openTooltipId !== null) {
+        setOpenTooltipId(null);
+      }
+    }
+
+    // Add the event listener
+    document.addEventListener('click', handleDocumentClick);
+    
+    // Clean up
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, [openTooltipId]);
+
+  // Handle tooltip icon click
+  const handleTooltipClick = (event: React.MouseEvent, listingId: string) => {
+    // Stop propagation to prevent the document click handler from firing
+    event.stopPropagation();
+    
+    // Toggle tooltip: close if already open, open if closed
+    setOpenTooltipId(openTooltipId === listingId ? null : listingId);
+  };
 
   async function handleLicenseUpload(
     event: React.ChangeEvent<HTMLInputElement>
@@ -628,6 +690,56 @@ export default function ProfilePage() {
         title: "Delete failed",
         description:
           error instanceof Error ? error.message : "Failed to delete post",
+      });
+    }
+  }
+
+  async function handleRenewListing(listingId: string): Promise<void> {
+    try {
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+
+      // Update the listing's created_at to now, which will reset the 30-day expiration
+      const { error: updateError } = await supabase
+        .from("listings")
+        .update({ 
+          created_at: new Date().toISOString(),
+          // If it was inactive, make it active again
+          status: "active"
+        })
+        .eq("id", listingId)
+        .eq("seller_id", userData.user.id);
+
+      if (updateError) throw updateError;
+
+      // Update the UI
+      setListings((prevListings) =>
+        prevListings.map((listing) =>
+          listing.id === listingId 
+            ? { 
+                ...listing, 
+                created_at: new Date().toISOString(),
+                expires_in_days: 30,  // Reset to 30 days
+                is_near_expiration: false,
+                status: "active"
+              } 
+            : listing
+        )
+      );
+
+      toast({
+        title: "Listing renewed",
+        description: "Your listing has been renewed for another 30 days.",
+      });
+    } catch (error) {
+      console.error("Error renewing listing:", error);
+      toast({
+        variant: "destructive",
+        title: "Renewal failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to renew listing.",
       });
     }
   }
@@ -1106,6 +1218,25 @@ export default function ProfilePage() {
                               Created{" "}
                               {format(new Date(listing.created_at), "PPP")}
                             </p>
+                            {/* Add expiration info with tooltip */}
+                            {typeof listing.expires_in_days === 'number' && (
+                              <p className="text-sm text-red-500 flex items-center">
+                                Expires in {listing.expires_in_days} days
+                                <TooltipProvider>
+                                  <Tooltip open={openTooltipId === listing.id}>
+                                    <TooltipTrigger asChild>
+                                      <Info 
+                                        className="h-4 w-4 ml-1 cursor-pointer" 
+                                        onClick={(e) => handleTooltipClick(e, listing.id)}
+                                      />
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs p-3">
+                                      <p>Listings are valid for 30 days. You can renew a listing up to 3 days before it expires. Once your listing expires, you will have to relist the item.</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </p>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -1125,6 +1256,17 @@ export default function ProfilePage() {
                             <option value="inactive">Inactive</option>
                           </select>
                           <div className="flex gap-2">
+                            {/* Show renew button for near-expiration listings */}
+                            {listing.is_near_expiration && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRenewListing(listing.id)}
+                                className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200"
+                              >
+                                Renew listing
+                              </Button>
+                            )}
                             <Link
                               href={`/marketplace/listing/${slugify(listing.title)}`}
                             >
