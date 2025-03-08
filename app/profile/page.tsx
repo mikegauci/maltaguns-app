@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -42,6 +42,14 @@ import { supabase } from "@/lib/supabase";
 import { Database } from "@/lib/database.types";
 import Link from "next/link";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -104,6 +112,7 @@ function slugify(text: string) {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -114,6 +123,8 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingLicense, setUploadingLicense] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [listingToDelete, setListingToDelete] = useState<string | null>(null);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -457,6 +468,68 @@ export default function ProfilePage() {
             : "Failed to update listing status.",
       });
     }
+  }
+
+  async function handleDeleteListing(listingId: string) {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        toast({
+          variant: "destructive",
+          title: "Unauthorized",
+          description: "You must be logged in to delete a listing"
+        });
+        return;
+      }
+
+      // Use the server-side API for deletion
+      const response = await fetch("/api/listings/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listingId,
+          userId: session.session.user.id
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete listing");
+      }
+
+      // Update the UI by removing the deleted listing
+      setListings((prevListings) =>
+        prevListings.filter((listing) => listing.id !== listingId)
+      );
+
+      toast({
+        title: "Listing deleted",
+        description: "Your listing has been deleted successfully"
+      });
+      
+      // Close the dialog
+      setDeleteDialogOpen(false);
+      setListingToDelete(null);
+    } catch (error) {
+      console.error("Error deleting listing:", error);
+      toast({
+        variant: "destructive",
+        title: "Delete failed",
+        description: error instanceof Error ? error.message : "Failed to delete listing"
+      });
+      
+      // Close the dialog even on error
+      setDeleteDialogOpen(false);
+      setListingToDelete(null);
+    }
+  }
+
+  // Function to open the delete confirmation dialog
+  function confirmDeleteListing(listingId: string) {
+    setListingToDelete(listingId);
+    setDeleteDialogOpen(true);
   }
 
   async function handleRemoveLicense() {
@@ -1085,6 +1158,15 @@ export default function ProfilePage() {
                                 Sold
                               </Badge>
                             )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => confirmDeleteListing(listing.id)}
+                              className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -1096,6 +1178,33 @@ export default function ProfilePage() {
           </Card>
         )}
       </div>
+
+      {/* Add the delete confirmation dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Listing</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this listing? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => listingToDelete && handleDeleteListing(listingToDelete)}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Listing
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

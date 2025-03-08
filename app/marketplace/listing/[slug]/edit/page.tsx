@@ -13,7 +13,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Trash2 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
@@ -152,6 +160,7 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const form = useForm<ListingForm>({
     resolver: zodResolver(listingSchema),
@@ -392,6 +401,62 @@ export default function EditListing({ params }: { params: { slug: string } }) {
     }
   }
 
+  async function handleDeleteListing() {
+    if (!listingId) return
+
+    try {
+      // Get the current user session
+      const { data } = await supabase.auth.getSession()
+      if (!data?.session?.user?.id) {
+        toast({
+          variant: "destructive",
+          title: "Unauthorized",
+          description: "You must be logged in to delete a listing"
+        })
+        return
+      }
+
+      // Instead of deleting directly, use the server-side API
+      const response = await fetch("/api/listings/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listingId,
+          userId: data.session.user.id
+        }),
+      });
+
+      // Handle the response from the API
+      if (!response.ok) {
+        // Get the detailed error message from the API response
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete listing");
+      }
+
+      // Success - show toast and redirect
+      toast({
+        title: "Listing deleted",
+        description: "Your listing has been deleted successfully"
+      })
+
+      // Redirect to marketplace
+      router.push("/profile")
+    } catch (error) {
+      console.error("Error deleting listing:", error)
+      toast({
+        variant: "destructive",
+        title: "Delete failed",
+        description: error instanceof Error 
+          ? error.message 
+          : "Failed to delete listing. Please try again or contact support if the issue persists."
+      })
+    } finally {
+      setDeleteDialogOpen(false)
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <Button 
@@ -405,10 +470,24 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50">
-          <CardTitle className="text-2xl">Edit Listing</CardTitle>
-          <CardDescription>
-            Update your listing information
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-2xl">Edit Listing</CardTitle>
+              <CardDescription>
+                Update your listing information
+              </CardDescription>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setDeleteDialogOpen(true)}
+              className="flex items-center gap-2"
+              disabled={isLoading || isUploading}
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Listing
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-6">
           {isLoading ? (
@@ -680,6 +759,33 @@ export default function EditListing({ params }: { params: { slug: string } }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Listing</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this listing? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteListing}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Listing
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
