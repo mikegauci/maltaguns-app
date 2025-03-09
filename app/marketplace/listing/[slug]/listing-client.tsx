@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,6 +13,8 @@ import { supabase } from "@/lib/supabase"
 import { FeatureCreditDialog } from "@/components/feature-credit-dialog"
 import { ReportListingDialog } from "@/components/report-listing-dialog"
 import { AuthChangeEvent, Session } from '@supabase/supabase-js'
+import { AutoFeatureHandler } from "../../auto-feature-handler"
+import { toast } from "sonner"
 
 // Default image to use when no images are provided
 const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
@@ -133,6 +135,7 @@ function slugify(text: string) {
 
 export default function ListingClient({ listing }: { listing: ListingDetails }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isFeatured, setIsFeatured] = useState(false)
   const [showFeatureDialog, setShowFeatureDialog] = useState(false)
@@ -140,6 +143,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
   const [isLoading, setIsLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [isRetailer, setIsRetailer] = useState(false)
+  const [showReportDialog, setShowReportDialog] = useState(false)
 
   // Use the first image from the listing, or the default if none are available
   const images = listing.images.length > 0 ? listing.images : [DEFAULT_LISTING_IMAGE]
@@ -167,24 +171,20 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
     try {
       const now = new Date().toISOString();
       const { data, error } = await supabase
-        .from('featured_listings')
-        .select('*')
-        .eq('listing_id', listing.id)
-        .gt('end_date', now)
+        .from("featured_listings")
+        .select("*")
+        .eq("listing_id", listing.id)
+        .gt("end_date", now)
         .maybeSingle();
-      
+
       if (error) {
-        if (error.code !== 'PGRST116') { // PGRST116 is the error code for "no rows returned"
-          console.error("Error checking featured status:", error)
-        }
-        setIsFeatured(false)
-        return
+        console.error("Error checking featured status:", error);
+        return;
       }
-      
-      setIsFeatured(!!data)
+
+      setIsFeatured(!!data);
     } catch (error) {
-      console.error("Error checking featured status:", error)
-      setIsFeatured(false)
+      console.error("Unexpected error checking featured status:", error);
     }
   }
 
@@ -226,7 +226,23 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
     
     // Check if seller is a retailer
     checkIfRetailer()
-  }, [listing.id, listing.seller_id])
+    
+    // Check for success parameter to show notification
+    const success = searchParams.get('success')
+    if (success === 'true') {
+      // Show success toast
+      toast.success("Payment successful!", {
+        description: "Your listing is now featured and will appear at the top of search results for 30 days.",
+      })
+      
+      // Clean up the URL parameter
+      const newUrl = window.location.pathname
+      window.history.replaceState({}, document.title, newUrl)
+      
+      // Refresh listing data
+      checkIfFeatured()
+    }
+  }, [listing.id, listing.seller_id, searchParams])
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -246,6 +262,36 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
   }
+
+  // Update the handleFeatureListing function
+  const handleFeatureListing = () => {
+    if (!userId) {
+      // Redirect to login page instead of using signIn
+      router.push('/login');
+      return;
+    }
+    
+    // Open the dialog, making sure we pass the listing ID
+    setShowFeatureDialog(true);
+  }
+
+  // Add useEffect to check URL params for auto-featuring after checkout
+  useEffect(() => {
+    // Check if we should auto-feature the listing after checkout success
+    const searchParams = new URLSearchParams(window.location.search);
+    const success = searchParams.get('success');
+    const autoFeature = searchParams.get('autoFeature');
+    
+    if (success === 'true' && autoFeature === 'true' && userId && !isFeatured) {
+      setShowFeatureDialog(true);
+    }
+    
+    // Clean up the URL parameters after processing
+    if (success || autoFeature) {
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [userId, isFeatured]);
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -275,7 +321,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
               {!isFeatured && (
                 <Button
                   variant="default"
-                  onClick={() => setShowFeatureDialog(true)}
+                  onClick={handleFeatureListing}
                 >
                   <Star className="h-4 w-4 mr-2" />
                   Feature Listing
@@ -488,6 +534,9 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
           </div>
         </div>
       </div>
+
+      {/* Add the AutoFeatureHandler with the specific listing ID */}
+      <AutoFeatureHandler listingId={listing.id} />
     </div>
   )
 }

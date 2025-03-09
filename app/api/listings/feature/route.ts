@@ -174,4 +174,95 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const listingId = searchParams.get('listingId');
+    const userId = searchParams.get('userId');
+
+    if (!listingId || !userId) {
+      return NextResponse.json(
+        { error: "Missing required parameters" },
+        { status: 400 }
+      );
+    }
+
+    console.log("[FEATURE API] Removing feature from listing:", listingId, "for user:", userId);
+
+    // Check if this listing is featured by this user
+    const { data: existingFeature, error: checkError } = await supabaseAdmin
+      .from("featured_listings")
+      .select("*")
+      .eq("listing_id", listingId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error("[FEATURE API] Error checking existing feature:", checkError);
+      return NextResponse.json(
+        { error: "Failed to check if listing is featured" },
+        { status: 500 }
+      );
+    }
+
+    if (!existingFeature) {
+      console.error("[FEATURE API] Listing is not featured by this user");
+      return NextResponse.json(
+        { error: "This listing is not featured" },
+        { status: 400 }
+      );
+    }
+
+    // Delete the featured listing entry
+    const { error: deleteError } = await supabaseAdmin
+      .from("featured_listings")
+      .delete()
+      .eq("listing_id", listingId)
+      .eq("user_id", userId);
+
+    if (deleteError) {
+      console.error("[FEATURE API] Error removing feature:", deleteError);
+      return NextResponse.json(
+        { error: "Failed to remove feature", details: deleteError },
+        { status: 500 }
+      );
+    }
+
+    // Don't refund the credit as this is just removing the feature, not a refund
+
+    // Record the action in the transaction log
+    try {
+      const { error: transactionError } = await supabaseAdmin
+        .from("credit_transactions")
+        .insert({
+          user_id: userId,
+          amount: 0,
+          credit_type: "featured",
+          status: "completed",
+          description: `Removed feature from listing ${listingId}`,
+          type: "info"
+        });
+
+      if (transactionError) {
+        console.error("[FEATURE API] Error recording transaction:", transactionError);
+        // Non-critical error, continue
+      }
+    } catch (error) {
+      console.error("[FEATURE API] Error recording transaction:", error);
+      // Non-critical error, continue with the process
+    }
+
+    return NextResponse.json({ 
+      success: true,
+      message: "Feature removed successfully"
+    });
+  } catch (error) {
+    console.error("[FEATURE API] Unexpected error removing feature:", error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
 } 

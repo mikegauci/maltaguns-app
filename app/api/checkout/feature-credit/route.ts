@@ -9,10 +9,27 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
 // Price ID for featured listing
 const FEATURE_LISTING_PRICE_ID = "price_1QydHBLT4uq5YHtWYofw182m";
 
+// Helper function to generate a slug from a string
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/--+/g, '-');
+}
+
 export async function POST(request: Request) {
   try {
-    const { userId } = await request.json();
-    console.log("[CHECKOUT] Creating feature credit checkout session for user:", userId);
+    const { userId, listingId } = await request.json();
+    
+    if (!userId || !listingId) {
+      return NextResponse.json(
+        { error: "Missing required fields: userId and listingId" },
+        { status: 400 }
+      );
+    }
+    
+    console.log("[CHECKOUT] Creating feature checkout for listing:", listingId, "by user:", userId);
 
     // Verify that the user exists in the profiles table
     const { data: profile, error: profileError } = await supabase
@@ -29,10 +46,31 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("[CHECKOUT] User verified:", profile);
+    // Verify the listing exists and belongs to the user and get its title for the slug
+    const { data: listing, error: listingError } = await supabase
+      .from("listings")
+      .select("id, title")
+      .eq("id", listingId)
+      .eq("seller_id", userId)
+      .single();
+      
+    if (listingError) {
+      console.error("[CHECKOUT] Error verifying listing:", listingError);
+      return NextResponse.json(
+        { error: "Listing not found or does not belong to user" },
+        { status: 400 }
+      );
+    }
+
+    console.log("[CHECKOUT] User and listing verified");
+    
+    // Generate a slug from the listing title
+    const slug = slugify(listing.title);
 
     // Create Stripe checkout session
     console.log("[CHECKOUT] Creating Stripe checkout session");
+    const successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/marketplace/listing/${slug}?success=true`;
+      
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -42,13 +80,12 @@ export async function POST(request: Request) {
         },
       ],
       mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/marketplace?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/marketplace?canceled=true`,
-      customer_email: profile.email, // Add customer email for better identification
+      success_url: successUrl,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/marketplace/listing/${slug}?canceled=true`,
+      customer_email: profile.email,
       metadata: {
         userId: userId,
-        creditType: "featured",
-        amount: 1,
+        listingId: listingId,
       },
     });
 
@@ -63,7 +100,7 @@ export async function POST(request: Request) {
         amount: 1,
         status: "pending",
         credit_type: "featured",
-        description: "Purchase of 1 feature credit",
+        description: `Feature listing purchase for listing ${listingId}`,
         stripe_payment_id: session.id
       });
       

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Sun as Gun, Package, Star } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
+import { AutoFeatureHandler } from "./auto-feature-handler"
 
 interface Listing {
   id: string
@@ -121,64 +122,66 @@ export default function Marketplace() {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
   const [regularListings, setRegularListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchListings() {
       try {
-        // Get current date
-        const now = new Date()
-        
-        // Calculate date 7 days ago
-        const sevenDaysAgo = new Date()
-        sevenDaysAgo.setDate(now.getDate() - 7)
-        
-        // Format for Supabase query
-        const sevenDaysAgoStr = sevenDaysAgo.toISOString()
-        
-        // Fetch active listings and sold listings less than 7 days old
-        const { data, error } = await supabase
-          .from('listings')
-          .select('*')
-          .or(`status.eq.active,and(status.eq.sold,updated_at.gt.${sevenDaysAgoStr})`)
-          .order('created_at', { ascending: false })
+        setIsLoading(true)
+        setError(null)
 
-        if (error) throw error
+        // Fetch listings from Supabase
+        const { data: listingsData, error: listingsError } = await supabase
+          .from("listings")
+          .select("*")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(50)
+
+        if (listingsError) {
+          console.error("Error fetching listings:", listingsError)
+          setError("Failed to load listings")
+          return
+        }
+
+        // Get current date for featured check
+        const now = new Date().toISOString();
         
-        // Filter out inactive listings
-        const filteredListings = data ? data.filter(listing => listing.status !== 'inactive') : []
-        
-        // Fetch featured listings
-        const { data: featuredData, error: featuredError } = await supabase
-          .from('featured_listings')
-          .select('listing_id')
-          .gt('end_date', new Date().toISOString())
-        
-        if (featuredError) throw featuredError
-        
-        // Create a set of featured listing IDs for quick lookup
-        const featuredIds = new Set(featuredData?.map(item => item.listing_id) || [])
-        
-        // Separate featured and regular listings
-        const featured: Listing[] = []
-        const regular: Listing[] = []
-        
-        filteredListings.forEach(listing => {
-          // Add to featured if it's in the featured IDs set
-          if (featuredIds.has(listing.id)) {
-            featured.push({
-              ...listing,
-              is_featured: true
-            })
-          } 
+        // Fetch all active featured listings
+        const { data: featuredListings, error: featuredError } = await supabase
+          .from("featured_listings")
+          .select("listing_id")
+          .gt("end_date", now);
           
-          // Always add to regular listings - this ensures a listing appears in both sections if featured
-          regular.push(listing)
-        })
+        if (featuredError) {
+          console.error("Error fetching featured listings:", featuredError)
+          // Continue without featured data
+        }
         
-        setFeaturedListings(featured)
-        setRegularListings(regular)
+        // Create a set of featured listing IDs for easy lookup
+        const featuredSet = new Set(featuredListings?.map(item => item.listing_id) || []);
+        
+        // Mark listings as featured if they're in the featured set
+        const processedListings = (listingsData || []).map(listing => ({
+          ...listing,
+          is_featured: featuredSet.has(listing.id)
+        }));
+        
+        // Sort listings: featured first, then by created date (newest first)
+        const sortedListings = [...processedListings].sort((a, b) => {
+          // Featured listings come before non-featured
+          if (a.is_featured && !b.is_featured) return -1;
+          if (!a.is_featured && b.is_featured) return 1;
+          
+          // Otherwise maintain default sort order (by created_at, newest first)
+          return 0;
+        });
+
+        setFeaturedListings(sortedListings.filter(l => l.is_featured))
+        setRegularListings(sortedListings.filter(l => !l.is_featured))
       } catch (error) {
-        console.error('Error fetching listings:', error)
+        console.error("Unexpected error fetching listings:", error)
+        setError("An unexpected error occurred")
       } finally {
         setIsLoading(false)
       }
@@ -309,6 +312,9 @@ export default function Marketplace() {
           </Link>
         </div>
 
+        {/* Add the AutoFeatureHandler with no specific listingId */}
+        <AutoFeatureHandler />
+
         {/* Category Navigation */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           {categories.map((category) => (
@@ -351,6 +357,23 @@ export default function Marketplace() {
               </Card>
             ))}
           </div>
+        ) : error ? (
+          <Card className="p-6 text-center">
+            <CardHeader>
+              <CardTitle>Error</CardTitle>
+              <CardDescription>
+                {error}
+              </CardDescription>
+            </CardHeader>
+            <CardFooter className="justify-center">
+              <Link href="/marketplace/create">
+                <Button>
+                  <Gun className="mr-2 h-4 w-4" />
+                  Create Listing
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
         ) : featuredListings.length === 0 && regularListings.length === 0 ? (
           <Card className="p-6 text-center">
             <CardHeader>

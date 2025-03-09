@@ -144,6 +144,8 @@ export default function ProfilePage() {
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [listingToFeature, setListingToFeature] = useState<string | null>(null);
+  const [removeFeatureDialogOpen, setRemoveFeatureDialogOpen] = useState(false);
+  const [listingToRemoveFeature, setListingToRemoveFeature] = useState<string | null>(null);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -187,7 +189,7 @@ export default function ProfilePage() {
         // Fetch user's listings
         const { data: listingsData, error: listingsError } = await supabase
           .from("listings")
-          .select("id, title, type, category, price, status, created_at")
+          .select("*")
           .eq("seller_id", userId)
           .order("created_at", { ascending: false });
 
@@ -196,31 +198,38 @@ export default function ProfilePage() {
           // Continue even if there's an error
         }
 
-        // Just get the basic listings without expiration calculation
-        const processedListings = listingsData || [];
-
-        // Fetch featured listings to mark which listings are featured and get expiration dates
-        const { data: featuredData, error: featuredError } = await supabase
+        // Fetch featured listings for the user to determine which listings are featured
+        const now = new Date().toISOString();
+        const { data: featuredListings, error: featuredError } = await supabase
           .from("featured_listings")
           .select("listing_id, end_date")
-          .gt("end_date", new Date().toISOString());
-
+          .eq("user_id", userId)
+          .gt("end_date", now);
+        
         if (featuredError) {
-          console.error("Featured listings fetch error:", featuredError.message);
-          // Continue even if there's an error
+          console.error("Error fetching featured listings:", featuredError.message);
+          // Continue without featured data if there's an error
         }
-
-        // Add feature status and expiration data to listings
-        const listingsWithFeatures = processedListings.map(listing => {
-          // Find if this listing is featured
-          const featuredItem = featuredData?.find(item => item.listing_id === listing.id);
+        
+        // Create a map of featured listing IDs to end dates for quick lookup
+        const featuredMap = new Map();
+        
+        if (featuredListings) {
+          featuredListings.forEach(featured => {
+            featuredMap.set(featured.listing_id, featured.end_date);
+          });
+        }
+        
+        // Process listings to add feature status and expiration data
+        const listingsWithFeatures = (listingsData || []).map(listing => {
+          const featuredEndDate = featuredMap.get(listing.id);
           
-          if (featuredItem) {
-            // If featured, calculate days until expiration
-            const endDate = new Date(featuredItem.end_date);
+          if (featuredEndDate) {
+            // Calculate days until expiration
+            const endDate = new Date(featuredEndDate);
             const today = new Date();
-            const timeDiff = endDate.getTime() - today.getTime();
-            const expiresInDays = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+            const diffTime = endDate.getTime() - today.getTime();
+            const expiresInDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
             return {
               ...listing,
@@ -245,8 +254,10 @@ export default function ProfilePage() {
           
           // For featured listings, sort by expiration date (ascending)
           if (a.is_featured && b.is_featured) {
-            // If both are featured, sort by expiration days
-            return (a.expires_in_days || 0) - (b.expires_in_days || 0);
+            // Use a proper type guard with nullish coalescing
+            const aExpires = 'expires_in_days' in a ? a.expires_in_days : 0;
+            const bExpires = 'expires_in_days' in b ? b.expires_in_days : 0;
+            return aExpires - bExpires;
           }
           
           // For non-featured listings, keep original order (by created_at)
@@ -795,6 +806,51 @@ export default function ProfilePage() {
     }
   }
 
+  async function handleRemoveFeature(listingId: string): Promise<void> {
+    try {
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+
+      const response = await fetch(`/api/listings/feature?listingId=${listingId}&userId=${userData.user.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to remove feature");
+      }
+
+      // Update UI by removing feature status from this listing
+      setListings((prevListings) =>
+        prevListings.map((listing) =>
+          listing.id === listingId 
+            ? { 
+                ...listing, 
+                is_featured: false,
+                expires_in_days: undefined,
+                is_near_expiration: false
+              } 
+            : listing
+        )
+      );
+
+      toast({
+        title: "Feature removed",
+        description: "Your listing is no longer featured.",
+      });
+    } catch (error) {
+      console.error("Error removing feature:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to remove feature",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to remove feature from listing.",
+      });
+    }
+  }
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -1269,9 +1325,22 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="font-semibold text-lg">{listing.title}</h3>
                               {listing.is_featured && (
-                                <Badge className="bg-red-500 text-white hover:bg-red-600 flex items-center">
-                                  <Star className="h-3 w-3 mr-1" /> Featured
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge className="bg-red-500 text-white hover:bg-red-600 flex items-center">
+                                    <Star className="h-3 w-3 mr-1" /> Featured
+                                  </Badge>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 px-2 border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => {
+                                      setListingToRemoveFeature(listing.id);
+                                      setRemoveFeatureDialogOpen(true);
+                                    }}
+                                  >
+                                    <X className="h-3 w-3 mr-1" /> Remove
+                                  </Button>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1416,6 +1485,40 @@ export default function ProfilePage() {
           onSuccess={handleRenewalSuccess}
         />
       )}
+
+      {/* Remove Feature Confirmation Dialog */}
+      <Dialog open={removeFeatureDialogOpen} onOpenChange={setRemoveFeatureDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Feature Status</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove the featured status from this listing? 
+              This will not refund your feature credit and your listing will no longer appear at the top of search results.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4 flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setRemoveFeatureDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => {
+                if (listingToRemoveFeature) {
+                  handleRemoveFeature(listingToRemoveFeature);
+                  setRemoveFeatureDialogOpen(false);
+                  setListingToRemoveFeature(null);
+                }
+              }}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Remove Feature
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
