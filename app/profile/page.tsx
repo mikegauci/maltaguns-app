@@ -39,7 +39,8 @@ import {
   ArrowLeft,
   CheckCircle,
   Mail,
-  Phone
+  Phone,
+  Star
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -61,6 +62,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { FeatureCreditDialog } from "@/components/feature-credit-dialog";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -91,6 +93,7 @@ interface Listing {
   created_at: string;
   expires_in_days?: number;
   is_near_expiration?: boolean;
+  is_featured?: boolean;
 }
 
 interface Retailer {
@@ -139,6 +142,8 @@ export default function ProfilePage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [listingToDelete, setListingToDelete] = useState<string | null>(null);
   const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
+  const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
+  const [listingToFeature, setListingToFeature] = useState<string | null>(null);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -191,25 +196,61 @@ export default function ProfilePage() {
           // Continue even if there's an error
         }
 
-        // Calculate expiration days for each listing
-        const processedListings = (listingsData || []).map(listing => {
-          // Listings are valid for 30 days from creation
-          const createdDate = new Date(listing.created_at);
-          const expirationDate = new Date(createdDate);
-          expirationDate.setDate(createdDate.getDate() + 30);
+        // Just get the basic listings without expiration calculation
+        const processedListings = listingsData || [];
+
+        // Fetch featured listings to mark which listings are featured and get expiration dates
+        const { data: featuredData, error: featuredError } = await supabase
+          .from("featured_listings")
+          .select("listing_id, end_date")
+          .gt("end_date", new Date().toISOString());
+
+        if (featuredError) {
+          console.error("Featured listings fetch error:", featuredError.message);
+          // Continue even if there's an error
+        }
+
+        // Add feature status and expiration data to listings
+        const listingsWithFeatures = processedListings.map(listing => {
+          // Find if this listing is featured
+          const featuredItem = featuredData?.find(item => item.listing_id === listing.id);
           
-          // Calculate days until expiration
-          const today = new Date();
-          const timeDiff = expirationDate.getTime() - today.getTime();
-          const daysRemaining = Math.ceil(timeDiff / (1000 * 3600 * 24));
+          if (featuredItem) {
+            // If featured, calculate days until expiration
+            const endDate = new Date(featuredItem.end_date);
+            const today = new Date();
+            const timeDiff = endDate.getTime() - today.getTime();
+            const expiresInDays = Math.max(0, Math.ceil(timeDiff / (1000 * 3600 * 24)));
+            
+            return {
+              ...listing,
+              is_featured: true,
+              expires_in_days: expiresInDays,
+              is_near_expiration: expiresInDays <= 3 && expiresInDays > 0
+            };
+          }
           
+          // If not featured, don't add expiration data
           return {
             ...listing,
-            // If days remaining is negative, set it to 0 (already expired)
-            expires_in_days: Math.max(0, daysRemaining),
-            // Mark listings as near expiration if they have 3 days or fewer remaining
-            is_near_expiration: daysRemaining <= 3 && daysRemaining > 0
+            is_featured: false
           };
+        });
+
+        // Sort listings: featured first, then by expiration date (soonest first)
+        const sortedListings = [...listingsWithFeatures].sort((a, b) => {
+          // Featured listings come before non-featured
+          if (a.is_featured && !b.is_featured) return -1;
+          if (!a.is_featured && b.is_featured) return 1;
+          
+          // For featured listings, sort by expiration date (ascending)
+          if (a.is_featured && b.is_featured) {
+            // If both are featured, sort by expiration days
+            return (a.expires_in_days || 0) - (b.expires_in_days || 0);
+          }
+          
+          // For non-featured listings, keep original order (by created_at)
+          return 0;
         });
 
         // Fetch user's blog posts
@@ -282,7 +323,7 @@ export default function ProfilePage() {
 
         // Update state with all fetched data
         setProfile(profileData);
-        setListings(processedListings);
+        setListings(sortedListings);
         setBlogPosts(blogData || []);
         setRetailerBlogPosts(retailerPostsData);
         
@@ -695,33 +736,40 @@ export default function ProfilePage() {
   }
 
   async function handleRenewListing(listingId: string): Promise<void> {
+    // Open the feature credit dialog and set the listing to feature
+    setListingToFeature(listingId);
+    setFeatureDialogOpen(true);
+  }
+
+  // Handle successful renewal after payment
+  async function handleRenewalSuccess(): Promise<void> {
     try {
+      if (!listingToFeature) return;
+      
       const { data: userData, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
 
-      // Update the listing's created_at to now, which will reset the 30-day expiration
+      // Update the listing's feature end_date to 30 days from now
+      const newEndDate = new Date();
+      newEndDate.setDate(newEndDate.getDate() + 30);
+      
       const { error: updateError } = await supabase
-        .from("listings")
+        .from("featured_listings")
         .update({ 
-          created_at: new Date().toISOString(),
-          // If it was inactive, make it active again
-          status: "active"
+          end_date: newEndDate.toISOString()
         })
-        .eq("id", listingId)
-        .eq("seller_id", userData.user.id);
+        .eq("listing_id", listingToFeature);
 
       if (updateError) throw updateError;
 
       // Update the UI
       setListings((prevListings) =>
         prevListings.map((listing) =>
-          listing.id === listingId 
+          listing.id === listingToFeature 
             ? { 
                 ...listing, 
-                created_at: new Date().toISOString(),
                 expires_in_days: 30,  // Reset to 30 days
-                is_near_expiration: false,
-                status: "active"
+                is_near_expiration: false
               } 
             : listing
         )
@@ -729,8 +777,11 @@ export default function ProfilePage() {
 
       toast({
         title: "Listing renewed",
-        description: "Your listing has been renewed for another 30 days.",
+        description: "Your listing has been featured for another 30 days.",
       });
+      
+      // Reset state
+      setListingToFeature(null);
     } catch (error) {
       console.error("Error renewing listing:", error);
       toast({
@@ -1205,111 +1256,118 @@ export default function ProfilePage() {
                 {listings.map((listing) => (
                   <Card key={listing.id}>
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
+                      {/* Top section: Title, type icon, and price */}
+                      <div className="flex justify-between items-start mb-3">
+                        {/* Left: Title and icon */}
                         <div className="flex items-center gap-2">
                           {listing.type === "firearms" ? (
-                            <Gun className="h-4 w-4" />
+                            <Gun className="h-5 w-5" />
                           ) : (
-                            <Package className="h-4 w-4" />
+                            <Package className="h-5 w-5" />
                           )}
                           <div>
-                            <h3 className="font-semibold">{listing.title}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Created{" "}
-                              {format(new Date(listing.created_at), "PPP")}
-                            </p>
-                            {/* Add expiration info with tooltip */}
-                            {typeof listing.expires_in_days === 'number' && (
-                              <p className={`text-sm ${listing.is_near_expiration ? 'text-red-500' : 'text-gray-400'} flex items-center`}>
-                                Expires in {listing.expires_in_days} days
-                                <TooltipProvider>
-                                  <Tooltip open={openTooltipId === listing.id}>
-                                    <TooltipTrigger asChild>
-                                      <Info 
-                                        className="h-4 w-4 ml-1 text-black cursor-pointer transition-transform hover:scale-125" 
-                                        onClick={(e) => handleTooltipClick(e, listing.id)}
-                                      />
-                                    </TooltipTrigger>
-                                    <TooltipContent className="max-w-xs p-3">
-                                      <p>Listings are valid for 30 days. You can renew a listing up to 3 days before it expires. Once your listing expires, you will have to relist the item.</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </p>
-                            )}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold text-lg">{listing.title}</h3>
+                              {listing.is_featured && (
+                                <Badge className="bg-red-500 text-white hover:bg-red-600 flex items-center">
+                                  <Star className="h-3 w-3 mr-1" /> Featured
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <Badge>{formatPrice(listing.price)}</Badge>
+                        {/* Right: Price */}
+                        <Badge className="text-base px-3 py-1">{formatPrice(listing.price)}</Badge>
+                      </div>
+                      
+                      {/* Middle section: Creation date and expiration for featured */}
+                      <div className="mb-4">
+                        <div className="text-sm text-muted-foreground">
+                          Created {format(new Date(listing.created_at), "PPP")}
+                        </div>
+                        {/* Expiration info with tooltip, only for featured listings */}
+                        {listing.is_featured && typeof listing.expires_in_days === 'number' && (
+                          <p className={`text-sm ${listing.is_near_expiration ? 'text-red-500' : 'text-gray-500'} flex items-center mt-1`}>
+                            Expires in {listing.expires_in_days} days
+                            <TooltipProvider>
+                              <Tooltip open={openTooltipId === listing.id}>
+                                <TooltipTrigger asChild>
+                                  <Info 
+                                    className="h-4 w-4 ml-1 text-black cursor-pointer transition-transform hover:scale-125" 
+                                    onClick={(e) => handleTooltipClick(e, listing.id)}
+                                  />
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-xs p-3">
+                                  <p>Featured listings appear at the top of search results for the specified number of days. After expiration, your listing will still be visible but not prominently featured.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </p>
+                        )}
+                      </div>
+                      
+                      {/* Bottom section: Action buttons and status dropdown */}
+                      <div className="mt-4">
+                        <div className="flex flex-wrap items-center gap-2">
+                          {/* Show renew button for near-expiration listings */}
+                          {listing.is_near_expiration && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRenewListing(listing.id)}
+                              className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200"
+                            >
+                              Renew listing
+                            </Button>
+                          )}
+                          
+                          {/* Status dropdown */}
                           <select
                             value={listing.status}
-                            onChange={(e) =>
-                              handleListingStatusChange(
-                                listing.id,
-                                e.target.value
-                              )
-                            }
-                            className="text-sm border rounded px-2 py-1"
+                            onChange={(e) => handleListingStatusChange(listing.id, e.target.value)}
+                            className="text-sm border rounded h-9 px-3"
                           >
                             <option value="active">Active</option>
                             <option value="sold">Sold</option>
                             <option value="inactive">Inactive</option>
                           </select>
-                          <div className="flex gap-2">
-                            {/* Show renew button for near-expiration listings */}
-                            {listing.is_near_expiration && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRenewListing(listing.id)}
-                                className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200"
-                              >
-                                Renew listing
-                              </Button>
-                            )}
-                            <Link
-                              href={`/marketplace/listing/${slugify(listing.title)}`}
-                            >
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-2" />
-                                View
-                              </Button>
-                            </Link>
-                            {listing.status === "sold" ? (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled
-                                className="opacity-50 cursor-not-allowed"
-                              >
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                            ) : (
-                              <Link
-                                href={`/marketplace/listing/${slugify(listing.title)}/edit`}
-                              >
-                                <Button variant="outline" size="sm">
-                                  <Pencil className="h-4 w-4 mr-2" />
-                                  Edit
-                                </Button>
-                              </Link>
-                            )}
-                            {listing.status === "sold" && (
-                              <Badge variant="destructive" className="ml-2">
-                                Sold
-                              </Badge>
-                            )}
+                          
+                          {/* Action buttons */}
+                          <Link href={`/marketplace/listing/${slugify(listing.title)}`}>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Button>
+                          </Link>
+                          
+                          {listing.status === "sold" ? (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => confirmDeleteListing(listing.id)}
-                              className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                              disabled
+                              className="opacity-50 cursor-not-allowed"
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
                             </Button>
-                          </div>
+                          ) : (
+                            <Link href={`/marketplace/listing/${slugify(listing.title)}/edit`}>
+                              <Button variant="outline" size="sm">
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button>
+                            </Link>
+                          )}
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => confirmDeleteListing(listing.id)}
+                            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -1347,6 +1405,17 @@ export default function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Feature Credit Dialog for renewals */}
+      {listingToFeature && (
+        <FeatureCreditDialog
+          open={featureDialogOpen}
+          onOpenChange={setFeatureDialogOpen}
+          userId={profile?.id || ""}
+          listingId={listingToFeature}
+          onSuccess={handleRenewalSuccess}
+        />
+      )}
     </div>
   );
 }
