@@ -1220,13 +1220,13 @@ export default function ProfilePage() {
                             </p>
                             {/* Add expiration info with tooltip */}
                             {typeof listing.expires_in_days === 'number' && (
-                              <p className="text-sm text-red-500 flex items-center">
+                              <p className={`text-sm ${listing.is_near_expiration ? 'text-red-500' : 'text-gray-400'} flex items-center`}>
                                 Expires in {listing.expires_in_days} days
                                 <TooltipProvider>
                                   <Tooltip open={openTooltipId === listing.id}>
                                     <TooltipTrigger asChild>
                                       <Info 
-                                        className="h-4 w-4 ml-1 cursor-pointer" 
+                                        className="h-4 w-4 ml-1 text-black cursor-pointer transition-transform hover:scale-125" 
                                         onClick={(e) => handleTooltipClick(e, listing.id)}
                                       />
                                     </TooltipTrigger>
