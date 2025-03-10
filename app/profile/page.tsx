@@ -123,6 +123,7 @@ interface Event {
   email: string | null;
   price: number | null;
   created_at: string;
+  slug: string | null;
 }
 
 const profileSchema = z.object({
@@ -806,6 +807,33 @@ export default function ProfilePage() {
         title: "Delete failed",
         description:
           error instanceof Error ? error.message : "Failed to delete post",
+      });
+    }
+  }
+
+  async function handleDeleteEvent(eventId: string) {
+    try {
+      const { error } = await supabase
+        .from("events")
+        .delete()
+        .eq("id", eventId);
+
+      if (error) throw error;
+
+      setEvents((prevEvents) =>
+        prevEvents.filter((event) => event.id !== eventId)
+      );
+
+      toast({
+        title: "Event deleted",
+        description: "Your event has been deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Delete failed",
+        description:
+          error instanceof Error ? error.message : "Failed to delete event",
       });
     }
   }
@@ -1625,12 +1653,27 @@ export default function ProfilePage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Link href={`/events/${event.id}`}>
+                          <Link href={`/events/${event.slug || event.id}`}>
                             <Button variant="outline" size="sm">
                               <Eye className="h-4 w-4 mr-2" />
                               View
                             </Button>
                           </Link>
+                          <Link href={`/events/${event.slug || event.id}/edit`}>
+                            <Button variant="outline" size="sm">
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteEvent(event.id)}
+                            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -1674,8 +1717,8 @@ export default function ProfilePage() {
         <FeatureCreditDialog
           open={featureDialogOpen}
           onOpenChange={setFeatureDialogOpen}
-          userId={profile?.id || ""}
-          listingId={listingToFeature}
+          userId={profile?.id ?? ""}
+          listingId={listingToFeature ?? ""}
           onSuccess={handleRenewalSuccess}
         />
       )}

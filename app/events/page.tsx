@@ -25,6 +25,7 @@ interface Event {
   location: string
   poster_url: string | null
   price: number | null
+  slug: string | null
 }
 
 export default function EventsPage() {
@@ -116,7 +117,7 @@ export default function EventsPage() {
             <CarouselContent>
               {upcomingEvents.map((event) => (
                 <CarouselItem key={event.id} className="md:basis-1/2 lg:basis-1/3">
-                  <Link href={`/events/${event.id}`}>
+                  <Link href={`/events/${event.slug || event.id}`}>
                     <Card className="h-full hover:shadow-lg transition-shadow">
                       {event.poster_url && (
                         <div className="aspect-video relative overflow-hidden rounded-t-lg">
@@ -224,7 +225,7 @@ export default function EventsPage() {
                           {events.map((event) => (
                             <Link 
                               key={event.id}
-                              href={`/events/${event.id}`}
+                              href={`/events/${event.slug || event.id}`}
                               className="block"
                             >
                               <div className={`text-xs p-1 rounded ${
@@ -251,7 +252,7 @@ export default function EventsPage() {
                 <h3 className="font-semibold mb-4">Events on {format(selectedDate, 'PPP')}</h3>
                 <div className="space-y-4">
                   {getDayEvents(selectedDate).map((event) => (
-                    <Link key={event.id} href={`/events/${event.id}`}>
+                    <Link key={event.id} href={`/events/${event.slug || event.id}`}>
                       <div className="p-3 rounded-lg border hover:bg-accent transition-colors">
                         <Badge className="mb-2">{event.type}</Badge>
                         <h4 className="font-medium">{event.title}</h4>
@@ -290,7 +291,7 @@ export default function EventsPage() {
           <h2 className="text-2xl font-bold mb-6">Past Events</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pastEvents.map((event) => (
-              <Link key={event.id} href={`/events/${event.id}`}>
+              <Link key={event.id} href={`/events/${event.slug || event.id}`}>
                 <Card className="hover:shadow-lg transition-shadow">
                   {event.poster_url && (
                     <div className="aspect-video relative overflow-hidden rounded-t-lg">

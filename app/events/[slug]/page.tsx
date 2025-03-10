@@ -18,21 +18,34 @@ interface Event {
   price: number | null;
   poster_url: string | null;
   created_by: string;
+  slug: string | null;
 }
 
 // Force dynamic rendering (disable static export)
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
-export default async function EventPage({ params }: { params: { id: string } }) {
-  const { data: event, error } = await supabase
+export default async function EventPage({ params }: { params: { slug: string } }) {
+  // First try to find the event by slug
+  let { data: event, error } = await supabase
     .from("events")
     .select("*")
-    .eq("id", params.id)
+    .eq("slug", params.slug)
     .single();
 
+  // If not found by slug, try to find by ID (for backward compatibility)
   if (error || !event) {
-    notFound();
+    const { data: eventById, error: errorById } = await supabase
+      .from("events")
+      .select("*")
+      .eq("id", params.slug)
+      .single();
+    
+    if (errorById || !eventById) {
+      notFound();
+    }
+    
+    event = eventById;
   }
 
   return <EventClient event={event as Event} />;
