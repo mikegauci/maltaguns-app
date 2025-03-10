@@ -117,6 +117,7 @@ export async function POST(request: Request) {
           user_id: userId,
           amount: 1,
           status: "completed", // Changed from "type" to "status" for consistency
+          type: "credit", // Adding the required type field
           credit_type: "event", // Added credit_type to indicate this is an event credit
           description: "Purchase of 1 event credit",
           stripe_payment_id: session.id
@@ -188,6 +189,7 @@ export async function POST(request: Request) {
           user_id: userId,
           amount: creditsToAdd,
           status: "completed",
+          type: "credit", // Adding the required type field
           credit_type: "firearms",
           description: `Purchase of ${creditsToAdd} firearms credits`,
           stripe_payment_id: session.id
