@@ -138,17 +138,22 @@ export async function POST(request: Request) {
       
       console.log("Credits to add:", creditsToAdd)
       
-      // Update the firearms_credits table
+      // Update the credits table (changed from firearms_credits)
       const { data: existingCredits, error: creditsError } = await supabase
-        .from("firearms_credits")
+        .from("credits")
         .select("amount")
         .eq("user_id", userId)
         .single()
 
+      if (creditsError && creditsError.code !== 'PGRST116') {
+        console.error("Error checking credits:", creditsError)
+        return NextResponse.json({ error: "Failed to check credits" }, { status: 500 })
+      }
+
       if (existingCredits) {
         console.log("Updating existing credits record:", existingCredits.amount, "+", creditsToAdd)
         const { error: updateError } = await supabase
-          .from("firearms_credits")
+          .from("credits")
           .update({ 
             amount: existingCredits.amount + creditsToAdd,
             updated_at: new Date().toISOString()
@@ -157,20 +162,22 @@ export async function POST(request: Request) {
 
         if (updateError) {
           console.error("Error updating credits:", updateError)
-          throw updateError
+          return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
         }
       } else {
         console.log("Creating new credits record with amount:", creditsToAdd)
         const { error: insertError } = await supabase
-          .from("firearms_credits")
+          .from("credits")
           .insert({
             user_id: userId,
-            amount: creditsToAdd
+            amount: creditsToAdd,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           })
 
         if (insertError) {
           console.error("Error inserting credits:", insertError)
-          throw insertError
+          return NextResponse.json({ error: "Failed to create credits record" }, { status: 500 })
         }
       }
       
@@ -180,8 +187,8 @@ export async function POST(request: Request) {
         .insert({
           user_id: userId,
           amount: creditsToAdd,
-          status: "completed", // Changed from "type" to "status" for consistency
-          credit_type: "firearms", // Changed from "listing" to "firearms" for consistency
+          status: "completed",
+          credit_type: "firearms",
           description: `Purchase of ${creditsToAdd} firearms credits`,
           stripe_payment_id: session.id
         })
