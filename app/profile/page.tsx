@@ -1215,9 +1215,10 @@ export default function ProfilePage() {
                           </Button>
                         </Link>
                         <Button 
-                          variant="destructive" 
+                          variant="outline" 
                           size="sm"
                           onClick={() => handleDeleteRetailer(retailerItem.id)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete Retailer
@@ -1290,6 +1291,7 @@ export default function ProfilePage() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDeleteRetailerPost(post.id)}
+                                  className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   Delete
@@ -1380,6 +1382,7 @@ export default function ProfilePage() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleDeletePost(post.id)}
+                              className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
@@ -1401,19 +1404,21 @@ export default function ProfilePage() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
                 <CardTitle>My Listings</CardTitle>
-                <CardDescription className="flex items-center">
+                <CardDescription>
                   Manage your marketplace listings
-                  <span className="ml-2 px-2 py-1 bg-muted rounded-md text-sm">
+                </CardDescription>
+                <div className="mt-4 flex items-center gap-4">
+                  <span className="px-3 py-1.5 bg-muted rounded-md text-sm">
                     Credits Remaining: {listingCredits}
                   </span>
                   <Button 
-                    variant="link" 
-                    className="text-sm ml-2 p-0 h-auto" 
+                    variant="default" 
+                    className="bg-green-600 hover:bg-green-700 text-white" 
                     onClick={() => setShowCreditDialog(true)}
                   >
-                    Add more credits?
+                    Add more credits
                   </Button>
-                </CardDescription>
+                </div>
               </div>
               <Link href="/marketplace/create">
                 <Button className="bg-black text-white hover:bg-gray-800">
@@ -1568,19 +1573,21 @@ export default function ProfilePage() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
                 <CardTitle>My Events</CardTitle>
-                <CardDescription className="flex items-center">
+                <CardDescription>
                   Manage your published events
-                  <span className="ml-2 px-2 py-1 bg-muted rounded-md text-sm">
+                </CardDescription>
+                <div className="mt-4 flex items-center gap-4">
+                  <span className="px-3 py-1.5 bg-muted rounded-md text-sm">
                     Credits Remaining: {eventCredits}
                   </span>
                   <Button 
-                    variant="link" 
-                    className="text-sm ml-2 p-0 h-auto" 
+                    variant="default" 
+                    className="bg-green-600 hover:bg-green-700 text-white" 
                     onClick={() => setShowEventCreditDialog(true)}
                   >
-                    Add more credits?
+                    Add more credits
                   </Button>
-                </CardDescription>
+                </div>
               </div>
               <Link href="/events/create">
                 <Button className="bg-black text-white hover:bg-gray-800">
