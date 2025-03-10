@@ -64,6 +64,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { FeatureCreditDialog } from "@/components/feature-credit-dialog";
+import { CreditDialog } from "@/components/credit-dialog";
+import { EventCreditDialog } from "@/components/event-credit-dialog";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -155,6 +157,7 @@ export default function ProfilePage() {
   const [retailer, setRetailer] = useState<Retailer | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [retailerBlogPosts, setRetailerBlogPosts] = useState<RetailerBlogPost[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingLicense, setUploadingLicense] = useState(false);
@@ -165,7 +168,10 @@ export default function ProfilePage() {
   const [listingToFeature, setListingToFeature] = useState<string | null>(null);
   const [removeFeatureDialogOpen, setRemoveFeatureDialogOpen] = useState(false);
   const [listingToRemoveFeature, setListingToRemoveFeature] = useState<string | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [listingCredits, setListingCredits] = useState(0);
+  const [eventCredits, setEventCredits] = useState(0);
+  const [showCreditDialog, setShowCreditDialog] = useState(false);
+  const [showEventCreditDialog, setShowEventCreditDialog] = useState(false);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -364,12 +370,37 @@ export default function ProfilePage() {
           // Continue even if there's an error
         }
 
+        // Fetch user's credits
+        const { data: listingCreditsData, error: listingCreditsError } = await supabase
+          .from("credits")
+          .select("amount")
+          .eq("user_id", userId)
+          .single();
+
+        if (listingCreditsError && listingCreditsError.code !== "PGRST116") {
+          console.error("Listing credits fetch error:", listingCreditsError.message);
+          // Continue even if there's an error
+        }
+
+        const { data: eventCreditsData, error: eventCreditsError } = await supabase
+          .from("credits_events")
+          .select("amount")
+          .eq("user_id", userId)
+          .single();
+
+        if (eventCreditsError && eventCreditsError.code !== "PGRST116") {
+          console.error("Event credits fetch error:", eventCreditsError.message);
+          // Continue even if there's an error
+        }
+
         // Update state with all fetched data
         setProfile(profileData);
         setListings(sortedListings);
         setBlogPosts(blogData || []);
         setRetailerBlogPosts(retailerPostsData);
         setEvents(eventsData || []);
+        setListingCredits(listingCreditsData?.amount || 0);
+        setEventCredits(eventCreditsData?.amount || 0);
         
         form.reset({
           phone: profileData.phone || "",
@@ -884,6 +915,13 @@ export default function ProfilePage() {
     }
   }
 
+  // Add a refresh function that reruns loadProfile
+  const refreshProfile = () => {
+    setLoading(true); // Show loading state
+    // This will trigger the useEffect to run loadProfile again
+    router.refresh();
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-6">
@@ -1329,13 +1367,23 @@ export default function ProfilePage() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
                 <CardTitle>My Listings</CardTitle>
-                <CardDescription>
+                <CardDescription className="flex items-center">
                   Manage your marketplace listings
+                  <span className="ml-2 px-2 py-1 bg-muted rounded-md text-sm">
+                    Credits Remaining: {listingCredits}
+                  </span>
+                  <Button 
+                    variant="link" 
+                    className="text-sm ml-2 p-0 h-auto" 
+                    onClick={() => setShowCreditDialog(true)}
+                  >
+                    Add more credits?
+                  </Button>
                 </CardDescription>
               </div>
               <Link href="/marketplace/create">
-                <Button>
-                  <Package className="h-4 w-4 mr-2" />
+                <Button className="bg-black text-white hover:bg-gray-800">
+                  <Package className="mr-2 h-4 w-4" />
                   Create Listing
                 </Button>
               </Link>
@@ -1486,8 +1534,18 @@ export default function ProfilePage() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
                 <CardTitle>My Events</CardTitle>
-                <CardDescription>
+                <CardDescription className="flex items-center">
                   Manage your published events
+                  <span className="ml-2 px-2 py-1 bg-muted rounded-md text-sm">
+                    Credits Remaining: {eventCredits}
+                  </span>
+                  <Button 
+                    variant="link" 
+                    className="text-sm ml-2 p-0 h-auto" 
+                    onClick={() => setShowEventCreditDialog(true)}
+                  >
+                    Add more credits?
+                  </Button>
                 </CardDescription>
               </div>
               <Link href="/events/create">
@@ -1614,6 +1672,35 @@ export default function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Credit Dialogs */}
+      <CreditDialog
+        open={showCreditDialog}
+        onOpenChange={setShowCreditDialog}
+        userId={profile?.id || ""}
+        onSuccess={() => {
+          toast({
+            title: "Credits purchased",
+            description: "Your credits have been added to your account.",
+          });
+          // Refresh the page to show updated credits
+          router.refresh();
+        }}
+      />
+
+      <EventCreditDialog
+        open={showEventCreditDialog}
+        onOpenChange={setShowEventCreditDialog}
+        userId={profile?.id || ""}
+        onSuccess={() => {
+          toast({
+            title: "Event credits purchased",
+            description: "Your event credits have been added to your account.",
+          });
+          // Refresh the page to show updated credits
+          router.refresh();
+        }}
+      />
     </div>
   );
 }
