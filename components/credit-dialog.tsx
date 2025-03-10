@@ -20,8 +20,8 @@ interface Plan {
 
 const plans: Plan[] = [
   { id: "price_1credit", credits: 1, price: 15, description: "Single listing credit" },
-  { id: "price_10credits", credits: 10, price: 50, description: "Best value for regular sellers" },
-  { id: "price_20credits", credits: 20, price: 100, description: "Perfect for power sellers" },
+  { id: "price_5credits", credits: 5, price: 65, description: "Best value for regular sellers" },
+  { id: "price_10credits", credits: 10, price: 100, description: "Perfect for power sellers" },
 ];
 
 interface CreditDialogProps {

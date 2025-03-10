@@ -29,9 +29,9 @@ export async function POST(request: Request) {
       Map your internal price IDs from Stripe Dashboard - Products to the corresponding Stripe Price IDs and credit amounts.
     */
     const planMapping: Record<string, { stripePriceId: string; credits: number }> = {
-      "price_1credit": { stripePriceId: "price_1QrHYBLT4uq5YHtWP7qIyCSq", credits: 1 },
-      "price_10credits": { stripePriceId: "price_1QrJf7LT4uq5YHtWMHerJRiB", credits: 10 },
-      "price_20credits": { stripePriceId: "price_1QrJgbLT4uq5YHtW7egQnVup", credits: 20 },
+      "price_1credit": { stripePriceId: "price_1QrHYBLT4uq5YHtWP7qIyCSq", credits: 1 },      // €15
+      "price_5credits": { stripePriceId: "price_1QrJf7LT4uq5YHtWMHerJRiB", credits: 5 },     // €65
+      "price_10credits": { stripePriceId: "price_1QrJgbLT4uq5YHtW7egQnVup", credits: 10 }    // €100
     };
 
     const plan = planMapping[priceId];
@@ -50,8 +50,14 @@ export async function POST(request: Request) {
       }],
       mode: 'payment',
       customer_email: profile.email,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/marketplace/create/firearms`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/marketplace/create/firearms?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cancel`,
+      metadata: {
+        userId: userId,
+        credits: plan.credits.toString(),
+        priceId: priceId,
+        creditType: 'firearms'
+      }
     });
     console.log("Stripe session created:", session.id);
 
@@ -60,6 +66,8 @@ export async function POST(request: Request) {
       user_id: userId,
       amount: plan.credits,
       type: "pending",
+      credit_type: "firearms",
+      description: `Pending purchase of ${plan.credits} firearms credits`,
       stripe_payment_id: session.id,
     });
 

@@ -58,7 +58,6 @@ export default function CreateEventPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [hasCredits, setHasCredits] = useState(false)
   const [credits, setCredits] = useState<number>(0)
-  const [refreshing, setRefreshing] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   
@@ -362,27 +361,6 @@ export default function CreateEventPage() {
     }
   }
 
-  // Function to force refresh credits
-  const forceRefreshCredits = async () => {
-    setRefreshing(true)
-    try {
-      await checkCredits(true)
-      toast({
-        title: "Credits refreshed",
-        description: "Your event credits have been refreshed.",
-      })
-    } catch (error) {
-      console.error("Error refreshing credits:", error)
-      toast({
-        variant: "destructive",
-        title: "Refresh failed",
-        description: "Failed to refresh your event credits. Please try again.",
-      })
-    } finally {
-      setRefreshing(false)
-    }
-  }
-
   // Move the dialog outside the return statement
   if (!isMounted) {
     return (
@@ -407,15 +385,6 @@ export default function CreateEventPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Event Credits remaining:</span>
             <span className="font-semibold">{credits}</span>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={forceRefreshCredits} 
-              disabled={refreshing}
-              className="ml-2 h-7 px-2"
-            >
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </Button>
           </div>
         </div>
 

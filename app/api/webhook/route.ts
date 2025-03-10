@@ -33,8 +33,11 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     console.log("[WEBHOOK-SINGULAR] Processing checkout.session.completed event")
     const session = event.data.object as Stripe.Checkout.Session
+    console.log("[WEBHOOK-SINGULAR] Full session data:", JSON.stringify(session, null, 2))
     console.log("[WEBHOOK-SINGULAR] Session ID:", session.id)
     console.log("[WEBHOOK-SINGULAR] Session metadata:", session.metadata)
+    console.log("[WEBHOOK-SINGULAR] Amount total:", session.amount_total)
+    console.log("[WEBHOOK-SINGULAR] Line items:", session.line_items)
     const customerEmail = session.customer_email
 
     if (!customerEmail) {
@@ -78,21 +81,29 @@ export async function POST(request: Request) {
     else if (amountPaid === 25) {
       console.log("[WEBHOOK-SINGULAR] Processing event credit purchase")
       
-      // Check if we've already processed this session ID
-      const { data: existingTransaction, error: transactionCheckError } = await supabase
+      // First check if we've already processed this transaction
+      const { data: existingTransaction } = await supabase
         .from("credit_transactions")
-        .select("id, created_at")
+        .select("id")
         .eq("stripe_payment_id", session.id)
         .eq("credit_type", "event")
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .single()
 
-      if (existingTransaction && existingTransaction.length > 0) {
-        console.log("[WEBHOOK-SINGULAR] This event credit purchase was already processed at:", existingTransaction[0].created_at)
+      if (existingTransaction) {
+        console.log("[WEBHOOK-SINGULAR] This event credit purchase was already processed")
         return NextResponse.json({ received: true })
       }
 
-      // Add transaction record FIRST before updating credits to prevent race conditions
+      // Start transaction by getting current credits with FOR UPDATE lock
+      const { data: existingCredits, error: fetchError } = await supabase
+        .from("credits_events")
+        .select("amount")
+        .eq("user_id", userId)
+        .single()
+        
+      const currentAmount = existingCredits?.amount || 0
+      
+      // Create transaction record first
       const { error: transactionError } = await supabase
         .from("credit_transactions")
         .insert({
@@ -110,51 +121,73 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Error recording transaction" }, { status: 500 })
       }
 
-      // Now that we've recorded the transaction, get current credits
-      const { data: existingCredits, error: fetchError } = await supabase
+      // Now update credits
+      const { error: creditError } = await supabase
         .from("credits_events")
-        .select("amount")
-        .eq("user_id", userId)
-        .single()
-        
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error("Error fetching event credits:", fetchError)
-        return NextResponse.json({ error: "Failed to fetch event credits" }, { status: 500 })
-      }
-      
-      const currentAmount = existingCredits?.amount || 0
-      const newAmount = currentAmount + 1
-      console.log("[WEBHOOK-SINGULAR] Current event credits:", currentAmount, "New amount:", newAmount)
-      
-      // Update credits after transaction is recorded
-      const { error: upsertError } = await supabase
-        .from("credits_events")
-        .upsert({ 
+        .upsert({
           user_id: userId,
-          amount: newAmount,
+          amount: currentAmount + 1,
           updated_at: new Date().toISOString(),
           created_at: existingCredits ? undefined : new Date().toISOString()
         })
 
-      if (upsertError) {
-        console.error("Error updating event credits:", upsertError)
-        return NextResponse.json({ error: "Error updating event credits" }, { status: 500 })
+      if (creditError) {
+        console.error("Error updating credits:", creditError)
+        // Try to rollback by deleting the transaction
+        await supabase
+          .from("credit_transactions")
+          .delete()
+          .eq("stripe_payment_id", session.id)
+        return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
       }
-      
-      console.log("[WEBHOOK-SINGULAR] Successfully updated event credits to:", newAmount)
+
+      console.log("[WEBHOOK-SINGULAR] Successfully processed event credit purchase. New amount:", currentAmount + 1)
       return NextResponse.json({ received: true })
     }
-    // Handle regular listing credits (€15, €50, €100)
-    else if (amountPaid === 15 || amountPaid === 50 || amountPaid === 100) {
-      console.log("[WEBHOOK-SINGULAR] Processing regular credit purchase")
-      let creditsToAdd = 0
-      if (amountPaid === 15) creditsToAdd = 1
-      else if (amountPaid === 50) creditsToAdd = 10
-      else if (amountPaid === 100) creditsToAdd = 20
+    // Handle regular listing credits (€15, €65, €100)
+    else if (amountPaid === 15 || amountPaid === 65 || amountPaid === 100) {
+      console.log("[WEBHOOK-SINGULAR] Processing regular credit purchase. Amount paid:", amountPaid)
+      console.log("[WEBHOOK-SINGULAR] Session metadata:", session.metadata)
       
-      console.log("Credits to add:", creditsToAdd)
+      // Get credits from metadata - this is the source of truth
+      const creditsToAdd = session.metadata?.credits ? parseInt(session.metadata.credits) : 0
+      if (!creditsToAdd) {
+        console.error("[WEBHOOK-SINGULAR] No credits specified in metadata")
+        return NextResponse.json({ error: "No credits specified in metadata" }, { status: 400 })
+      }
+      console.log("[WEBHOOK-SINGULAR] Credits to add from metadata:", creditsToAdd)
+
+      // First check if we've already processed this transaction - check both pending and completed
+      const { data: existingTransactions, error: txError } = await supabase
+        .from("credit_transactions")
+        .select("id, status, amount")
+        .eq("stripe_payment_id", session.id)
+        .eq("credit_type", "firearms")
+
+      if (txError) {
+        console.error("[WEBHOOK-SINGULAR] Error checking existing transactions:", txError)
+        return NextResponse.json({ error: "Failed to check existing transactions" }, { status: 500 })
+      }
+
+      console.log("[WEBHOOK-SINGULAR] Found existing transactions:", existingTransactions)
+
+      // If there's a completed transaction with the correct amount, we're done
+      if (existingTransactions && existingTransactions.length > 0) {
+        const completedTx = existingTransactions.find(tx => tx.status === "completed" && tx.amount === creditsToAdd)
+        if (completedTx) {
+          console.log("[WEBHOOK-SINGULAR] Found completed transaction with correct amount:", completedTx)
+          return NextResponse.json({ received: true })
+        }
+
+        // If there's a completed transaction with wrong amount, log error
+        const wrongAmountTx = existingTransactions.find(tx => tx.status === "completed" && tx.amount !== creditsToAdd)
+        if (wrongAmountTx) {
+          console.error("[WEBHOOK-SINGULAR] Found completed transaction with wrong amount:", wrongAmountTx)
+          return NextResponse.json({ error: "Transaction already processed with different amount" }, { status: 400 })
+        }
+      }
       
-      // Update the credits table
+      // Get current credits first
       const { data: existingCredits, error: creditsError } = await supabase
         .from("credits")
         .select("amount")
@@ -162,42 +195,65 @@ export async function POST(request: Request) {
         .single()
 
       if (creditsError && creditsError.code !== 'PGRST116') {
-        console.error("Error checking credits:", creditsError)
+        console.error("[WEBHOOK-SINGULAR] Error checking credits:", creditsError)
         return NextResponse.json({ error: "Failed to check credits" }, { status: 500 })
       }
 
-      if (existingCredits) {
-        console.log("Updating existing credits record:", existingCredits.amount, "+", creditsToAdd)
-        const { error: updateError } = await supabase
-          .from("credits")
-          .update({ 
-            amount: existingCredits.amount + creditsToAdd,
-            updated_at: new Date().toISOString()
-          })
-          .eq("user_id", userId)
+      const currentAmount = existingCredits?.amount || 0
+      console.log("[WEBHOOK-SINGULAR] Current credit amount:", currentAmount)
 
-        if (updateError) {
-          console.error("Error updating credits:", updateError)
-          return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
-        }
-      } else {
-        console.log("Creating new credits record with amount:", creditsToAdd)
-        const { error: insertError } = await supabase
-          .from("credits")
-          .insert({
-            user_id: userId,
-            amount: creditsToAdd,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
+      // Handle existing transactions
+      if (existingTransactions && existingTransactions.length > 0) {
+        // Find pending transaction
+        const pendingTx = existingTransactions.find(tx => tx.status === "pending" || tx.status === null)
+        if (pendingTx) {
+          console.log("[WEBHOOK-SINGULAR] Updating pending transaction to completed with correct amount")
+          
+          // First update the transaction
+          const { error: updateError } = await supabase
+            .from("credit_transactions")
+            .update({ 
+              status: "completed",
+              amount: creditsToAdd,
+              description: `Purchase of ${creditsToAdd} firearms credits (€${amountPaid} package)`
+            })
+            .eq("id", pendingTx.id)
 
-        if (insertError) {
-          console.error("Error inserting credits:", insertError)
-          return NextResponse.json({ error: "Failed to create credits record" }, { status: 500 })
+          if (updateError) {
+            console.error("[WEBHOOK-SINGULAR] Error updating pending transaction:", updateError)
+            return NextResponse.json({ error: "Failed to update pending transaction" }, { status: 500 })
+          }
+
+          // Now update credits using UPDATE instead of UPSERT to avoid unique constraint error
+          const { error: creditError } = await supabase
+            .from("credits")
+            .update({
+              amount: currentAmount + creditsToAdd,
+              updated_at: new Date().toISOString()
+            })
+            .eq("user_id", userId)
+
+          if (creditError) {
+            console.error("[WEBHOOK-SINGULAR] Error updating credits:", creditError)
+            // Try to rollback by marking transaction as failed
+            await supabase
+              .from("credit_transactions")
+              .update({ status: "failed" })
+              .eq("id", pendingTx.id)
+            return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
+          }
+
+          const newAmount = currentAmount + creditsToAdd
+          console.log("[WEBHOOK-SINGULAR] Successfully processed firearms credit purchase:")
+          console.log("- Package: €" + amountPaid)
+          console.log("- Previous amount:", currentAmount)
+          console.log("- Credits added:", creditsToAdd)
+          console.log("- New amount:", newAmount)
+          return NextResponse.json({ received: true })
         }
       }
-      
-      // Record the transaction
+
+      // If no pending transaction exists, create a new one and update credits
       const { error: transactionError } = await supabase
         .from("credit_transactions")
         .insert({
@@ -206,16 +262,40 @@ export async function POST(request: Request) {
           status: "completed",
           type: "credit",
           credit_type: "firearms",
-          description: `Purchase of ${creditsToAdd} firearms credits`,
+          description: `Purchase of ${creditsToAdd} firearms credits (€${amountPaid} package)`,
           stripe_payment_id: session.id
         })
 
       if (transactionError) {
-        console.error("Error recording transaction:", transactionError)
+        console.error("[WEBHOOK-SINGULAR] Error recording transaction:", transactionError)
         return NextResponse.json({ error: "Error recording transaction" }, { status: 500 })
       }
-      
-      console.log("Successfully processed regular credit purchase")
+
+      // Update credits using UPDATE instead of UPSERT
+      const { error: creditError } = await supabase
+        .from("credits")
+        .update({
+          amount: currentAmount + creditsToAdd,
+          updated_at: new Date().toISOString()
+        })
+        .eq("user_id", userId)
+
+      if (creditError) {
+        console.error("[WEBHOOK-SINGULAR] Error updating credits:", creditError)
+        // Try to rollback by deleting the transaction
+        await supabase
+          .from("credit_transactions")
+          .delete()
+          .eq("stripe_payment_id", session.id)
+        return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
+      }
+
+      const newAmount = currentAmount + creditsToAdd
+      console.log("[WEBHOOK-SINGULAR] Successfully processed firearms credit purchase:")
+      console.log("- Package: €" + amountPaid)
+      console.log("- Previous amount:", currentAmount)
+      console.log("- Credits added:", creditsToAdd)
+      console.log("- New amount:", newAmount)
       return NextResponse.json({ received: true })
     }
     // Handle unknown amount
