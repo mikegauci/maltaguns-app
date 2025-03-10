@@ -78,32 +78,98 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true })
     }
     // Handle event credits (€25)
-    else if (amountPaid === 25) {
+    else if (amountPaid === 25 || (session.metadata && session.metadata.creditType === 'event')) {
       console.log("[WEBHOOK-SINGULAR] Processing event credit purchase")
       
       // First check if we've already processed this transaction
-      const { data: existingTransaction } = await supabase
+      const { data: existingTransactions, error: txError } = await supabase
         .from("credit_transactions")
-        .select("id")
+        .select("id, status, amount")
         .eq("stripe_payment_id", session.id)
         .eq("credit_type", "event")
-        .single()
 
-      if (existingTransaction) {
-        console.log("[WEBHOOK-SINGULAR] This event credit purchase was already processed")
-        return NextResponse.json({ received: true })
+      if (txError) {
+        console.error("[WEBHOOK-SINGULAR] Error checking existing transactions:", txError)
+        return NextResponse.json({ error: "Failed to check existing transactions" }, { status: 500 })
       }
 
-      // Start transaction by getting current credits with FOR UPDATE lock
-      const { data: existingCredits, error: fetchError } = await supabase
+      console.log("[WEBHOOK-SINGULAR] Found existing transactions:", existingTransactions)
+
+      // If there's a completed transaction, we're done
+      if (existingTransactions && existingTransactions.length > 0) {
+        const completedTx = existingTransactions.find(tx => tx.status === "completed")
+        if (completedTx) {
+          console.log("[WEBHOOK-SINGULAR] Found completed transaction:", completedTx)
+          return NextResponse.json({ received: true })
+        }
+      }
+      
+      // Get current credits first
+      const { data: existingCredits, error: creditsError } = await supabase
         .from("credits_events")
         .select("amount")
         .eq("user_id", userId)
         .single()
-        
+
+      if (creditsError && creditsError.code !== 'PGRST116') {
+        console.error("[WEBHOOK-SINGULAR] Error checking credits:", creditsError)
+        return NextResponse.json({ error: "Failed to check credits" }, { status: 500 })
+      }
+
       const currentAmount = existingCredits?.amount || 0
-      
-      // Create transaction record first
+      console.log("[WEBHOOK-SINGULAR] Current event credits:", currentAmount)
+
+      // Handle existing transactions
+      if (existingTransactions && existingTransactions.length > 0) {
+        // Find pending transaction
+        const pendingTx = existingTransactions.find(tx => tx.status === "pending" || tx.status === null)
+        if (pendingTx) {
+          console.log("[WEBHOOK-SINGULAR] Updating pending transaction to completed")
+          
+          // First update the transaction
+          const { error: updateError } = await supabase
+            .from("credit_transactions")
+            .update({ 
+              status: "completed",
+              amount: 1,
+              description: "Purchase of 1 event credit"
+            })
+            .eq("id", pendingTx.id)
+
+          if (updateError) {
+            console.error("[WEBHOOK-SINGULAR] Error updating pending transaction:", updateError)
+            return NextResponse.json({ error: "Failed to update pending transaction" }, { status: 500 })
+          }
+
+          // Now update credits using UPDATE instead of UPSERT
+          const { error: creditError } = await supabase
+            .from("credits_events")
+            .update({
+              amount: currentAmount + 1,
+              updated_at: new Date().toISOString()
+            })
+            .eq("user_id", userId)
+
+          if (creditError) {
+            console.error("[WEBHOOK-SINGULAR] Error updating credits:", creditError)
+            // Try to rollback by marking transaction as failed
+            await supabase
+              .from("credit_transactions")
+              .update({ status: "failed" })
+              .eq("id", pendingTx.id)
+            return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
+          }
+
+          const newAmount = currentAmount + 1
+          console.log("[WEBHOOK-SINGULAR] Successfully processed event credit purchase:")
+          console.log("- Previous amount:", currentAmount)
+          console.log("- Credits added: 1")
+          console.log("- New amount:", newAmount)
+          return NextResponse.json({ received: true })
+        }
+      }
+
+      // If no pending transaction exists, create a new one and update credits
       const { error: transactionError } = await supabase
         .from("credit_transactions")
         .insert({
@@ -117,22 +183,21 @@ export async function POST(request: Request) {
         })
 
       if (transactionError) {
-        console.error("Error recording transaction:", transactionError)
+        console.error("[WEBHOOK-SINGULAR] Error recording transaction:", transactionError)
         return NextResponse.json({ error: "Error recording transaction" }, { status: 500 })
       }
 
-      // Now update credits
+      // Update credits using UPDATE instead of UPSERT
       const { error: creditError } = await supabase
         .from("credits_events")
-        .upsert({
-          user_id: userId,
+        .update({
           amount: currentAmount + 1,
-          updated_at: new Date().toISOString(),
-          created_at: existingCredits ? undefined : new Date().toISOString()
+          updated_at: new Date().toISOString()
         })
+        .eq("user_id", userId)
 
       if (creditError) {
-        console.error("Error updating credits:", creditError)
+        console.error("[WEBHOOK-SINGULAR] Error updating credits:", creditError)
         // Try to rollback by deleting the transaction
         await supabase
           .from("credit_transactions")
@@ -141,7 +206,11 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
       }
 
-      console.log("[WEBHOOK-SINGULAR] Successfully processed event credit purchase. New amount:", currentAmount + 1)
+      const newAmount = currentAmount + 1
+      console.log("[WEBHOOK-SINGULAR] Successfully processed event credit purchase:")
+      console.log("- Previous amount:", currentAmount)
+      console.log("- Credits added: 1")
+      console.log("- New amount:", newAmount)
       return NextResponse.json({ received: true })
     }
     // Handle regular listing credits (€15, €65, €100)

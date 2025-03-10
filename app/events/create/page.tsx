@@ -121,88 +121,61 @@ export default function CreateEventPage() {
         console.log("Force refreshing credits")
       }
 
-      // Direct query to get credits from the database
-      // This bypasses any potential caching issues
-      const { data, error } = await supabase.rpc('get_user_credits', {
-        user_id_param: session.user.id
-      })
-      
-      if (error) {
-        console.error("Error fetching credits:", error)
+      // Get user's credits
+      const { data: userCredits, error: creditsError } = await supabase
+        .from("credits_events")
+        .select("amount")
+        .eq("user_id", session.user.id)
+        .single()
+          
+      if (creditsError) {
+        console.error("Error fetching event credits:", creditsError)
         
-        // Fallback to the old method if RPC fails
-        const { data: userCredits, error: creditsError } = await supabase
-          .from("credits_events")
-          .select("amount")
-          .eq("user_id", session.user.id)
-          .single()
-          
-        if (creditsError) {
-          console.error("Error fetching event credits:", creditsError)
-          
-          // Try to create the record if it doesn't exist
-          if (creditsError.code === 'PGRST116') { // Record not found
-            console.log("No event credits record found, creating one")
-            const { error: insertError } = await supabase
-              .from("credits_events")
-              .insert({ 
-                user_id: session.user.id,
-                amount: 0,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              
-            if (insertError) {
-              console.error("Error creating event credits record:", insertError)
-            } else {
-              console.log("Created event credits record")
-            }
-          }
-          
-          // Set credits to 0 if we couldn't fetch them
-          setCredits(0)
-          setHasCredits(false)
-          
-          // Show credit dialog if no credits
-          if (!forceRefresh && isMounted) {
-            setShowCreditDialog(true)
-          }
-        } else {
-          const creditAmount = userCredits?.amount || 0
-          console.log("Found event credits (fallback method):", creditAmount)
-          setCredits(creditAmount)
-          setHasCredits(creditAmount > 0)
-          
-          // Only show credit dialog if mounted and no credits
-          if (creditAmount === 0 && !forceRefresh && isMounted) {
-            setShowCreditDialog(true)
+        // Try to create the record if it doesn't exist
+        if (creditsError.code === 'PGRST116') { // Record not found
+          console.log("No event credits record found, creating one")
+          const { error: insertError } = await supabase
+            .from("credits_events")
+            .insert({ 
+              user_id: session.user.id,
+              amount: 0,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            
+          if (insertError) {
+            console.error("Error creating event credits record:", insertError)
+          } else {
+            console.log("Created event credits record")
           }
         }
+        
+        // Set credits to 0 if we couldn't fetch them
+        setCredits(0)
+        setHasCredits(false)
+        
+        // Show credit dialog if no credits
+        if (!forceRefresh && isMounted) {
+          setShowCreditDialog(true)
+        }
       } else {
-        // Successfully got credits from RPC
-        if (data && data.length > 0) {
-          const eventCredits = data[0].event_credits || 0
-          console.log("Found event credits (RPC method):", eventCredits)
-          setCredits(eventCredits)
-          setHasCredits(eventCredits > 0)
-          
-          // Only show credit dialog if mounted and no credits
-          if (eventCredits === 0 && !forceRefresh && isMounted) {
-            setShowCreditDialog(true)
-          }
-        } else {
-          console.log("No credits data returned from RPC")
-          setCredits(0)
-          setHasCredits(false)
-          
-          // Show credit dialog if no credits
-          if (!forceRefresh && isMounted) {
-            setShowCreditDialog(true)
-          }
+        const creditAmount = userCredits?.amount || 0
+        console.log("Found event credits:", creditAmount)
+        setCredits(creditAmount)
+        setHasCredits(creditAmount > 0)
+        
+        // Only show credit dialog if mounted and no credits
+        if (creditAmount === 0 && !forceRefresh && isMounted) {
+          setShowCreditDialog(true)
         }
       }
     } catch (error) {
       console.error("Error checking credits:", error)
+      setCredits(0)
+      setHasCredits(false)
+      if (!forceRefresh && isMounted) {
+        setShowCreditDialog(true)
+      }
     }
   }
 
