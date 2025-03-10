@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  identifier: z.string().min(1, "Username or email is required"),
   password: z.string().min(1, "Password is required"),
 })
 
@@ -28,7 +28,7 @@ export default function Login() {
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      identifier: "",
       password: "",
     },
   })
@@ -36,11 +36,38 @@ export default function Login() {
   async function onSubmit(data: LoginForm) {
     try {
       setIsLoading(true)
-
-      const { data: { user }, error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      })
+      
+      // Check if the identifier is an email
+      const isEmail = data.identifier.includes('@')
+      
+      let authResponse
+      
+      if (isEmail) {
+        // Sign in with email
+        authResponse = await supabase.auth.signInWithPassword({
+          email: data.identifier,
+          password: data.password,
+        })
+      } else {
+        // Get the email associated with the username
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('email')
+          .eq('username', data.identifier)
+          .single()
+          
+        if (userError || !userData) {
+          throw new Error("Username not found")
+        }
+        
+        // Sign in with the email associated with the username
+        authResponse = await supabase.auth.signInWithPassword({
+          email: userData.email,
+          password: data.password,
+        })
+      }
+      
+      const { data: { user }, error } = authResponse
 
       if (error) throw error
 
@@ -49,10 +76,13 @@ export default function Login() {
         // Sign out the user if email is not verified
         await supabase.auth.signOut()
         
+        // Get email for verification (different depending on login method)
+        const emailToVerify = isEmail ? data.identifier : (user?.email || data.identifier)
+
         // Send another verification email
         await supabase.auth.resend({
           type: 'signup',
-          email: data.email,
+          email: emailToVerify,
           options: {
             emailRedirectTo: `${window.location.origin}/login`,
           },
@@ -98,12 +128,12 @@ export default function Login() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="identifier"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Username or Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="john@example.com" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

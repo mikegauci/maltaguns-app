@@ -1099,7 +1099,10 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               <span className="font-medium">Status:</span>
-              <Badge variant={profile.is_seller ? "default" : "secondary"}>
+              <Badge 
+                variant={profile.is_seller ? "default" : "secondary"}
+                className={profile.is_seller ? "bg-green-600 hover:bg-green-600 text-white" : ""}
+              >
                 {profile.is_seller ? "Verified Gun Seller" : "No license verified"}
               </Badge>
             </div>
@@ -1346,8 +1349,7 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <p className="mb-4">
-                  As a verified seller, you can create a retailer profile to showcase
-                  your business and post updates for potential customers.
+                  Maltaguns allows businesses in Malta that provide services to the local community to advertise their services on Maltaguns. This may include gun dealers, gun smiths, airsoft equipement repair, wood stock restoration, engineering services or gun safe importers. If you you wish to advertise your store or services on Maltaguns, kindly send an email to info@maltaguns.com in order to gain access to create your retailer profile.
                 </p>
                 <Link href="/retailers/create">
                   <Button>
