@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Calendar as CalendarIcon, MapPin, Clock, Mail, Phone, DollarSign } from "lucide-react"
+import { Calendar as CalendarIcon, MapPin, Clock, Mail, Phone, Coins, ChevronLeft, Pencil } from "lucide-react"
 import { format } from "date-fns"
 import Link from "next/link"
+import { supabase } from "@/lib/supabase"
 
 interface Event {
   id: string
@@ -25,6 +26,7 @@ interface Event {
   price: number | null
   poster_url: string | null
   slug: string | null
+  created_by: string
 }
 
 interface EventClientProps {
@@ -33,6 +35,18 @@ interface EventClientProps {
 
 export default function EventClient({ event }: EventClientProps) {
   const router = useRouter()
+  const [isOwner, setIsOwner] = useState(false)
+
+  useEffect(() => {
+    async function checkOwnership() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.id === event.created_by) {
+        setIsOwner(true)
+      }
+    }
+    
+    checkOwnership()
+  }, [event.created_by])
 
   const formatTime = (time: string | null) => {
     if (!time) return null;
@@ -50,37 +64,55 @@ export default function EventClient({ event }: EventClientProps) {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4">
-        <Link href="/events" className="text-primary hover:underline mb-6 inline-block">
-          ← Back to events
-        </Link>
+        <Button
+          variant="ghost"
+          onClick={() => router.push('/events')}
+          className="flex items-center text-muted-foreground hover:text-foreground mb-6"
+        >
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back to events
+        </Button>
         
         <div className="bg-card rounded-lg shadow-md overflow-hidden">
           {/* Event Header */}
-          <div className="p-6 border-b">
-            <Badge className="mb-2">{event.type}</Badge>
-            <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
-            <div className="flex flex-wrap gap-4 text-muted-foreground">
-              <div className="flex items-center">
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                <span>
-                  {format(new Date(event.start_date), "MMMM d, yyyy")}
-                  {event.end_date && ` - ${format(new Date(event.end_date), "MMMM d, yyyy")}`}
-                </span>
-              </div>
-              {event.start_time && (
+          <div className="p-6 border-b flex justify-between items-start">
+            <div>
+              <Badge className="mb-2">{event.type}</Badge>
+              <h1 className="text-3xl font-bold mb-2">{event.title}</h1>
+              <div className="flex flex-wrap gap-4 text-muted-foreground">
                 <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-2" />
+                  <CalendarIcon className="h-4 w-4 mr-2" />
                   <span>
-                    {formatTime(event.start_time)}
-                    {event.end_time && ` - ${formatTime(event.end_time)}`}
+                    {format(new Date(event.start_date), "MMMM d, yyyy")}
+                    {event.end_date && ` - ${format(new Date(event.end_date), "MMMM d, yyyy")}`}
                   </span>
                 </div>
-              )}
-              <div className="flex items-center">
-                <MapPin className="h-4 w-4 mr-2" />
-                <span>{event.location}</span>
+                {event.start_time && (
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2" />
+                    <span>
+                      {formatTime(event.start_time)}
+                      {event.end_time && ` - ${formatTime(event.end_time)}`}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  <span>{event.location}</span>
+                </div>
               </div>
             </div>
+            
+            {isOwner && (
+              <Button 
+                onClick={() => router.push(`/events/${event.slug || event.id}/edit`)}
+                className="flex items-center"
+                variant="outline"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit Event
+              </Button>
+            )}
           </div>
           
           {/* Event Content */}
@@ -107,7 +139,7 @@ export default function EventClient({ event }: EventClientProps) {
                   <div>
                     <h3 className="font-medium">Price</h3>
                     <div className="flex items-center mt-1">
-                      <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+                      <Coins className="h-4 w-4 mr-2 text-muted-foreground" />
                       <span>{formatPrice(event.price)}</span>
                     </div>
                   </div>
