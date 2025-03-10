@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
-import { ArrowLeft, X } from "lucide-react"
+import { ArrowLeft, X, Loader2 } from "lucide-react"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
@@ -89,8 +89,10 @@ function slugify(text: string) {
 export default function CreateNonFirearmsListing() {
   const router = useRouter()
   const { toast } = useToast()
-  const [uploading, setUploading] = useState(false)
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedCategory, setSelectedCategory] = useState<keyof typeof subcategories>("airsoft")
 
   const form = useForm<NonFirearmsForm>({
@@ -211,6 +213,10 @@ export default function CreateNonFirearmsListing() {
 
   async function onSubmit(data: NonFirearmsForm) {
     try {
+      setIsSubmitting(true);
+      const { data: userData, error: authError } = await supabase.auth.getUser()
+      if (authError) throw authError
+
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
       
       if (sessionError) {
@@ -262,12 +268,14 @@ export default function CreateNonFirearmsListing() {
       
       router.push(`/marketplace/listing/${slugify(listing.title)}`);
     } catch (error) {
-      console.error("Submit error:", error)
+      console.error("Error creating listing:", error)
       toast({
         variant: "destructive",
-        title: "Failed to create listing",
-        description: error instanceof Error ? error.message : "Something went wrong"
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong",
       })
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -493,10 +501,17 @@ export default function CreateNonFirearmsListing() {
 
                 <Button 
                   type="submit" 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white" 
-                  disabled={uploading}
+                  className="w-full"
+                  disabled={isSubmitting || uploading}
                 >
-                  {uploading ? "Uploading images..." : "Create Listing"}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Listing"
+                  )}
                 </Button>
               </form>
             </Form>

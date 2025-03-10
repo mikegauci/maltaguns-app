@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
 import { EventCreditDialog } from "@/components/event-credit-dialog"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Loader2 } from "lucide-react"
 
 // Force dynamic rendering to avoid hydration issues
 export const dynamic = "force-dynamic";
@@ -60,6 +60,7 @@ export default function CreateEventPage() {
   const [credits, setCredits] = useState<number>(0)
   const [refreshing, setRefreshing] = useState(false)
   const [isMounted, setIsMounted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   
   // Set isMounted to true when component mounts
   useEffect(() => {
@@ -275,14 +276,21 @@ export default function CreateEventPage() {
   }
 
   async function onSubmit(data: EventForm) {
-    if (!hasCredits) {
-      setShowCreditDialog(true)
-      return
-    }
-
     try {
+      setIsSubmitting(true);
+      
+      // Check credits again to make sure user still has enough
+      await checkCredits(true)
+      
+      if (credits < 1) {
+        setShowCreditDialog(true)
+        setIsSubmitting(false);
+        return
+      }
+
       setIsLoading(true)
 
+      // Authenticate user
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user.id) {
         throw new Error("Not authenticated")
@@ -309,6 +317,19 @@ export default function CreateEventPage() {
         })
 
       if (eventError) throw eventError
+
+      // Get the event ID
+      const { data: eventData, error: fetchError } = await supabase
+        .from("events")
+        .select("id")
+        .eq("created_by", session.user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (fetchError) throw fetchError
+      
+      const eventId = eventData.id
 
       // Deduct one event credit
       const { error: creditError } = await supabase
@@ -344,6 +365,7 @@ export default function CreateEventPage() {
       })
     } finally {
       setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -604,27 +626,38 @@ export default function CreateEventPage() {
                   name="posterUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Event Poster (Optional)</FormLabel>
+                      <FormLabel>Poster Image</FormLabel>
                       <FormControl>
-                        <div className="space-y-4">
-                          <Input
+                        <div className="flex flex-col gap-2">
+                          <input
                             type="file"
                             accept="image/*"
                             onChange={handlePosterUpload}
                             disabled={uploadingPoster}
+                            className="hidden"
+                            id="poster-upload"
                           />
-                          <Input type="hidden" {...field} />
-                          {uploadingPoster && (
-                            <p className="text-sm text-muted-foreground">
-                              Uploading poster...
-                            </p>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <label
+                              htmlFor="poster-upload"
+                              className="cursor-pointer bg-secondary hover:bg-secondary/80 text-secondary-foreground px-4 py-2 rounded-md text-sm font-medium"
+                            >
+                              {uploadingPoster ? "Uploading..." : "Upload Poster"}
+                            </label>
+                            {field.value && (
+                              <span className="text-sm text-muted-foreground">
+                                Poster uploaded
+                              </span>
+                            )}
+                          </div>
                           {field.value && (
-                            <img
-                              src={field.value}
-                              alt="Event poster preview"
-                              className="w-full max-w-md rounded-lg"
-                            />
+                            <div className="relative w-40 h-40 mt-2">
+                              <img
+                                src={field.value}
+                                alt="Event poster"
+                                className="w-full h-full object-cover rounded-md"
+                              />
+                            </div>
                           )}
                         </div>
                       </FormControl>
@@ -633,8 +666,19 @@ export default function CreateEventPage() {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isLoading || uploadingPoster}>
-                  {isLoading ? "Creating event..." : "Create Event"}
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={isSubmitting || uploadingPoster}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Event"
+                  )}
                 </Button>
               </form>
             </Form>

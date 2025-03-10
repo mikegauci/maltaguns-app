@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
-import { ArrowLeft, X } from "lucide-react"
+import { ArrowLeft, X, Loader2 } from "lucide-react"
 import { CreditDialog } from "@/components/credit-dialog"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -65,6 +65,9 @@ export default function CreateFirearmsListing() {
   const [isLoading, setIsLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [isRetailer, setIsRetailer] = useState(false)
+  const [hasCredits, setHasCredits] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<FirearmsForm>({
     resolver: zodResolver(firearmsSchema),
@@ -266,6 +269,7 @@ export default function CreateFirearmsListing() {
 
   async function onSubmit(data: FirearmsForm) {
     try {
+      setIsSubmitting(true);
       if (credits < 1) {
         setShowCreditDialog(true)
         return
@@ -358,6 +362,8 @@ export default function CreateFirearmsListing() {
         title: "Failed to create listing",
         description: error instanceof Error ? error.message : "Something went wrong"
       })
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -544,6 +550,7 @@ export default function CreateFirearmsListing() {
                               onChange={handleImageUpload}
                               disabled={uploading || uploadedImages.length >= MAX_FILES}
                               className="hidden"
+                              ref={fileInputRef}
                             />
                           </div>
                           {uploadedImages.length > 0 && (
@@ -581,9 +588,16 @@ export default function CreateFirearmsListing() {
                 <Button 
                   type="submit" 
                   className="w-full bg-green-600 hover:bg-green-700 text-white" 
-                  disabled={uploading}
+                  disabled={isSubmitting || uploading}
                 >
-                  {uploading ? "Uploading images..." : "Create Listing"}
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Listing"
+                  )}
                 </Button>
               </form>
             </Form>
