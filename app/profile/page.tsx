@@ -40,7 +40,8 @@ import {
   CheckCircle,
   Mail,
   Phone,
-  Star
+  Star,
+  Calendar
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -104,6 +105,24 @@ interface Retailer {
   slug: string;
 }
 
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  organizer: string;
+  type: string;
+  start_date: string;
+  end_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  location: string;
+  poster_url: string | null;
+  phone: string | null;
+  email: string | null;
+  price: number | null;
+  created_at: string;
+}
+
 const profileSchema = z.object({
   phone: z.string().min(1, "Phone number is required"),
   address: z.string().min(1, "Address is required"),
@@ -146,6 +165,7 @@ export default function ProfilePage() {
   const [listingToFeature, setListingToFeature] = useState<string | null>(null);
   const [removeFeatureDialogOpen, setRemoveFeatureDialogOpen] = useState(false);
   const [listingToRemoveFeature, setListingToRemoveFeature] = useState<string | null>(null);
+  const [events, setEvents] = useState<Event[]>([]);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -332,11 +352,24 @@ export default function ProfilePage() {
           }
         }
 
+        // Fetch user's events
+        const { data: eventsData, error: eventsError } = await supabase
+          .from("events")
+          .select("*")
+          .eq("created_by", userId)
+          .order("start_date", { ascending: false });
+
+        if (eventsError) {
+          console.error("Events fetch error:", eventsError.message);
+          // Continue even if there's an error
+        }
+
         // Update state with all fetched data
         setProfile(profileData);
         setListings(sortedListings);
         setBlogPosts(blogData || []);
         setRetailerBlogPosts(retailerPostsData);
+        setEvents(eventsData || []);
         
         form.reset({
           phone: profileData.phone || "",
@@ -1437,6 +1470,68 @@ export default function ProfilePage() {
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
                           </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Events - Only show if user has events */}
+        {events.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>My Events</CardTitle>
+                <CardDescription>
+                  Manage your published events
+                </CardDescription>
+              </div>
+              <Link href="/events/create">
+                <Button className="bg-black text-white hover:bg-gray-800">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Create Event
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {events.map((event) => (
+                  <Card key={event.id}>
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex gap-3">
+                          {event.poster_url ? (
+                            <div className="h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
+                              <img
+                                src={event.poster_url}
+                                alt={event.title}
+                                className="h-full w-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="h-16 w-16 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
+                              <Calendar className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div>
+                            <h3 className="font-semibold text-lg">{event.title}</h3>
+                            <div className="text-sm text-muted-foreground">
+                              <p>{format(new Date(event.start_date), "PPP")}</p>
+                              <p>{event.location}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/events/${event.id}`}>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Button>
+                          </Link>
                         </div>
                       </div>
                     </CardContent>
