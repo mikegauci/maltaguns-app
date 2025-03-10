@@ -370,28 +370,35 @@ export default function ProfilePage() {
           // Continue even if there's an error
         }
 
-        // Fetch user's credits
+        // Fetch user's credits - Modified query
         const { data: listingCreditsData, error: listingCreditsError } = await supabase
           .from("credits")
           .select("amount")
           .eq("user_id", userId)
-          .single();
+          .maybeSingle();  // Changed from single() to maybeSingle()
 
-        if (listingCreditsError && listingCreditsError.code !== "PGRST116") {
+        if (listingCreditsError) {
           console.error("Listing credits fetch error:", listingCreditsError.message);
-          // Continue even if there's an error
         }
 
         const { data: eventCreditsData, error: eventCreditsError } = await supabase
           .from("credits_events")
           .select("amount")
           .eq("user_id", userId)
-          .single();
+          .maybeSingle();  // Changed from single() to maybeSingle()
 
-        if (eventCreditsError && eventCreditsError.code !== "PGRST116") {
+        if (eventCreditsError) {
           console.error("Event credits fetch error:", eventCreditsError.message);
-          // Continue even if there's an error
         }
+
+        // Set credits with proper null checking
+        setListingCredits(listingCreditsData?.amount ?? 0);
+        setEventCredits(eventCreditsData?.amount ?? 0);
+        
+        form.reset({
+          phone: profileData.phone || "",
+          address: profileData.address || "",
+        });
 
         // Update state with all fetched data
         setProfile(profileData);
@@ -399,13 +406,6 @@ export default function ProfilePage() {
         setBlogPosts(blogData || []);
         setRetailerBlogPosts(retailerPostsData);
         setEvents(eventsData || []);
-        setListingCredits(listingCreditsData?.amount || 0);
-        setEventCredits(eventCreditsData?.amount || 0);
-        
-        form.reset({
-          phone: profileData.phone || "",
-          address: profileData.address || "",
-        });
       } catch (error) {
         console.error("Error loading profile:", error);
         toast({
@@ -916,10 +916,44 @@ export default function ProfilePage() {
   }
 
   // Add a refresh function that reruns loadProfile
-  const refreshProfile = () => {
-    setLoading(true); // Show loading state
-    // This will trigger the useEffect to run loadProfile again
-    router.refresh();
+  const refreshProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        router.push("/login");
+        return;
+      }
+
+      const userId = session.user.id;
+
+      // Fetch user's credits - Modified query
+      const { data: listingCreditsData, error: listingCreditsError } = await supabase
+        .from("credits")
+        .select("amount")
+        .eq("user_id", userId)
+        .maybeSingle();  // Changed from single() to maybeSingle()
+
+      if (listingCreditsError) {
+        console.error("Listing credits fetch error:", listingCreditsError.message);
+      }
+
+      const { data: eventCreditsData, error: eventCreditsError } = await supabase
+        .from("credits_events")
+        .select("amount")
+        .eq("user_id", userId)
+        .maybeSingle();  // Changed from single() to maybeSingle()
+
+      if (eventCreditsError) {
+        console.error("Event credits fetch error:", eventCreditsError.message);
+      }
+
+      // Set credits with proper null checking
+      setListingCredits(listingCreditsData?.amount ?? 0);
+      setEventCredits(eventCreditsData?.amount ?? 0);
+
+    } catch (error) {
+      console.error("Error refreshing profile:", error);
+    }
   };
 
   return (
@@ -1678,13 +1712,12 @@ export default function ProfilePage() {
         open={showCreditDialog}
         onOpenChange={setShowCreditDialog}
         userId={profile?.id || ""}
-        onSuccess={() => {
+        onSuccess={async () => {
           toast({
             title: "Credits purchased",
             description: "Your credits have been added to your account.",
           });
-          // Refresh the page to show updated credits
-          router.refresh();
+          await refreshProfile();
         }}
       />
 
@@ -1692,13 +1725,12 @@ export default function ProfilePage() {
         open={showEventCreditDialog}
         onOpenChange={setShowEventCreditDialog}
         userId={profile?.id || ""}
-        onSuccess={() => {
+        onSuccess={async () => {
           toast({
             title: "Event credits purchased",
             description: "Your event credits have been added to your account.",
           });
-          // Refresh the page to show updated credits
-          router.refresh();
+          await refreshProfile();
         }}
       />
     </div>

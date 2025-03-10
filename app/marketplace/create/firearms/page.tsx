@@ -117,12 +117,13 @@ export default function CreateFirearmsListing() {
           .from("credits")
           .select("amount")
           .eq("user_id", session.user.id)
-          .single();
+          .maybeSingle();
 
-        if (creditsError && creditsError.code !== 'PGRST116') {
-          // Real error, not just "not found"
+        if (creditsError) {
+          // Real error
           console.error("Error fetching credits:", creditsError);
           setCredits(0);
+          setShowCreditDialog(true);
         } else if (!userCredits) {
           // No credits found, create a new record with 0 credits
           console.log("No credits found, creating new record");
@@ -148,13 +149,14 @@ export default function CreateFirearmsListing() {
           setCredits(userCredits.amount || 0);
           
           // Show credit dialog if user has no credits
-          if (!userCredits.amount) {
+          if (userCredits.amount === 0) {
             setShowCreditDialog(true);
           }
         }
       } catch (error) {
         console.error("Error checking credits:", error);
         setCredits(0);
+        setShowCreditDialog(true);
       } finally {
         setIsLoading(false);
       }
