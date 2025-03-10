@@ -72,53 +72,35 @@ export async function POST(request: Request) {
       }
       
       console.log("[WEBHOOK-SINGULAR] Successfully processed feature credit purchase")
+      return NextResponse.json({ received: true })
     }
-    // Handle different types of credits
+    // Handle event credits (€25)
     else if (amountPaid === 25) {
       console.log("[WEBHOOK-SINGULAR] Processing event credit purchase")
       
-      // First, check if the user already has event credits
-      const { data: existingCredits, error: fetchError } = await supabase
-        .from("credits_events")
-        .select("amount")
-        .eq("user_id", userId)
-        .single()
-        
-      if (fetchError && fetchError.code !== 'PGRST116') { // Not found is ok
-        console.error("Error fetching event credits:", fetchError)
-        return NextResponse.json({ error: "Failed to fetch event credits" }, { status: 500 })
-      }
-      
-      const currentAmount = existingCredits?.amount || 0
-      const newAmount = currentAmount + 1
-      console.log("Current event credits:", currentAmount, "New amount:", newAmount)
-      
-      // Now update or insert the record with the incremented amount
-      const { error: upsertError } = await supabase
-        .from("credits_events")
-        .upsert({ 
-          user_id: userId,
-          amount: newAmount,
-          updated_at: new Date().toISOString(),
-          created_at: existingCredits ? undefined : new Date().toISOString() // Only set created_at for new records
-        })
+      // Check if we've already processed this session ID
+      const { data: existingTransaction, error: transactionCheckError } = await supabase
+        .from("credit_transactions")
+        .select("id, created_at")
+        .eq("stripe_payment_id", session.id)
+        .eq("credit_type", "event")
+        .order('created_at', { ascending: false })
+        .limit(1)
 
-      if (upsertError) {
-        console.error("Error updating event credits:", upsertError)
-        return NextResponse.json({ error: "Error updating event credits" }, { status: 500 })
+      if (existingTransaction && existingTransaction.length > 0) {
+        console.log("[WEBHOOK-SINGULAR] This event credit purchase was already processed at:", existingTransaction[0].created_at)
+        return NextResponse.json({ received: true })
       }
-      
-      console.log("Successfully updated event credits to:", newAmount)
 
-      // Record the transaction
+      // Add transaction record FIRST before updating credits to prevent race conditions
       const { error: transactionError } = await supabase
         .from("credit_transactions")
         .insert({
           user_id: userId,
           amount: 1,
-          status: "completed", // Changed from "type" to "status" for consistency
-          type: "credit", // Adding the required type field
-          credit_type: "event", // Added credit_type to indicate this is an event credit
+          status: "completed",
+          type: "credit",
+          credit_type: "event",
           description: "Purchase of 1 event credit",
           stripe_payment_id: session.id
         })
@@ -127,11 +109,44 @@ export async function POST(request: Request) {
         console.error("Error recording transaction:", transactionError)
         return NextResponse.json({ error: "Error recording transaction" }, { status: 500 })
       }
+
+      // Now that we've recorded the transaction, get current credits
+      const { data: existingCredits, error: fetchError } = await supabase
+        .from("credits_events")
+        .select("amount")
+        .eq("user_id", userId)
+        .single()
+        
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error("Error fetching event credits:", fetchError)
+        return NextResponse.json({ error: "Failed to fetch event credits" }, { status: 500 })
+      }
       
-      console.log("Successfully processed event credit purchase")
-    } else {
+      const currentAmount = existingCredits?.amount || 0
+      const newAmount = currentAmount + 1
+      console.log("[WEBHOOK-SINGULAR] Current event credits:", currentAmount, "New amount:", newAmount)
+      
+      // Update credits after transaction is recorded
+      const { error: upsertError } = await supabase
+        .from("credits_events")
+        .upsert({ 
+          user_id: userId,
+          amount: newAmount,
+          updated_at: new Date().toISOString(),
+          created_at: existingCredits ? undefined : new Date().toISOString()
+        })
+
+      if (upsertError) {
+        console.error("Error updating event credits:", upsertError)
+        return NextResponse.json({ error: "Error updating event credits" }, { status: 500 })
+      }
+      
+      console.log("[WEBHOOK-SINGULAR] Successfully updated event credits to:", newAmount)
+      return NextResponse.json({ received: true })
+    }
+    // Handle regular listing credits (€15, €50, €100)
+    else if (amountPaid === 15 || amountPaid === 50 || amountPaid === 100) {
       console.log("[WEBHOOK-SINGULAR] Processing regular credit purchase")
-      // Regular listing credits
       let creditsToAdd = 0
       if (amountPaid === 15) creditsToAdd = 1
       else if (amountPaid === 50) creditsToAdd = 10
@@ -139,7 +154,7 @@ export async function POST(request: Request) {
       
       console.log("Credits to add:", creditsToAdd)
       
-      // Update the credits table (changed from firearms_credits)
+      // Update the credits table
       const { data: existingCredits, error: creditsError } = await supabase
         .from("credits")
         .select("amount")
@@ -189,7 +204,7 @@ export async function POST(request: Request) {
           user_id: userId,
           amount: creditsToAdd,
           status: "completed",
-          type: "credit", // Adding the required type field
+          type: "credit",
           credit_type: "firearms",
           description: `Purchase of ${creditsToAdd} firearms credits`,
           stripe_payment_id: session.id
@@ -201,6 +216,12 @@ export async function POST(request: Request) {
       }
       
       console.log("Successfully processed regular credit purchase")
+      return NextResponse.json({ received: true })
+    }
+    // Handle unknown amount
+    else {
+      console.log("[WEBHOOK-SINGULAR] Unrecognized amount:", amountPaid)
+      return NextResponse.json({ error: "Unrecognized payment amount" }, { status: 400 })
     }
   } else {
     console.log("[WEBHOOK-SINGULAR] Ignoring non-checkout.session.completed event")

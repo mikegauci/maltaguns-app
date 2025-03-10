@@ -62,16 +62,11 @@ export default function CreateEventPage() {
   const [isMounted, setIsMounted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   
-  // Set isMounted to true when component mounts
+  // Set isMounted to true and handle success redirect
   useEffect(() => {
-    setIsMounted(true)
-  }, [])
-  
-  // Check for success parameter in URL (after Stripe redirect)
-  useEffect(() => {
-    // Only run if we're in the browser
     if (typeof window === 'undefined') return;
     
+    setIsMounted(true)
     const url = new URL(window.location.href)
     const success = url.searchParams.get('success')
     const sessionId = url.searchParams.get('session_id')
@@ -88,8 +83,13 @@ export default function CreateEventPage() {
       url.searchParams.delete('session_id')
       window.history.replaceState({}, '', url.toString())
       
-      // Force refresh credits
-      checkCredits(true)
+      // Wait a moment before checking credits to allow webhook to complete
+      setTimeout(() => {
+        checkCredits(true)
+      }, 2000)
+    } else {
+      // Only check credits if not coming from a successful payment
+      checkCredits()
     }
   }, [])
 
@@ -206,13 +206,6 @@ export default function CreateEventPage() {
       console.error("Error checking credits:", error)
     }
   }
-
-  useEffect(() => {
-    // Only run checkCredits after component is mounted
-    if (isMounted) {
-      checkCredits()
-    }
-  }, [isMounted, router])
 
   async function handlePosterUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {
@@ -388,6 +381,15 @@ export default function CreateEventPage() {
     } finally {
       setRefreshing(false)
     }
+  }
+
+  // Move the dialog outside the return statement
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
   }
 
   return (
@@ -685,19 +687,16 @@ export default function CreateEventPage() {
           </CardContent>
         </Card>
 
-        {/* Only render dialog when component is mounted and suppress hydration warnings */}
-        {isMounted && userId && (
-          <div suppressHydrationWarning>
-            <EventCreditDialog
-              open={showCreditDialog}
-              onOpenChange={setShowCreditDialog}
-              userId={userId}
-              onSuccess={() => {
-                setShowCreditDialog(false)
-                setHasCredits(true)
-              }}
-            />
-          </div>
+        {userId && (
+          <EventCreditDialog
+            open={showCreditDialog}
+            onOpenChange={setShowCreditDialog}
+            userId={userId}
+            onSuccess={() => {
+              setShowCreditDialog(false)
+              setHasCredits(true)
+            }}
+          />
         )}
       </div>
     </div>
