@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Store, MapPin, Phone, Mail, Globe, Plus } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
+import { LoadingState } from "@/components/ui/loading-state"
 
 // List of authorized user IDs
 const AUTHORIZED_RETAILER_CREATORS = [
@@ -61,7 +62,7 @@ export default function RetailersPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading retailers...</p>
+        <LoadingState message="Loading retailers..." />
       </div>
     )
   }

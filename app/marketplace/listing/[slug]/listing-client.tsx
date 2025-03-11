@@ -9,12 +9,12 @@ import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock, Pencil, Calendar, Us
 import Link from "next/link"
 import { format } from "date-fns"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { supabase } from "@/lib/supabase"
+import { useSupabase } from "@/components/providers/supabase-provider"
 import { FeatureCreditDialog } from "@/components/feature-credit-dialog"
 import { ReportListingDialog } from "@/components/report-listing-dialog"
-import { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { AutoFeatureHandler } from "../../auto-feature-handler"
 import { toast } from "sonner"
+import { LoadingState } from "@/components/ui/loading-state"
 
 // Default image to use when no images are provided
 const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
@@ -39,6 +39,14 @@ interface ListingDetails {
   } | null
   images: string[]
   status: string
+}
+
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/--+/g, '-')
 }
 
 function formatPrice(price: number) {
@@ -117,25 +125,17 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
   } as const;
 
   if (!(category in subcategories)) {
-    return subcategory; // Return original if category doesn't exist
+    return subcategory;
   }
 
   const categorySubcategories = subcategories[category as keyof typeof subcategories];
-
   return categorySubcategories[subcategory as keyof typeof categorySubcategories] || subcategory;
-}
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
 }
 
 export default function ListingClient({ listing }: { listing: ListingDetails }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { supabase, session } = useSupabase()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isFeatured, setIsFeatured] = useState(false)
   const [showFeatureDialog, setShowFeatureDialog] = useState(false)
@@ -144,6 +144,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
   const [userId, setUserId] = useState<string | null>(null)
   const [isRetailer, setIsRetailer] = useState(false)
   const [showReportDialog, setShowReportDialog] = useState(false)
+  const [sessionChecked, setSessionChecked] = useState(false)
 
   // Use the first image from the listing, or the default if none are available
   const images = listing.images.length > 0 ? listing.images : [DEFAULT_LISTING_IMAGE]
@@ -151,18 +152,31 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
   // Function to check if the current user is the owner of the listing
   async function checkOwnership() {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
+      console.log("Checking session...");
+      
       if (session?.user) {
-        setUserId(session.user.id)
-        setIsOwner(session.user.id === listing.seller_id)
-      } else {
-        setIsOwner(false)
+        console.log("Session found:", {
+          userId: session.user.id,
+          listingSellerId: listing.seller_id
+        });
+        
+        setUserId(session.user.id);
+        setIsOwner(session.user.id === listing.seller_id);
+        setSessionChecked(true);
+        return session;
       }
+      
+      console.log("No session found");
+      setUserId(null);
+      setIsOwner(false);
+      setSessionChecked(true);
+      return null;
     } catch (error) {
-      console.error("Error checking ownership:", error)
-      setIsOwner(false)
-    } finally {
-      setIsLoading(false)
+      console.error("Error checking ownership:", error);
+      setUserId(null);
+      setIsOwner(false);
+      setSessionChecked(true);
+      return null;
     }
   }
 
@@ -190,9 +204,9 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
 
   // Function to check if seller is a retailer
   async function checkIfRetailer() {
+    if (!listing.seller_id) return;
+
     try {
-      if (!listing.seller_id) return;
-      
       const { data, error } = await supabase
         .from('retailers')
         .select('id')
@@ -215,83 +229,207 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
   }
 
   useEffect(() => {
-    // Reset image index when listing changes
-    setCurrentImageIndex(0)
-    
-    // Check if the current user is the owner of the listing
-    checkOwnership()
-    
-    // Check if the listing is featured
-    checkIfFeatured()
-    
-    // Check if seller is a retailer
-    checkIfRetailer()
-    
-    // Check for success parameter to show notification
-    const success = searchParams.get('success')
-    if (success === 'true') {
-      // Show success toast
-      toast.success("Payment successful!", {
-        description: "Your listing is now featured and will appear at the top of search results for 30 days.",
-      })
-      
-      // Clean up the URL parameter
-      const newUrl = window.location.pathname
-      window.history.replaceState({}, document.title, newUrl)
-      
-      // Refresh listing data
-      checkIfFeatured()
-    }
-  }, [listing.id, listing.seller_id, searchParams])
+    let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event: AuthChangeEvent, session: Session | null) => {
-        setUserId(session?.user.id || null)
-        setIsOwner(session?.user.id === listing.seller_id)
+    async function initializeData() {
+      try {
+        setIsLoading(true);
+        
+        // First check session and ownership
+        const currentSession = await checkOwnership();
+        console.log("Initial session check complete:", {
+          hasSession: !!currentSession,
+          userId: currentSession?.user?.id
+        });
+        
+        // If we're not logged in, we can skip other checks
+        if (!currentSession) {
+          if (mounted) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        // Run remaining checks in parallel only if we have a session
+        if (mounted) {
+          await Promise.all([
+            checkIfFeatured(),
+            checkIfRetailer()
+          ]);
+        }
+
+        if (mounted) {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("Error initializing data:", error);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-    )
+    }
 
-    return () => subscription.unsubscribe()
-  }, [listing.seller_id])
+    // Initialize data when session changes
+    initializeData();
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % images.length)
-  }
+    // Set a timeout to show loading state if initialization takes too long
+    timeoutId = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.log("Loading timeout reached, forcing state update");
+        setIsLoading(false);
+        setSessionChecked(true);
+      }
+    }, 3000); // 3 seconds timeout
 
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length)
-  }
+    return () => {
+      mounted = false;
+      clearTimeout(timeoutId);
+    }
+  }, [session, listing.id, listing.seller_id]);
 
-  // Update the handleFeatureListing function
-  const handleFeatureListing = () => {
+  // Remove duplicate auth state listener
+  useEffect(() => {
+    console.log("Current user state:", { userId, isOwner });
+  }, [userId, isOwner]);
+
+  // Render debug info in development
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Component state:", {
+        userId,
+        isOwner,
+        isLoading,
+        sessionChecked,
+        hasSellerInfo: !!listing.seller
+      });
+    }
+  }, [userId, isOwner, isLoading, sessionChecked, listing.seller]);
+
+  function handleFeatureListing() {
     if (!userId) {
-      // Redirect to login page instead of using signIn
       router.push('/login');
       return;
     }
-    
-    // Open the dialog, making sure we pass the listing ID
     setShowFeatureDialog(true);
   }
 
-  // Add useEffect to check URL params for auto-featuring after checkout
-  useEffect(() => {
-    // Check if we should auto-feature the listing after checkout success
-    const searchParams = new URLSearchParams(window.location.search);
-    const success = searchParams.get('success');
-    const autoFeature = searchParams.get('autoFeature');
-    
-    if (success === 'true' && autoFeature === 'true' && userId && !isFeatured) {
-      setShowFeatureDialog(true);
+  function prevImage() {
+    setCurrentImageIndex((prev) => 
+      prev === 0 ? images.length - 1 : prev - 1
+    );
+  }
+
+  function nextImage() {
+    setCurrentImageIndex((prev) => 
+      prev === images.length - 1 ? 0 : prev + 1
+    );
+  }
+
+  if (isLoading && !sessionChecked) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingState message="Loading listing details..." />
+      </div>
+    );
+  }
+
+  // Render seller information section
+  const renderSellerInfo = () => {
+    console.log("Rendering seller info with state:", {
+      userId,
+      sessionChecked,
+      hasSellerInfo: !!listing.seller,
+      sellerInfo: listing.seller
+    });
+
+    // Show loading state while checking session
+    if (!sessionChecked) {
+      return (
+        <div className="flex items-center justify-center p-4">
+          <LoadingState message="Loading seller information..." />
+        </div>
+      );
     }
-    
-    // Clean up the URL parameters after processing
-    if (success || autoFeature) {
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
+
+    // Show seller information for authenticated users
+    if (userId && listing.seller) {
+      return (
+        <>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold">{listing.seller.username}</p>
+            {isRetailer && (
+              <div
+                onClick={() => router.push(`/retailers/${listing.seller_id}`)}
+                className="cursor-pointer"
+              >
+                <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" />
+                  Verified Retailer
+                </Badge>
+              </div>
+            )}
+          </div>
+          {listing.seller.email && (listing.seller.contact_preference === "email" || listing.seller.contact_preference === "both" || !listing.seller.contact_preference) && (
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <a
+                href={`mailto:${listing.seller.email}`}
+                className="text-primary hover:underline"
+              >
+                {listing.seller.email}
+              </a>
+            </div>
+          )}
+          {listing.seller.phone && (listing.seller.contact_preference === "phone" || listing.seller.contact_preference === "both" || !listing.seller.contact_preference) && (
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <a
+                href={`tel:${listing.seller.phone}`}
+                className="text-primary hover:underline"
+              >
+                {listing.seller.phone}
+              </a>
+            </div>
+          )}
+          {!isOwner && <ReportListingDialog listingId={listing.id} />}
+        </>
+      );
     }
-  }, [userId, isFeatured]);
+
+    // Show login/register prompt if not authenticated
+    return (
+      <div className="space-y-4">
+        <div className="relative min-h-[200px]">
+          <div className="blur-sm">
+            <p className="font-semibold">••••••••••</p>
+            <div className="flex items-center gap-2 mt-2">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <span>••••••@••••.com</span>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              <span>+356 •••• ••••</span>
+            </div>
+          </div>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
+            <Lock className="h-8 w-8 text-muted-foreground mb-2" />
+            <p className="text-sm text-center text-muted-foreground mb-4">
+              Create a verified account to view seller information
+            </p>
+            <div className="flex flex-col gap-2 w-full">
+              <Link href="/register" className="w-full">
+                <Button className="w-full">Register to Contact Seller</Button>
+              </Link>
+              <Link href="/login" className="w-full">
+                <Button variant="outline" className="w-full">Login</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -460,75 +598,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                 <CardTitle>Seller Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {userId ? (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold">{listing.seller?.username}</p>
-                      {isRetailer && (
-                        <Link href={`/retailers/${listing.seller_id}`}>
-                          <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1 cursor-pointer">
-                            <CheckCircle className="h-3 w-3" />
-                            Verified Retailer
-                          </Badge>
-                        </Link>
-                      )}
-                    </div>
-                    {listing.seller?.email && (listing.seller?.contact_preference === "email" || listing.seller?.contact_preference === "both" || !listing.seller?.contact_preference) && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-muted-foreground" />
-                        <a
-                          href={`mailto:${listing.seller.email}`}
-                          className="text-primary hover:underline"
-                        >
-                          {listing.seller.email}
-                        </a>
-                      </div>
-                    )}
-                    {listing.seller?.phone && (listing.seller?.contact_preference === "phone" || listing.seller?.contact_preference === "both" || !listing.seller?.contact_preference) && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <a
-                          href={`tel:${listing.seller.phone}`}
-                          className="text-primary hover:underline"
-                        >
-                          {listing.seller.phone}
-                        </a>
-                      </div>
-                    )}
-                    {/* Add Report Listing button */}
-                    {!isOwner && <ReportListingDialog listingId={listing.id} />}
-                  </>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="relative min-h-[200px]">
-                      <div className="blur-sm">
-                        <p className="font-semibold">••••••••••</p>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Mail className="h-4 w-4 text-muted-foreground" />
-                          <span>••••••@••••.com</span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Phone className="h-4 w-4 text-muted-foreground" />
-                          <span>+356 •••• ••••</span>
-                        </div>
-                      </div>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
-                        <Lock className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm text-center text-muted-foreground mb-4">
-                          Create a verified account to view seller information
-                        </p>
-                        <div className="flex flex-col gap-2 w-full">
-                          <Link href="/register" className="w-full">
-                            <Button className="w-full">Register to Contact Seller</Button>
-                          </Link>
-                          <Link href="/login" className="w-full">
-                            <Button variant="outline" className="w-full">Login</Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {renderSellerInfo()}
               </CardContent>
             </Card>
           </div>

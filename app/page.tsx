@@ -10,6 +10,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { Database } from "@/lib/database.types"
+import { LoadingState } from "@/components/ui/loading-state"
 
 function slugify(text: string) {
   return text
@@ -31,14 +32,16 @@ interface Event {
 interface Listing {
   id: string
   title: string
+  description: string
   price: number
   thumbnail: string
-  type: 'firearms' | 'non_firearms'
+  created_at: string
 }
 
 interface BlogPost {
   id: string
   title: string
+  content: string
   slug: string
   featured_image: string | null
   created_at: string
@@ -55,50 +58,24 @@ export default function Home() {
   const [recentListings, setRecentListings] = useState<Listing[]>([])
   const [latestPosts, setLatestPosts] = useState<BlogPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [retryCount, setRetryCount] = useState(0)
+  const MAX_RETRIES = 3
 
   useEffect(() => {
     let mounted = true
+    let retryTimeout: NodeJS.Timeout
 
     async function fetchData() {
       try {
-        // Get session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-          return
-        }
-
-        if (mounted) {
-          setIsAuthenticated(!!session)
-        }
-
-        // Fetch latest events
-        const { data: eventsData, error: eventsError } = await supabase
-          .from('events')
-          .select('*')
-          .gte('start_date', new Date().toISOString())
-          .order('start_date', { ascending: true })
-          .limit(3)
-
-        if (eventsError) {
-          console.error('Events fetch error:', eventsError)
-          toast({
-            variant: "destructive",
-            title: "Error loading events",
-            description: "Failed to load latest events. Please refresh the page."
-          })
-        } else if (mounted) {
-          setLatestEvents(eventsData || [])
-        }
+        setIsLoading(true)
 
         // Fetch recent listings
         const { data: listingsData, error: listingsError } = await supabase
-          .from('listings')
-          .select('*')
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(3)
+          .from("listings")
+          .select("*")
+          .eq("status", "active")
+          .order("created_at", { ascending: false })
+          .limit(6)
 
         if (listingsError) {
           console.error('Listings fetch error:', listingsError)
@@ -132,34 +109,46 @@ export default function Home() {
         } else if (mounted) {
           setLatestPosts(postsData || [])
         }
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Something went wrong. Please refresh the page."
-        })
-      } finally {
+
+        // Check authentication status
+        const { data: { session } } = await supabase.auth.getSession()
+        if (mounted) {
+          setIsAuthenticated(!!session)
+        }
+
         if (mounted) {
           setIsLoading(false)
+          setRetryCount(0) // Reset retry count on successful fetch
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        if (mounted) {
+          // If we haven't exceeded max retries, try again with exponential backoff
+          if (retryCount < MAX_RETRIES) {
+            const nextRetry = Math.min(1000 * Math.pow(2, retryCount), 10000)
+            retryTimeout = setTimeout(() => {
+              setRetryCount(prev => prev + 1)
+              fetchData()
+            }, nextRetry)
+          } else {
+            setIsLoading(false)
+            toast({
+              variant: "destructive",
+              title: "Error",
+              description: "Something went wrong. Please refresh the page."
+            })
+          }
         }
       }
     }
 
     fetchData()
 
-    // Set up auth state listener
-    const { data: { subscription }} = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) {
-        setIsAuthenticated(!!session)
-      }
-    })
-
     return () => {
       mounted = false
-      subscription.unsubscribe()
+      if (retryTimeout) clearTimeout(retryTimeout)
     }
-  }, [supabase, toast])
+  }, [supabase, toast, retryCount])
 
   function formatPrice(price: number) {
     return new Intl.NumberFormat('en-MT', {
@@ -171,7 +160,7 @@ export default function Home() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <LoadingState message="Loading content..." />
       </div>
     )
   }
@@ -238,7 +227,7 @@ export default function Home() {
                   </div>
                   <CardContent className="p-4">
                     <Badge variant="secondary" className="mb-2">
-                      {listing.type === 'firearms' ? 'Firearms' : 'Accessories'}
+                      {listing.title.split(' ')[0]}
                     </Badge>
                     <h3 className="font-semibold text-lg mb-2 line-clamp-1">{listing.title}</h3>
                     <p className="text-lg font-bold text-primary">{formatPrice(listing.price)}</p>

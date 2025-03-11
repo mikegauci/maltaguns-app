@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
+import { Loader2, LogOut } from "lucide-react"
 
 const loginSchema = z.object({
   identifier: z.string().min(1, "Username or email is required"),
@@ -20,9 +21,8 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>
 
-interface DebugInfo {
-  sessionAfterLogin?: any;
-  [key: string]: any;
+type DebugInfo = {
+  sessionAfterLogin?: any
 }
 
 export default function Login() {
@@ -30,9 +30,22 @@ export default function Login() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [debugInfo, setDebugInfo] = useState<DebugInfo>({})
   const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setIsAuthenticated(true)
+        setUserEmail(session.user.email || null)
+      }
+    }
+    checkSession()
+  }, [supabase.auth])
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -41,6 +54,30 @@ export default function Login() {
       password: "",
     },
   })
+
+  async function handleLogout() {
+    try {
+      setIsLoading(true)
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+
+      toast({
+        title: "Logged out successfully",
+        description: "You have been signed out of your account.",
+      })
+
+      router.push('/')
+      router.refresh()
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to log out",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   async function onSubmit(data: LoginForm) {
     try {
@@ -110,6 +147,50 @@ export default function Login() {
     }
   }
 
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Already Logged In</CardTitle>
+            <CardDescription>
+              You are currently logged in as {userEmail}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4">
+              <Button 
+                variant="destructive" 
+                onClick={handleLogout}
+                disabled={isLoading}
+                className="w-full"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging out...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log Out
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => window.history.back()}
+                className="w-full"
+              >
+                Go Back
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <Card className="w-full max-w-md">
@@ -129,12 +210,13 @@ export default function Login() {
                   <FormItem>
                     <FormLabel>Username or Email</FormLabel>
                     <FormControl>
-                      <Input {...field} />
+                      <Input placeholder="Enter your username or email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <FormField
                 control={form.control}
                 name="password"
@@ -142,43 +224,37 @@ export default function Login() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="password" placeholder="Enter your password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign in"}
+
+              {error && (
+                <div className="text-sm text-destructive">
+                  {error}
+                </div>
+              )}
+
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                Don&apos;t have an account?{" "}
-                <Link href="/register" className="text-primary hover:underline">
-                  Register here
-                </Link>
-              </p>
             </form>
           </Form>
         </CardContent>
       </Card>
-
-      {error && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold">Error</h3>
-          <p className="mt-2 p-4 bg-red-100 rounded text-sm overflow-auto">
-            {error}
-          </p>
-        </div>
-      )}
-
-      {debugInfo && (
-        <div className="mt-4">
-          <h3 className="text-lg font-semibold">Debug Information</h3>
-          <pre className="mt-2 p-4 bg-gray-100 rounded text-sm overflow-auto">
-            {JSON.stringify(debugInfo, null, 2)}
-          </pre>
-        </div>
-      )}
     </div>
   )
 }

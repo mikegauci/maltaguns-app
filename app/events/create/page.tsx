@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { EventCreditDialog } from "@/components/event-credit-dialog"
 import { ArrowLeft, Loader2 } from "lucide-react"
+import { Database } from "@/lib/database.types"
 
 // Force dynamic rendering to avoid hydration issues
 export const dynamic = "force-dynamic";
@@ -31,13 +32,78 @@ const eventTypes = [
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
+// Helper function to check if a date is in the past
+function isPastDate(date: string) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // Reset time to start of day
+  const checkDate = new Date(date)
+  return checkDate < today
+}
+
+// Helper function to check if a date is more than 5 years in the future
+function isTooFarInFuture(date: string) {
+  const maxDate = new Date()
+  maxDate.setFullYear(maxDate.getFullYear() + 5)
+  maxDate.setHours(0, 0, 0, 0)
+  const checkDate = new Date(date)
+  return checkDate > maxDate
+}
+
+// Helper function to format today's date as YYYY-MM-DD
+function getTodayString() {
+  return new Date().toISOString().split('T')[0]
+}
+
+// Helper function to format max date (5 years from now) as YYYY-MM-DD
+function getMaxDateString() {
+  const maxDate = new Date()
+  maxDate.setFullYear(maxDate.getFullYear() + 5)
+  return maxDate.toISOString().split('T')[0]
+}
+
+type EventFormType = {
+  title: string;
+  description: string;
+  organizer: string;
+  type: typeof eventTypes[number];
+  startDate: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
+  location: string;
+  phone?: string;
+  email?: string;
+  price?: number;
+  posterUrl?: string;
+}
+
 const eventSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   organizer: z.string().min(2, "Organizer name is required"),
   type: z.enum(eventTypes),
-  startDate: z.string().min(1, "Start date is required"),
-  endDate: z.string().optional(),
+  startDate: z.string()
+    .min(1, "Start date is required")
+    .refine((date) => !isPastDate(date), {
+      message: "Start date cannot be in the past"
+    })
+    .refine((date) => !isTooFarInFuture(date), {
+      message: "Start date cannot be more than 5 years in the future"
+    }),
+  endDate: z.string()
+    .optional()
+    .refine((date) => {
+      if (!date) return true // Allow empty/undefined
+      return !isPastDate(date)
+    }, {
+      message: "End date cannot be in the past"
+    })
+    .refine((date) => {
+      if (!date) return true // Allow empty/undefined
+      return !isTooFarInFuture(date)
+    }, {
+      message: "End date cannot be more than 5 years in the future"
+    }),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
   location: z.string().min(3, "Location is required"),
@@ -45,6 +111,28 @@ const eventSchema = z.object({
   email: z.string().email("Invalid email address").optional(),
   price: z.number().min(0, "Price must be a positive number").optional(),
   posterUrl: z.string().optional()
+}).superRefine((data, ctx) => {
+  // Validate end date is after start date
+  if (data.endDate && data.startDate) {
+    if (new Date(data.endDate) < new Date(data.startDate)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "End date must be after or equal to start date",
+        path: ["endDate"]
+      })
+    }
+  }
+
+  // Validate end time is after start time on the same day
+  if (data.endTime && data.startTime && data.startDate === data.endDate) {
+    if (data.endTime < data.startTime) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "End time must be after start time when on the same day",
+        path: ["endTime"]
+      })
+    }
+  }
 })
 
 type EventForm = z.infer<typeof eventSchema>
@@ -52,7 +140,7 @@ type EventForm = z.infer<typeof eventSchema>
 export default function CreateEventPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClientComponentClient()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingPoster, setUploadingPoster] = useState(false)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
@@ -102,7 +190,7 @@ export default function CreateEventPage() {
 
           // Check user credits
           const { data: creditsData, error: creditsError } = await supabase
-            .from("event_credits")
+            .from("credits_events")
             .select("amount")
             .eq("user_id", session.user.id)
             .single()
@@ -254,13 +342,24 @@ export default function CreateEventPage() {
         throw new Error("Not authenticated")
       }
 
-      // Create the event
+      // Create the event with correct column names
       const { data: event, error: eventError } = await supabase
         .from("events")
         .insert({
-          ...data,
-          organizer_id: session.user.id,
-          poster_url: posterUrl || null
+          title: data.title,
+          description: data.description,
+          organizer: data.organizer,
+          type: data.type,
+          start_date: data.startDate,
+          end_date: data.endDate || null,
+          start_time: data.startTime || null,
+          end_time: data.endTime || null,
+          location: data.location,
+          phone: data.phone || null,
+          email: data.email || null,
+          price: data.price || null,
+          poster_url: posterUrl || null,
+          created_by: session.user.id
         })
         .select()
         .single()
@@ -269,7 +368,7 @@ export default function CreateEventPage() {
 
       // Deduct one credit
       const { error: creditError } = await supabase
-        .from("event_credits")
+        .from("credits_events")
         .update({ 
           amount: credits - 1,
           updated_at: new Date().toISOString()
@@ -431,7 +530,12 @@ export default function CreateEventPage() {
                       <FormItem>
                         <FormLabel>Start Date</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input 
+                            type="date" 
+                            min={getTodayString()}
+                            max={getMaxDateString()}
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -445,7 +549,12 @@ export default function CreateEventPage() {
                       <FormItem>
                         <FormLabel>End Date (Optional)</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input 
+                            type="date"
+                            min={form.watch("startDate") || getTodayString()}
+                            max={getMaxDateString()}
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

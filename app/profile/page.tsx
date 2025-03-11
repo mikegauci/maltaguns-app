@@ -67,6 +67,7 @@ import { FeatureCreditDialog } from "@/components/feature-credit-dialog";
 import { CreditDialog } from "@/components/credit-dialog";
 import { EventCreditDialog } from "@/components/event-credit-dialog";
 import { useSupabase } from "@/components/providers/supabase-provider";
+import { LoadingState } from "@/components/ui/loading-state"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -576,7 +577,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading profile...</p>
+        <LoadingState message="Loading profile..." />
       </div>
     );
   }
@@ -584,9 +585,7 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">
-          Please log in to view your profile.
-        </p>
+        <LoadingState message="Loading profile..." />
       </div>
     );
   }

@@ -1,6 +1,7 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import type { AuthResponse } from '@supabase/supabase-js'
 
 const AUTHORIZED_ADMIN_EMAILS = [
   "etsy@motorelement.com",
@@ -10,10 +11,14 @@ const AUTHORIZED_ADMIN_EMAILS = [
 const PROTECTED_ROUTES = [
   '/profile',
   '/marketplace/create',
+  '/events',
   '/events/create',
   '/retailers/create',
   '/blog/create'
 ]
+
+// Add timeout for session operations
+const SESSION_TIMEOUT = 5000 // 5 seconds
 
 export async function middleware(req: NextRequest) {
   try {
@@ -31,15 +36,22 @@ export async function middleware(req: NextRequest) {
       return res
     }
 
-    // Try to get the session
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+    // Create a timeout promise
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Session operation timed out')), SESSION_TIMEOUT)
+    })
 
-    // Handle session error
-    if (sessionError) {
-      console.error('Session error:', sessionError)
+    // Try to get the session with timeout
+    const sessionPromise = supabase.auth.getSession()
+    let session
+    
+    try {
+      const result = await Promise.race([sessionPromise, timeoutPromise]) as Awaited<typeof sessionPromise>
+      session = result.data.session
+    } catch (error) {
+      console.error('Session operation timed out or failed:', error)
+      // Clear any stale session data
+      await supabase.auth.signOut()
       return redirectToLogin(req)
     }
 
@@ -57,10 +69,14 @@ export async function middleware(req: NextRequest) {
 
     if (isNearExpiry) {
       try {
-        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+        const refreshPromise = supabase.auth.refreshSession()
+        const result = await Promise.race([refreshPromise, timeoutPromise]) as AuthResponse
+        const { data: { session: refreshedSession }, error: refreshError } = result
         
         if (refreshError || !refreshedSession) {
           console.error('Session refresh failed:', refreshError)
+          // Clear any stale session data
+          await supabase.auth.signOut()
           return redirectToLogin(req)
         }
 
@@ -71,6 +87,8 @@ export async function middleware(req: NextRequest) {
         })
       } catch (error) {
         console.error('Error refreshing session:', error)
+        // Clear any stale session data
+        await supabase.auth.signOut()
         return redirectToLogin(req)
       }
     }
@@ -85,6 +103,10 @@ export async function middleware(req: NextRequest) {
       }
     }
 
+    // Add cache control headers to prevent stale session states
+    res.headers.set('Cache-Control', 'no-store, must-revalidate')
+    res.headers.set('Pragma', 'no-cache')
+    
     // Set session cookie and return response
     return res
 
@@ -98,7 +120,11 @@ export async function middleware(req: NextRequest) {
 function redirectToLogin(req: NextRequest) {
   const redirectUrl = new URL('/login', req.url)
   redirectUrl.searchParams.set('redirectTo', req.url)
-  return NextResponse.redirect(redirectUrl)
+  // Add cache control headers to prevent redirect loops
+  const response = NextResponse.redirect(redirectUrl)
+  response.headers.set('Cache-Control', 'no-store, must-revalidate')
+  response.headers.set('Pragma', 'no-cache')
+  return response
 }
 
 export const config = {

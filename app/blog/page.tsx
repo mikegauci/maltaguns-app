@@ -9,6 +9,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { Database } from "@/lib/database.types"
+import { LoadingState } from "@/components/ui/loading-state"
 
 // List of authorized user IDs
 const AUTHORIZED_BLOG_AUTHORS = [
@@ -109,7 +110,7 @@ export default function BlogPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading posts...</p>
+        <LoadingState message="Loading posts..." />
       </div>
     )
   }
