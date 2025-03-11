@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package, ArrowLeft, Mail, Phone, Lock, Pencil, Calendar, User, ChevronLeft, ChevronRight, Star, Store, CheckCircle } from "lucide-react"
+import { Package, ArrowLeft, Mail, Phone, Lock, Pencil, Calendar, User, ChevronLeft, ChevronRight, Star, Store, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -15,6 +15,7 @@ import { ReportListingDialog } from "@/components/report-listing-dialog"
 import { AutoFeatureHandler } from "../../auto-feature-handler"
 import { toast } from "sonner"
 import { LoadingState } from "@/components/ui/loading-state"
+import Image from "next/image"
 
 // Default image to use when no images are provided
 const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
@@ -549,12 +550,24 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
             {/* Details Section */}
             <Card>
               <CardContent className="p-6 space-y-6">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-4">
                   {listing.type === 'firearms' ? (
-                    <Gun className="h-5 w-5" />
+                    <Image
+                      src="/images/pistol-gun-icon.svg"
+                      alt="Firearms"
+                      width={20}
+                      height={20}
+                      className="mr-2"
+                    />
                   ) : (
-                    <Package className="h-5 w-5" />
+                    <Package className="h-5 w-5 mr-2" />
                   )}
+                  <span className="text-sm text-muted-foreground">
+                    {listing.type === 'firearms' ? 'Firearms' : 'Non-Firearms'} Listing
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
                   <Badge variant="secondary">
                     {getCategoryLabel(listing.category, listing.type)}
                   </Badge>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Loader2 } from "lucide-react"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useToast } from "@/hooks/use-toast"
 import { Database } from "@/lib/database.types"
@@ -26,6 +26,7 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
     featuredImage: null as File | null,
     featuredImageUrl: "",
   })
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -233,7 +234,7 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
         description: "Your blog post has been published successfully.",
       })
       
-      // Redirect to the retailer page
+      // Keep isLoading true during redirection
       router.push(`/retailers/${params.slug}`)
     } catch (error) {
       console.error("Error creating blog post:", error)
@@ -242,7 +243,6 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
         description: "There was a problem creating your blog post. Please try again.",
         variant: "destructive",
       })
-    } finally {
       setIsLoading(false)
     }
   }
@@ -321,8 +321,19 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
                 )}
               </div>
 
-              <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Publishing..." : "Publish Blog Post"}
+              <Button 
+                type="submit" 
+                className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                disabled={isLoading || uploadingImage}
+              >
+                {(isLoading || uploadingImage) ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {uploadingImage ? "Uploading Image..." : "Publishing..."}
+                  </>
+                ) : (
+                  "Publish Post"
+                )}
               </Button>
             </form>
           </CardContent>

@@ -4,13 +4,14 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Store, Calendar, BookOpen, Package, Shield, Users } from "lucide-react"
+import { Store, Calendar, BookOpen, Package, Shield, Users } from "lucide-react"
 import Link from "next/link"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { Database } from "@/lib/database.types"
 import { LoadingState } from "@/components/ui/loading-state"
+import Image from "next/image"
 
 function slugify(text: string) {
   return text
@@ -342,7 +343,13 @@ export default function Home() {
             <Card>
               <CardContent className="p-6">
                 <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
-                  <Package className="h-6 w-6 text-primary" />
+                  <Image
+                    src="/images/pistol-gun-icon.svg"
+                    alt="Firearms Marketplace"
+                    width={24}
+                    height={24}
+                    className="text-primary"
+                  />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Marketplace</h3>
                 <p className="text-muted-foreground">

@@ -16,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import Image from "next/image"
 
 export default function CreateListing() {
   const router = useRouter()
@@ -118,7 +119,12 @@ export default function CreateListing() {
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Gun className="h-5 w-5" />
+                <Image
+                  src="/images/pistol-gun-icon.svg"
+                  alt="Firearms"
+                  width={20}
+                  height={20}
+                />
                 Firearms Listing
               </CardTitle>
               <CardDescription>

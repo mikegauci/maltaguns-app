@@ -68,6 +68,7 @@ import { CreditDialog } from "@/components/credit-dialog";
 import { EventCreditDialog } from "@/components/event-credit-dialog";
 import { useSupabase } from "@/components/providers/supabase-provider";
 import { LoadingState } from "@/components/ui/loading-state"
+import Image from "next/image"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -1448,10 +1449,16 @@ export default function ProfilePage() {
                       <div className="flex justify-between items-start mb-3">
                         {/* Left: Title and icon */}
                         <div className="flex items-center gap-2">
-                          {listing.type === "firearms" ? (
-                            <Gun className="h-5 w-5" />
+                          {listing.type === 'firearms' ? (
+                            <Image
+                              src="/images/pistol-gun-icon.svg"
+                              alt="Firearms"
+                              width={16}
+                              height={16}
+                              className="mr-2"
+                            />
                           ) : (
-                            <Package className="h-5 w-5" />
+                            <Package className="h-4 w-4 mr-2" />
                           )}
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">

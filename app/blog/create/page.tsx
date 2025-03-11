@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote } from "lucide-react"
+import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote, Loader2 } from "lucide-react"
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
@@ -256,6 +256,7 @@ export default function CreateBlogPost() {
         description: "Your blog post has been published successfully"
       })
 
+      // Keep isLoading true during redirection
       router.push(`/blog/${postSlug}`)
     } catch (error) {
       console.error("Submit error:", error)
@@ -264,7 +265,6 @@ export default function CreateBlogPost() {
         title: "Failed to create post",
         description: error instanceof Error ? error.message : "Something went wrong"
       })
-    } finally {
       setIsLoading(false)
     }
   }
@@ -444,8 +444,19 @@ export default function CreateBlogPost() {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isLoading || uploadingImage}>
-                  {isLoading ? "Publishing..." : "Publish Post"}
+                <Button 
+                  type="submit" 
+                  className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                  disabled={isLoading || uploadingImage}
+                >
+                  {(isLoading || uploadingImage) ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {uploadingImage ? "Uploading Image..." : "Publishing..."}
+                    </>
+                  ) : (
+                    "Publish Post"
+                  )}
                 </Button>
               </form>
             </Form>

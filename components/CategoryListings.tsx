@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Sun as Gun, Package, Star, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
+import Image from "next/image"
 
 interface Listing {
   id: string
@@ -238,14 +239,16 @@ export default function CategoryListings({ type, category, subcategory, title, d
         </div>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-3">
-            {listing.type === 'firearms' ? (
-              <Link href="/marketplace/firearms" className="inline-flex" onClick={(e) => e.stopPropagation()}>
-                <Gun className="h-4 w-4" />
-              </Link>
+            {category === "firearms" ? (
+              <Image
+                src="/images/pistol-gun-icon.svg"
+                alt="Firearms"
+                width={20}
+                height={20}
+                className="mr-2"
+              />
             ) : (
-              <Link href="/marketplace/non-firearms" className="inline-flex" onClick={(e) => e.stopPropagation()}>
-                <Package className="h-4 w-4" />
-              </Link>
+              <Package className="mr-2 h-5 w-5" />
             )}
             <Link 
               href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}`}

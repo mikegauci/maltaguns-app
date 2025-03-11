@@ -325,11 +325,6 @@ export default function CreateEventPage() {
 
   async function onSubmit(data: EventForm) {
     try {
-      if (!hasCredits) {
-        setShowCreditDialog(true)
-        return
-      }
-
       setIsSubmitting(true)
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
@@ -391,7 +386,6 @@ export default function CreateEventPage() {
 
       if (transactionError) {
         console.error("Error recording transaction:", transactionError)
-        // Don't throw here, just log the error
       }
 
       setCredits(credits - 1)
@@ -402,6 +396,7 @@ export default function CreateEventPage() {
         description: "Your event has been created successfully"
       })
 
+      // Keep isSubmitting true during redirection
       router.push(`/events/${event.id}`)
     } catch (error) {
       console.error("Submit error:", error)
@@ -410,7 +405,6 @@ export default function CreateEventPage() {
         title: "Failed to create event",
         description: error instanceof Error ? error.message : "Something went wrong"
       })
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -702,14 +696,16 @@ export default function CreateEventPage() {
 
                 <Button 
                   type="submit" 
-                  className="w-full" 
-                  disabled={isSubmitting || uploadingPoster}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                  disabled={isSubmitting || uploadingPoster || !hasCredits}
                 >
-                  {isSubmitting ? (
+                  {(isSubmitting || uploadingPoster) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      {uploadingPoster ? "Uploading Poster..." : "Creating..."}
                     </>
+                  ) : !hasCredits ? (
+                    "Insufficient Credits"
                   ) : (
                     "Create Event"
                   )}

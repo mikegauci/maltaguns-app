@@ -589,13 +589,15 @@ export default function CreateFirearmsListing() {
                 <Button 
                   type="submit" 
                   className="w-full bg-green-600 hover:bg-green-700 text-white" 
-                  disabled={isSubmitting || uploading}
+                  disabled={isSubmitting || uploading || !hasCredits}
                 >
-                  {isSubmitting ? (
+                  {(isSubmitting || uploading) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      {uploading ? "Uploading Images..." : "Creating..."}
                     </>
+                  ) : !hasCredits ? (
+                    "Insufficient Credits"
                   ) : (
                     "Create Listing"
                   )}

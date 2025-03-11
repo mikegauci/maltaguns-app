@@ -1,47 +1,55 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package, Star } from "lucide-react"
-import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-import { AutoFeatureHandler } from "./auto-feature-handler"
-import { LoadingState } from "@/components/ui/loading-state"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Package, Star, Plus } from "lucide-react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import { AutoFeatureHandler } from "./auto-feature-handler";
+import { LoadingState } from "@/components/ui/loading-state";
+import Image from "next/image";
 
 interface Listing {
-  id: string
-  title: string
-  description: string
-  price: number
-  category: string
-  subcategory?: string
-  calibre?: string
-  type: 'firearms' | 'non_firearms'
-  thumbnail: string
-  created_at: string
-  status: string
-  updated_at: string
-  is_featured?: boolean
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  subcategory?: string;
+  calibre?: string;
+  type: "firearms" | "non_firearms";
+  thumbnail: string;
+  created_at: string;
+  status: string;
+  updated_at: string;
+  is_featured?: boolean;
 }
 
 function slugify(text: string) {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/--+/g, "-");
 }
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-MT', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(price)
+  return new Intl.NumberFormat("en-MT", {
+    style: "currency",
+    currency: "EUR",
+  }).format(price);
 }
 
-function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
+function getCategoryLabel(category: string, type: "firearms" | "non_firearms") {
   const firearmsCategories: Record<string, string> = {
     airguns: "Airguns",
     ammunition: "Ammunition",
@@ -53,19 +61,19 @@ function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
     black_powder: "Black powder",
     replica_deactivated: "Replica or Deactivated",
     crossbow: "Crossbow",
-    schedule_1: "Schedule 1 (automatic)"
-  }
+    schedule_1: "Schedule 1 (automatic)",
+  };
 
   const nonFirearmsCategories: Record<string, string> = {
     airsoft: "Airsoft",
     reloading: "Reloading",
     militaria: "Militaria",
-    accessories: "Accessories"
-  }
+    accessories: "Accessories",
+  };
 
-  return type === 'firearms' 
+  return type === "firearms"
     ? firearmsCategories[category] || category
-    : nonFirearmsCategories[category] || category
+    : nonFirearmsCategories[category] || category;
 }
 
 function getSubcategoryLabel(category: string, subcategory: string): string {
@@ -113,23 +121,26 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
     return subcategory; // Return original if category doesn't exist
   }
 
-  const categorySubcategories = subcategories[category as keyof typeof subcategories];
+  const categorySubcategories =
+    subcategories[category as keyof typeof subcategories];
 
-  return categorySubcategories[subcategory as keyof typeof categorySubcategories] || subcategory;
+  return (
+    categorySubcategories[subcategory as keyof typeof categorySubcategories] ||
+    subcategory
+  );
 }
 
-
 export default function Marketplace() {
-  const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
-  const [regularListings, setRegularListings] = useState<Listing[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
+  const [regularListings, setRegularListings] = useState<Listing[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchListings() {
       try {
-        setIsLoading(true)
-        setError(null)
+        setIsLoading(true);
+        setError(null);
 
         // Fetch listings from Supabase
         const { data: listingsData, error: listingsError } = await supabase
@@ -137,75 +148,83 @@ export default function Marketplace() {
           .select("*")
           .eq("status", "active")
           .order("created_at", { ascending: false })
-          .limit(50)
+          .limit(50);
 
         if (listingsError) {
-          console.error("Error fetching listings:", listingsError)
-          setError("Failed to load listings")
-          return
+          console.error("Error fetching listings:", listingsError);
+          setError("Failed to load listings");
+          return;
         }
 
         // Get current date for featured check
         const now = new Date().toISOString();
-        
+
         // Fetch all active featured listings
         const { data: featuredListings, error: featuredError } = await supabase
           .from("featured_listings")
           .select("listing_id")
           .gt("end_date", now);
-          
+
         if (featuredError) {
-          console.error("Error fetching featured listings:", featuredError)
+          console.error("Error fetching featured listings:", featuredError);
           // Continue without featured data
         }
-        
+
         // Create a set of featured listing IDs for easy lookup
-        const featuredSet = new Set(featuredListings?.map(item => item.listing_id) || []);
-        
+        const featuredSet = new Set(
+          featuredListings?.map((item) => item.listing_id) || []
+        );
+
         // Mark listings as featured if they're in the featured set
-        const processedListings = (listingsData || []).map(listing => ({
+        const processedListings = (listingsData || []).map((listing) => ({
           ...listing,
-          is_featured: featuredSet.has(listing.id)
+          is_featured: featuredSet.has(listing.id),
         }));
-        
+
         // Sort listings: featured first, then by created date (newest first)
         const sortedListings = [...processedListings].sort((a, b) => {
           // Featured listings come before non-featured
           if (a.is_featured && !b.is_featured) return -1;
           if (!a.is_featured && b.is_featured) return 1;
-          
+
           // Otherwise maintain default sort order (by created_at, newest first)
           return 0;
         });
 
-        setFeaturedListings(sortedListings.filter(l => l.is_featured))
-        setRegularListings(sortedListings.filter(l => !l.is_featured))
+        setFeaturedListings(sortedListings.filter((l) => l.is_featured));
+        setRegularListings(sortedListings.filter((l) => !l.is_featured));
       } catch (error) {
-        console.error("Unexpected error fetching listings:", error)
-        setError("An unexpected error occurred")
+        console.error("Unexpected error fetching listings:", error);
+        setError("An unexpected error occurred");
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchListings()
-  }, [])
+    fetchListings();
+  }, []);
 
   // Function to render a listing card
   const renderListingCard = (listing: Listing) => (
-    <Link 
-      key={listing.id} 
+    <Link
+      key={listing.id}
       href={`/marketplace/listing/${slugify(listing.title)}`}
     >
-      <Card className={`overflow-hidden hover:shadow-lg transition-shadow ${listing.is_featured ? 'border-2 border-red-500' : ''}`}>
+      <Card
+        className={`overflow-hidden hover:shadow-lg transition-shadow ${
+          listing.is_featured ? "border-2 border-red-500" : ""
+        }`}
+      >
         <div className="aspect-video relative overflow-hidden">
           <img
             src={listing.thumbnail}
             alt={listing.title}
             className="object-cover w-full h-full"
           />
-          {listing.status === 'sold' && (
-            <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
+          {listing.status === "sold" && (
+            <Badge variant="destructive" className="absolute top-2 right-2">
+              Sold
+            </Badge>
           )}
           {listing.is_featured && (
             <Badge className="absolute top-2 left-2 bg-red-500 text-white hover:bg-red-600">
@@ -215,29 +234,48 @@ export default function Marketplace() {
         </div>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-3">
-            {listing.type === 'firearms' ? (
-              <Link href="/marketplace/firearms" className="inline-flex" onClick={(e) => e.stopPropagation()}>
-                <Gun className="h-4 w-4" />
-              </Link>
+            {listing.type === "firearms" ? (
+              <div className="inline-flex">
+                <Image
+                  src="/images/pistol-gun-icon.svg"
+                  alt="Firearms"
+                  width={16}
+                  height={16}
+                  className="mr-2"
+                />
+              </div>
             ) : (
-              <Link href="/marketplace/non-firearms" className="inline-flex" onClick={(e) => e.stopPropagation()}>
-                <Package className="h-4 w-4" />
-              </Link>
+              <div className="inline-flex">
+                <Package className="h-4 w-4 mr-2" />
+              </div>
             )}
-            <Link 
-              href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}`}
+            <Link
+              href={`/marketplace/${
+                listing.type === "firearms" ? "firearms" : "non-firearms"
+              }/${listing.category}`}
               onClick={(e) => e.stopPropagation()}
             >
-              <Badge variant="secondary" className="hover:bg-secondary/80 cursor-pointer">
+              <Badge
+                variant="secondary"
+                className="hover:bg-secondary/80 cursor-pointer"
+              >
                 {getCategoryLabel(listing.category, listing.type)}
               </Badge>
             </Link>
             {listing.subcategory && (
-              <Link 
-                href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}/${listing.subcategory.replace(/_/g, '-')}`}
+              <Link
+                href={`/marketplace/${
+                  listing.type === "firearms" ? "firearms" : "non-firearms"
+                }/${listing.category}/${listing.subcategory.replace(
+                  /_/g,
+                  "-"
+                )}`}
                 onClick={(e) => e.stopPropagation()}
               >
-                <Badge variant="outline" className="hover:bg-muted cursor-pointer">
+                <Badge
+                  variant="outline"
+                  className="hover:bg-muted cursor-pointer"
+                >
                   {getSubcategoryLabel(listing.category, listing.subcategory)}
                 </Badge>
               </Link>
@@ -250,25 +288,28 @@ export default function Marketplace() {
             {listing.description}
           </p>
           <div className="flex items-center justify-between">
-            <p className="text-lg font-bold">
-              {formatPrice(listing.price)}
-            </p>
-            {listing.type === 'firearms' && listing.calibre && (
-              <Badge variant="secondary">
-                {listing.calibre}
-              </Badge>
+            <p className="text-lg font-bold">{formatPrice(listing.price)}</p>
+            {listing.type === "firearms" && listing.calibre && (
+              <Badge variant="secondary">{listing.calibre}</Badge>
             )}
           </div>
         </CardContent>
       </Card>
     </Link>
-  )
+  );
 
   // Category navigation data
   const categories = [
     {
       title: "Firearms",
-      icon: <Gun className="h-5 w-5" />,
+      icon: (
+        <Image
+          src="/images/pistol-gun-icon.svg"
+          alt="Firearms"
+          width={20}
+          height={20}
+        />
+      ),
       href: "/marketplace/firearms",
       subcategories: [
         { name: "Airguns", href: "/marketplace/firearms/airguns" },
@@ -277,12 +318,15 @@ export default function Marketplace() {
         { name: "Carbines", href: "/marketplace/firearms/carbines" },
         { name: "Crossbow", href: "/marketplace/firearms/crossbow" },
         { name: "Pistols", href: "/marketplace/firearms/pistols" },
-        { name: "Replica/Deactivated", href: "/marketplace/firearms/replica-deactivated" },
+        {
+          name: "Replica/Deactivated",
+          href: "/marketplace/firearms/replica-deactivated",
+        },
         { name: "Revolvers", href: "/marketplace/firearms/revolvers" },
         { name: "Rifles", href: "/marketplace/firearms/rifles" },
         { name: "Schedule 1", href: "/marketplace/firearms/schedule-1" },
         { name: "Shotguns", href: "/marketplace/firearms/shotguns" },
-      ]
+      ],
     },
     {
       title: "Non-Firearms",
@@ -293,39 +337,46 @@ export default function Marketplace() {
         { name: "Reloading", href: "/marketplace/non-firearms/reloading" },
         { name: "Militaria", href: "/marketplace/non-firearms/militaria" },
         { name: "Accessories", href: "/marketplace/non-firearms/accessories" },
-      ]
-    }
-  ]
+      ],
+    },
+  ];
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingState />
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-4xl font-bold mb-2">Marketplace</h1>
-            <p className="text-muted-foreground">Here, you can browse a wide range of firearms, accessories, and other items listed by our reputable sellers. We prioritize your safety and security with a strict commitment to legal compliance and transparency. Whether you're buying or selling, we aim to provide a secure and enjoyable experience while encourage safe and responsible engagement in our community.  Enjoy exploring!</p>
+            <p className="text-muted-foreground">
+              Here, you can browse a wide range of firearms, accessories, and
+              other items listed by our reputable sellers. We prioritize your
+              safety and security with a strict commitment to legal compliance
+              and transparency. Whether you're buying or selling, we aim to
+              provide a secure and enjoyable experience while encourage safe and
+              responsible engagement in our community. Enjoy exploring!
+            </p>
           </div>
-          <Link href="/marketplace/create">
-            <Button>
-              <Gun className="mr-2 h-4 w-4" />
-              Post Listing
-            </Button>
-          </Link>
         </div>
+        <Link href="/marketplace/create">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Listing
+          </Button>
+        </Link>
 
         {/* Add the AutoFeatureHandler with no specific listingId */}
         <AutoFeatureHandler />
 
         {/* Category Navigation */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           {categories.map((category) => (
             <Card key={category.title} className="overflow-hidden">
               <CardHeader className="pb-2">
@@ -339,8 +390,8 @@ export default function Marketplace() {
               <CardContent>
                 <div className="grid grid-cols-2 gap-2">
                   {category.subcategories.map((subcategory) => (
-                    <Link 
-                      key={subcategory.name} 
+                    <Link
+                      key={subcategory.name}
                       href={subcategory.href}
                       className="text-sm text-muted-foreground hover:text-primary hover:underline"
                     >
@@ -352,19 +403,23 @@ export default function Marketplace() {
             </Card>
           ))}
         </div>
-        
+
         {error ? (
           <Card className="p-6 text-center">
             <CardHeader>
               <CardTitle>Error</CardTitle>
-              <CardDescription>
-                {error}
-              </CardDescription>
+              <CardDescription>{error}</CardDescription>
             </CardHeader>
             <CardFooter className="justify-center">
               <Link href="/marketplace/create">
                 <Button>
-                  <Gun className="mr-2 h-4 w-4" />
+                  <Image
+                    src="/images/pistol-gun-icon.svg"
+                    alt="Firearms"
+                    width={16}
+                    height={16}
+                    className="mr-2"
+                  />
                   Create Listing
                 </Button>
               </Link>
@@ -381,7 +436,13 @@ export default function Marketplace() {
             <CardFooter className="justify-center">
               <Link href="/marketplace/create">
                 <Button>
-                  <Gun className="mr-2 h-4 w-4" />
+                  <Image
+                    src="/images/pistol-gun-icon.svg"
+                    alt="Firearms"
+                    width={16}
+                    height={16}
+                    className="mr-2"
+                  />
                   Create Listing
                 </Button>
               </Link>
@@ -400,11 +461,11 @@ export default function Marketplace() {
                 </div>
               </div>
             )}
-            
+
             {regularListings.length > 0 && (
               <div>
                 <h2 className="text-2xl font-bold mb-4">
-                  {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
+                  {featuredListings.length > 0 ? "All Listings" : "Listings"}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {regularListings.map(renderListingCard)}
@@ -415,5 +476,5 @@ export default function Marketplace() {
         )}
       </div>
     </div>
-  )
+  );
 }

@@ -574,13 +574,13 @@ export default function CreateNonFirearmsListing() {
 
                 <Button 
                   type="submit" 
-                  className="w-full"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                   disabled={isSubmitting || uploading}
                 >
-                  {isSubmitting ? (
+                  {(isSubmitting || uploading) ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      {uploading ? "Uploading Images..." : "Creating..."}
                     </>
                   ) : (
                     "Create Listing"
