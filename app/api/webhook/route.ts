@@ -141,8 +141,8 @@ export async function POST(request: Request) {
         
         // Calculate new expiry date for listing if needed
         let newExpiryDate = null;
-        if (daysUntilExpiry <= 15) {
-          console.log('[WEBHOOK-SINGULAR] Listing is expiring in 15 days or less, will extend to 30 days');
+        if (daysUntilExpiry < 15) {
+          console.log('[WEBHOOK-SINGULAR] Listing is expiring soon, will extend to 30 days');
           newExpiryDate = new Date();
           newExpiryDate.setDate(newExpiryDate.getDate() + 30);
         }

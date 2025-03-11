@@ -877,29 +877,42 @@ export default function ProfilePage() {
       const { data: userData, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
 
-      // Update the listing's feature status
+      // Get the current listing to check its expiry
+      const { data: listing, error: listingError } = await supabase
+        .from("listings")
+        .select("expires_at")
+        .eq("id", listingToFeature)
+        .single();
+        
+      if (listingError) throw listingError;
+      
+      // Calculate days until expiry
+      const now = new Date();
+      const expiryDate = new Date(listing.expires_at);
+      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Prepare update data for database
+      const featuredUntil = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString();
+      const updateData: { featured_until: string; expires_at?: string } = { 
+        featured_until: featuredUntil 
+      };
+      
+      // If listing expires in less than 15 days, extend it to 30 days
+      if (daysUntilExpiry < 15) {
+        const newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+        updateData.expires_at = newExpiresAt;
+      }
+
+      // Update the listing in database
       const { error: updateError } = await supabase
         .from("listings")
-        .update({ 
-          featured_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
-        })
+        .update(updateData)
         .eq("id", listingToFeature);
 
       if (updateError) throw updateError;
 
-      // Update the UI
-      setListings((prevListings) =>
-        prevListings.map((listing) =>
-          listing.id === listingToFeature 
-            ? { 
-                ...listing, 
-                featured_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-                is_featured: true,
-                days_until_expiration: Math.max(30, listing.days_until_expiration || 0)
-              } 
-            : listing
-        )
-      );
+      // Get the updated listing to refresh UI
+      await refreshProfile();
 
       toast({
         title: "Listing featured",
@@ -1551,7 +1564,7 @@ export default function ProfilePage() {
                                 <span>Featured ending in {listing.featured_days_remaining} days</span>
                               </div>
                               {/* Add Renew Feature button if less than 3 days remaining */}
-                              {listing.featured_days_remaining <= 3 && (
+                              {(listing.featured_days_remaining ?? 0) <= 3 && (
                                 <Button
                                   variant="outline"
                                   size="sm"
