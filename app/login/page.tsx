@@ -21,7 +21,7 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>
 
-type DebugInfo = {
+interface DebugInfo {
   sessionAfterLogin?: any
 }
 
@@ -37,15 +37,36 @@ export default function Login() {
   const supabase = createClientComponentClient()
 
   useEffect(() => {
+    let mounted = true
+    
     async function checkSession() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        setIsAuthenticated(true)
-        setUserEmail(session.user.email || null)
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          return
+        }
+        
+        if (session && mounted) {
+          setIsAuthenticated(true)
+          setUserEmail(session.user.email || null)
+          
+          // Get the redirect URL from query parameters
+          const redirectTo = searchParams.get('redirectTo') || '/'
+          router.push(redirectTo)
+        }
+      } catch (error) {
+        console.error('Error checking session:', error)
       }
     }
+    
     checkSession()
-  }, [supabase.auth])
+    
+    return () => {
+      mounted = false
+    }
+  }, [supabase.auth, router, searchParams])
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -86,16 +107,9 @@ export default function Login() {
       
       // Check if the identifier is an email
       const isEmail = data.identifier.includes('@')
+      let email = data.identifier
       
-      let signInResult
-      
-      if (isEmail) {
-        // Sign in with email
-        signInResult = await supabase.auth.signInWithPassword({
-          email: data.identifier,
-          password: data.password,
-        })
-      } else {
+      if (!isEmail) {
         // Get the email associated with the username
         const { data: userData, error: userError } = await supabase
           .from('profiles')
@@ -106,43 +120,26 @@ export default function Login() {
         if (userError || !userData) {
           throw new Error("Username not found")
         }
-        
-        // Sign in with the email associated with the username
-        signInResult = await supabase.auth.signInWithPassword({
-          email: userData.email,
-          password: data.password,
-        })
+        email = userData.email
       }
       
-      if (signInResult.error) {
-        setError(signInResult.error.message)
-        return
-      }
-
-      // Verify session after login
-      const { data: { session } } = await supabase.auth.getSession()
+      // Sign in with email
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: data.password,
+      })
       
-      if (session) {
-        setDebugInfo(prev => ({
-          ...prev,
-          sessionAfterLogin: session
-        }))
-        toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
-        })
-
-        // Get the redirect URL from query parameters
-        const redirectTo = searchParams.get('redirectTo') || '/'
-        
-        router.push(redirectTo)
-        router.refresh()
-      } else {
-        setError('Session not established after login')
+      if (error) {
+        throw error
       }
+
+      // Simple redirect to home page
+      router.push('/')
+      router.refresh()
+
     } catch (error) {
+      console.error('Login error:', error)
       setError(error instanceof Error ? error.message : "Invalid credentials")
-    } finally {
       setIsLoading(false)
     }
   }

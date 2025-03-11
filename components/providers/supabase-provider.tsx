@@ -34,6 +34,7 @@ export default function SupabaseProvider({
 
     async function initializeSession() {
       try {
+        setIsLoading(true)
         // Create a timeout promise
         const timeoutPromise = new Promise((_, reject) => {
           sessionCheckTimeout = setTimeout(() => reject(new Error('Session operation timed out')), SESSION_TIMEOUT)
@@ -50,7 +51,6 @@ export default function SupabaseProvider({
           console.error('Error getting initial session:', error)
           if (mounted) {
             setSession(null)
-            setIsLoading(false)
           }
           return
         }
@@ -74,17 +74,16 @@ export default function SupabaseProvider({
                 console.error('Error refreshing session:', refreshError)
                 if (mounted) {
                   setSession(null)
-                  setIsLoading(false)
                 }
                 return
               }
               
               // Set the refreshed session
-              await supabase.auth.setSession({
-                access_token: refreshedSession.access_token,
-                refresh_token: refreshedSession.refresh_token
-              })
               if (mounted) {
+                await supabase.auth.setSession({
+                  access_token: refreshedSession.access_token,
+                  refresh_token: refreshedSession.refresh_token
+                })
                 setSession(refreshedSession)
               }
             } catch (refreshError) {
@@ -132,30 +131,13 @@ export default function SupabaseProvider({
       if (event === 'SIGNED_OUT') {
         if (mounted) {
           setSession(null)
-          setIsLoading(false)
         }
-        router.push('/')
-        router.refresh()
         return
       }
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (newSession && mounted) {
-          try {
-            await supabase.auth.setSession({
-              access_token: newSession.access_token,
-              refresh_token: newSession.refresh_token
-            })
-            setSession(newSession)
-            setIsLoading(false)
-            router.refresh()
-          } catch (error) {
-            console.error('Error setting session:', error)
-            if (mounted) {
-              setSession(null)
-              setIsLoading(false)
-            }
-          }
+          setSession(newSession)
         }
       }
     })
