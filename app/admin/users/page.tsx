@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import dynamic from "next/dynamic"
 
 interface User {
@@ -57,6 +57,7 @@ function UsersPageComponent() {
     is_admin: false,
     is_seller: false,
   })
+  const supabase = createClientComponentClient()
 
   const columns: ColumnDef<User>[] = [
     {
@@ -133,21 +134,90 @@ function UsersPageComponent() {
     fetchUsers()
   }, [])
 
+  async function initializeAdminUsers() {
+    try {
+      const response = await fetch('/api/admin/init', {
+        method: 'POST'
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to initialize admin users')
+      }
+      
+      // Refresh the users list
+      await fetchUsers()
+    } catch (error) {
+      console.error('Error initializing admin users:', error)
+    }
+  }
+
   async function fetchUsers() {
     try {
       setIsLoading(true)
+      
+      // First check if we have a valid session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError)
+        throw new Error('Failed to get session')
+      }
+
+      if (!session) {
+        console.error('No session found')
+        throw new Error('No active session')
+      }
+
+      console.log('Fetching users with session:', {
+        userId: session.user.id,
+        userEmail: session.user.email
+      })
+
+      // Now fetch users with all fields including roles
       const { data, error } = await supabase
         .from("profiles")
         .select("id, username, email, created_at, is_admin, is_seller")
         .order("created_at", { ascending: false })
 
-      if (error) throw error
-      setUsers(data || [])
+      if (error) {
+        console.error('Fetch users error:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        })
+        throw error
+      }
+      
+      if (!data) {
+        console.error('No data returned from profiles query')
+        throw new Error('No data returned from profiles query')
+      }
+
+      // Check if current user should be an admin but isn't
+      const currentUser = data.find(user => user.id === session.user.id)
+      if (currentUser && 
+          AUTHORIZED_ADMIN_EMAILS.includes(currentUser.email.toLowerCase()) && 
+          !currentUser.is_admin) {
+        console.log('Initializing admin privileges for authorized user')
+        await initializeAdminUsers()
+        return // fetchUsers will be called again after initialization
+      }
+
+      console.log('Successfully fetched users:', {
+        count: data.length,
+        firstUser: data[0]
+      })
+      
+      setUsers(data)
     } catch (error) {
+      console.error('Error in fetchUsers:', error)
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to fetch users",
+        title: "Error fetching users",
+        description: error instanceof Error 
+          ? `${error.message}. Please check console for more details.` 
+          : "Failed to fetch users. Please check console for more details.",
       })
     } finally {
       setIsLoading(false)
@@ -298,12 +368,15 @@ function UsersPageComponent() {
     try {
       setIsSubmitting(true)
 
-      // Delete user from auth
-      const { error: authError } = await supabase.auth.admin.deleteUser(
-        selectedUser.id
-      )
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
+        method: 'DELETE',
+      })
 
-      if (authError) throw authError
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete user')
+      }
 
       toast({
         title: "Success",
