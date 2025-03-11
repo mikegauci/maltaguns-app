@@ -262,29 +262,11 @@ export default function Marketplace() {
                 {getCategoryLabel(listing.category, listing.type)}
               </Badge>
             </Link>
-            {listing.subcategory && (
-              <Link
-                href={`/marketplace/${
-                  listing.type === "firearms" ? "firearms" : "non-firearms"
-                }/${listing.category}/${listing.subcategory.replace(
-                  /_/g,
-                  "-"
-                )}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Badge
-                  variant="outline"
-                  className="hover:bg-muted cursor-pointer"
-                >
-                  {getSubcategoryLabel(listing.category, listing.subcategory)}
-                </Badge>
-              </Link>
-            )}
           </div>
-          <h3 className="text-lg font-semibold mb-2 line-clamp-1">
+          <h3 className="text-md font-semibold mb-2 line-clamp-1">
             {listing.title}
           </h3>
-          <p className="text-muted-foreground mb-4 line-clamp-2 min-h-[50px]">
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[40px]">
             {listing.description}
           </p>
           <div className="flex items-center justify-between">
@@ -456,7 +438,7 @@ export default function Marketplace() {
                   <Star className="h-5 w-5 mr-2 text-red-500" />
                   Featured Listings
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                   {featuredListings.map(renderListingCard)}
                 </div>
               </div>
@@ -467,7 +449,7 @@ export default function Marketplace() {
                 <h2 className="text-2xl font-bold mb-4">
                   {featuredListings.length > 0 ? "All Listings" : "Listings"}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                   {regularListings.map(renderListingCard)}
                 </div>
               </div>

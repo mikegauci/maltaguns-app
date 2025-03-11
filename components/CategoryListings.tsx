@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package, Star, ArrowLeft } from "lucide-react"
+import { Sun as Gun, Package, Star, ArrowLeft, Plus } from "lucide-react"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import Image from "next/image"
@@ -239,40 +239,29 @@ export default function CategoryListings({ type, category, subcategory, title, d
         </div>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-3">
-            {category === "firearms" ? (
-              <Image
-                src="/images/pistol-gun-icon.svg"
-                alt="Firearms"
-                width={20}
-                height={20}
-                className="mr-2"
-              />
+            {listing.type === "firearms" ? (
+              <div className="inline-flex">
+                <Image
+                  src="/images/pistol-gun-icon.svg"
+                  alt="Firearms"
+                  width={16}
+                  height={16}
+                  className="mr-2"
+                />
+              </div>
             ) : (
-              <Package className="mr-2 h-5 w-5" />
+              <div className="inline-flex">
+                <Package className="h-4 w-4 mr-2" />
+              </div>
             )}
-            <Link 
-              href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Badge variant="secondary" className="hover:bg-secondary/80 cursor-pointer">
-                {getCategoryLabel(listing.category, listing.type)}
-              </Badge>
-            </Link>
-            {listing.subcategory && (
-              <Link 
-                href={`/marketplace/${listing.type === 'firearms' ? 'firearms' : 'non-firearms'}/${listing.category}/${listing.subcategory.replace(/_/g, '-')}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Badge variant="outline" className="hover:bg-muted cursor-pointer">
-                  {getSubcategoryLabel(listing.category, listing.subcategory)}
-                </Badge>
-              </Link>
-            )}
+            <Badge variant="secondary">
+              {getCategoryLabel(listing.category, listing.type)}
+            </Badge>
           </div>
-          <h3 className="text-lg font-semibold mb-2 line-clamp-1">
+          <h3 className="text-md font-semibold mb-2 line-clamp-1">
             {listing.title}
           </h3>
-          <p className="text-muted-foreground mb-4 line-clamp-2">
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[40px]">
             {listing.description}
           </p>
           <div className="flex items-center justify-between">
@@ -309,8 +298,8 @@ export default function CategoryListings({ type, category, subcategory, title, d
             </div>
             <Link href="/marketplace/create">
               <Button>
-                <Gun className="mr-2 h-4 w-4" />
-                Post Listing
+                <Plus className="mr-2 h-4 w-4" />
+                Create Listing
               </Button>
             </Link>
           </div>
@@ -340,7 +329,7 @@ export default function CategoryListings({ type, category, subcategory, title, d
             <CardFooter className="justify-center">
               <Link href="/marketplace/create">
                 <Button>
-                  <Gun className="mr-2 h-4 w-4" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Create Listing
                 </Button>
               </Link>
@@ -354,7 +343,7 @@ export default function CategoryListings({ type, category, subcategory, title, d
                   <Star className="h-5 w-5 mr-2 text-red-500" />
                   Featured Listings
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                   {featuredListings.map(renderListingCard)}
                 </div>
               </div>
@@ -363,9 +352,9 @@ export default function CategoryListings({ type, category, subcategory, title, d
             {regularListings.length > 0 && (
               <div>
                 <h2 className="text-2xl font-bold mb-4">
-                  {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
+                  {featuredListings.length > 0 ? "All Listings" : "Listings"}
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                   {regularListings.map(renderListingCard)}
                 </div>
               </div>
