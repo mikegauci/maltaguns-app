@@ -66,6 +66,7 @@ import {
 import { FeatureCreditDialog } from "@/components/feature-credit-dialog";
 import { CreditDialog } from "@/components/credit-dialog";
 import { EventCreditDialog } from "@/components/event-credit-dialog";
+import { useSupabase } from "@/components/providers/supabase-provider";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -152,6 +153,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const { supabase, session } = useSupabase();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [retailers, setRetailers] = useState<Retailer[]>([]);
@@ -184,24 +186,18 @@ export default function ProfilePage() {
 
   useEffect(() => {
     async function loadProfile() {
-      setLoading(true);
-
       try {
-        const { data: userData, error: authError } =
-          await supabase.auth.getUser();
-        if (authError || !userData?.user) {
-          console.error(
-            "Authentication error:",
-            authError?.message || "User not found"
-          );
-          router.push("/login");
+        if (!session?.user) {
+          console.log('No session found, redirecting to login');
+          router.push('/login');
           return;
         }
 
-        const userId = userData.user.id;
-        console.log("Current user ID:", userId);
+        setLoading(true);
+        const userId = session.user.id;
+        console.log("Loading profile for user ID:", userId);
 
-        // Fetch profile
+        // Fetch profile first
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
@@ -212,6 +208,13 @@ export default function ProfilePage() {
           console.error("Profile fetch error:", profileError.message);
           throw profileError;
         }
+
+        // Set profile data immediately
+        setProfile(profileData);
+        form.reset({
+          phone: profileData.phone || "",
+          address: profileData.address || "",
+        });
 
         // Fetch user's listings
         const { data: listingsData, error: listingsError } = await supabase
@@ -225,7 +228,10 @@ export default function ProfilePage() {
           // Continue even if there's an error
         }
 
-        // Fetch featured listings for the user to determine which listings are featured
+        // Create a map of featured listing IDs to end dates for quick lookup
+        const featuredMap = new Map<string, string>();
+
+        // Fetch featured listings for the user
         const now = new Date().toISOString();
         const { data: featuredListings, error: featuredError } = await supabase
           .from("featured_listings")
@@ -235,24 +241,17 @@ export default function ProfilePage() {
         
         if (featuredError) {
           console.error("Error fetching featured listings:", featuredError.message);
-          // Continue without featured data if there's an error
-        }
-        
-        // Create a map of featured listing IDs to end dates for quick lookup
-        const featuredMap = new Map();
-        
-        if (featuredListings) {
-          featuredListings.forEach(featured => {
+        } else if (featuredListings) {
+          featuredListings.forEach((featured: { listing_id: string; end_date: string }) => {
             featuredMap.set(featured.listing_id, featured.end_date);
           });
         }
         
         // Process listings to add feature status and expiration data
-        const listingsWithFeatures = (listingsData || []).map(listing => {
+        const listingsWithFeatures = (listingsData || []).map((listing: any) => {
           const featuredEndDate = featuredMap.get(listing.id);
           
           if (featuredEndDate) {
-            // Calculate days until expiration
             const endDate = new Date(featuredEndDate);
             const today = new Date();
             const diffTime = endDate.getTime() - today.getTime();
@@ -266,30 +265,14 @@ export default function ProfilePage() {
             };
           }
           
-          // If not featured, don't add expiration data
           return {
             ...listing,
             is_featured: false
           };
         });
 
-        // Sort listings: featured first, then by expiration date (soonest first)
-        const sortedListings = [...listingsWithFeatures].sort((a, b) => {
-          // Featured listings come before non-featured
-          if (a.is_featured && !b.is_featured) return -1;
-          if (!a.is_featured && b.is_featured) return 1;
-          
-          // For featured listings, sort by expiration date (ascending)
-          if (a.is_featured && b.is_featured) {
-            // Use a proper type guard with nullish coalescing
-            const aExpires = 'expires_in_days' in a ? a.expires_in_days : 0;
-            const bExpires = 'expires_in_days' in b ? b.expires_in_days : 0;
-            return aExpires - bExpires;
-          }
-          
-          // For non-featured listings, keep original order (by created_at)
-          return 0;
-        });
+        // Update listings state
+        setListings(listingsWithFeatures);
 
         // Fetch user's blog posts
         const { data: blogData, error: blogError } = await supabase
@@ -396,14 +379,7 @@ export default function ProfilePage() {
         setListingCredits(listingCreditsData?.amount ?? 0);
         setEventCredits(eventCreditsData?.amount ?? 0);
         
-        form.reset({
-          phone: profileData.phone || "",
-          address: profileData.address || "",
-        });
-
         // Update state with all fetched data
-        setProfile(profileData);
-        setListings(sortedListings);
         setBlogPosts(blogData || []);
         setRetailerBlogPosts(retailerPostsData);
         setEvents(eventsData || []);
@@ -419,8 +395,10 @@ export default function ProfilePage() {
       }
     }
 
-    loadProfile();
-  }, [router, form, toast]);
+    if (session) {
+      loadProfile();
+    }
+  }, [router, form, toast, session, supabase]);
 
   // Add a document click listener to close tooltip when clicking outside
   useEffect(() => {
@@ -588,6 +566,11 @@ export default function ProfilePage() {
           error instanceof Error ? error.message : "Failed to delete post",
       });
     }
+  }
+
+  if (!session) {
+    router.push('/login');
+    return null;
   }
 
   if (loading) {

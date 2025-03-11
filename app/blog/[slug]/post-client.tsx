@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Pencil } from "lucide-react"
 import { format } from "date-fns"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Database } from "@/lib/database.types"
+import { useToast } from "@/hooks/use-toast"
 
 interface BlogPost {
   id: string
@@ -24,16 +26,54 @@ interface BlogPost {
 
 export default function BlogPostClient({ post }: { post: BlogPost }) {
   const router = useRouter()
+  const supabase = createClientComponentClient<Database>()
+  const { toast } = useToast()
   const [isAuthor, setIsAuthor] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let mounted = true
+
     async function checkAuthor() {
-      const { data: { session } } = await supabase.auth.getSession()
-      setIsAuthor(session?.user?.id === post.author_id)
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          return
+        }
+
+        if (mounted) {
+          setIsAuthor(session?.user?.id === post.author_id)
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('Error checking author:', error)
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to verify author status."
+        })
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
     }
 
     checkAuthor()
-  }, [post.author_id])
+
+    return () => {
+      mounted = false
+    }
+  }, [post.author_id, supabase, toast])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">

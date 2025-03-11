@@ -6,8 +6,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Sun as Gun, Store, Calendar, BookOpen, Package, Shield, Users } from "lucide-react"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
+import { useToast } from "@/hooks/use-toast"
+import { Database } from "@/lib/database.types"
 
 function slugify(text: string) {
   return text
@@ -46,58 +48,132 @@ interface BlogPost {
 }
 
 export default function Home() {
+  const supabase = createClientComponentClient<Database>()
+  const { toast } = useToast()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [latestEvents, setLatestEvents] = useState<Event[]>([])
   const [recentListings, setRecentListings] = useState<Listing[]>([])
   const [latestPosts, setLatestPosts] = useState<BlogPost[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session)
+    let mounted = true
+
+    async function fetchData() {
+      try {
+        // Get session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          return
+        }
+
+        if (mounted) {
+          setIsAuthenticated(!!session)
+        }
+
+        // Fetch latest events
+        const { data: eventsData, error: eventsError } = await supabase
+          .from('events')
+          .select('*')
+          .gte('start_date', new Date().toISOString())
+          .order('start_date', { ascending: true })
+          .limit(3)
+
+        if (eventsError) {
+          console.error('Events fetch error:', eventsError)
+          toast({
+            variant: "destructive",
+            title: "Error loading events",
+            description: "Failed to load latest events. Please refresh the page."
+          })
+        } else if (mounted) {
+          setLatestEvents(eventsData || [])
+        }
+
+        // Fetch recent listings
+        const { data: listingsData, error: listingsError } = await supabase
+          .from('listings')
+          .select('*')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(3)
+
+        if (listingsError) {
+          console.error('Listings fetch error:', listingsError)
+          toast({
+            variant: "destructive",
+            title: "Error loading listings",
+            description: "Failed to load recent listings. Please refresh the page."
+          })
+        } else if (mounted) {
+          setRecentListings(listingsData || [])
+        }
+
+        // Fetch latest blog posts
+        const { data: postsData, error: postsError } = await supabase
+          .from('blog_posts')
+          .select(`
+            *,
+            author:profiles(username)
+          `)
+          .eq('published', true)
+          .order('created_at', { ascending: false })
+          .limit(3)
+
+        if (postsError) {
+          console.error('Blog posts fetch error:', postsError)
+          toast({
+            variant: "destructive",
+            title: "Error loading articles",
+            description: "Failed to load latest articles. Please refresh the page."
+          })
+        } else if (mounted) {
+          setLatestPosts(postsData || [])
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Something went wrong. Please refresh the page."
+        })
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    fetchData()
+
+    // Set up auth state listener
+    const { data: { subscription }} = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) {
+        setIsAuthenticated(!!session)
+      }
     })
 
-    // Fetch latest events
-    supabase
-      .from('events')
-      .select('*')
-      .gte('start_date', new Date().toISOString())
-      .order('start_date', { ascending: true })
-      .limit(3)
-      .then(({ data }) => {
-        if (data) setLatestEvents(data)
-      })
-
-    // Fetch recent listings (limited to 3)
-    supabase
-      .from('listings')
-      .select('*')
-      .eq('status', 'active')
-      .order('created_at', { ascending: false })
-      .limit(3)
-      .then(({ data }) => {
-        if (data) setRecentListings(data)
-      })
-
-    // Fetch latest blog posts
-    supabase
-      .from('blog_posts')
-      .select(`
-        *,
-        author:profiles(username)
-      `)
-      .eq('published', true)
-      .order('created_at', { ascending: false })
-      .limit(3)
-      .then(({ data }) => {
-        if (data) setLatestPosts(data)
-      })
-  }, [])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, [supabase, toast])
 
   function formatPrice(price: number) {
     return new Intl.NumberFormat('en-MT', {
       style: 'currency',
       currency: 'EUR'
     }).format(price)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
   }
 
   return (

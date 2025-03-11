@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { EventCreditDialog } from "@/components/event-credit-dialog"
 import { ArrowLeft, Loader2 } from "lucide-react"
 
@@ -52,45 +52,103 @@ type EventForm = z.infer<typeof eventSchema>
 export default function CreateEventPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
+  const supabase = createClientComponentClient()
+  const [isLoading, setIsLoading] = useState(true)
   const [uploadingPoster, setUploadingPoster] = useState(false)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [hasCredits, setHasCredits] = useState(false)
   const [credits, setCredits] = useState<number>(0)
-  const [isMounted, setIsMounted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
-  // Set isMounted to true and handle success redirect
+  const [posterUrl, setPosterUrl] = useState<string | null>(null)
+
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    setIsMounted(true)
-    const url = new URL(window.location.href)
-    const success = url.searchParams.get('success')
-    const sessionId = url.searchParams.get('session_id')
-    
-    if (success === 'true' && sessionId) {
-      // Show success toast
-      toast({
-        title: "Payment successful!",
-        description: "Your event credit has been added to your account.",
-      })
-      
-      // Remove the query parameters from the URL
-      url.searchParams.delete('success')
-      url.searchParams.delete('session_id')
-      window.history.replaceState({}, '', url.toString())
-      
-      // Wait a moment before checking credits to allow webhook to complete
-      setTimeout(() => {
-        checkCredits(true)
-      }, 2000)
-    } else {
-      // Only check credits if not coming from a successful payment
-      checkCredits()
+    let mounted = true
+
+    async function initializeSession() {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
+          return
+        }
+
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
+        }
+
+        if (mounted) {
+          setUserId(session.user.id)
+
+          // Check user credits
+          const { data: creditsData, error: creditsError } = await supabase
+            .from("event_credits")
+            .select("amount")
+            .eq("user_id", session.user.id)
+            .single()
+
+          if (creditsError && creditsError.code !== 'PGRST116') {
+            console.error('Error fetching credits:', creditsError)
+          }
+
+          const currentCredits = creditsData?.amount || 0
+          setCredits(currentCredits)
+          setHasCredits(currentCredits > 0)
+
+          // Check URL parameters for Stripe success
+          if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href)
+            const success = url.searchParams.get('success')
+            const sessionId = url.searchParams.get('session_id')
+            
+            if (success === 'true' && sessionId) {
+              toast({
+                title: "Payment successful!",
+                description: "Your event credit has been added to your account.",
+              })
+              
+              url.searchParams.delete('success')
+              url.searchParams.delete('session_id')
+              window.history.replaceState({}, '', url.toString())
+            }
+          }
+
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('Error in session initialization:', error)
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
     }
-  }, [])
+
+    initializeSession()
+
+    return () => {
+      mounted = false
+    }
+  }, [router, supabase, toast])
 
   const form = useForm<EventForm>({
     resolver: zodResolver(eventSchema),
@@ -104,81 +162,6 @@ export default function CreateEventPage() {
     }
   })
 
-  async function checkCredits(forceRefresh = false) {
-    try {
-      // Only run if we're in the browser
-      if (typeof window === 'undefined') return;
-      
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
-        router.push("/login")
-        return
-      }
-
-      setUserId(session.user.id)
-
-      if (forceRefresh) {
-        console.log("Force refreshing credits")
-      }
-
-      // Get user's credits
-      const { data: userCredits, error: creditsError } = await supabase
-        .from("credits_events")
-        .select("amount")
-        .eq("user_id", session.user.id)
-        .single()
-          
-      if (creditsError) {
-        console.error("Error fetching event credits:", creditsError)
-        
-        // Try to create the record if it doesn't exist
-        if (creditsError.code === 'PGRST116') { // Record not found
-          console.log("No event credits record found, creating one")
-          const { error: insertError } = await supabase
-            .from("credits_events")
-            .insert({ 
-              user_id: session.user.id,
-              amount: 0,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            
-          if (insertError) {
-            console.error("Error creating event credits record:", insertError)
-          } else {
-            console.log("Created event credits record")
-          }
-        }
-        
-        // Set credits to 0 if we couldn't fetch them
-        setCredits(0)
-        setHasCredits(false)
-        
-        // Show credit dialog if no credits
-        if (!forceRefresh && isMounted) {
-          setShowCreditDialog(true)
-        }
-      } else {
-        const creditAmount = userCredits?.amount || 0
-        console.log("Found event credits:", creditAmount)
-        setCredits(creditAmount)
-        setHasCredits(creditAmount > 0)
-        
-        // Only show credit dialog if mounted and no credits
-        if (creditAmount === 0 && !forceRefresh && isMounted) {
-          setShowCreditDialog(true)
-        }
-      }
-    } catch (error) {
-      console.error("Error checking credits:", error)
-      setCredits(0)
-      setHasCredits(false)
-      if (!forceRefresh && isMounted) {
-        setShowCreditDialog(true)
-      }
-    }
-  }
-
   async function handlePosterUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {
       const file = event.target.files?.[0]
@@ -188,7 +171,7 @@ export default function CreateEventPage() {
         toast({
           variant: "destructive",
           title: "File too large",
-          description: "Poster image must be under 5MB",
+          description: "Image must be less than 5MB"
         })
         return
       }
@@ -197,43 +180,55 @@ export default function CreateEventPage() {
         toast({
           variant: "destructive",
           title: "Invalid file type",
-          description: "Please upload an image file (JPEG/PNG/WebP)",
+          description: "Please upload a valid image file (JPEG, PNG, or WebP)"
         })
         return
       }
 
       setUploadingPoster(true)
-
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session?.user.id) {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
         throw new Error("Not authenticated")
       }
 
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${sessionData.session.user.id}-${Date.now()}.${fileExt}`
+      const fileExt = file.name.split(".").pop()
+      const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
       const filePath = `events/${fileName}`
 
       const { error: uploadError } = await supabase.storage
-        .from('events')
-        .upload(filePath, file)
+        .from("events")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        throw uploadError
+      }
 
       const { data: { publicUrl } } = supabase.storage
-        .from('events')
+        .from("events")
         .getPublicUrl(filePath)
 
-      form.setValue('posterUrl', publicUrl)
+      setPosterUrl(publicUrl)
+      form.setValue("posterUrl", publicUrl)
 
       toast({
         title: "Poster uploaded",
-        description: "Your event poster has been uploaded successfully",
+        description: "Your event poster has been uploaded successfully"
       })
     } catch (error) {
+      console.error("Poster upload error:", error)
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload poster",
+        description: error instanceof Error ? error.message : "Failed to upload poster"
       })
     } finally {
       setUploadingPoster(false)
@@ -242,100 +237,86 @@ export default function CreateEventPage() {
 
   async function onSubmit(data: EventForm) {
     try {
-      setIsSubmitting(true);
-      
-      // Check credits again to make sure user still has enough
-      await checkCredits(true)
-      
-      if (credits < 1) {
+      if (!hasCredits) {
         setShowCreditDialog(true)
-        setIsSubmitting(false);
         return
       }
 
-      setIsLoading(true)
-
-      // Authenticate user
-      const { data: { session } } = await supabase.auth.getSession()
+      setIsSubmitting(true)
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
       if (!session?.user.id) {
         throw new Error("Not authenticated")
       }
 
       // Create the event
-      const { error: eventError } = await supabase
+      const { data: event, error: eventError } = await supabase
         .from("events")
         .insert({
-          title: data.title,
-          description: data.description,
-          organizer: data.organizer,
-          type: data.type,
-          start_date: data.startDate,
-          end_date: data.endDate || null,
-          start_time: data.startTime || null,
-          end_time: data.endTime || null,
-          location: data.location,
-          phone: data.phone || null,
-          email: data.email || null,
-          price: data.price || null,
-          poster_url: data.posterUrl || null,
-          created_by: session.user.id
+          ...data,
+          organizer_id: session.user.id,
+          poster_url: posterUrl || null
         })
+        .select()
+        .single()
 
       if (eventError) throw eventError
 
-      // Get the event ID
-      const { data: eventData, error: fetchError } = await supabase
-        .from("events")
-        .select("id")
-        .eq("created_by", session.user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single()
-
-      if (fetchError) throw fetchError
-      
-      const eventId = eventData.id
-
-      // Deduct one event credit
+      // Deduct one credit
       const { error: creditError } = await supabase
-        .from("credits_events")
+        .from("event_credits")
         .update({ 
           amount: credits - 1,
           updated_at: new Date().toISOString()
         })
         .eq("user_id", session.user.id)
 
-      if (creditError) throw creditError
+      if (creditError) {
+        console.error("Error updating credits:", creditError)
+        throw creditError
+      }
 
       // Record the transaction
-      await supabase
-        .from("credit_transactions")
+      const { error: transactionError } = await supabase
+        .from("event_credit_transactions")
         .insert({
           user_id: session.user.id,
           amount: -1,
           type: "event_creation"
         })
 
+      if (transactionError) {
+        console.error("Error recording transaction:", transactionError)
+        // Don't throw here, just log the error
+      }
+
+      setCredits(credits - 1)
+      setHasCredits(credits - 1 > 0)
+
       toast({
         title: "Event created",
         description: "Your event has been created successfully"
       })
 
-      router.push("/events")
+      router.push(`/events/${event.id}`)
     } catch (error) {
+      console.error("Submit error:", error)
       toast({
         variant: "destructive",
         title: "Failed to create event",
         description: error instanceof Error ? error.message : "Something went wrong"
       })
     } finally {
-      setIsLoading(false)
       setIsSubmitting(false)
     }
   }
 
-  // Move the dialog outside the return statement
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>

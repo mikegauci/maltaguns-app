@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Sun as Gun, Package } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,15 +22,41 @@ export default function CreateListing() {
   const [showLicenseDialog, setShowLicenseDialog] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isSeller, setIsSeller] = useState(false)
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
+    let mounted = true
+
     async function checkSellerStatus() {
       try {
         const { data: { session }, error: authError } = await supabase.auth.getSession()
         
-        if (authError || !session) {
+        if (authError) {
+          console.error('Auth error:', authError)
           router.push('/login')
           return
+        }
+
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
         }
 
         const { data: profile, error: profileError } = await supabase
@@ -39,18 +65,29 @@ export default function CreateListing() {
           .eq('id', session.user.id)
           .single()
 
-        if (profileError) throw profileError
+        if (profileError) {
+          console.error('Error fetching profile:', profileError)
+          throw profileError
+        }
 
-        setIsSeller(profile?.is_seller || false)
+        if (mounted) {
+          setIsSeller(profile?.is_seller || false)
+          setIsLoading(false)
+        }
       } catch (error) {
         console.error('Error checking seller status:', error)
-      } finally {
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
 
     checkSellerStatus()
-  }, [router])
+
+    return () => {
+      mounted = false
+    }
+  }, [router, supabase])
 
   const handleFirearmsClick = () => {
     if (!isSeller) {

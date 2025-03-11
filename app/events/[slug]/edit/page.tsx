@@ -11,8 +11,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { ArrowLeft, Trash2, Calendar as CalendarIcon, Clock } from "lucide-react"
+import { Database } from "@/lib/database.types"
 import {
   Dialog,
   DialogContent,
@@ -73,6 +74,7 @@ type EventForm = z.infer<typeof eventSchema>
 export default function EditEvent({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [eventId, setEventId] = useState<string | null>(null)
   const [posterUrl, setPosterUrl] = useState<string | null>(null)
@@ -81,6 +83,7 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isAuthorized, setIsAuthorized] = useState(false)
 
   const form = useForm<EventForm>({
     resolver: zodResolver(eventSchema),
@@ -101,16 +104,47 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
   })
 
   useEffect(() => {
-    async function loadEvent() {
-      setIsLoading(true)
-      
+    let mounted = true
+
+    async function initializeSession() {
       try {
+        // Get session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
+          return
+        }
+
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
+        }
+
         // First try to find by slug
         let { data: event, error } = await supabase
           .from("events")
           .select("*")
           .eq("slug", params.slug)
-          .single();
+          .single()
         
         // If not found by slug, try by ID for backward compatibility
         if (error || !event) {
@@ -118,68 +152,80 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
             .from("events")
             .select("*")
             .eq("id", params.slug)
-            .single();
+            .single()
           
           if (errorById || !eventById) {
+            console.error('Error fetching event:', errorById)
             toast({
-              title: "Error",
-              description: "Event not found",
+              title: "Event not found",
+              description: "The event you're trying to edit doesn't exist.",
               variant: "destructive",
             })
             router.push("/events")
             return
           }
           
-          event = eventById;
+          event = eventById
         }
 
-        // Check if the user is the owner of the event
-        const { data: session } = await supabase.auth.getSession()
-        if (!session?.session?.user?.id || session.session.user.id !== event.created_by) {
+        // Check if user is the owner
+        if (event.created_by !== session.user.id) {
           toast({
             title: "Unauthorized",
-            description: "You don't have permission to edit this event",
+            description: "You don't have permission to edit this event.",
             variant: "destructive",
           })
           router.push(`/events/${event.slug || event.id}`)
           return
         }
 
-        setEventId(event.id)
-        setPosterUrl(event.poster_url)
-        if (event.poster_url) {
-          setPosterPreview(event.poster_url)
+        if (mounted) {
+          setEventId(event.id)
+          setPosterUrl(event.poster_url)
+          setIsAuthorized(true)
+          
+          if (event.poster_url) {
+            setPosterPreview(event.poster_url)
+          }
+          
+          // Format dates for the form
+          form.reset({
+            title: event.title,
+            description: event.description,
+            organizer: event.organizer,
+            type: event.type,
+            start_date: format(new Date(event.start_date), "yyyy-MM-dd"),
+            end_date: event.end_date ? format(new Date(event.end_date), "yyyy-MM-dd") : null,
+            start_time: event.start_time,
+            end_time: event.end_time,
+            location: event.location,
+            phone: event.phone,
+            email: event.email,
+            price: event.price,
+          })
+
+          setIsLoading(false)
         }
-        
-        // Format dates for the form
-        form.reset({
-          title: event.title,
-          description: event.description,
-          organizer: event.organizer,
-          type: event.type,
-          start_date: format(new Date(event.start_date), "yyyy-MM-dd"),
-          end_date: event.end_date ? format(new Date(event.end_date), "yyyy-MM-dd") : null,
-          start_time: event.start_time,
-          end_time: event.end_time,
-          location: event.location,
-          phone: event.phone,
-          email: event.email,
-          price: event.price,
-        })
       } catch (error) {
-        console.error("Error loading event:", error)
+        console.error('Error in session initialization:', error)
         toast({
           title: "Error",
-          description: "Failed to load event",
+          description: "Failed to initialize session. Please try again.",
           variant: "destructive",
         })
-      } finally {
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
+        router.push('/login')
       }
     }
 
-    loadEvent()
-  }, [params.slug, router, toast, form])
+    initializeSession()
+
+    return () => {
+      mounted = false
+    }
+  }, [params.slug, router, form, supabase, toast])
 
   async function handlePosterUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -214,28 +260,55 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
   }
 
   async function onSubmit(data: EventForm) {
-    if (!eventId) return
+    if (!eventId) {
+      toast({
+        title: "Error",
+        description: "Event information is missing.",
+        variant: "destructive",
+      })
+      return
+    }
     
     setIsUploading(true)
     setUploadProgress(0)
     
     try {
+      // Get session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
+        throw new Error("Not authenticated")
+      }
+
       let finalPosterUrl = posterUrl
       
       // 1. Upload new poster if provided
       if (newPoster) {
         setUploadProgress(10)
         const fileExt = newPoster.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+        const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `events/${eventId}/${fileName}`
         
         const { error: uploadError } = await supabase.storage
           .from('events')
-          .upload(filePath, newPoster)
+          .upload(filePath, newPoster, {
+            cacheControl: "3600",
+            upsert: false
+          })
           
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          console.error("Upload error:", uploadError)
+          throw uploadError
+        }
         
-        const { data: urlData } = supabase.storage.from('events').getPublicUrl(filePath)
+        const { data: urlData } = supabase.storage
+          .from('events')
+          .getPublicUrl(filePath)
         finalPosterUrl = urlData.publicUrl
         setUploadProgress(50)
       } else {
@@ -245,11 +318,18 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
       // 2. Delete old poster if it was replaced or removed
       if (posterUrl && (newPoster || !posterPreview)) {
         // Extract the path from the URL
-        const urlParts = posterUrl.split('/');
-        const bucketIndex = urlParts.findIndex(part => part === 'events');
+        const urlParts = posterUrl.split('/')
+        const bucketIndex = urlParts.findIndex(part => part === 'events')
         if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
-          const path = urlParts.slice(bucketIndex + 1).join('/');
-          await supabase.storage.from('events').remove([path]);
+          const path = urlParts.slice(bucketIndex + 1).join('/')
+          const { error: deleteError } = await supabase.storage
+            .from('events')
+            .remove([path])
+          
+          if (deleteError) {
+            console.error("Delete error:", deleteError)
+            // Continue with update even if delete fails
+          }
         }
       }
       
@@ -272,16 +352,20 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
           price: data.price,
           poster_url: finalPosterUrl,
           updated_at: new Date().toISOString(),
+          slug: slugify(data.title),
         })
         .eq('id', eventId)
       
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error("Update error:", updateError)
+        throw updateError
+      }
       
       setUploadProgress(100)
       
       toast({
         title: "Event updated",
-        description: "Your event has been updated successfully"
+        description: "Your event has been updated successfully."
       })
 
       // Generate a new slug from the title if different
@@ -292,25 +376,52 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
       console.error("Submit error:", error)
       toast({
         variant: "destructive",
-        title: "Failed to update event",
-        description: error instanceof Error ? error.message : "Something went wrong"
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update event. Please try again."
       })
     } finally {
       setIsUploading(false)
+      setUploadProgress(0)
     }
   }
 
   async function handleDeleteEvent() {
-    if (!eventId) return
+    if (!eventId) {
+      toast({
+        title: "Error",
+        description: "Event information is missing.",
+        variant: "destructive",
+      })
+      return
+    }
 
     try {
+      // Get session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
+        throw new Error("Not authenticated")
+      }
+
       // 1. Delete poster if exists
       if (posterUrl) {
-        const urlParts = posterUrl.split('/');
-        const bucketIndex = urlParts.findIndex(part => part === 'events');
+        const urlParts = posterUrl.split('/')
+        const bucketIndex = urlParts.findIndex(part => part === 'events')
         if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
-          const path = urlParts.slice(bucketIndex + 1).join('/');
-          await supabase.storage.from('events').remove([path]);
+          const path = urlParts.slice(bucketIndex + 1).join('/')
+          const { error: deleteError } = await supabase.storage
+            .from('events')
+            .remove([path])
+          
+          if (deleteError) {
+            console.error("Delete error:", deleteError)
+            // Continue with deletion even if poster delete fails
+          }
         }
       }
       
@@ -320,25 +431,42 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
         .delete()
         .eq('id', eventId)
       
-      if (error) throw error
+      if (error) {
+        console.error("Delete error:", error)
+        throw error
+      }
       
       toast({
         title: "Event deleted",
-        description: "Your event has been deleted successfully"
+        description: "Your event has been deleted successfully."
       })
       
       router.push('/events')
       router.refresh()
     } catch (error) {
-      console.error("Error deleting event:", error)
+      console.error("Delete error:", error)
       toast({
         variant: "destructive",
         title: "Delete failed",
-        description: error instanceof Error ? error.message : "Failed to delete event"
+        description: error instanceof Error 
+          ? error.message 
+          : "Failed to delete event. Please try again or contact support if the issue persists."
       })
     } finally {
       setDeleteDialogOpen(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  if (!isAuthorized) {
+    return null // Component will redirect in useEffect
   }
 
   return (

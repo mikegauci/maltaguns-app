@@ -8,13 +8,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useToast } from "@/hooks/use-toast"
+import { Database } from "@/lib/database.types"
 
 export default function CreateRetailerBlogPost({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
+  const supabase = createClientComponentClient<Database>()
+  const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [retailerId, setRetailerId] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
@@ -26,57 +28,99 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
   })
 
   useEffect(() => {
-    async function checkAuthorization() {
-      // Get current user
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
+    let mounted = true
+
+    async function initializeSession() {
+      try {
+        // Get session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
+          return
+        }
+
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
+        }
+
+        // Store user ID for later use
+        setUserId(session.user.id)
+
+        // First get the retailer ID from the slug
+        const { data: retailer, error: retailerError } = await supabase
+          .from("retailers")
+          .select("*")
+          .eq("slug", params.slug)
+          .single()
+
+        if (retailerError || !retailer) {
+          console.error('Error fetching retailer:', retailerError)
+          toast({
+            title: "Retailer not found",
+            description: "The retailer you're trying to create a blog post for doesn't exist.",
+            variant: "destructive",
+          })
+          router.push("/retailers")
+          return
+        }
+
+        setRetailerId(retailer.id)
+
+        // Check if user is the owner of this retailer
+        if (retailer.owner_id !== session.user.id) {
+          toast({
+            title: "Unauthorized",
+            description: "You don't have permission to create blog posts for this retailer.",
+            variant: "destructive",
+          })
+          router.push(`/retailers/${params.slug}`)
+          return
+        }
+
+        if (mounted) {
+          setIsAuthorized(true)
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('Error in session initialization:', error)
         toast({
-          title: "Authentication required",
-          description: "You must be logged in to create a blog post.",
+          title: "Error",
+          description: "Failed to initialize session. Please try again.",
           variant: "destructive",
         })
-        router.push(`/retailers/${params.slug}`)
-        return
+        if (mounted) {
+          setIsLoading(false)
+        }
+        router.push('/login')
       }
-
-      // Store user ID for later use
-      setUserId(session.user.id)
-
-      // First get the retailer ID from the slug
-      const { data: retailer, error: retailerError } = await supabase
-        .from("retailers")
-        .select("*")
-        .eq("slug", params.slug)
-        .single()
-
-      if (retailerError || !retailer) {
-        toast({
-          title: "Retailer not found",
-          description: "The retailer you're trying to create a blog post for doesn't exist.",
-          variant: "destructive",
-        })
-        router.push("/retailers")
-        return
-      }
-
-      setRetailerId(retailer.id)
-
-      // Check if user is the owner of this retailer
-      if (retailer.owner_id !== session.user.id) {
-        toast({
-          title: "Unauthorized",
-          description: "You don't have permission to create blog posts for this retailer.",
-          variant: "destructive",
-        })
-        router.push(`/retailers/${params.slug}`)
-        return
-      }
-
-      setIsAuthorized(true)
     }
 
-    checkAuthorization()
-  }, [params.slug, router, toast])
+    initializeSession()
+
+    return () => {
+      mounted = false
+    }
+  }, [params.slug, router, supabase, toast])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -126,6 +170,18 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
     setIsLoading(true)
 
     try {
+      // Get session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
+        throw new Error("Not authenticated")
+      }
+
       // Generate slug from title
       const slug = slugify(formData.title)
       
@@ -133,15 +189,19 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
       let featured_image = null
       if (formData.featuredImage) {
         const fileExt = formData.featuredImage.name.split('.').pop()
-        const fileName = `${Date.now()}.${fileExt}`
+        const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `retailer-blog/${retailerId}/${fileName}`
         
-        // Using 'retailers' bucket instead of 'blog-images'
         const { error: uploadError } = await supabase.storage
           .from('retailers')
-          .upload(filePath, formData.featuredImage)
+          .upload(filePath, formData.featuredImage, {
+            cacheControl: "3600",
+            upsert: false
+          })
           
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          throw uploadError
+        }
         
         const { data: { publicUrl } } = supabase.storage
           .from('retailers')
@@ -160,11 +220,13 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
           slug,
           published: true,
           retailer_id: retailerId,
-          author_id: userId,
+          author_id: session.user.id,
         })
         .select()
         
-      if (postError) throw postError
+      if (postError) {
+        throw postError
+      }
       
       toast({
         title: "Blog post created",
@@ -185,12 +247,16 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
     }
   }
 
-  if (!isAuthorized) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <p>Checking authorization...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     )
+  }
+
+  if (!isAuthorized) {
+    return null // Component will redirect in useEffect
   }
 
   return (

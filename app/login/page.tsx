@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -20,12 +20,18 @@ const loginSchema = z.object({
 
 type LoginForm = z.infer<typeof loginSchema>
 
+interface DebugInfo {
+  sessionAfterLogin?: any;
+  [key: string]: any;
+}
+
 export default function Login() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>({})
   const supabase = createClientComponentClient()
 
   const form = useForm<LoginForm>({
@@ -89,21 +95,10 @@ export default function Login() {
           description: "You have successfully logged in.",
         })
 
-        // Check if there's a redirect URL in cookies
-        const cookies = document.cookie.split(';')
-        const redirectCookie = cookies.find(cookie => cookie.trim().startsWith('redirectUrl='))
-        let redirectUrl = '/'
+        // Get the redirect URL from query parameters
+        const redirectTo = searchParams.get('redirectTo') || '/'
         
-        if (redirectCookie) {
-          const cookieValue = redirectCookie.split('=')[1]
-          if (cookieValue) {
-            redirectUrl = decodeURIComponent(cookieValue)
-            // Clear the redirect cookie
-            document.cookie = 'redirectUrl=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-          }
-        }
-
-        router.push(redirectUrl)
+        router.push(redirectTo)
         router.refresh()
       } else {
         setError('Session not established after login')

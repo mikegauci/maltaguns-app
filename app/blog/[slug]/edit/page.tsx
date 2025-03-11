@@ -10,13 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote } from "lucide-react"
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import slug from 'slug'
+import { Database } from "@/lib/database.types"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
@@ -33,6 +34,7 @@ type BlogPostForm = z.infer<typeof blogPostSchema>
 export default function EditBlogPost({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [postId, setPostId] = useState<string | null>(null)
@@ -67,59 +69,112 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
   })
 
   useEffect(() => {
+    let mounted = true
+
     async function loadPost() {
       try {
-        const { data: sessionData } = await supabase.auth.getSession()
-        if (!sessionData.session?.user) {
-          router.push("/login")
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
           return
         }
 
-        const { data: post, error } = await supabase
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
+        }
+
+        const { data: post, error: postError } = await supabase
           .from("blog_posts")
           .select("*")
           .eq("slug", params.slug)
           .single()
 
-        if (error) throw error
-
-        if (post.author_id !== sessionData.session.user.id) {
+        if (postError) {
+          console.error('Error fetching post:', postError)
           toast({
             variant: "destructive",
-            title: "Unauthorized",
-            description: "You can only edit your own blog posts.",
+            title: "Error",
+            description: "Failed to load blog post."
           })
-          router.push("/profile")
           return
         }
 
-        setPostId(post.id)
-        form.reset({
-          title: post.title,
-          content: post.content,
-          featuredImage: post.featured_image || "",
-          published: post.published,
-        })
+        if (!post) {
+          console.log('Post not found:', params.slug)
+          toast({
+            variant: "destructive",
+            title: "Not found",
+            description: "The blog post you're trying to edit doesn't exist."
+          })
+          router.push('/blog')
+          return
+        }
 
-        if (editor) {
-          editor.commands.setContent(post.content)
+        if (post.author_id !== session.user.id) {
+          toast({
+            variant: "destructive",
+            title: "Unauthorized",
+            description: "You can only edit your own blog posts."
+          })
+          router.push('/blog')
+          return
+        }
+
+        if (mounted) {
+          setPostId(post.id)
+          form.reset({
+            title: post.title,
+            content: post.content,
+            featuredImage: post.featured_image || "",
+            published: post.published,
+          })
+
+          if (editor) {
+            editor.commands.setContent(post.content)
+          }
+          setIsLoading(false)
         }
       } catch (error) {
         console.error("Error loading post:", error)
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to load blog post.",
+          description: "Failed to load blog post."
         })
-      } finally {
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
 
     if (editor) {
       loadPost()
     }
-  }, [params.slug, router, form, editor, toast])
+
+    return () => {
+      mounted = false
+    }
+  }, [params.slug, router, form, editor, supabase, toast])
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {
@@ -130,7 +185,7 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
         toast({
           variant: "destructive",
           title: "File too large",
-          description: "Featured image must be under 5MB",
+          description: "Featured image must be less than 5MB"
         })
         return
       }
@@ -139,27 +194,37 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
         toast({
           variant: "destructive",
           title: "Invalid file type",
-          description: "Please upload an image file (JPEG/PNG/WebP)",
+          description: "Please upload a valid image file (JPEG, PNG, or WebP)"
         })
         return
       }
 
       setUploadingImage(true)
-
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session?.user.id) {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
         throw new Error("Not authenticated")
       }
 
       const fileExt = file.name.split('.').pop()
-      const fileName = `${sessionData.session.user.id}-${Date.now()}.${fileExt}`
+      const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
       const filePath = `blog/${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from('blog')
-        .upload(filePath, file)
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        throw uploadError
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('blog')
@@ -169,13 +234,14 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
 
       toast({
         title: "Image uploaded",
-        description: "Your featured image has been uploaded successfully",
+        description: "Your featured image has been uploaded successfully"
       })
     } catch (error) {
+      console.error("Image upload error:", error)
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload image",
+        description: error instanceof Error ? error.message : "Failed to upload image"
       })
     } finally {
       setUploadingImage(false)
@@ -187,15 +253,20 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
 
     try {
       setIsLoading(true)
-
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session?.user.id) {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
         throw new Error("Not authenticated")
       }
 
       const postSlug = slug(data.title)
 
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from("blog_posts")
         .update({
           title: data.title,
@@ -207,7 +278,10 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
         })
         .eq("id", postId)
 
-      if (error) throw error
+      if (updateError) {
+        console.error("Update error:", updateError)
+        throw updateError
+      }
 
       toast({
         title: "Post updated",
@@ -216,6 +290,7 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
 
       router.push(`/blog/${postSlug}`)
     } catch (error) {
+      console.error("Submit error:", error)
       toast({
         variant: "destructive",
         title: "Update failed",
@@ -301,7 +376,7 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="text-muted-foreground">Loading post...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     )
   }

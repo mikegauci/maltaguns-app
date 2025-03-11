@@ -1,33 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
 import { SearchBar } from "@/components/search";
 import { Store, BookOpen, Menu, X } from "lucide-react";
+import { useSupabase } from "./providers/supabase-provider";
 
 export function Header() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const { supabase, session } = useSupabase();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -79,7 +63,7 @@ export function Header() {
               </Button>
             </Link>
             
-            {user ? (
+            {session?.user ? (
               <>
                 <Link href="/profile">
                   <Button variant="ghost">Profile</Button>
@@ -124,7 +108,7 @@ export function Header() {
               </Button>
             </Link>
             
-            {user ? (
+            {session?.user ? (
               <>
                 <Link href="/profile">
                   <Button variant="ghost" onClick={() => setMenuOpen(false)}>Profile</Button>

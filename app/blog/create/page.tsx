@@ -10,13 +10,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote } from "lucide-react"
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import slug from 'slug'
+import { Database } from "@/lib/database.types"
 
 // List of authorized user IDs
 const AUTHORIZED_BLOG_AUTHORS = [
@@ -38,33 +39,75 @@ type BlogPostForm = z.infer<typeof blogPostSchema>
 export default function CreateBlogPost() {
   const router = useRouter()
   const { toast } = useToast()
-  const [isLoading, setIsLoading] = useState(false)
+  const supabase = createClientComponentClient<Database>()
+  const [isLoading, setIsLoading] = useState(true)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
-    async function checkAuthorization() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) {
+    let mounted = true
+
+    async function initializeSession() {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
+          return
+        }
+
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
+        }
+
+        if (!AUTHORIZED_BLOG_AUTHORS.includes(session.user.id)) {
+          toast({
+            variant: "destructive",
+            title: "Unauthorized",
+            description: "You are not authorized to create blog posts.",
+          })
+          router.push('/blog')
+          return
+        }
+
+        if (mounted) {
+          setIsAuthorized(true)
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('Error in session initialization:', error)
+        if (mounted) {
+          setIsLoading(false)
+        }
         router.push('/login')
-        return
       }
-
-      if (!AUTHORIZED_BLOG_AUTHORS.includes(session.user.id)) {
-        toast({
-          variant: "destructive",
-          title: "Unauthorized",
-          description: "You are not authorized to create blog posts.",
-        })
-        router.push('/blog')
-        return
-      }
-
-      setIsAuthorized(true)
     }
 
-    checkAuthorization()
-  }, [router, toast])
+    initializeSession()
+
+    return () => {
+      mounted = false
+    }
+  }, [router, supabase, toast])
 
   const editor = useEditor({
     extensions: [
@@ -111,7 +154,7 @@ export default function CreateBlogPost() {
         toast({
           variant: "destructive",
           title: "File too large",
-          description: "Featured image must be under 5MB",
+          description: "Featured image must be less than 5MB",
         })
         return
       }
@@ -120,27 +163,37 @@ export default function CreateBlogPost() {
         toast({
           variant: "destructive",
           title: "Invalid file type",
-          description: "Please upload an image file (JPEG/PNG/WebP)",
+          description: "Please upload a valid image file (JPEG, PNG, or WebP)",
         })
         return
       }
 
       setUploadingImage(true)
-
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session?.user.id) {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
         throw new Error("Not authenticated")
       }
 
       const fileExt = file.name.split('.').pop()
-      const fileName = `${sessionData.session.user.id}-${Date.now()}.${fileExt}`
+      const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
       const filePath = `blog/${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from('blog')
-        .upload(filePath, file)
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false
+        })
 
-      if (uploadError) throw uploadError
+      if (uploadError) {
+        throw uploadError
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('blog')
@@ -150,13 +203,14 @@ export default function CreateBlogPost() {
 
       toast({
         title: "Image uploaded",
-        description: "Your featured image has been uploaded successfully",
+        description: "Your featured image has been uploaded successfully"
       })
     } catch (error) {
+      console.error("Image upload error:", error)
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload image",
+        description: error instanceof Error ? error.message : "Failed to upload image"
       })
     } finally {
       setUploadingImage(false)
@@ -166,14 +220,19 @@ export default function CreateBlogPost() {
   async function onSubmit(data: BlogPostForm) {
     try {
       setIsLoading(true)
-
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session?.user.id) {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
         throw new Error("Not authenticated")
       }
 
       // Double-check authorization
-      if (!AUTHORIZED_BLOG_AUTHORS.includes(sessionData.session.user.id)) {
+      if (!AUTHORIZED_BLOG_AUTHORS.includes(session.user.id)) {
         throw new Error("Not authorized to create blog posts")
       }
 
@@ -182,7 +241,7 @@ export default function CreateBlogPost() {
       const { error } = await supabase
         .from("blog_posts")
         .insert({
-          author_id: sessionData.session.user.id,
+          author_id: session.user.id,
           title: data.title,
           slug: postSlug,
           content: data.content,
@@ -199,6 +258,7 @@ export default function CreateBlogPost() {
 
       router.push(`/blog/${postSlug}`)
     } catch (error) {
+      console.error("Submit error:", error)
       toast({
         variant: "destructive",
         title: "Failed to create post",
@@ -277,6 +337,14 @@ export default function CreateBlogPost() {
         >
           <Quote className="h-4 w-4" />
         </Button>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     )
   }

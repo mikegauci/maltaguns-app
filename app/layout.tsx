@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
+import SupabaseProvider from "@/components/providers/supabase-provider"
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,14 +27,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider>
-          <Header />
-          <main className="min-h-[calc(100vh-64px)]">
-            {children}
-          </main>
-          <Footer />
-          <Toaster />
-        </ThemeProvider>
+        <SupabaseProvider>
+          <ThemeProvider>
+            <Header />
+            <main className="min-h-[calc(100vh-64px)]">
+              {children}
+            </main>
+            <Footer />
+            <Toaster />
+          </ThemeProvider>
+        </SupabaseProvider>
       </body>
     </html>
   )

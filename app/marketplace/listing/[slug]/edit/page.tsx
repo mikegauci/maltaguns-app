@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { ArrowLeft, Trash2 } from "lucide-react"
+import { Database } from "@/lib/database.types"
 import {
   Dialog,
   DialogContent,
@@ -150,6 +151,7 @@ function parseImageUrls(images: string): string[] {
 export default function EditListing({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [listingId, setListingId] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<"firearms" | "non_firearms" | null>(null)
@@ -161,6 +163,7 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isAuthorized, setIsAuthorized] = useState(false)
 
   const form = useForm<ListingForm>({
     resolver: zodResolver(listingSchema),
@@ -176,20 +179,52 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   })
 
   useEffect(() => {
-    async function loadListing() {
-      setIsLoading(true)
-      
+    let mounted = true
+
+    async function initializeSession() {
       try {
-        // Fetch all listings and filter by slug
+        // Get session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
+          return
+        }
+
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
+        }
+
+        // Fetch listing by slug
         const { data, error } = await supabase
           .from("listings")
           .select("*")
-          .filter('title', 'ilike', `%${params.slug.replace(/-/g, ' ')}%`);
+          .filter('title', 'ilike', `%${params.slug.replace(/-/g, ' ')}%`)
 
         if (error || !data || data.length === 0) {
+          console.error('Error fetching listing:', error)
           toast({
-            title: "Error",
-            description: "Listing not found",
+            title: "Listing not found",
+            description: "The listing you're trying to edit doesn't exist.",
             variant: "destructive",
           })
           router.push("/marketplace")
@@ -198,60 +233,82 @@ export default function EditListing({ params }: { params: { slug: string } }) {
 
         // Find the best match by comparing the slugified title with the provided slug
         const listing = data.find(item => {
-          const itemSlug = slugify(item.title);
-          return itemSlug === params.slug || itemSlug.includes(params.slug);
-        }) || data[0];
+          const itemSlug = slugify(item.title)
+          return itemSlug === params.slug || itemSlug.includes(params.slug)
+        }) || data[0]
 
-        // Check if the user is the owner of the listing
-        const { data: session } = await supabase.auth.getSession()
-        if (!session?.session?.user?.id || session.session.user.id !== listing.seller_id) {
+        // Check if user is the owner
+        if (listing.seller_id !== session.user.id) {
           toast({
             title: "Unauthorized",
-            description: "You don't have permission to edit this listing",
+            description: "You don't have permission to edit this listing.",
             variant: "destructive",
           })
-          router.push("/marketplace")
+          router.push(`/marketplace/listing/${params.slug}`)
           return
         }
 
-        setListingId(listing.id)
-        setSelectedType(listing.type)
-        setSelectedCategory(listing.category)
-        
-        // Parse the images from PostgreSQL format
-        const parsedImages = parseImageUrls(listing.images);
-        setExistingImages(parsedImages)
+        if (mounted) {
+          setListingId(listing.id)
+          setSelectedType(listing.type)
+          setSelectedCategory(listing.category)
+          setIsAuthorized(true)
+          
+          // Parse the images from PostgreSQL format
+          const parsedImages = parseImageUrls(listing.images)
+          setExistingImages(parsedImages)
 
-        // Set form values
-        form.reset({
-          title: listing.title,
-          description: listing.description,
-          price: listing.price,
-          type: listing.type,
-          category: listing.category,
-          subcategory: listing.subcategory || "",
-          calibre: listing.calibre || "",
-        })
+          // Set form values
+          form.reset({
+            title: listing.title,
+            description: listing.description,
+            price: listing.price,
+            type: listing.type,
+            category: listing.category,
+            subcategory: listing.subcategory || "",
+            calibre: listing.calibre || "",
+          })
 
-        // Create preview URLs for existing images
-        setPreviewUrls(parsedImages)
+          // Create preview URLs for existing images
+          setPreviewUrls(parsedImages)
+          setIsLoading(false)
+        }
       } catch (error) {
-        console.error("Error loading listing:", error)
+        console.error('Error in session initialization:', error)
         toast({
           title: "Error",
-          description: "Failed to load listing",
+          description: "Failed to initialize session. Please try again.",
           variant: "destructive",
         })
-      } finally {
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
+        router.push('/login')
       }
     }
 
-    loadListing()
-  }, [params.slug, router, supabase, form])
+    initializeSession()
+
+    return () => {
+      mounted = false
+    }
+  }, [params.slug, router, form, supabase, toast])
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files || [])
+    if (!event.target.files || event.target.files.length === 0) {
+      return
+    }
+
+    if (!listingId) {
+      toast({
+        title: "Error",
+        description: "Listing information is missing.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const files = Array.from(event.target.files)
     
     if (files.length + previewUrls.length > MAX_FILES) {
       toast({
@@ -282,10 +339,63 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       }
     }
     
-    // Create preview URLs for the new images
-    const newPreviews = files.map(file => URL.createObjectURL(file))
-    setPreviewUrls(prev => [...prev, ...newPreviews])
-    setNewImages(prev => [...prev, ...files])
+    setIsUploading(true)
+    
+    try {
+      // Get session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
+        throw new Error("Not authenticated")
+      }
+
+      for (const file of files) {
+        // Create a unique file name
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
+        const filePath = `listings/${listingId}/${fileName}`
+        
+        // Upload file to Supabase Storage
+        const { error: uploadError } = await supabase.storage
+          .from('listings')
+          .upload(filePath, file, {
+            cacheControl: "3600",
+            upsert: false
+          })
+          
+        if (uploadError) {
+          throw uploadError
+        }
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('listings')
+          .getPublicUrl(filePath)
+        
+        // Add to preview URLs
+        setPreviewUrls(prev => [...prev, publicUrl])
+        setNewImages(prev => [...prev, file])
+      }
+      
+      toast({
+        title: "Images uploaded",
+        description: "Your images have been uploaded successfully.",
+      })
+    } catch (error) {
+      console.error("Image upload error:", error)
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload images. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   function handleRemoveImage(index: number) {
@@ -303,12 +413,31 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   }
 
   async function onSubmit(data: ListingForm) {
-    if (!listingId) return
+    if (!listingId) {
+      toast({
+        title: "Error",
+        description: "Listing information is missing.",
+        variant: "destructive",
+      })
+      return
+    }
 
     setIsUploading(true)
     setUploadProgress(0)
 
     try {
+      // Get session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
+        throw new Error("Not authenticated")
+      }
+
       // 1. Upload new images
       const uploadedImageUrls: string[] = []
       
@@ -316,16 +445,24 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         for (let i = 0; i < newImages.length; i++) {
           const file = newImages[i]
           const fileExt = file.name.split('.').pop()
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
+          const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
           const filePath = `listings/${listingId}/${fileName}`
           
           const { error: uploadError } = await supabase.storage
             .from('listings')
-            .upload(filePath, file)
+            .upload(filePath, file, {
+              cacheControl: "3600",
+              upsert: false
+            })
             
-          if (uploadError) throw uploadError
+          if (uploadError) {
+            console.error("Upload error:", uploadError)
+            throw uploadError
+          }
           
-          const { data: urlData } = supabase.storage.from('listings').getPublicUrl(filePath)
+          const { data: urlData } = supabase.storage
+            .from('listings')
+            .getPublicUrl(filePath)
           uploadedImageUrls.push(urlData.publicUrl)
           
           // Update progress
@@ -339,14 +476,21 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       if (imagesToDelete.length > 0) {
         for (const imageUrl of imagesToDelete) {
           // Don't delete the default image
-          if (imageUrl === DEFAULT_LISTING_IMAGE) continue;
+          if (imageUrl === DEFAULT_LISTING_IMAGE) continue
           
           // Extract the path from the URL
-          const urlParts = imageUrl.split('/');
-          const bucketIndex = urlParts.findIndex(part => part === 'listings');
+          const urlParts = imageUrl.split('/')
+          const bucketIndex = urlParts.findIndex(part => part === 'listings')
           if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
-            const path = urlParts.slice(bucketIndex + 1).join('/');
-            await supabase.storage.from('listings').remove([path]);
+            const path = urlParts.slice(bucketIndex + 1).join('/')
+            const { error: deleteError } = await supabase.storage
+              .from('listings')
+              .remove([path])
+            
+            if (deleteError) {
+              console.error("Delete error:", deleteError)
+              // Continue with other deletions even if one fails
+            }
           }
         }
       }
@@ -354,13 +498,13 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       // 3. Combine remaining existing images with new uploaded images
       const remainingExistingImages = Array.isArray(existingImages) 
         ? existingImages.filter(url => !imagesToDelete.includes(url))
-        : [];
-      const allImages = [...remainingExistingImages, ...uploadedImageUrls];
+        : []
+      const allImages = [...remainingExistingImages, ...uploadedImageUrls]
       
       // 4. Format the images as a PostgreSQL array literal, use default image if no images
       const formattedImages = allImages.length > 0 
         ? `{${allImages.map(url => `"${url}"`).join(',')}}`
-        : `{"${DEFAULT_LISTING_IMAGE}"}`;
+        : `{"${DEFAULT_LISTING_IMAGE}"}`
       
       // 5. Update the listing in the database
       const { error: updateError } = await supabase
@@ -379,13 +523,16 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         })
         .eq('id', listingId)
       
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error("Update error:", updateError)
+        throw updateError
+      }
       
       setUploadProgress(100)
       
       toast({
         title: "Listing updated",
-        description: "Your listing has been updated successfully"
+        description: "Your listing has been updated successfully."
       })
 
       router.push(`/marketplace/listing/${slugify(data.title)}`)
@@ -393,27 +540,36 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       console.error("Submit error:", error)
       toast({
         variant: "destructive",
-        title: "Failed to update listing",
-        description: error instanceof Error ? error.message : "Something went wrong"
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Failed to update listing. Please try again."
       })
     } finally {
       setIsUploading(false)
+      setUploadProgress(0)
     }
   }
 
   async function handleDeleteListing() {
-    if (!listingId) return
+    if (!listingId) {
+      toast({
+        title: "Error",
+        description: "Listing information is missing.",
+        variant: "destructive",
+      })
+      return
+    }
 
     try {
-      // Get the current user session
-      const { data } = await supabase.auth.getSession()
-      if (!data?.session?.user?.id) {
-        toast({
-          variant: "destructive",
-          title: "Unauthorized",
-          description: "You must be logged in to delete a listing"
-        })
-        return
+      // Get session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
+        throw new Error("Not authenticated")
       }
 
       // Instead of deleting directly, use the server-side API
@@ -424,27 +580,26 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         },
         body: JSON.stringify({
           listingId,
-          userId: data.session.user.id
+          userId: session.user.id
         }),
-      });
+      })
 
       // Handle the response from the API
       if (!response.ok) {
         // Get the detailed error message from the API response
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete listing");
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to delete listing")
       }
 
-      // Success - show toast and redirect
       toast({
         title: "Listing deleted",
-        description: "Your listing has been deleted successfully"
+        description: "Your listing has been deleted successfully."
       })
 
-      // Redirect to marketplace
+      // Redirect to profile
       router.push("/profile")
     } catch (error) {
-      console.error("Error deleting listing:", error)
+      console.error("Delete error:", error)
       toast({
         variant: "destructive",
         title: "Delete failed",
@@ -455,6 +610,18 @@ export default function EditListing({ params }: { params: { slug: string } }) {
     } finally {
       setDeleteDialogOpen(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  if (!isAuthorized) {
+    return null // Component will redirect in useEffect
   }
 
   return (

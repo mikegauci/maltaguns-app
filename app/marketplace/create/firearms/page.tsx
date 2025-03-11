@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { ArrowLeft, X, Loader2 } from "lucide-react"
 import { CreditDialog } from "@/components/credit-dialog"
 
@@ -58,6 +58,7 @@ export default function CreateFirearmsListing() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+  const supabase = createClientComponentClient()
   const [uploading, setUploading] = useState(false)
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [showCreditDialog, setShowCreditDialog] = useState(false)
@@ -82,88 +83,86 @@ export default function CreateFirearmsListing() {
   })
 
   useEffect(() => {
+    let mounted = true
+
     async function checkCredits() {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) {
-          router.push("/login");
-          return;
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
+          return
         }
-        // Set the userId from the session
-        setUserId(session.user.id);
 
-        // Check if user is a retailer
-        const { data: retailerData, error: retailerError } = await supabase
-          .from("retailers")
-          .select("id")
-          .eq("owner_id", session.user.id)
-          .single();
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
           
-        if (!retailerError && retailerData) {
-          setIsRetailer(true);
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
         }
 
-        // Check if coming back from Stripe
-        const sessionId = searchParams.get("session_id");
-        if (sessionId) {
-          toast({
-            title: "Payment successful!",
-            description: "Your credits have been added to your account.",
-          });
-        }
+        if (mounted) {
+          setUserId(session.user.id)
 
-        // Get user's credits
-        const { data: userCredits, error: creditsError } = await supabase
-          .from("credits")
-          .select("amount")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
+          // Check if user is a retailer
+          const { data: retailerData, error: retailerError } = await supabase
+            .from("retailers")
+            .select("id")
+            .eq("owner_id", session.user.id)
+            .single()
 
-        if (creditsError) {
-          // Real error
-          console.error("Error fetching credits:", creditsError);
-          setCredits(0);
-          setShowCreditDialog(true);
-        } else if (!userCredits) {
-          // No credits found, create a new record with 0 credits
-          console.log("No credits found, creating new record");
-          
-          const { error: insertError } = await supabase
+          if (retailerError && retailerError.code !== 'PGRST116') {
+            console.error('Error checking retailer status:', retailerError)
+          }
+
+          setIsRetailer(!!retailerData)
+
+          // Get user credits
+          const { data: creditsData, error: creditsError } = await supabase
             .from("credits")
-            .insert({ 
-              user_id: session.user.id, 
-              amount: 0,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            });
-            
-          if (insertError) {
-            console.error("Error creating credits record:", insertError);
+            .select("amount")
+            .eq("user_id", session.user.id)
+            .single()
+
+          if (creditsError && creditsError.code !== 'PGRST116') {
+            console.error('Error fetching credits:', creditsError)
           }
-          
-          setCredits(0);
-          setShowCreditDialog(true);
-        } else {
-          // Credits found
-          console.log("Found credits in credits table:", userCredits.amount);
-          setCredits(userCredits.amount || 0);
-          
-          // Show credit dialog if user has no credits
-          if (userCredits.amount === 0) {
-            setShowCreditDialog(true);
-          }
+
+          const currentCredits = creditsData?.amount || 0
+          setCredits(currentCredits)
+          setHasCredits(currentCredits > 0 || !!retailerData)
+          setIsLoading(false)
         }
       } catch (error) {
-        console.error("Error checking credits:", error);
-        setCredits(0);
-        setShowCreditDialog(true);
-      } finally {
-        setIsLoading(false);
+        console.error('Error in checkCredits:', error)
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
 
-    checkCredits();
-  }, [router, searchParams, toast]);
+    checkCredits()
+
+    return () => {
+      mounted = false
+    }
+  }, [router, supabase])
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {

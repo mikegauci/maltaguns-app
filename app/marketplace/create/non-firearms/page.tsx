@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useRef, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/lib/supabase"
 import { ArrowLeft, X, Loader2 } from "lucide-react"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
@@ -88,12 +89,17 @@ function slugify(text: string) {
 
 export default function CreateNonFirearmsListing() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
+  const supabase = createClientComponentClient()
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedCategory, setSelectedCategory] = useState<keyof typeof subcategories>("airsoft")
+  const [userId, setUserId] = useState<string | null>(null)
+  const [isRetailer, setIsRetailer] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   const form = useForm<NonFirearmsForm>({
     resolver: zodResolver(nonFirearmsSchema),
@@ -106,6 +112,73 @@ export default function CreateNonFirearmsListing() {
       images: []
     }
   })
+
+  useEffect(() => {
+    let mounted = true
+
+    async function checkSession() {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
+          return
+        }
+
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
+        }
+
+        if (mounted) {
+          setUserId(session.user.id)
+
+          // Check if user is a retailer
+          const { data: retailerData, error: retailerError } = await supabase
+            .from("retailers")
+            .select("id")
+            .eq("owner_id", session.user.id)
+            .single()
+
+          if (retailerError && retailerError.code !== 'PGRST116') {
+            console.error('Error checking retailer status:', retailerError)
+          }
+
+          setIsRetailer(!!retailerData)
+          setIsLoading(false)
+        }
+      } catch (error) {
+        console.error('Error in checkSession:', error)
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    checkSession()
+
+    return () => {
+      mounted = false
+    }
+  }, [router, supabase])
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {

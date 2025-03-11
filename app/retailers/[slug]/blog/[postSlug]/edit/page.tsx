@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useToast } from "@/hooks/use-toast"
+import { Database } from "@/lib/database.types"
 
 export default function EditRetailerBlogPost({ params }: { params: { slug: string, postSlug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [retailerId, setRetailerId] = useState<string | null>(null)
@@ -27,18 +29,39 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
   })
 
   useEffect(() => {
-    async function loadPostAndCheckAuthorization() {
+    let mounted = true
+
+    async function initializeSession() {
       try {
-        // Get current user
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session?.user) {
-          toast({
-            title: "Authentication required",
-            description: "You must be logged in to edit a blog post.",
-            variant: "destructive",
-          })
-          router.push(`/retailers/${params.slug}`)
+        // Get session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          router.push('/login')
           return
+        }
+
+        if (!session) {
+          console.log('No session found')
+          router.push('/login')
+          return
+        }
+
+        // Validate session expiry
+        const sessionExpiry = new Date(session.expires_at! * 1000)
+        const now = new Date()
+        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+        if (isNearExpiry) {
+          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+          
+          if (refreshError || !refreshedSession) {
+            console.error('Session refresh failed:', refreshError)
+            router.push('/login')
+            return
+          }
         }
 
         // First get the retailer ID from the slug
@@ -49,6 +72,7 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
           .single()
 
         if (retailerError || !retailer) {
+          console.error('Error fetching retailer:', retailerError)
           toast({
             title: "Retailer not found",
             description: "The retailer you're trying to edit a blog post for doesn't exist.",
@@ -79,7 +103,8 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
           .eq("retailer_id", retailer.id)
           .single()
 
-        if (postError || !post) {
+        if (postError) {
+          console.error('Error fetching post:', postError)
           toast({
             title: "Post not found",
             description: "The blog post you're trying to edit doesn't exist.",
@@ -89,31 +114,38 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
           return
         }
 
-        setPostId(post.id)
-        setFormData({
-          title: post.title,
-          content: post.content,
-          featuredImage: null,
-          featuredImageUrl: "",
-          currentFeaturedImage: post.featured_image || "",
-        })
-
-        setIsAuthorized(true)
+        if (mounted) {
+          setPostId(post.id)
+          setFormData({
+            title: post.title,
+            content: post.content,
+            featuredImage: null,
+            featuredImageUrl: "",
+            currentFeaturedImage: post.featured_image || "",
+          })
+          setIsAuthorized(true)
+          setIsLoading(false)
+        }
       } catch (error) {
-        console.error("Error loading post:", error)
+        console.error('Error in session initialization:', error)
         toast({
-          variant: "destructive",
           title: "Error",
-          description: "Failed to load blog post.",
+          description: "Failed to initialize session. Please try again.",
+          variant: "destructive",
         })
-        router.push(`/retailers/${params.slug}`)
-      } finally {
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+        }
+        router.push('/login')
       }
     }
 
-    loadPostAndCheckAuthorization()
-  }, [params.slug, params.postSlug, router, toast])
+    initializeSession()
+
+    return () => {
+      mounted = false
+    }
+  }, [params.slug, params.postSlug, router, supabase, toast])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -163,6 +195,18 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
     setIsLoading(true)
 
     try {
+      // Get session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error("Session error:", sessionError)
+        throw new Error("Authentication error: " + sessionError.message)
+      }
+      
+      if (!session?.user.id) {
+        throw new Error("Not authenticated")
+      }
+
       // Generate slug from title
       const newSlug = slugify(formData.title)
       
@@ -170,17 +214,22 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
       let featured_image = formData.currentFeaturedImage
       if (formData.featuredImage) {
         const fileExt = formData.featuredImage.name.split('.').pop()
-        const fileName = `${Date.now()}.${fileExt}`
+        const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `retailer-blog/${retailerId}/${fileName}`
         
         const { error: uploadError } = await supabase.storage
-          .from('blog-images')
-          .upload(filePath, formData.featuredImage)
+          .from('retailers')
+          .upload(filePath, formData.featuredImage, {
+            cacheControl: "3600",
+            upsert: false
+          })
           
-        if (uploadError) throw uploadError
+        if (uploadError) {
+          throw uploadError
+        }
         
         const { data: { publicUrl } } = supabase.storage
-          .from('blog-images')
+          .from('retailers')
           .getPublicUrl(filePath)
           
         featured_image = publicUrl
@@ -198,7 +247,10 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
         })
         .eq('id', postId)
         
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error("Update error:", updateError)
+        throw updateError
+      }
       
       toast({
         title: "Blog post updated",
@@ -208,7 +260,7 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
       // Redirect to the blog post page
       router.push(`/retailers/${params.slug}/blog/${newSlug}`)
     } catch (error) {
-      console.error("Error updating blog post:", error)
+      console.error("Submit error:", error)
       toast({
         title: "Error",
         description: "There was a problem updating your blog post. Please try again.",
@@ -222,17 +274,13 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <p>Loading...</p>
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     )
   }
 
   if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <p>Checking authorization...</p>
-      </div>
-    )
+    return null // Component will redirect in useEffect
   }
 
   return (
@@ -297,7 +345,7 @@ export default function EditRetailerBlogPost({ params }: { params: { slug: strin
                 )}
               </div>
 
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading} className="w-full">
                 {isLoading ? "Updating..." : "Update Blog Post"}
               </Button>
             </form>

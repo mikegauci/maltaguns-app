@@ -5,8 +5,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { BookOpen, Pencil } from "lucide-react"
 import Link from "next/link"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from "date-fns"
+import { useToast } from "@/hooks/use-toast"
+import { Database } from "@/lib/database.types"
 
 // List of authorized user IDs
 const AUTHORIZED_BLOG_AUTHORS = [
@@ -36,21 +38,32 @@ function truncateText(text: string, words: number) {
 }
 
 export default function BlogPage() {
+  const supabase = createClientComponentClient<Database>()
+  const { toast } = useToast()
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
-    async function fetchPosts() {
+    let mounted = true
+
+    async function fetchData() {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
+        // Get session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          return
+        }
+
         // Check if user is authorized to create blog posts
         if (session?.user) {
           setIsAuthorized(AUTHORIZED_BLOG_AUTHORS.includes(session.user.id))
         }
 
-        const { data, error } = await supabase
+        // Fetch blog posts
+        const { data: postsData, error: postsError } = await supabase
           .from('blog_posts')
           .select(`
             *,
@@ -59,17 +72,39 @@ export default function BlogPage() {
           .eq('published', true)
           .order('created_at', { ascending: false })
 
-        if (error) throw error
-        setPosts(data || [])
+        if (postsError) {
+          console.error('Blog posts fetch error:', postsError)
+          toast({
+            variant: "destructive",
+            title: "Error loading posts",
+            description: "Failed to load blog posts. Please refresh the page."
+          })
+          return
+        }
+
+        if (mounted) {
+          setPosts(postsData || [])
+          setIsLoading(false)
+        }
       } catch (error) {
-        console.error('Error fetching posts:', error)
-      } finally {
-        setIsLoading(false)
+        console.error('Error fetching data:', error)
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Something went wrong. Please refresh the page."
+        })
+        if (mounted) {
+          setIsLoading(false)
+        }
       }
     }
 
-    fetchPosts()
-  }, [])
+    fetchData()
+
+    return () => {
+      mounted = false
+    }
+  }, [supabase, toast])
 
   if (isLoading) {
     return (
