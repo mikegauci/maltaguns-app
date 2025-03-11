@@ -1,12 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Removed static export mode to enable dynamic functionality.
+  transpilePackages: ['jotai-devtools'],
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'buqeowpqufayojbitiqp.supabase.co',
+      },
+    ],
   },
   experimental: {
-    serverActions: true
-  }
+    serverComponentsExternalPackages: ['sharp'],
+  },
 };
 
 module.exports = nextConfig;

@@ -22,6 +22,18 @@ const SESSION_TIMEOUT = 5000 // 5 seconds
 
 export async function middleware(req: NextRequest) {
   try {
+    // Special handling for Stripe webhook endpoints
+    if (req.nextUrl.pathname.startsWith('/api/webhooks/stripe')) {
+      console.log('[MIDDLEWARE] Detected Stripe webhook request, skipping auth check');
+      return NextResponse.next({
+        request: {
+          headers: new Headers({
+            'x-middleware-next': '1',
+          }),
+        },
+      });
+    }
+    
     // Create a response early
     const res = NextResponse.next()
     
@@ -137,5 +149,6 @@ export const config = {
      * - public (public files)
      */
     '/((?!_next/static|_next/image|favicon.ico|public).*)',
+    '/api/webhooks/stripe'
   ],
 } 

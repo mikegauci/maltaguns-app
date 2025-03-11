@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
@@ -35,39 +35,90 @@ export function FeatureCreditDialog({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isRenewal, setIsRenewal] = useState(false);
+
+  useEffect(() => {
+    // Check if this is a renewal
+    const checkFeatureStatus = async () => {
+      try {
+        const { data: listing } = await supabase
+          .from('listings')
+          .select('featured_until')
+          .eq('id', listingId)
+          .single();
+
+        if (listing?.featured_until) {
+          const featuredUntil = new Date(listing.featured_until);
+          const now = new Date();
+          const daysRemaining = Math.ceil((featuredUntil.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          setIsRenewal(daysRemaining <= 3 && daysRemaining > 0);
+        }
+      } catch (error) {
+        console.error('Error checking feature status:', error);
+      }
+    };
+
+    if (open) {
+      checkFeatureStatus();
+    }
+  }, [open, listingId]);
 
   const handlePurchase = async () => {
     try {
       setLoading(true);
       
-      // Redirect to Stripe checkout
-      const response = await fetch("/api/checkout/feature-credit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId,
-          listingId
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("API error:", errorData);
-        throw new Error(errorData.error || "Failed to create checkout session");
-      }
-      
-      const data = await response.json();
-      
-      if (data.url) {
-        router.push(data.url);
+      if (isRenewal) {
+        // Call the renew-feature endpoint directly
+        const response = await fetch("/api/listings/renew-feature", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            listingId
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to renew feature");
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          setSuccess(true);
+          onSuccess?.();
+        }
       } else {
-        throw new Error("No checkout URL returned");
+        // Regular feature purchase through Stripe
+        const response = await fetch("/api/checkout/feature-credit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId,
+            listingId
+          }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to create checkout session");
+        }
+        
+        const data = await response.json();
+        if (data.url) {
+          router.push(data.url);
+        } else {
+          throw new Error("No checkout URL returned");
+        }
       }
     } catch (error) {
       console.error("Error:", error);
       toast.error(error instanceof Error ? error.message : "Failed to process request");
+    } finally {
       setLoading(false);
     }
   };
@@ -77,12 +128,9 @@ export function FeatureCreditDialog({
       onOpenChange(newOpen);
       if (!newOpen) {
         setSuccess(false);
+        setIsRenewal(false);
       }
     }
-  };
-
-  const handleBackToListings = () => {
-    router.push("/marketplace");
   };
 
   return (
@@ -90,22 +138,35 @@ export function FeatureCreditDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {success ? "Listing Featured!" : "Feature Your Listing"}
+            {success ? "Listing Featured!" : isRenewal ? "Renew Featured Status" : "Feature Your Listing"}
           </DialogTitle>
           <DialogDescription>
             {success
-              ? "Your listing will now appear at the top of search results for 30 days."
-              : `Feature your listing for €${FEATURE_PRICE} to make it stand out and appear at the top of search results for 30 days.`}
+              ? "Your listing will now appear at the top of search results for 15 days."
+              : isRenewal
+              ? "Renew your listing's featured status for another 15 days and extend the listing expiry to 30 days."
+              : `Feature your listing for €${FEATURE_PRICE} to make it stand out and appear at the top of search results for 15 days.`}
           </DialogDescription>
         </DialogHeader>
 
         {!success ? (
           <div className="flex flex-col gap-4">
             <div className="text-center p-4 bg-muted rounded-md">
-              <p className="font-semibold text-lg">€{FEATURE_PRICE}.00</p>
-              <p className="text-sm text-muted-foreground">
-                One-time payment for 30 days of featuring
-              </p>
+              {isRenewal ? (
+                <>
+                  <p className="font-semibold text-lg">Free Renewal</p>
+                  <p className="text-sm text-muted-foreground">
+                    Use 1 feature credit to renew for 15 days
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-lg">€{FEATURE_PRICE}.00</p>
+                  <p className="text-sm text-muted-foreground">
+                    One-time payment for 15 days of featuring
+                  </p>
+                </>
+              )}
             </div>
           </div>
         ) : (
@@ -127,7 +188,7 @@ export function FeatureCreditDialog({
               </svg>
             </div>
             <p className="text-center text-sm text-muted-foreground mt-2">
-              Your listing will now appear at the top of search results for 30 days.
+              Your listing will now appear at the top of search results for 15 days.
             </p>
           </div>
         )}
@@ -140,10 +201,14 @@ export function FeatureCreditDialog({
               disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading ? "Processing..." : `Purchase Feature (€${FEATURE_PRICE})`}
+              {loading 
+                ? "Processing..." 
+                : isRenewal 
+                ? "Renew Feature" 
+                : `Purchase Feature (€${FEATURE_PRICE})`}
             </Button>
           ) : (
-            <Button onClick={handleBackToListings} className="w-full">
+            <Button onClick={() => router.push("/marketplace")} className="w-full">
               Back to Marketplace
             </Button>
           )}

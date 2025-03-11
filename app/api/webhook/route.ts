@@ -1,381 +1,254 @@
-import { NextResponse } from "next/server"
-import Stripe from "stripe"
-import { supabaseAdmin as supabase } from "@/lib/supabaseAdmin"
-import { handleFeatureCreditPurchase } from "../webhook-handler"
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
+import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY is not defined');
+}
+
+if (!process.env.STRIPE_WEBHOOK_SECRET) {
+  throw new Error('STRIPE_WEBHOOK_SECRET is not defined');
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2023-10-16'
+});
+
+const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 export async function POST(request: Request) {
-  console.log("[WEBHOOK-SINGULAR] Received webhook request at /api/webhook")
-  const sig = request.headers.get("stripe-signature") || ""
-  const rawBody = await request.text()
-
-  // Trim any whitespace from the webhook secret
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim()
-  
-  if (!webhookSecret) {
-    console.error("[WEBHOOK-SINGULAR] Webhook secret is not defined")
-    return NextResponse.json({ error: "Webhook secret is not configured" }, { status: 500 })
-  }
-
-  let event: Stripe.Event
-
+  console.log('[WEBHOOK-SINGULAR] Received webhook request');
   try {
-    console.log("[WEBHOOK-SINGULAR] Attempting to verify webhook signature")
-    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)
-    console.log("[WEBHOOK-SINGULAR] Webhook signature verified successfully")
-    console.log("[WEBHOOK-SINGULAR] Event type:", event.type)
-  } catch (err: any) {
-    console.error("[WEBHOOK-SINGULAR] Webhook signature verification failed:", err)
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
-  }
+    const payload = await request.text();
+    const signature = request.headers.get('stripe-signature') || '';
+    console.log('[WEBHOOK-SINGULAR] Webhook signature:', signature.substring(0, 10) + '...');
 
-  if (event.type === "checkout.session.completed") {
-    console.log("[WEBHOOK-SINGULAR] Processing checkout.session.completed event")
-    const session = event.data.object as Stripe.Checkout.Session
-    console.log("[WEBHOOK-SINGULAR] Full session data:", JSON.stringify(session, null, 2))
-    console.log("[WEBHOOK-SINGULAR] Session ID:", session.id)
-    console.log("[WEBHOOK-SINGULAR] Session metadata:", session.metadata)
-    console.log("[WEBHOOK-SINGULAR] Amount total:", session.amount_total)
-    console.log("[WEBHOOK-SINGULAR] Line items:", session.line_items)
-    const customerEmail = session.customer_email
+    let event: Stripe.Event;
 
-    if (!customerEmail) {
-      console.error("[WEBHOOK-SINGULAR] Customer email not found in session")
-      return NextResponse.json({ error: "Customer email not found" }, { status: 400 })
+    try {
+      console.log('[WEBHOOK-SINGULAR] Attempting to verify webhook signature');
+      event = stripe.webhooks.constructEvent(
+        payload,
+        signature,
+        endpointSecret
+      );
+      console.log('[WEBHOOK-SINGULAR] Signature verified, event type:', event.type);
+    } catch (err: any) {
+      console.error(`[WEBHOOK-SINGULAR] Signature verification failed: ${err.message}`);
+      return NextResponse.json({ error: err.message }, { status: 400 });
     }
 
-    // Get user ID from email
-    console.log("[WEBHOOK-SINGULAR] Looking up user ID for email:", customerEmail)
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", customerEmail)
-      .single()
-
-    if (profileError || !profile?.id) {
-      console.error("[WEBHOOK-SINGULAR] User not found for email:", customerEmail, "Error:", profileError)
-      return NextResponse.json({ error: "User not found" }, { status: 400 })
-    }
-
-    const userId = profile.id
-    const amountPaid = session.amount_total ? session.amount_total / 100 : 0
-    console.log("[WEBHOOK-SINGULAR] Amount paid:", amountPaid, "for user:", userId)
-
-    // Check if this is a feature credit purchase (€5)
-    if (amountPaid === 5 || (session.metadata && session.metadata.creditType === 'featured')) {
-      console.log("[WEBHOOK-SINGULAR] Processing feature credit purchase")
+    // Handle the checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+      console.log('[WEBHOOK-SINGULAR] Processing checkout.session.completed event');
+      const session = event.data.object as Stripe.Checkout.Session;
+      console.log('[WEBHOOK-SINGULAR] Session ID:', session.id);
+      console.log('[WEBHOOK-SINGULAR] Session metadata:', session.metadata);
       
-      // Use the shared utility function to handle feature credit purchases
-      const result = await handleFeatureCreditPurchase(userId, 1, session.id)
-      
-      if (!result.success) {
-        console.error("[WEBHOOK-SINGULAR] Feature credit purchase failed:", result.error)
-        return NextResponse.json({ error: result.error }, { status: 500 })
+      // Extract userId and listingId from session metadata
+      const userId = session.metadata?.userId;
+      const listingId = session.metadata?.listingId;
+
+      if (!userId || !listingId) {
+        console.error('[WEBHOOK-SINGULAR] Missing userId or listingId in metadata');
+        return NextResponse.json(
+          { error: 'Missing metadata' },
+          { status: 400 }
+        );
       }
       
-      console.log("[WEBHOOK-SINGULAR] Successfully processed feature credit purchase")
-      return NextResponse.json({ received: true })
-    }
-    // Handle event credits (€25)
-    else if (amountPaid === 25 || (session.metadata && session.metadata.creditType === 'event')) {
-      console.log("[WEBHOOK-SINGULAR] Processing event credit purchase")
+      console.log('[WEBHOOK-SINGULAR] Processing for userId:', userId, 'listingId:', listingId);
+
+      // Create a Supabase client
+      console.log('[WEBHOOK-SINGULAR] Creating Supabase client');
+      const supabase = createRouteHandlerClient({ cookies });
       
-      // First check if we've already processed this transaction
-      const { data: existingTransactions, error: txError } = await supabase
-        .from("credit_transactions")
-        .select("id, status, amount")
-        .eq("stripe_payment_id", session.id)
-        .eq("credit_type", "event")
-
-      if (txError) {
-        console.error("[WEBHOOK-SINGULAR] Error checking existing transactions:", txError)
-        return NextResponse.json({ error: "Failed to check existing transactions" }, { status: 500 })
-      }
-
-      console.log("[WEBHOOK-SINGULAR] Found existing transactions:", existingTransactions)
-
-      // If there's a completed transaction, we're done
-      if (existingTransactions && existingTransactions.length > 0) {
-        const completedTx = existingTransactions.find(tx => tx.status === "completed")
-        if (completedTx) {
-          console.log("[WEBHOOK-SINGULAR] Found completed transaction:", completedTx)
-          return NextResponse.json({ received: true })
-        }
-      }
-      
-      // Get current credits first
-      const { data: existingCredits, error: creditsError } = await supabase
-        .from("credits_events")
-        .select("amount")
-        .eq("user_id", userId)
-        .single()
-
-      if (creditsError && creditsError.code !== 'PGRST116') {
-        console.error("[WEBHOOK-SINGULAR] Error checking credits:", creditsError)
-        return NextResponse.json({ error: "Failed to check credits" }, { status: 500 })
-      }
-
-      const currentAmount = existingCredits?.amount || 0
-      console.log("[WEBHOOK-SINGULAR] Current event credits:", currentAmount)
-
-      // Handle existing transactions
-      if (existingTransactions && existingTransactions.length > 0) {
-        // Find pending transaction
-        const pendingTx = existingTransactions.find(tx => tx.status === "pending" || tx.status === null)
-        if (pendingTx) {
-          console.log("[WEBHOOK-SINGULAR] Updating pending transaction to completed")
+      try {
+        // First, check the listing details to get current expiry
+        console.log('[WEBHOOK-SINGULAR] Checking listing details');
+        const { data: listingData, error: listingError } = await supabase
+          .from('listings')
+          .select('expires_at, type')
+          .eq('id', listingId)
+          .single();
           
-          // First update the transaction
-          const { error: updateError } = await supabase
-            .from("credit_transactions")
-            .update({ 
-              status: "completed",
-              amount: 1,
-              description: "Purchase of 1 event credit"
-            })
-            .eq("id", pendingTx.id)
+        if (listingError) {
+          console.error('[WEBHOOK-SINGULAR] Error fetching listing details:', listingError);
+          return NextResponse.json(
+            { error: 'Error fetching listing details' },
+            { status: 500 }
+          );
+        }
+        
+        console.log('[WEBHOOK-SINGULAR] Listing details:', listingData);
 
-          if (updateError) {
-            console.error("[WEBHOOK-SINGULAR] Error updating pending transaction:", updateError)
-            return NextResponse.json({ error: "Failed to update pending transaction" }, { status: 500 })
-          }
+        // Update the transaction status to completed
+        console.log('[WEBHOOK-SINGULAR] Updating transaction status to completed');
+        const { data: txData, error: transactionError } = await supabase
+          .from('credit_transactions')
+          .update({
+            status: 'completed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('stripe_payment_id', session.id)
+          .eq('user_id', userId)
+          .eq('credit_type', 'featured')
+          .eq('status', 'pending')
+          .select();
 
-          // Now update credits using UPDATE instead of UPSERT
-          const { error: creditError } = await supabase
-            .from("credits_events")
+        if (transactionError) {
+          console.error('[WEBHOOK-SINGULAR] Error updating transaction:', transactionError);
+          // Continue anyway, not critical
+        } else {
+          console.log('[WEBHOOK-SINGULAR] Transaction updated successfully:', txData);
+        }
+
+        // Check for existing featured listing
+        console.log('[WEBHOOK-SINGULAR] Checking for existing featured listing');
+        const { data: existingFeature, error: featureError } = await supabase
+          .from('featured_listings')
+          .select('*')
+          .eq('listing_id', listingId)
+          .gt('end_date', new Date().toISOString())
+          .order('end_date', { ascending: false })
+          .limit(1);
+
+        if (featureError) {
+          console.error('[WEBHOOK-SINGULAR] Error checking for existing feature:', featureError);
+          return NextResponse.json(
+            { error: 'Error checking existing feature' },
+            { status: 500 }
+          );
+        }
+
+        console.log('[WEBHOOK-SINGULAR] Existing feature check result:', existingFeature);
+        
+        // Always set start date to now and end date to 15 days from now
+        // This ensures a consistent 15-day feature period regardless of any existing period
+        const startDate = new Date().toISOString();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 15);
+        const endDateIso = endDate.toISOString();
+        
+        console.log('[WEBHOOK-SINGULAR] New feature period:', startDate, 'to', endDateIso);
+
+        // Check if listing is expiring soon (less than 15 days)
+        const currentExpiryDate = new Date(listingData.expires_at);
+        const now = new Date();
+        const daysUntilExpiry = Math.floor((currentExpiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        console.log('[WEBHOOK-SINGULAR] Days until listing expiry:', daysUntilExpiry);
+        
+        // Calculate new expiry date for listing if needed
+        let newExpiryDate = null;
+        if (daysUntilExpiry <= 15) {
+          console.log('[WEBHOOK-SINGULAR] Listing is expiring in 15 days or less, will extend to 30 days');
+          newExpiryDate = new Date();
+          newExpiryDate.setDate(newExpiryDate.getDate() + 30);
+        }
+
+        if (existingFeature && existingFeature.length > 0) {
+          // If there's an existing feature, update its dates
+          const feature = existingFeature[0];
+          console.log('[WEBHOOK-SINGULAR] Found existing feature. Will update to fixed 15-day period');
+          
+          // Update the existing featured listing with new dates
+          console.log('[WEBHOOK-SINGULAR] Updating existing featured listing');
+          const { data: updateData, error: updateError } = await supabase
+            .from('featured_listings')
             .update({
-              amount: currentAmount + 1,
+              start_date: startDate,
+              end_date: endDateIso,
               updated_at: new Date().toISOString()
             })
-            .eq("user_id", userId)
-
-          if (creditError) {
-            console.error("[WEBHOOK-SINGULAR] Error updating credits:", creditError)
-            // Try to rollback by marking transaction as failed
-            await supabase
-              .from("credit_transactions")
-              .update({ status: "failed" })
-              .eq("id", pendingTx.id)
-            return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
-          }
-
-          const newAmount = currentAmount + 1
-          console.log("[WEBHOOK-SINGULAR] Successfully processed event credit purchase:")
-          console.log("- Previous amount:", currentAmount)
-          console.log("- Credits added: 1")
-          console.log("- New amount:", newAmount)
-          return NextResponse.json({ received: true })
-        }
-      }
-
-      // If no pending transaction exists, create a new one and update credits
-      const { error: transactionError } = await supabase
-        .from("credit_transactions")
-        .insert({
-          user_id: userId,
-          amount: 1,
-          status: "completed",
-          type: "credit",
-          credit_type: "event",
-          description: "Purchase of 1 event credit",
-          stripe_payment_id: session.id
-        })
-
-      if (transactionError) {
-        console.error("[WEBHOOK-SINGULAR] Error recording transaction:", transactionError)
-        return NextResponse.json({ error: "Error recording transaction" }, { status: 500 })
-      }
-
-      // Update credits using UPDATE instead of UPSERT
-      const { error: creditError } = await supabase
-        .from("credits_events")
-        .update({
-          amount: currentAmount + 1,
-          updated_at: new Date().toISOString()
-        })
-        .eq("user_id", userId)
-
-      if (creditError) {
-        console.error("[WEBHOOK-SINGULAR] Error updating credits:", creditError)
-        // Try to rollback by deleting the transaction
-        await supabase
-          .from("credit_transactions")
-          .delete()
-          .eq("stripe_payment_id", session.id)
-        return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
-      }
-
-      const newAmount = currentAmount + 1
-      console.log("[WEBHOOK-SINGULAR] Successfully processed event credit purchase:")
-      console.log("- Previous amount:", currentAmount)
-      console.log("- Credits added: 1")
-      console.log("- New amount:", newAmount)
-      return NextResponse.json({ received: true })
-    }
-    // Handle regular listing credits (€15, €65, €100)
-    else if (amountPaid === 15 || amountPaid === 65 || amountPaid === 100) {
-      console.log("[WEBHOOK-SINGULAR] Processing regular credit purchase. Amount paid:", amountPaid)
-      console.log("[WEBHOOK-SINGULAR] Session metadata:", session.metadata)
-      
-      // Get credits from metadata - this is the source of truth
-      const creditsToAdd = session.metadata?.credits ? parseInt(session.metadata.credits) : 0
-      if (!creditsToAdd) {
-        console.error("[WEBHOOK-SINGULAR] No credits specified in metadata")
-        return NextResponse.json({ error: "No credits specified in metadata" }, { status: 400 })
-      }
-      console.log("[WEBHOOK-SINGULAR] Credits to add from metadata:", creditsToAdd)
-
-      // First check if we've already processed this transaction - check both pending and completed
-      const { data: existingTransactions, error: txError } = await supabase
-        .from("credit_transactions")
-        .select("id, status, amount")
-        .eq("stripe_payment_id", session.id)
-        .eq("credit_type", "firearms")
-
-      if (txError) {
-        console.error("[WEBHOOK-SINGULAR] Error checking existing transactions:", txError)
-        return NextResponse.json({ error: "Failed to check existing transactions" }, { status: 500 })
-      }
-
-      console.log("[WEBHOOK-SINGULAR] Found existing transactions:", existingTransactions)
-
-      // If there's a completed transaction with the correct amount, we're done
-      if (existingTransactions && existingTransactions.length > 0) {
-        const completedTx = existingTransactions.find(tx => tx.status === "completed" && tx.amount === creditsToAdd)
-        if (completedTx) {
-          console.log("[WEBHOOK-SINGULAR] Found completed transaction with correct amount:", completedTx)
-          return NextResponse.json({ received: true })
-        }
-
-        // If there's a completed transaction with wrong amount, log error
-        const wrongAmountTx = existingTransactions.find(tx => tx.status === "completed" && tx.amount !== creditsToAdd)
-        if (wrongAmountTx) {
-          console.error("[WEBHOOK-SINGULAR] Found completed transaction with wrong amount:", wrongAmountTx)
-          return NextResponse.json({ error: "Transaction already processed with different amount" }, { status: 400 })
-        }
-      }
-      
-      // Get current credits first
-      const { data: existingCredits, error: creditsError } = await supabase
-        .from("credits")
-        .select("amount")
-        .eq("user_id", userId)
-        .single()
-
-      if (creditsError && creditsError.code !== 'PGRST116') {
-        console.error("[WEBHOOK-SINGULAR] Error checking credits:", creditsError)
-        return NextResponse.json({ error: "Failed to check credits" }, { status: 500 })
-      }
-
-      const currentAmount = existingCredits?.amount || 0
-      console.log("[WEBHOOK-SINGULAR] Current credit amount:", currentAmount)
-
-      // Handle existing transactions
-      if (existingTransactions && existingTransactions.length > 0) {
-        // Find pending transaction
-        const pendingTx = existingTransactions.find(tx => tx.status === "pending" || tx.status === null)
-        if (pendingTx) {
-          console.log("[WEBHOOK-SINGULAR] Updating pending transaction to completed with correct amount")
+            .eq('id', feature.id)
+            .select();
           
-          // First update the transaction
-          const { error: updateError } = await supabase
-            .from("credit_transactions")
-            .update({ 
-              status: "completed",
-              amount: creditsToAdd,
-              description: `Purchase of ${creditsToAdd} firearms credits (€${amountPaid} package)`
-            })
-            .eq("id", pendingTx.id)
-
           if (updateError) {
-            console.error("[WEBHOOK-SINGULAR] Error updating pending transaction:", updateError)
-            return NextResponse.json({ error: "Failed to update pending transaction" }, { status: 500 })
+            console.error('[WEBHOOK-SINGULAR] Error updating feature:', updateError);
+            return NextResponse.json(
+              { error: 'Error updating feature' },
+              { status: 500 }
+            );
           }
-
-          // Now update credits using UPDATE instead of UPSERT to avoid unique constraint error
-          const { error: creditError } = await supabase
-            .from("credits")
-            .update({
-              amount: currentAmount + creditsToAdd,
-              updated_at: new Date().toISOString()
+          
+          console.log(`[WEBHOOK-SINGULAR] Reset feature for listing ${listingId} to new 15-day period`, updateData);
+        } else {
+          // Create new feature
+          console.log('[WEBHOOK-SINGULAR] No existing feature found, creating new one');
+          
+          // Insert new featured listing
+          console.log('[WEBHOOK-SINGULAR] Inserting new featured listing');
+          const { data: insertData, error: insertError } = await supabase
+            .from('featured_listings')
+            .insert({
+              listing_id: listingId,
+              user_id: userId,
+              start_date: startDate,
+              end_date: endDateIso
             })
-            .eq("user_id", userId)
-
-          if (creditError) {
-            console.error("[WEBHOOK-SINGULAR] Error updating credits:", creditError)
-            // Try to rollback by marking transaction as failed
-            await supabase
-              .from("credit_transactions")
-              .update({ status: "failed" })
-              .eq("id", pendingTx.id)
-            return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
+            .select();
+          
+          if (insertError) {
+            console.error('[WEBHOOK-SINGULAR] Error creating feature:', insertError);
+            return NextResponse.json(
+              { error: 'Error creating feature' },
+              { status: 500 }
+            );
           }
-
-          const newAmount = currentAmount + creditsToAdd
-          console.log("[WEBHOOK-SINGULAR] Successfully processed firearms credit purchase:")
-          console.log("- Package: €" + amountPaid)
-          console.log("- Previous amount:", currentAmount)
-          console.log("- Credits added:", creditsToAdd)
-          console.log("- New amount:", newAmount)
-          return NextResponse.json({ received: true })
+          
+          console.log(`[WEBHOOK-SINGULAR] Created new feature for listing ${listingId}:`, insertData);
         }
+
+        // Update the listing
+        const listingUpdateData: any = {
+          featured_until: endDateIso
+        };
+        
+        // Add the new expires_at if needed
+        if (newExpiryDate) {
+          listingUpdateData.expires_at = newExpiryDate.toISOString();
+        }
+        
+        console.log('[WEBHOOK-SINGULAR] Updating listing with:', listingUpdateData);
+        const { error: listingUpdateError } = await supabase
+          .from('listings')
+          .update(listingUpdateData)
+          .eq('id', listingId);
+          
+        if (listingUpdateError) {
+          console.error('[WEBHOOK-SINGULAR] Error updating listing:', listingUpdateError);
+          // Not critical, continue
+        } else {
+          const updateMessage = newExpiryDate 
+            ? `Listing featured_until and expires_at updated successfully. New expiry: ${newExpiryDate.toISOString()}` 
+            : 'Listing featured_until updated successfully';
+          console.log(`[WEBHOOK-SINGULAR] ${updateMessage}`);
+        }
+
+        console.log('[WEBHOOK-SINGULAR] Webhook processing completed successfully');
+        return NextResponse.json({ 
+          success: true,
+          feature_start: startDate,
+          feature_end: endDateIso,
+          listing_expiry: newExpiryDate ? newExpiryDate.toISOString() : listingData.expires_at
+        });
+      } catch (error) {
+        console.error('[WEBHOOK-SINGULAR] Unexpected error processing webhook:', error);
+        return NextResponse.json(
+          { error: 'Unexpected error processing webhook' },
+          { status: 500 }
+        );
       }
-
-      // If no pending transaction exists, create a new one and update credits
-      const { error: transactionError } = await supabase
-        .from("credit_transactions")
-        .insert({
-          user_id: userId,
-          amount: creditsToAdd,
-          status: "completed",
-          type: "credit",
-          credit_type: "firearms",
-          description: `Purchase of ${creditsToAdd} firearms credits (€${amountPaid} package)`,
-          stripe_payment_id: session.id
-        })
-
-      if (transactionError) {
-        console.error("[WEBHOOK-SINGULAR] Error recording transaction:", transactionError)
-        return NextResponse.json({ error: "Error recording transaction" }, { status: 500 })
-      }
-
-      // Update credits using UPDATE instead of UPSERT
-      const { error: creditError } = await supabase
-        .from("credits")
-        .update({
-          amount: currentAmount + creditsToAdd,
-          updated_at: new Date().toISOString()
-        })
-        .eq("user_id", userId)
-
-      if (creditError) {
-        console.error("[WEBHOOK-SINGULAR] Error updating credits:", creditError)
-        // Try to rollback by deleting the transaction
-        await supabase
-          .from("credit_transactions")
-          .delete()
-          .eq("stripe_payment_id", session.id)
-        return NextResponse.json({ error: "Failed to update credits" }, { status: 500 })
-      }
-
-      const newAmount = currentAmount + creditsToAdd
-      console.log("[WEBHOOK-SINGULAR] Successfully processed firearms credit purchase:")
-      console.log("- Package: €" + amountPaid)
-      console.log("- Previous amount:", currentAmount)
-      console.log("- Credits added:", creditsToAdd)
-      console.log("- New amount:", newAmount)
-      return NextResponse.json({ received: true })
     }
-    // Handle unknown amount
-    else {
-      console.log("[WEBHOOK-SINGULAR] Unrecognized amount:", amountPaid)
-      return NextResponse.json({ error: "Unrecognized payment amount" }, { status: 400 })
-    }
-  } else {
-    console.log("[WEBHOOK-SINGULAR] Ignoring non-checkout.session.completed event")
+
+    console.log('[WEBHOOK-SINGULAR] Event type not handled:', event.type);
+    return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error('[WEBHOOK-SINGULAR] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Unexpected error' },
+      { status: 500 }
+    );
   }
-
-  console.log("[WEBHOOK-SINGULAR] Webhook processing completed")
-  return NextResponse.json({ received: true })
-}
+} 
