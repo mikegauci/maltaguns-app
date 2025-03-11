@@ -97,9 +97,13 @@ interface Listing {
   price: number;
   status: string;
   created_at: string;
-  expires_in_days?: number;
+  expires_at: string;
+  featured_until: string | null;
   is_near_expiration?: boolean;
   is_featured?: boolean;
+  days_until_expiration?: number;
+  featured_days_remaining?: number;
+  is_expired: boolean;
 }
 
 interface Retailer {
@@ -230,51 +234,52 @@ export default function ProfilePage() {
           // Continue even if there's an error
         }
 
-        // Create a map of featured listing IDs to end dates for quick lookup
-        const featuredMap = new Map<string, string>();
-
-        // Fetch featured listings for the user
-        const now = new Date().toISOString();
-        const { data: featuredListings, error: featuredError } = await supabase
+        // Fetch featured listings data
+        const { data: featuredListingsData, error: featuredListingsError } = await supabase
           .from("featured_listings")
-          .select("listing_id, end_date")
-          .eq("user_id", userId)
-          .gt("end_date", now);
-        
-        if (featuredError) {
-          console.error("Error fetching featured listings:", featuredError.message);
-        } else if (featuredListings) {
-          featuredListings.forEach((featured: { listing_id: string; end_date: string }) => {
-            featuredMap.set(featured.listing_id, featured.end_date);
-          });
+          .select("*")
+          .eq("user_id", userId);
+
+        if (featuredListingsError) {
+          console.error("Featured listings fetch error:", featuredListingsError.message);
         }
-        
+
+        // Create a map of listing IDs to their featured end dates
+        const featuredEndDates = new Map(
+          (featuredListingsData || []).map(featured => [
+            featured.listing_id,
+            new Date(featured.end_date)
+          ])
+        );
+
         // Process listings to add feature status and expiration data
         const listingsWithFeatures = (listingsData || []).map((listing: any) => {
-          const featuredEndDate = featuredMap.get(listing.id);
+          const now = new Date();
+          const expirationDate = new Date(listing.expires_at);
+          const featuredEndDate = featuredEndDates.get(listing.id);
           
-          if (featuredEndDate) {
-            const endDate = new Date(featuredEndDate);
-            const today = new Date();
-            const diffTime = endDate.getTime() - today.getTime();
-            const expiresInDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            return {
-              ...listing,
-              is_featured: true,
-              expires_in_days: expiresInDays,
-              is_near_expiration: expiresInDays <= 3 && expiresInDays > 0
-            };
+          const diffTime = expirationDate.getTime() - now.getTime();
+          const daysUntilExpiration = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          
+          let featuredDaysRemaining = 0;
+          if (featuredEndDate && featuredEndDate > now) {
+            const featuredDiffTime = featuredEndDate.getTime() - now.getTime();
+            featuredDaysRemaining = Math.max(0, Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24)));
           }
           
           return {
             ...listing,
-            is_featured: false
+            is_featured: featuredEndDate ? featuredEndDate > now : false,
+            days_until_expiration: daysUntilExpiration,
+            featured_days_remaining: featuredDaysRemaining,
+            is_near_expiration: daysUntilExpiration <= 3 && daysUntilExpiration > 0,
+            is_expired: daysUntilExpiration <= 0
           };
         });
 
-        // Update listings state
-        setListings(listingsWithFeatures);
+        // Filter out expired listings as they'll be deleted soon
+        const activeListings = listingsWithFeatures.filter(listing => !listing.is_expired);
+        setListings(activeListings);
 
         // Fetch user's blog posts
         const { data: blogData, error: blogError } = await supabase
@@ -822,39 +827,25 @@ export default function ProfilePage() {
   }
 
   async function handleRenewListing(listingId: string): Promise<void> {
-    // Open the feature credit dialog and set the listing to feature
-    setListingToFeature(listingId);
-    setFeatureDialogOpen(true);
-  }
-
-  // Handle successful renewal after payment
-  async function handleRenewalSuccess(): Promise<void> {
     try {
-      if (!listingToFeature) return;
-      
       const { data: userData, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
 
-      // Update the listing's feature end_date to 30 days from now
-      const newEndDate = new Date();
-      newEndDate.setDate(newEndDate.getDate() + 30);
-      
-      const { error: updateError } = await supabase
-        .from("featured_listings")
-        .update({ 
-          end_date: newEndDate.toISOString()
-        })
-        .eq("listing_id", listingToFeature);
+      // Call the relist function
+      const { error } = await supabase.rpc('relist_listing', {
+        listing_id: listingId
+      });
 
-      if (updateError) throw updateError;
+      if (error) throw error;
 
       // Update the UI
       setListings((prevListings) =>
         prevListings.map((listing) =>
-          listing.id === listingToFeature 
+          listing.id === listingId 
             ? { 
                 ...listing, 
-                expires_in_days: 30,  // Reset to 30 days
+                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                days_until_expiration: 30,
                 is_near_expiration: false
               } 
             : listing
@@ -863,11 +854,8 @@ export default function ProfilePage() {
 
       toast({
         title: "Listing renewed",
-        description: "Your listing has been featured for another 30 days.",
+        description: "Your listing has been renewed for another 30 days.",
       });
-      
-      // Reset state
-      setListingToFeature(null);
     } catch (error) {
       console.error("Error renewing listing:", error);
       toast({
@@ -877,6 +865,58 @@ export default function ProfilePage() {
           error instanceof Error
             ? error.message
             : "Failed to renew listing.",
+      });
+    }
+  }
+
+  // Update the handleRenewalSuccess function for feature handling
+  async function handleRenewalSuccess(): Promise<void> {
+    try {
+      if (!listingToFeature) return;
+      
+      const { data: userData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+
+      // Update the listing's feature status
+      const { error: updateError } = await supabase
+        .from("listings")
+        .update({ 
+          featured_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString()
+        })
+        .eq("id", listingToFeature);
+
+      if (updateError) throw updateError;
+
+      // Update the UI
+      setListings((prevListings) =>
+        prevListings.map((listing) =>
+          listing.id === listingToFeature 
+            ? { 
+                ...listing, 
+                featured_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+                is_featured: true,
+                days_until_expiration: Math.max(30, listing.days_until_expiration || 0)
+              } 
+            : listing
+        )
+      );
+
+      toast({
+        title: "Listing featured",
+        description: "Your listing has been featured for 15 days.",
+      });
+      
+      // Reset state
+      setListingToFeature(null);
+    } catch (error) {
+      console.error("Error featuring listing:", error);
+      toast({
+        variant: "destructive",
+        title: "Featuring failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to feature listing.",
       });
     }
   }
@@ -902,7 +942,7 @@ export default function ProfilePage() {
             ? { 
                 ...listing, 
                 is_featured: false,
-                expires_in_days: undefined,
+                days_until_expiration: undefined,
                 is_near_expiration: false
               } 
             : listing
@@ -1446,9 +1486,8 @@ export default function ProfilePage() {
                 {listings.map((listing) => (
                   <Card key={listing.id}>
                     <CardContent className="p-4">
-                      {/* Top section: Title, type icon, and price */}
+                      {/* Top section with title and featured status */}
                       <div className="flex justify-between items-start mb-3">
-                        {/* Left: Title and icon */}
                         <div className="flex items-center gap-2">
                           {listing.type === 'firearms' ? (
                             <Image
@@ -1462,7 +1501,7 @@ export default function ProfilePage() {
                             <Package className="h-4 w-4 mr-2" />
                           )}
                           <div>
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-2">
                               <h3 className="font-semibold text-lg">{listing.title}</h3>
                               {listing.is_featured && (
                                 <div className="flex items-center gap-2">
@@ -1485,40 +1524,70 @@ export default function ProfilePage() {
                             </div>
                           </div>
                         </div>
-                        {/* Right: Price */}
                         <Badge className="text-base px-3 py-1">{formatPrice(listing.price)}</Badge>
                       </div>
                       
-                      {/* Middle section: Creation date and expiration for featured */}
+                      {/* Middle section: Expiration info */}
                       <div className="mb-4">
-                        <div className="text-sm text-muted-foreground">
-                          Created {format(new Date(listing.created_at), "PPP")}
+                        <div className="text-sm text-muted-foreground flex flex-col gap-2">
+                          {/* Listing expiration */}
+                          <div className="flex items-center gap-2">
+                            <Calendar className={`h-4 w-4 ${listing.is_near_expiration ? 'text-red-500' : ''}`} />
+                            <span className={listing.is_near_expiration ? 'text-red-500 font-medium' : ''}>
+                              Expires in {listing.days_until_expiration} days
+                              {listing.is_near_expiration && (
+                                <span className="ml-1 text-red-500">
+                                  (Will be removed when expired)
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          
+                          {/* Featured status expiry */}
+                          {listing.is_featured && (listing.featured_days_remaining ?? 0) > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div className={`flex items-center gap-2 ${(listing.featured_days_remaining ?? 0) > 3 ? 'text-green-600' : 'text-red-500'}`}>
+                                <Star className="h-4 w-4" />
+                                <span>Featured ending in {listing.featured_days_remaining} days</span>
+                              </div>
+                              {/* Add Renew Feature button if less than 3 days remaining */}
+                              {listing.featured_days_remaining <= 3 && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setListingToFeature(listing.id);
+                                    setFeatureDialogOpen(true);
+                                  }}
+                                  className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200"
+                                >
+                                  <Star className="h-4 w-4 mr-2" />
+                                  Renew
+                                </Button>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Listings expire after 30 days and are automatically removed when expired. You can relist within 3 days of expiration.</p>
+                                {listing.is_featured && (
+                                  <p className="mt-2">Featured status lasts for 15 days.</p>
+                                )}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider> */}
                         </div>
-                        {/* Expiration info with tooltip, only for featured listings */}
-                        {listing.is_featured && typeof listing.expires_in_days === 'number' && (
-                          <p className={`text-sm ${listing.is_near_expiration ? 'text-red-500' : 'text-gray-500'} flex items-center mt-1`}>
-                            Expires in {listing.expires_in_days} days
-                            <TooltipProvider>
-                              <Tooltip open={openTooltipId === listing.id}>
-                                <TooltipTrigger asChild>
-                                  <Info 
-                                    className="h-4 w-4 ml-1 text-black cursor-pointer transition-transform hover:scale-125" 
-                                    onClick={(e) => handleTooltipClick(e, listing.id)}
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-xs p-3">
-                                  <p>Featured listings appear at the top of search results for the specified number of days. After expiration, your listing will still be visible but not prominently featured.</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </p>
-                        )}
                       </div>
                       
                       {/* Bottom section: Action buttons and status dropdown */}
                       <div className="mt-4">
                         <div className="flex flex-wrap items-center gap-2">
-                          {/* Show renew button for near-expiration listings */}
+                          {/* Show relist button for near-expiration listings */}
                           {listing.is_near_expiration && (
                             <Button
                               variant="outline"
@@ -1526,7 +1595,8 @@ export default function ProfilePage() {
                               onClick={() => handleRenewListing(listing.id)}
                               className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200"
                             >
-                              Renew listing
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Relist (Prevent Deletion)
                             </Button>
                           )}
                           
