@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -11,7 +12,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
 
 const loginSchema = z.object({
   identifier: z.string().min(1, "Username or email is required"),
@@ -24,6 +24,9 @@ export default function Login() {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const supabase = createClientComponentClient()
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -36,15 +39,16 @@ export default function Login() {
   async function onSubmit(data: LoginForm) {
     try {
       setIsLoading(true)
+      setError(null)
       
       // Check if the identifier is an email
       const isEmail = data.identifier.includes('@')
       
-      let authResponse
+      let signInResult
       
       if (isEmail) {
         // Sign in with email
-        authResponse = await supabase.auth.signInWithPassword({
+        signInResult = await supabase.auth.signInWithPassword({
           email: data.identifier,
           password: data.password,
         })
@@ -61,54 +65,51 @@ export default function Login() {
         }
         
         // Sign in with the email associated with the username
-        authResponse = await supabase.auth.signInWithPassword({
+        signInResult = await supabase.auth.signInWithPassword({
           email: userData.email,
           password: data.password,
         })
       }
       
-      const { data: { user }, error } = authResponse
-
-      if (error) throw error
-
-      // Check if email is verified
-      if (!user?.email_confirmed_at) {
-        // Sign out the user if email is not verified
-        await supabase.auth.signOut()
-        
-        // Get email for verification (different depending on login method)
-        const emailToVerify = isEmail ? data.identifier : (user?.email || data.identifier)
-
-        // Send another verification email
-        await supabase.auth.resend({
-          type: 'signup',
-          email: emailToVerify,
-          options: {
-            emailRedirectTo: `${window.location.origin}/login`,
-          },
-        })
-
-        toast({
-          variant: "destructive",
-          title: "Email not verified",
-          description: "Please check your email to verify your account. A new verification email has been sent.",
-        })
+      if (signInResult.error) {
+        setError(signInResult.error.message)
         return
       }
 
-      toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
-      })
+      // Verify session after login
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (session) {
+        setDebugInfo(prev => ({
+          ...prev,
+          sessionAfterLogin: session
+        }))
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
+        })
 
-      router.push("/")
-      router.refresh()
+        // Check if there's a redirect URL in cookies
+        const cookies = document.cookie.split(';')
+        const redirectCookie = cookies.find(cookie => cookie.trim().startsWith('redirectUrl='))
+        let redirectUrl = '/'
+        
+        if (redirectCookie) {
+          const cookieValue = redirectCookie.split('=')[1]
+          if (cookieValue) {
+            redirectUrl = decodeURIComponent(cookieValue)
+            // Clear the redirect cookie
+            document.cookie = 'redirectUrl=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+          }
+        }
+
+        router.push(redirectUrl)
+        router.refresh()
+      } else {
+        setError('Session not established after login')
+      }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Login failed",
-        description: error instanceof Error ? error.message : "Invalid credentials",
-      })
+      setError(error instanceof Error ? error.message : "Invalid credentials")
     } finally {
       setIsLoading(false)
     }
@@ -165,6 +166,24 @@ export default function Login() {
           </Form>
         </CardContent>
       </Card>
+
+      {error && (
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold">Error</h3>
+          <p className="mt-2 p-4 bg-red-100 rounded text-sm overflow-auto">
+            {error}
+          </p>
+        </div>
+      )}
+
+      {debugInfo && (
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold">Debug Information</h3>
+          <pre className="mt-2 p-4 bg-gray-100 rounded text-sm overflow-auto">
+            {JSON.stringify(debugInfo, null, 2)}
+          </pre>
+        </div>
+      )}
     </div>
   )
 }
