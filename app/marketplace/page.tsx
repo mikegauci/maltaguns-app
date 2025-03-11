@@ -311,7 +311,7 @@ export default function Marketplace() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">Marketplace</h1>
-            <p className="text-muted-foreground">Browse verified listings from licensed sellers</p>
+            <p className="text-muted-foreground">Here, you can browse a wide range of firearms, accessories, and other items listed by our reputable sellers. We prioritize your safety and security with a strict commitment to legal compliance and transparency. Whether you're buying or selling, we aim to provide a secure and enjoyable experience while encourage safe and responsible engagement in our community.  Enjoy exploring!</p>
           </div>
           <Link href="/marketplace/create">
             <Button>
