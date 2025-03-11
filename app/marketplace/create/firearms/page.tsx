@@ -330,40 +330,24 @@ export default function CreateFirearmsListing() {
         .eq("user_id", session.user.id)
 
       if (creditError) {
-        console.error("Error updating credits:", creditError)
-        throw creditError
+        console.error("Error updating credits:", creditError);
+        throw creditError;
       }
-
-      // Record the transaction
-      const { error: transactionError } = await supabase
-        .from("credit_transactions")
-        .insert({
-          user_id: session.user.id,
-          amount: -1,
-          type: "listing_creation"
-        })
-
-      if (transactionError) {
-        console.error("Error recording transaction:", transactionError)
-        // Don't throw here, just log the error
-      }
-
-      setCredits(credits - 1)
-
+      
       toast({
         title: "Listing created",
         description: "Your listing has been created successfully"
-      })
-
-      router.push(`/marketplace/listing/${slugify(listing.title)}`)
+      });
+      
+      router.push(`/marketplace/listing/${slugify(listing.title)}`);
     } catch (error) {
-      console.error("Submit error:", error)
+      console.error("Error creating listing:", error)
       toast({
         variant: "destructive",
-        title: "Failed to create listing",
-        description: error instanceof Error ? error.message : "Something went wrong"
+        title: "Error",
+        description: error instanceof Error ? error.message : "Something went wrong",
       })
-    } finally {
+      // Only reset isSubmitting on error
       setIsSubmitting(false);
     }
   }

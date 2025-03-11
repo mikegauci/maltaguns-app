@@ -243,6 +243,7 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
         description: "There was a problem creating your blog post. Please try again.",
         variant: "destructive",
       })
+      // Only reset isLoading on error
       setIsLoading(false)
     }
   }

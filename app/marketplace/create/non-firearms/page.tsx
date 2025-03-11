@@ -347,7 +347,7 @@ export default function CreateNonFirearmsListing() {
         title: "Error",
         description: error instanceof Error ? error.message : "Something went wrong",
       })
-    } finally {
+      // Only reset isSubmitting on error
       setIsSubmitting(false);
     }
   }

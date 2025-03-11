@@ -405,6 +405,7 @@ export default function CreateEventPage() {
         title: "Failed to create event",
         description: error instanceof Error ? error.message : "Something went wrong"
       })
+      // Only reset isSubmitting on error
       setIsSubmitting(false)
     }
   }

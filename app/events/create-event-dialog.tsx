@@ -238,7 +238,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
         title: "Failed to create event",
         description: error instanceof Error ? error.message : "Something went wrong"
       })
-    } finally {
+      // Only reset isLoading on error
       setIsLoading(false)
     }
   }
