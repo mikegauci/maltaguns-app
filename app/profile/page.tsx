@@ -877,46 +877,53 @@ export default function ProfilePage() {
       const { data: userData, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
 
-      // Get the current listing to check its expiry
-      const { data: listing, error: listingError } = await supabase
-        .from("listings")
-        .select("expires_at")
-        .eq("id", listingToFeature)
-        .single();
-        
-      if (listingError) throw listingError;
+      console.log("Starting renewal process for listing:", listingToFeature);
       
-      // Calculate days until expiry
-      const now = new Date();
-      const expiryDate = new Date(listing.expires_at);
-      const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      // Step 1: Call the feature renewal API first (which handles the feature status)
+      const featureResponse = await fetch("/api/listings/renew-feature", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userData.user.id,
+          listingId: listingToFeature
+        }),
+      });
       
-      // Prepare update data for database
-      const featuredUntil = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString();
-      const updateData: { featured_until: string; expires_at?: string } = { 
-        featured_until: featuredUntil 
-      };
-      
-      // If listing expires in less than 15 days, extend it to 30 days
-      if (daysUntilExpiry < 15) {
-        const newExpiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
-        updateData.expires_at = newExpiresAt;
+      if (!featureResponse.ok) {
+        const errorData = await featureResponse.json();
+        throw new Error(errorData.error || "Failed to renew feature");
       }
-
-      // Update the listing in database
-      const { error: updateError } = await supabase
-        .from("listings")
-        .update(updateData)
-        .eq("id", listingToFeature);
-
-      if (updateError) throw updateError;
-
-      // Get the updated listing to refresh UI
+      
+      const featureData = await featureResponse.json();
+      console.log("Feature API response:", featureData);
+      
+      // Step 2: Call our admin API to ensure the expiry date is updated properly
+      console.log("Now calling admin API to update expiry date");
+      const adminResponse = await fetch("/api/admin/update-expiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listingId: listingToFeature
+        }),
+      });
+      
+      if (adminResponse.ok) {
+        const adminData = await adminResponse.json();
+        console.log("Admin API response:", adminData);
+      } else {
+        console.error("Admin API failed, but continuing");
+      }
+      
+      // Step 3: Get the updated listing to refresh UI
       await refreshProfile();
-
+      
       toast({
-        title: "Listing featured",
-        description: "Your listing has been featured for 15 days.",
+        title: "Listing featured and renewed",
+        description: "Your listing has been featured for 15 days and renewed for 30 days.",
       });
       
       // Reset state
@@ -930,6 +937,42 @@ export default function ProfilePage() {
           error instanceof Error
             ? error.message
             : "Failed to feature listing.",
+      });
+    }
+  }
+
+  // Add this new function after handleRenewalSuccess
+  async function testUpdateExpiry(listingId: string) {
+    try {
+      console.log(`Testing direct expiry update for listing ${listingId}`);
+      
+      // Call debug API
+      const response = await fetch("/api/listings/debug", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listingId
+        }),
+      });
+      
+      const data = await response.json();
+      console.log("Debug API response:", data);
+      
+      // Refresh the UI
+      await refreshProfile();
+      
+      toast({
+        title: "Debug completed",
+        description: "Check the console logs for details",
+      });
+    } catch (error) {
+      console.error("Debug test failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Test failed",
+        description: "Check the console for details",
       });
     }
   }
@@ -989,6 +1032,64 @@ export default function ProfilePage() {
       }
 
       const userId = session.user.id;
+
+      // Fetch user's listings
+      const { data: listingsData, error: listingsError } = await supabase
+        .from("listings")
+        .select("*")
+        .eq("seller_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (listingsError) {
+        console.error("Listings fetch error:", listingsError.message);
+      }
+
+      // Fetch featured listings data
+      const { data: featuredListingsData, error: featuredListingsError } = await supabase
+        .from("featured_listings")
+        .select("*")
+        .eq("user_id", userId);
+
+      if (featuredListingsError) {
+        console.error("Featured listings fetch error:", featuredListingsError.message);
+      }
+
+      // Create a map of listing IDs to their featured end dates
+      const featuredEndDates = new Map(
+        (featuredListingsData || []).map(featured => [
+          featured.listing_id,
+          new Date(featured.end_date)
+        ])
+      );
+
+      // Process listings to add feature status and expiration data
+      const listingsWithFeatures = (listingsData || []).map((listing: any) => {
+        const now = new Date();
+        const expirationDate = new Date(listing.expires_at);
+        const featuredEndDate = featuredEndDates.get(listing.id);
+        
+        const diffTime = expirationDate.getTime() - now.getTime();
+        const daysUntilExpiration = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        let featuredDaysRemaining = 0;
+        if (featuredEndDate && featuredEndDate > now) {
+          const featuredDiffTime = featuredEndDate.getTime() - now.getTime();
+          featuredDaysRemaining = Math.max(0, Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24)));
+        }
+        
+        return {
+          ...listing,
+          is_featured: featuredEndDate ? featuredEndDate > now : false,
+          days_until_expiration: daysUntilExpiration,
+          featured_days_remaining: featuredDaysRemaining,
+          is_near_expiration: daysUntilExpiration <= 3 && daysUntilExpiration > 0,
+          is_expired: daysUntilExpiration <= 0
+        };
+      });
+
+      // Filter out expired listings as they'll be deleted soon
+      const activeListings = listingsWithFeatures.filter(listing => !listing.is_expired);
+      setListings(activeListings);
 
       // Fetch user's credits - Modified query
       const { data: listingCreditsData, error: listingCreditsError } = await supabase

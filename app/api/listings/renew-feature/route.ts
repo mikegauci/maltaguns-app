@@ -28,6 +28,10 @@ export async function POST(request: Request) {
     const newFeatureEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000); // 15 days
     const newListingExpiryDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
+    console.log('Renewing feature with the following dates:');
+    console.log('- New feature end date:', newFeatureEndDate.toISOString());
+    console.log('- New listing expiry date:', newListingExpiryDate.toISOString());
+
     // Update the featured_listings table
     const { error: featureError } = await supabase
       .from('featured_listings')
@@ -39,21 +43,44 @@ export async function POST(request: Request) {
       });
 
     if (featureError) {
+      console.error('Error updating featured_listings:', featureError);
       throw featureError;
     }
 
     // Update the listing's expiration and featured status
-    const { error: updateError } = await supabase
+    console.log('Updating listing with ID:', listingId);
+    
+    // First update the expires_at field only
+    const { data: expiryUpdateResult, error: expiryUpdateError } = await supabase
       .from('listings')
       .update({
-        expires_at: newListingExpiryDate.toISOString(),
+        expires_at: newListingExpiryDate.toISOString()
+      })
+      .eq('id', listingId)
+      .select('id, expires_at');
+      
+    if (expiryUpdateError) {
+      console.error('Error updating expires_at:', expiryUpdateError);
+      throw expiryUpdateError;
+    }
+    
+    console.log('Expiry update result:', expiryUpdateResult);
+    
+    // Then update the featured_until field separately
+    const { data: featureUpdateResult, error: featureUpdateError } = await supabase
+      .from('listings')
+      .update({
         featured_until: newFeatureEndDate.toISOString()
       })
-      .eq('id', listingId);
-
-    if (updateError) {
-      throw updateError;
+      .eq('id', listingId)
+      .select('id, featured_until');
+    
+    if (featureUpdateError) {
+      console.error('Error updating featured_until:', featureUpdateError);
+      throw featureUpdateError;
     }
+    
+    console.log('Feature update result:', featureUpdateResult);
 
     // Record the transaction
     const { error: transactionError } = await supabase
@@ -63,7 +90,7 @@ export async function POST(request: Request) {
         amount: 1,
         credit_type: 'featured',
         status: 'completed',
-        description: `Renewed feature for listing ${listingId} for 15 days`,
+        description: `Renewed feature for listing ${listingId} for 15 days and extended expiry for 30 days`,
         type: 'debit'
       });
 
