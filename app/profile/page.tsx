@@ -1421,9 +1421,10 @@ export default function ProfilePage() {
                   Manage your marketplace listings
                 </CardDescription>
                 <div className="mt-4 flex items-center gap-4">
-                  <span className="px-3 py-1.5 bg-muted rounded-md text-sm">
-                    Credits Remaining: {listingCredits}
-                  </span>
+                  <div className="bg-muted px-4 py-2 rounded-md">
+                    <span className="text-sm text-muted-foreground">Credits Remaining:</span>
+                    <span className="font-semibold ml-1">{listingCredits}</span>
+                  </div>
                   <Button 
                     variant="default" 
                     className="bg-green-600 hover:bg-green-700 text-white" 
@@ -1596,9 +1597,10 @@ export default function ProfilePage() {
                   Manage your published events
                 </CardDescription>
                 <div className="mt-4 flex items-center gap-4">
-                  <span className="px-3 py-1.5 bg-muted rounded-md text-sm">
-                    Credits Remaining: {eventCredits}
-                  </span>
+                  <div className="bg-muted px-4 py-2 rounded-md">
+                    <span className="text-sm text-muted-foreground">Credits Remaining:</span>
+                    <span className="font-semibold ml-1">{eventCredits}</span>
+                  </div>
                   <Button 
                     variant="default" 
                     className="bg-green-600 hover:bg-green-700 text-white" 

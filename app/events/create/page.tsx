@@ -431,8 +431,10 @@ export default function CreateEventPage() {
             Back to events
           </Button>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Event Credits remaining:</span>
-            <span className="font-semibold">{credits}</span>
+            <div className="bg-muted px-4 py-2 rounded-md">
+              <span className="text-sm text-muted-foreground">Event Credits remaining:</span>
+              <span className="font-semibold ml-1">{credits}</span>
+            </div>
           </div>
         </div>
 

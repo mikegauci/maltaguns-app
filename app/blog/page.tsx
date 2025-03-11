@@ -173,7 +173,7 @@ export default function BlogPage() {
                     <h2 className="text-xl font-semibold mb-2 line-clamp-2">
                       {post.title}
                     </h2>
-                    <p className="text-muted-foreground line-clamp-3">
+                    <p className="text-muted-foreground line-clamp-2 min-h-[50px]">
                       {truncateText(post.content, 20)}
                     </p>
                   </CardContent>

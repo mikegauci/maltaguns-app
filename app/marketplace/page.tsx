@@ -284,7 +284,7 @@ export default function Marketplace() {
           <h3 className="text-lg font-semibold mb-2 line-clamp-1">
             {listing.title}
           </h3>
-          <p className="text-muted-foreground mb-4 line-clamp-2">
+          <p className="text-muted-foreground mb-4 line-clamp-2 min-h-[50px]">
             {listing.description}
           </p>
           <div className="flex items-center justify-between">
