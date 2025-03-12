@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
-import { Loader2, LogOut } from "lucide-react"
+import { Loader2, LogOut, User } from "lucide-react"
 
 const loginSchema = z.object({
   identifier: z.string().min(1, "Username or email is required"),
@@ -52,9 +52,21 @@ export default function Login() {
           setIsAuthenticated(true)
           setUserEmail(session.user.email || null)
           
-          // Get the redirect URL from query parameters
-          const redirectTo = searchParams.get('redirectTo') || '/'
-          router.push(redirectTo)
+          // Check for saved redirect location first
+          const savedRedirect = localStorage.getItem('redirectAfterLogin')
+          if (savedRedirect) {
+            console.log(`Auto-redirecting to saved location: ${savedRedirect}`)
+            localStorage.removeItem('redirectAfterLogin')
+            // Use replace instead of push to avoid adding to history
+            router.replace(savedRedirect)
+          } else {
+            // Only redirect to home if explicitly requested or no redirect is specified
+            const redirectTo = searchParams.get('redirectTo')
+            if (redirectTo) {
+              router.replace(redirectTo)
+            }
+            // Don't auto-redirect if there's no explicit direction
+          }
         }
       } catch (error) {
         console.error('Error checking session:', error)
@@ -133,8 +145,19 @@ export default function Login() {
         throw error
       }
 
-      // Simple redirect to home page
-      router.push('/')
+      // Check if there's a redirect URL in localStorage (set by profile page)
+      const redirectUrl = localStorage.getItem('redirectAfterLogin')
+      
+      // If there is a redirect URL, use it and clear the localStorage
+      if (redirectUrl) {
+        console.log(`Redirecting to saved location: ${redirectUrl}`)
+        localStorage.removeItem('redirectAfterLogin')
+        router.push(redirectUrl)
+      } else {
+        // Otherwise, redirect to home page
+        router.push('/')
+      }
+      
       router.refresh()
 
     } catch (error) {
@@ -157,6 +180,15 @@ export default function Login() {
           <CardContent>
             <div className="flex flex-col gap-4">
               <Button 
+                variant="default" 
+                onClick={() => router.push('/profile')}
+                className="w-full"
+              >
+                <User className="mr-2 h-4 w-4" />
+                Go to My Profile
+              </Button>
+              
+              <Button 
                 variant="destructive" 
                 onClick={handleLogout}
                 disabled={isLoading}
@@ -174,12 +206,13 @@ export default function Login() {
                   </>
                 )}
               </Button>
+              
               <Button 
                 variant="outline" 
-                onClick={() => window.history.back()}
+                onClick={() => router.push('/')}
                 className="w-full"
               >
-                Go Back
+                Go to Homepage
               </Button>
             </div>
           </CardContent>

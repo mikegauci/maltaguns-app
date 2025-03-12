@@ -181,6 +181,7 @@ export default function ProfilePage() {
   const [eventCredits, setEventCredits] = useState(0);
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [showEventCreditDialog, setShowEventCreditDialog] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -193,203 +194,204 @@ export default function ProfilePage() {
   useEffect(() => {
     async function loadProfile() {
       try {
-        if (!session?.user) {
-          console.log('No session found, redirecting to login');
-          router.push('/login');
-          return;
-        }
+        // Only load profile data if user is logged in
+        if (session?.user) {
+          setLoading(true);
+          const userId = session.user.id;
+          console.log("Loading profile for user ID:", userId);
 
-        setLoading(true);
-        const userId = session.user.id;
-        console.log("Loading profile for user ID:", userId);
+          // Fetch profile first
+          const { data: profileData, error: profileError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", userId)
+            .single();
 
-        // Fetch profile first
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId)
-          .single();
-
-        if (profileError) {
-          console.error("Profile fetch error:", profileError.message);
-          throw profileError;
-        }
-
-        // Set profile data immediately
-        setProfile(profileData);
-        form.reset({
-          phone: profileData.phone || "",
-          address: profileData.address || "",
-        });
-
-        // Fetch user's listings
-        const { data: listingsData, error: listingsError } = await supabase
-          .from("listings")
-          .select("*")
-          .eq("seller_id", userId)
-          .order("created_at", { ascending: false });
-
-        if (listingsError) {
-          console.error("Listings fetch error:", listingsError.message);
-          // Continue even if there's an error
-        }
-
-        // Fetch featured listings data
-        const { data: featuredListingsData, error: featuredListingsError } = await supabase
-          .from("featured_listings")
-          .select("*")
-          .eq("user_id", userId);
-
-        if (featuredListingsError) {
-          console.error("Featured listings fetch error:", featuredListingsError.message);
-        }
-
-        // Create a map of listing IDs to their featured end dates
-        const featuredEndDates = new Map(
-          (featuredListingsData || []).map(featured => [
-            featured.listing_id,
-            new Date(featured.end_date)
-          ])
-        );
-
-        // Process listings to add feature status and expiration data
-        const listingsWithFeatures = (listingsData || []).map((listing: any) => {
-          const now = new Date();
-          const expirationDate = new Date(listing.expires_at);
-          const featuredEndDate = featuredEndDates.get(listing.id);
-          
-          const diffTime = expirationDate.getTime() - now.getTime();
-          const daysUntilExpiration = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          
-          let featuredDaysRemaining = 0;
-          if (featuredEndDate && featuredEndDate > now) {
-            const featuredDiffTime = featuredEndDate.getTime() - now.getTime();
-            featuredDaysRemaining = Math.max(0, Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24)));
+          if (profileError) {
+            console.error("Profile fetch error:", profileError.message);
+            throw profileError;
           }
-          
-          return {
-            ...listing,
-            is_featured: featuredEndDate ? featuredEndDate > now : false,
-            days_until_expiration: daysUntilExpiration,
-            featured_days_remaining: featuredDaysRemaining,
-            is_near_expiration: daysUntilExpiration <= 3 && daysUntilExpiration > 0,
-            is_expired: daysUntilExpiration <= 0
-          };
-        });
 
-        // Filter out expired listings as they'll be deleted soon
-        const activeListings = listingsWithFeatures.filter(listing => !listing.is_expired);
-        setListings(activeListings);
+          // Set profile data immediately
+          setProfile(profileData);
+          form.reset({
+            phone: profileData.phone || "",
+            address: profileData.address || "",
+          });
 
-        // Fetch user's blog posts
-        const { data: blogData, error: blogError } = await supabase
-          .from("blog_posts")
-          .select("id, title, slug, published, created_at")
-          .eq("author_id", userId)
-          .order("created_at", { ascending: false });
+          // Fetch user's listings
+          const { data: listingsData, error: listingsError } = await supabase
+            .from("listings")
+            .select("*")
+            .eq("seller_id", userId)
+            .order("created_at", { ascending: false });
 
-        if (blogError) {
-          console.error("Blog posts fetch error:", blogError.message);
-          // Continue even if there's an error
-        }
+          if (listingsError) {
+            console.error("Listings fetch error:", listingsError.message);
+            // Continue even if there's an error
+          }
 
-        // SIMPLIFIED APPROACH: Directly fetch retailer data
-        console.log("Fetching retailers for user ID:", userId);
-        const { data: retailersData, error: retailerError } = await supabase
-          .from("retailers")
-          .select("*")
-          .eq("owner_id", userId);
+          // Fetch featured listings data
+          const { data: featuredListingsData, error: featuredListingsError } = await supabase
+            .from("featured_listings")
+            .select("*")
+            .eq("user_id", userId);
 
-        // Initialize variables for retailer posts
-        let retailerPostsData: RetailerBlogPost[] = [];
+          if (featuredListingsError) {
+            console.error("Featured listings fetch error:", featuredListingsError.message);
+          }
 
-        if (retailerError) {
-          console.error("Retailer fetch error:", retailerError.message);
-        } else if (retailersData && retailersData.length > 0) {
-          console.log("Found retailers:", retailersData.length, retailersData);
-          
-          // Store all retailers
-          setRetailers(retailersData);
-          
-          // Also keep the first retailer in the single retailer state for backwards compatibility
-          const currentRetailer = retailersData[0];
-          setRetailer(currentRetailer);
+          // Create a map of listing IDs to their featured end dates
+          const featuredEndDates = new Map(
+            (featuredListingsData || []).map(featured => [
+              featured.listing_id,
+              new Date(featured.end_date)
+            ])
+          );
 
-          // Check and fix slugs for all retailers
-          for (const retailer of retailersData) {
-            if (!retailer.slug) {
-              const slug = slugify(retailer.business_name);
-              const { error: updateError } = await supabase
-                .from("retailers")
-                .update({ slug })
-                .eq("id", retailer.id);
+          // Process listings to add feature status and expiration data
+          const listingsWithFeatures = (listingsData || []).map((listing: any) => {
+            const now = new Date();
+            const expirationDate = new Date(listing.expires_at);
+            const featuredEndDate = featuredEndDates.get(listing.id);
+            
+            const diffTime = expirationDate.getTime() - now.getTime();
+            const daysUntilExpiration = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let featuredDaysRemaining = 0;
+            if (featuredEndDate && featuredEndDate > now) {
+              const featuredDiffTime = featuredEndDate.getTime() - now.getTime();
+              featuredDaysRemaining = Math.max(0, Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24)));
+            }
+            
+            return {
+              ...listing,
+              is_featured: featuredEndDate ? featuredEndDate > now : false,
+              days_until_expiration: daysUntilExpiration,
+              featured_days_remaining: featuredDaysRemaining,
+              is_near_expiration: daysUntilExpiration <= 3 && daysUntilExpiration > 0,
+              is_expired: daysUntilExpiration <= 0
+            };
+          });
 
-              if (updateError) {
-                console.error("Error updating retailer slug:", updateError);
-              } else {
-                retailer.slug = slug;
+          // Filter out expired listings as they'll be deleted soon
+          const activeListings = listingsWithFeatures.filter(listing => !listing.is_expired);
+          setListings(activeListings);
+
+          // Fetch user's blog posts
+          const { data: blogData, error: blogError } = await supabase
+            .from("blog_posts")
+            .select("id, title, slug, published, created_at")
+            .eq("author_id", userId)
+            .order("created_at", { ascending: false });
+
+          if (blogError) {
+            console.error("Blog posts fetch error:", blogError.message);
+            // Continue even if there's an error
+          }
+
+          // SIMPLIFIED APPROACH: Directly fetch retailer data
+          console.log("Fetching retailers for user ID:", userId);
+          const { data: retailersData, error: retailerError } = await supabase
+            .from("retailers")
+            .select("*")
+            .eq("owner_id", userId);
+
+          // Initialize variables for retailer posts
+          let retailerPostsData: RetailerBlogPost[] = [];
+
+          if (retailerError) {
+            console.error("Retailer fetch error:", retailerError.message);
+          } else if (retailersData && retailersData.length > 0) {
+            console.log("Found retailers:", retailersData.length, retailersData);
+            
+            // Store all retailers
+            setRetailers(retailersData);
+            
+            // Also keep the first retailer in the single retailer state for backwards compatibility
+            const currentRetailer = retailersData[0];
+            setRetailer(currentRetailer);
+
+            // Check and fix slugs for all retailers
+            for (const retailer of retailersData) {
+              if (!retailer.slug) {
+                const slug = slugify(retailer.business_name);
+                const { error: updateError } = await supabase
+                  .from("retailers")
+                  .update({ slug })
+                  .eq("id", retailer.id);
+
+                if (updateError) {
+                  console.error("Error updating retailer slug:", updateError);
+                } else {
+                  retailer.slug = slug;
+                }
+              }
+            }
+
+            // Fetch blog posts for all retailers
+            for (const retailer of retailersData) {
+              const { data: postsData, error: postsError } = await supabase
+                .from("retailer_blog_posts")
+                .select("*")
+                .eq("retailer_id", retailer.id)
+                .order("created_at", { ascending: false });
+
+              if (postsError) {
+                console.error(`Retailer blog posts fetch error for ${retailer.business_name}:`, postsError.message);
+              } else if (postsData && postsData.length > 0) {
+                console.log(`Found ${postsData.length} posts for retailer ${retailer.business_name}`);
+                retailerPostsData = [...retailerPostsData, ...postsData as RetailerBlogPost[]];
               }
             }
           }
 
-          // Fetch blog posts for all retailers
-          for (const retailer of retailersData) {
-            const { data: postsData, error: postsError } = await supabase
-              .from("retailer_blog_posts")
-              .select("*")
-              .eq("retailer_id", retailer.id)
-              .order("created_at", { ascending: false });
+          // Fetch user's events
+          const { data: eventsData, error: eventsError } = await supabase
+            .from("events")
+            .select("*")
+            .eq("created_by", userId)
+            .order("start_date", { ascending: false });
 
-            if (postsError) {
-              console.error(`Retailer blog posts fetch error for ${retailer.business_name}:`, postsError.message);
-            } else if (postsData && postsData.length > 0) {
-              console.log(`Found ${postsData.length} posts for retailer ${retailer.business_name}`);
-              retailerPostsData = [...retailerPostsData, ...postsData as RetailerBlogPost[]];
-            }
+          if (eventsError) {
+            console.error("Events fetch error:", eventsError.message);
+            // Continue even if there's an error
           }
+
+          // Fetch user's credits - Modified query
+          const { data: listingCreditsData, error: listingCreditsError } = await supabase
+            .from("credits")
+            .select("amount")
+            .eq("user_id", userId)
+            .maybeSingle();  // Changed from single() to maybeSingle()
+
+          if (listingCreditsError) {
+            console.error("Listing credits fetch error:", listingCreditsError.message);
+          }
+
+          const { data: eventCreditsData, error: eventCreditsError } = await supabase
+            .from("credits_events")
+            .select("amount")
+            .eq("user_id", userId)
+            .maybeSingle();  // Changed from single() to maybeSingle()
+
+          if (eventCreditsError) {
+            console.error("Event credits fetch error:", eventCreditsError.message);
+          }
+
+          // Set credits with proper null checking
+          setListingCredits(listingCreditsData?.amount ?? 0);
+          setEventCredits(eventCreditsData?.amount ?? 0);
+          
+          // Update state with all fetched data
+          setBlogPosts(blogData || []);
+          setRetailerBlogPosts(retailerPostsData);
+          setEvents(eventsData || []);
+        } else {
+          // Just set loading to false if not logged in - will show login prompt instead of redirecting
+          setLoading(false);
+          setSessionChecked(true);
         }
-
-        // Fetch user's events
-        const { data: eventsData, error: eventsError } = await supabase
-          .from("events")
-          .select("*")
-          .eq("created_by", userId)
-          .order("start_date", { ascending: false });
-
-        if (eventsError) {
-          console.error("Events fetch error:", eventsError.message);
-          // Continue even if there's an error
-        }
-
-        // Fetch user's credits - Modified query
-        const { data: listingCreditsData, error: listingCreditsError } = await supabase
-          .from("credits")
-          .select("amount")
-          .eq("user_id", userId)
-          .maybeSingle();  // Changed from single() to maybeSingle()
-
-        if (listingCreditsError) {
-          console.error("Listing credits fetch error:", listingCreditsError.message);
-        }
-
-        const { data: eventCreditsData, error: eventCreditsError } = await supabase
-          .from("credits_events")
-          .select("amount")
-          .eq("user_id", userId)
-          .maybeSingle();  // Changed from single() to maybeSingle()
-
-        if (eventCreditsError) {
-          console.error("Event credits fetch error:", eventCreditsError.message);
-        }
-
-        // Set credits with proper null checking
-        setListingCredits(listingCreditsData?.amount ?? 0);
-        setEventCredits(eventCreditsData?.amount ?? 0);
-        
-        // Update state with all fetched data
-        setBlogPosts(blogData || []);
-        setRetailerBlogPosts(retailerPostsData);
-        setEvents(eventsData || []);
       } catch (error) {
         console.error("Error loading profile:", error);
         toast({
@@ -399,12 +401,11 @@ export default function ProfilePage() {
         });
       } finally {
         setLoading(false);
+        setSessionChecked(true);
       }
     }
 
-    if (session) {
-      loadProfile();
-    }
+    loadProfile();
   }, [router, form, toast, session, supabase]);
 
   // Add a document click listener to close tooltip when clicking outside
@@ -575,11 +576,6 @@ export default function ProfilePage() {
     }
   }
 
-  if (!session) {
-    router.push('/login');
-    return null;
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -588,10 +584,40 @@ export default function ProfilePage() {
     );
   }
 
+  if (!session?.user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Profile Access</CardTitle>
+            <CardDescription>
+              You need to log in to view your profile
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4">
+              <Link href="/login">
+                <Button className="w-full">
+                  Log In
+                </Button>
+              </Link>
+              <Link href="/">
+                <Button variant="outline" className="w-full">
+                  Back to Home
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Add null check for profile right before returning the main UI
   if (!profile) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <LoadingState message="Loading profile..." />
+        <LoadingState message="Loading profile data..." />
       </div>
     );
   }
@@ -966,9 +992,6 @@ export default function ProfilePage() {
         )
       );
       
-      // Refresh the profile to update UI with the latest data from the server
-      await refreshProfile();
-      
       toast({
         title: "Listing featured and renewed",
         description: "Your listing has been featured for 15 days and renewed for 30 days.",
@@ -1008,19 +1031,30 @@ export default function ProfilePage() {
       const data = await response.json();
       console.log("Debug API response:", data);
       
-      // Refresh the UI
-      await refreshProfile();
+      // Update UI directly instead of refreshing the whole profile
+      setListings((prevListings) =>
+        prevListings.map((listing) =>
+          listing.id === listingId 
+            ? { 
+                ...listing, 
+                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                days_until_expiration: 30,
+                is_near_expiration: false
+              } 
+            : listing
+        )
+      );
       
       toast({
         title: "Debug completed",
-        description: "Check the console logs for details",
+        description: "Check the console logs for details"
       });
     } catch (error) {
       console.error("Debug test failed:", error);
       toast({
         variant: "destructive",
         title: "Test failed",
-        description: "Check the console for details",
+        description: "Check the console for details"
       });
     }
   }
@@ -1075,105 +1109,6 @@ export default function ProfilePage() {
       });
     }
   }
-
-  // Add a refresh function that reruns loadProfile
-  const refreshProfile = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        router.push("/login");
-        return;
-      }
-
-      const userId = session.user.id;
-
-      // Fetch user's listings
-      const { data: listingsData, error: listingsError } = await supabase
-        .from("listings")
-        .select("*")
-        .eq("seller_id", userId)
-        .order("created_at", { ascending: false });
-
-      if (listingsError) {
-        console.error("Listings fetch error:", listingsError.message);
-      }
-
-      // Fetch featured listings data
-      const { data: featuredListingsData, error: featuredListingsError } = await supabase
-        .from("featured_listings")
-        .select("*")
-        .eq("user_id", userId);
-
-      if (featuredListingsError) {
-        console.error("Featured listings fetch error:", featuredListingsError.message);
-      }
-
-      // Create a map of listing IDs to their featured end dates
-      const featuredEndDates = new Map(
-        (featuredListingsData || []).map(featured => [
-          featured.listing_id,
-          new Date(featured.end_date)
-        ])
-      );
-
-      // Process listings to add feature status and expiration data
-      const listingsWithFeatures = (listingsData || []).map((listing: any) => {
-        const now = new Date();
-        const expirationDate = new Date(listing.expires_at);
-        const featuredEndDate = featuredEndDates.get(listing.id);
-        
-        const diffTime = expirationDate.getTime() - now.getTime();
-        const daysUntilExpiration = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
-        let featuredDaysRemaining = 0;
-        if (featuredEndDate && featuredEndDate > now) {
-          const featuredDiffTime = featuredEndDate.getTime() - now.getTime();
-          featuredDaysRemaining = Math.max(0, Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24)));
-        }
-        
-        return {
-          ...listing,
-          is_featured: featuredEndDate ? featuredEndDate > now : false,
-          days_until_expiration: daysUntilExpiration,
-          featured_days_remaining: featuredDaysRemaining,
-          is_near_expiration: daysUntilExpiration <= 3 && daysUntilExpiration > 0,
-          is_expired: daysUntilExpiration <= 0
-        };
-      });
-
-      // Filter out expired listings as they'll be deleted soon
-      const activeListings = listingsWithFeatures.filter(listing => !listing.is_expired);
-      setListings(activeListings);
-
-      // Fetch user's credits - Modified query
-      const { data: listingCreditsData, error: listingCreditsError } = await supabase
-        .from("credits")
-        .select("amount")
-        .eq("user_id", userId)
-        .maybeSingle();  // Changed from single() to maybeSingle()
-
-      if (listingCreditsError) {
-        console.error("Listing credits fetch error:", listingCreditsError.message);
-      }
-
-      const { data: eventCreditsData, error: eventCreditsError } = await supabase
-        .from("credits_events")
-        .select("amount")
-        .eq("user_id", userId)
-        .maybeSingle();  // Changed from single() to maybeSingle()
-
-      if (eventCreditsError) {
-        console.error("Event credits fetch error:", eventCreditsError.message);
-      }
-
-      // Set credits with proper null checking
-      setListingCredits(listingCreditsData?.amount ?? 0);
-      setEventCredits(eventCreditsData?.amount ?? 0);
-
-    } catch (error) {
-      console.error("Error refreshing profile:", error);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -2012,12 +1947,11 @@ export default function ProfilePage() {
         open={showCreditDialog}
         onOpenChange={setShowCreditDialog}
         userId={profile?.id || ""}
-        onSuccess={async () => {
+        onSuccess={() => {
           toast({
             title: "Credits purchased",
             description: "Your credits have been added to your account.",
           });
-          await refreshProfile();
         }}
       />
 
@@ -2025,12 +1959,11 @@ export default function ProfilePage() {
         open={showEventCreditDialog}
         onOpenChange={setShowEventCreditDialog}
         userId={profile?.id || ""}
-        onSuccess={async () => {
+        onSuccess={() => {
           toast({
             title: "Event credits purchased",
             description: "Your event credits have been added to your account.",
           });
-          await refreshProfile();
         }}
       />
     </div>
