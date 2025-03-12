@@ -201,29 +201,31 @@ export async function POST(request: Request) {
         }
 
         // Update the listing
-        const listingUpdateData: any = {
-          featured_until: endDateIso
-        };
-        
+        const listingUpdateData: any = {};
+
         // Add the new expires_at if needed
         if (newExpiryDate) {
           listingUpdateData.expires_at = newExpiryDate.toISOString();
         }
-        
+
         console.log('[WEBHOOK-PLURAL] Updating listing with:', listingUpdateData);
-        const { error: listingUpdateError } = await supabase
-          .from('listings')
-          .update(listingUpdateData)
-          .eq('id', listingId);
-          
-        if (listingUpdateError) {
-          console.error('[WEBHOOK-PLURAL] Error updating listing:', listingUpdateError);
-          // Not critical, continue
-        } else {
-          const updateMessage = newExpiryDate 
-            ? `Listing featured_until and expires_at updated successfully. New expiry: ${newExpiryDate.toISOString()}` 
-            : 'Listing featured_until updated successfully';
-          console.log(`[WEBHOOK-PLURAL] ${updateMessage}`);
+
+        // Only update if there's something to update
+        if (Object.keys(listingUpdateData).length > 0) {
+          const { error: listingUpdateError } = await supabase
+            .from('listings')
+            .update(listingUpdateData)
+            .eq('id', listingId);
+            
+          if (listingUpdateError) {
+            console.error('[WEBHOOK-PLURAL] Error updating listing:', listingUpdateError);
+            // Not critical, continue
+          } else {
+            const updateMessage = newExpiryDate 
+              ? `Listing expires_at updated successfully. New expiry: ${newExpiryDate.toISOString()}` 
+              : 'No listing updates needed';
+            console.log(`[WEBHOOK-PLURAL] ${updateMessage}`);
+          }
         }
 
         console.log('[WEBHOOK-PLURAL] Webhook processing completed successfully');

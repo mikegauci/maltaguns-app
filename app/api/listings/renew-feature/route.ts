@@ -47,10 +47,10 @@ export async function POST(request: Request) {
       throw featureError;
     }
 
-    // Update the listing's expiration and featured status
+    // Update the listing's expiration date
     console.log('Updating listing with ID:', listingId);
     
-    // First update the expires_at field only
+    // Update the expires_at field
     const { data: expiryUpdateResult, error: expiryUpdateError } = await supabase
       .from('listings')
       .update({
@@ -65,22 +65,6 @@ export async function POST(request: Request) {
     }
     
     console.log('Expiry update result:', expiryUpdateResult);
-    
-    // Then update the featured_until field separately
-    const { data: featureUpdateResult, error: featureUpdateError } = await supabase
-      .from('listings')
-      .update({
-        featured_until: newFeatureEndDate.toISOString()
-      })
-      .eq('id', listingId)
-      .select('id, featured_until');
-    
-    if (featureUpdateError) {
-      console.error('Error updating featured_until:', featureUpdateError);
-      throw featureUpdateError;
-    }
-    
-    console.log('Feature update result:', featureUpdateResult);
 
     // Record the transaction
     const { error: transactionError } = await supabase

@@ -147,6 +147,7 @@ export async function POST(request: Request) {
           newExpiryDate.setDate(newExpiryDate.getDate() + 30);
         }
 
+        // Handle the featured listing (update existing or create new)
         if (existingFeature && existingFeature.length > 0) {
           // If there's an existing feature, update its dates
           const feature = existingFeature[0];
@@ -200,30 +201,33 @@ export async function POST(request: Request) {
           console.log(`[WEBHOOK-SINGULAR] Created new feature for listing ${listingId}:`, insertData);
         }
 
-        // Update the listing
-        const listingUpdateData: any = {
-          featured_until: endDateIso
-        };
-        
+        // Update the listing's expiry date if needed
+        const listingUpdateData: any = {};
+
         // Add the new expires_at if needed
         if (newExpiryDate) {
           listingUpdateData.expires_at = newExpiryDate.toISOString();
         }
-        
-        console.log('[WEBHOOK-SINGULAR] Updating listing with:', listingUpdateData);
-        const { error: listingUpdateError } = await supabase
-          .from('listings')
-          .update(listingUpdateData)
-          .eq('id', listingId);
-          
-        if (listingUpdateError) {
-          console.error('[WEBHOOK-SINGULAR] Error updating listing:', listingUpdateError);
-          // Not critical, continue
+
+        // Only update if there's something to update
+        if (Object.keys(listingUpdateData).length > 0) {
+          console.log('[WEBHOOK-SINGULAR] Updating listing with:', listingUpdateData);
+          const { error: listingUpdateError } = await supabase
+            .from('listings')
+            .update(listingUpdateData)
+            .eq('id', listingId);
+            
+          if (listingUpdateError) {
+            console.error('[WEBHOOK-SINGULAR] Error updating listing:', listingUpdateError);
+            // Not critical, continue
+          } else {
+            const updateMessage = newExpiryDate 
+              ? `Listing expires_at updated successfully. New expiry: ${newExpiryDate.toISOString()}` 
+              : 'No listing updates needed';
+            console.log(`[WEBHOOK-SINGULAR] ${updateMessage}`);
+          }
         } else {
-          const updateMessage = newExpiryDate 
-            ? `Listing featured_until and expires_at updated successfully. New expiry: ${newExpiryDate.toISOString()}` 
-            : 'Listing featured_until updated successfully';
-          console.log(`[WEBHOOK-SINGULAR] ${updateMessage}`);
+          console.log('[WEBHOOK-SINGULAR] No listing updates needed');
         }
 
         console.log('[WEBHOOK-SINGULAR] Webhook processing completed successfully');

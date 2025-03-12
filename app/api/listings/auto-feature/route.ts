@@ -78,11 +78,10 @@ export async function POST(request: Request) {
       ? new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000)
       : new Date(listing.expires_at);
 
-    // Update the listing first
+    // Update the listing first - only update expires_at
     const { error: updateError } = await supabaseAdmin
       .from("listings")
       .update({ 
-        featured_until: endDate.toISOString(),
         expires_at: newExpiresAt.toISOString() 
       })
       .eq("id", listingId);

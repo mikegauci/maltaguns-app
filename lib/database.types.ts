@@ -97,7 +97,7 @@ export interface Database {
           updated_at: string;
           is_featured: boolean;
           featured_at: string | null;
-          featured_until: string | null;
+          expires_at: string;
         };
         Insert: {
           id?: string;
@@ -116,7 +116,7 @@ export interface Database {
           updated_at?: string;
           is_featured?: boolean;
           featured_at?: string | null;
-          featured_until?: string | null;
+          expires_at?: string;
         };
         Update: {
           id?: string;
@@ -135,7 +135,7 @@ export interface Database {
           updated_at?: string;
           is_featured?: boolean;
           featured_at?: string | null;
-          featured_until?: string | null;
+          expires_at?: string;
         };
       };
       featured_listings: {
@@ -143,22 +143,28 @@ export interface Database {
           id: string;
           listing_id: string;
           user_id: string;
+          start_date: string;
+          end_date: string;
           created_at: string;
-          expires_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: string;
           listing_id: string;
           user_id: string;
+          start_date: string;
+          end_date: string;
           created_at?: string;
-          expires_at: string;
+          updated_at?: string;
         };
         Update: {
           id?: string;
           listing_id?: string;
           user_id?: string;
+          start_date?: string;
+          end_date?: string;
           created_at?: string;
-          expires_at?: string;
+          updated_at?: string;
         };
       };
       credits: {

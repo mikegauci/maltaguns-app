@@ -98,7 +98,6 @@ interface Listing {
   status: string;
   created_at: string;
   expires_at: string;
-  featured_until: string | null;
   is_near_expiration?: boolean;
   is_featured?: boolean;
   days_until_expiration?: number;
@@ -917,7 +916,7 @@ export default function ProfilePage() {
     }
   }
 
-  // Update the handleRenewalSuccess function for feature handling
+  // Update the handleRenewalSuccess function to always extend expiry
   async function handleRenewalSuccess(): Promise<void> {
     try {
       if (!listingToFeature) return;
@@ -927,7 +926,29 @@ export default function ProfilePage() {
 
       console.log("Starting renewal process for listing:", listingToFeature);
       
-      // Step 1: Call the feature renewal API (which handles the feature status)
+      // Step 1: Always update the expiry date to 30 days first
+      console.log("Extending listing expiry to 30 days");
+      const expiryResponse = await fetch("/api/listings/update-expiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listingId: listingToFeature
+        }),
+      });
+      
+      if (!expiryResponse.ok) {
+        console.error("Error extending listing expiry");
+        const errorData = await expiryResponse.json();
+        throw new Error(errorData.error || "Failed to extend listing expiry");
+      }
+      
+      const expiryData = await expiryResponse.json();
+      console.log("Expiry update response:", expiryData);
+      
+      // Step 2: Call the feature renewal API
+      console.log("Renewing featured status");
       const featureResponse = await fetch("/api/listings/renew-feature", {
         method: "POST",
         headers: {
@@ -946,35 +967,6 @@ export default function ProfilePage() {
       
       const featureData = await featureResponse.json();
       console.log("Feature API response:", featureData);
-      
-      // Step 2: Update the expiry date
-      const expiryResponse = await fetch("/api/listings/update-expiry", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          listingId: listingToFeature
-        }),
-      });
-      
-      if (!expiryResponse.ok) {
-        console.error("Expiry update failed, trying fallback methods");
-        
-        // Fallback to RPC method if the API fails, similar to handleRenewListing
-        console.log("Trying fallback RPC method for expiry extension");
-        const { error: rpcError } = await supabase.rpc('relist_listing', {
-          listing_id: listingToFeature
-        });
-        
-        if (rpcError) {
-          console.error("RPC fallback error:", rpcError);
-          console.log("Continuing with feature renewal even though expiry update failed");
-        }
-      } else {
-        const expiryData = await expiryResponse.json();
-        console.log("Expiry update response:", expiryData);
-      }
       
       // Update the UI to reflect the changes
       setListings((prevListings) =>
@@ -1293,7 +1285,7 @@ export default function ProfilePage() {
                     }}
                   />
                 )}
-              </p>
+                </p>
             </div>
           </CardContent>
           {!profile.license_image && (
@@ -1644,6 +1636,19 @@ export default function ProfilePage() {
                                 </span>
                               )}
                             </span>
+                            
+                            {/* Move the extend expiry button here */}
+                            {(listing.days_until_expiration ?? 0) < 15 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRenewListing(listing.id)}
+                                className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200 ml-2"
+                              >
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Relist for 30 days
+                              </Button>
+                            )}
                           </div>
                           
                           {/* Featured status expiry */}
@@ -1663,16 +1668,11 @@ export default function ProfilePage() {
                                           variant="outline"
                                           size="sm"
                                           onClick={() => {
-                                            // First extend the expiry without showing toast
-                                            handleRenewListing(listing.id, false);
-                                            // Then set up for featuring
+                                            // Always set the listing to feature regardless of expiry date
                                             setListingToFeature(listing.id);
                                             setFeatureDialogOpen(true);
                                           }}
-                                          className={`bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 ${
-                                            (listing.days_until_expiration ?? 0) < 15 ? 'opacity-50 cursor-not-allowed' : ''
-                                          }`}
-                                          disabled={(listing.days_until_expiration ?? 0) < 15}
+                                          className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200"
                                         >
                                           <Star className="h-4 w-4 mr-2" />
                                           Renew Featured
@@ -1680,48 +1680,19 @@ export default function ProfilePage() {
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      {(listing.days_until_expiration ?? 0) < 15 
-                                        ? "You must first extend the listing expiry to 30 days before renewing the featured status" 
-                                        : "Renew featured status for this listing"}
+                                      Renew featured status for this listing
                                     </TooltipContent>
                                   </Tooltip>
                                 </TooltipProvider>
                               )}
                             </div>
                           )}
-                          
-                          {/* <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Listings expire after 30 days and are automatically removed when expired. You can relist within 3 days of expiration.</p>
-                                {listing.is_featured && (
-                                  <p className="mt-2">Featured status lasts for 15 days.</p>
-                                )}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider> */}
                         </div>
                       </div>
                       
                       {/* Bottom section: Action buttons and status dropdown */}
                       <div className="mt-4">
                         <div className="flex flex-wrap items-center gap-2">
-                          {/* Show relist button for listings expiring within 15 days */}
-                          {(listing.days_until_expiration ?? 0) < 15 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRenewListing(listing.id)}
-                              className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200"
-                            >
-                              <RefreshCw className="h-4 w-4 mr-2" />
-                              Extend Expiry to 30 Days
-                            </Button>
-                          )}
-                          
                           {/* Status dropdown */}
                           <select
                             value={listing.status}
