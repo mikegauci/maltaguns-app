@@ -826,18 +826,37 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleRenewListing(listingId: string): Promise<void> {
+  async function handleRenewListing(listingId: string, showToast: boolean = true): Promise<void> {
     try {
-      const { data: userData, error: authError } = await supabase.auth.getUser();
-      if (authError) throw authError;
-
-      // Call the relist function
-      const { error } = await supabase.rpc('relist_listing', {
-        listing_id: listingId
+      console.log(`Renewing listing: ${listingId}`);
+      
+      // Call our simplified API endpoint to update the expiry
+      const response = await fetch("/api/listings/update-expiry", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listingId
+        }),
       });
-
-      if (error) throw error;
-
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("API error:", errorData);
+        
+        // Fallback to the RPC function if the API fails
+        console.log("Trying fallback RPC method");
+        const { error } = await supabase.rpc('relist_listing', {
+          listing_id: listingId
+        });
+        
+        if (error) {
+          console.error("RPC fallback error:", error);
+          throw new Error("Failed to renew listing after multiple attempts");
+        }
+      }
+      
       // Update the UI
       setListings((prevListings) =>
         prevListings.map((listing) =>
@@ -851,11 +870,14 @@ export default function ProfilePage() {
             : listing
         )
       );
-
-      toast({
-        title: "Listing renewed",
-        description: "Your listing has been renewed for another 30 days.",
-      });
+      
+      // Only show toast if showToast is true
+      if (showToast) {
+        toast({
+          title: "Listing renewed",
+          description: "Your listing has been renewed for another 30 days.",
+        });
+      }
     } catch (error) {
       console.error("Error renewing listing:", error);
       toast({
@@ -879,7 +901,7 @@ export default function ProfilePage() {
 
       console.log("Starting renewal process for listing:", listingToFeature);
       
-      // Step 1: Call the feature renewal API first (which handles the feature status)
+      // Step 1: Call the feature renewal API (which handles the feature status)
       const featureResponse = await fetch("/api/listings/renew-feature", {
         method: "POST",
         headers: {
@@ -899,9 +921,8 @@ export default function ProfilePage() {
       const featureData = await featureResponse.json();
       console.log("Feature API response:", featureData);
       
-      // Step 2: Call our admin API to ensure the expiry date is updated properly
-      console.log("Now calling admin API to update expiry date");
-      const adminResponse = await fetch("/api/admin/update-expiry", {
+      // Step 2: Update the expiry date
+      const expiryResponse = await fetch("/api/listings/update-expiry", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -911,14 +932,41 @@ export default function ProfilePage() {
         }),
       });
       
-      if (adminResponse.ok) {
-        const adminData = await adminResponse.json();
-        console.log("Admin API response:", adminData);
+      if (!expiryResponse.ok) {
+        console.error("Expiry update failed, trying fallback methods");
+        
+        // Fallback to RPC method if the API fails, similar to handleRenewListing
+        console.log("Trying fallback RPC method for expiry extension");
+        const { error: rpcError } = await supabase.rpc('relist_listing', {
+          listing_id: listingToFeature
+        });
+        
+        if (rpcError) {
+          console.error("RPC fallback error:", rpcError);
+          console.log("Continuing with feature renewal even though expiry update failed");
+        }
       } else {
-        console.error("Admin API failed, but continuing");
+        const expiryData = await expiryResponse.json();
+        console.log("Expiry update response:", expiryData);
       }
       
-      // Step 3: Get the updated listing to refresh UI
+      // Update the UI to reflect the changes
+      setListings((prevListings) =>
+        prevListings.map((listing) =>
+          listing.id === listingToFeature 
+            ? { 
+                ...listing, 
+                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                days_until_expiration: 30,
+                is_near_expiration: false,
+                is_featured: true,
+                featured_days_remaining: 15 // Assuming feature period is 15 days
+              } 
+            : listing
+        )
+      );
+      
+      // Refresh the profile to update UI with the latest data from the server
       await refreshProfile();
       
       toast({
@@ -1664,20 +1712,39 @@ export default function ProfilePage() {
                                 <Star className="h-4 w-4" />
                                 <span>Featured ending in {listing.featured_days_remaining} days</span>
                               </div>
-                              {/* Add Renew Feature button if less than 3 days remaining */}
+                              {/* Add Renew Feature button if less than or equal to 3 days remaining */}
                               {(listing.featured_days_remaining ?? 0) <= 3 && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setListingToFeature(listing.id);
-                                    setFeatureDialogOpen(true);
-                                  }}
-                                  className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200"
-                                >
-                                  <Star className="h-4 w-4 mr-2" />
-                                  Renew
-                                </Button>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            // First extend the expiry without showing toast
+                                            handleRenewListing(listing.id, false);
+                                            // Then set up for featuring
+                                            setListingToFeature(listing.id);
+                                            setFeatureDialogOpen(true);
+                                          }}
+                                          className={`bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 ${
+                                            (listing.days_until_expiration ?? 0) < 15 ? 'opacity-50 cursor-not-allowed' : ''
+                                          }`}
+                                          disabled={(listing.days_until_expiration ?? 0) < 15}
+                                        >
+                                          <Star className="h-4 w-4 mr-2" />
+                                          Renew Featured
+                                        </Button>
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      {(listing.days_until_expiration ?? 0) < 15 
+                                        ? "You must first extend the listing expiry to 30 days before renewing the featured status" 
+                                        : "Renew featured status for this listing"}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               )}
                             </div>
                           )}
@@ -1701,8 +1768,8 @@ export default function ProfilePage() {
                       {/* Bottom section: Action buttons and status dropdown */}
                       <div className="mt-4">
                         <div className="flex flex-wrap items-center gap-2">
-                          {/* Show relist button for near-expiration listings */}
-                          {listing.is_near_expiration && (
+                          {/* Show relist button for listings expiring within 15 days */}
+                          {(listing.days_until_expiration ?? 0) < 15 && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -1710,7 +1777,7 @@ export default function ProfilePage() {
                               className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200"
                             >
                               <RefreshCw className="h-4 w-4 mr-2" />
-                              Relist (Prevent Deletion)
+                              Extend Expiry to 30 Days
                             </Button>
                           )}
                           
