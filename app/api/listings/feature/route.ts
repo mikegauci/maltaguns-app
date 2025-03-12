@@ -77,6 +77,8 @@ export async function DELETE(request: Request) {
       );
     }
 
+    console.log(`[FEATURE-API] Removing featured status for listing ${listingId} by user ${userId}`);
+
     const supabase = createRouteHandlerClient({ cookies });
 
     // Verify user owns the listing
@@ -88,13 +90,44 @@ export async function DELETE(request: Request) {
       .single();
 
     if (listingError || !listing) {
+      console.error(`[FEATURE-API] Unauthorized or listing not found:`, listingError);
       return NextResponse.json(
         { error: 'Unauthorized or listing not found' },
         { status: 404 }
       );
     }
 
-    // Remove featured status
+    // First, check if there is a featured_listings entry to delete
+    const { data: featuredData, error: featuredCheckError } = await supabase
+      .from('featured_listings')
+      .select('*')
+      .eq('listing_id', listingId)
+      .eq('user_id', userId);
+      
+    if (featuredCheckError) {
+      console.error(`[FEATURE-API] Error checking featured_listings:`, featuredCheckError);
+      // Continue despite this error
+    } else if (featuredData && featuredData.length > 0) {
+      console.log(`[FEATURE-API] Found entries in featured_listings to delete:`, featuredData.length);
+      
+      // Delete from featured_listings table
+      const { error: deleteError } = await supabase
+        .from('featured_listings')
+        .delete()
+        .eq('listing_id', listingId)
+        .eq('user_id', userId);
+        
+      if (deleteError) {
+        console.error(`[FEATURE-API] Error deleting from featured_listings:`, deleteError);
+        // Continue despite this error
+      } else {
+        console.log(`[FEATURE-API] Successfully deleted from featured_listings`);
+      }
+    } else {
+      console.log(`[FEATURE-API] No entries found in featured_listings`);
+    }
+
+    // Remove featured status from listings table
     const { error: updateError } = await supabase
       .from('listings')
       .update({
@@ -103,9 +136,12 @@ export async function DELETE(request: Request) {
       .eq('id', listingId);
 
     if (updateError) {
+      console.error(`[FEATURE-API] Error updating listings table:`, updateError);
       throw updateError;
     }
 
+    console.log(`[FEATURE-API] Successfully removed feature status for listing ${listingId}`);
+    
     return NextResponse.json({
       message: 'Feature removed successfully'
     });

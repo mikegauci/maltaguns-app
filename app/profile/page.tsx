@@ -1030,24 +1030,30 @@ export default function ProfilePage() {
       const { data: userData, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
 
+      console.log(`[REMOVE-FEATURE] Attempting to remove feature status for listing ${listingId}`);
+      
       const response = await fetch(`/api/listings/feature?listingId=${listingId}&userId=${userData.user.id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error(`[REMOVE-FEATURE] API error:`, errorData);
         throw new Error(errorData.error || "Failed to remove feature");
       }
 
-      // Update UI by removing feature status from this listing
+      console.log(`[REMOVE-FEATURE] Feature status successfully removed for listing ${listingId}`);
+      
+      // Update UI by removing ONLY feature status from this listing
+      // but preserving the days_until_expiration
       setListings((prevListings) =>
         prevListings.map((listing) =>
           listing.id === listingId 
             ? { 
                 ...listing, 
                 is_featured: false,
-                days_until_expiration: undefined,
-                is_near_expiration: false
+                featured_days_remaining: 0,
+                // Preserve the days_until_expiration and is_near_expiration
               } 
             : listing
         )
@@ -1055,7 +1061,7 @@ export default function ProfilePage() {
 
       toast({
         title: "Feature removed",
-        description: "Your listing is no longer featured.",
+        description: "Your listing is no longer featured but its expiration date remains unchanged.",
       });
     } catch (error) {
       console.error("Error removing feature:", error);
