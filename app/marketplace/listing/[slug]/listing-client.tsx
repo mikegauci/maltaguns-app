@@ -495,12 +495,12 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
           <div className="lg:col-span-3 space-y-6">
             {/* Images Section */}
             <Card>
-              <CardContent className="p-0">
-                <div className="relative">
+              <CardContent className="p-2">
+                <div className="relative h-[500px] flex items-center justify-center">
                   <img
                     src={images[currentImageIndex]}
                     alt={listing.title}
-                    className="object-contain w-full h-full"
+                    className="object-contain w-full h-full max-h-[500px]"
                   />
                   {listing.status === 'sold' && (
                     <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
