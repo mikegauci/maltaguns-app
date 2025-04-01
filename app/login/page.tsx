@@ -154,8 +154,8 @@ export default function Login() {
         localStorage.removeItem('redirectAfterLogin')
         router.push(redirectUrl)
       } else {
-        // Otherwise, redirect to home page
-        router.push('/')
+        // Otherwise, redirect to profile page
+        router.push('/profile')
       }
       
       router.refresh()
