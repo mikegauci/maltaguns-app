@@ -303,7 +303,9 @@ export default function CreateFirearmsListing() {
         price: data.price,
         // Format the images as a PostgreSQL array literal, use default image if no images provided
         images: imageUrls.length > 0 ? `{${imageUrls.map(url => `"${url}"`).join(',')}}` : `{"${DEFAULT_LISTING_IMAGE}"}`,
-        thumbnail: imageUrls[0] || DEFAULT_LISTING_IMAGE
+        thumbnail: imageUrls[0] || DEFAULT_LISTING_IMAGE,
+        status: "active",
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
       };
       
       console.log("Creating listing with data:", listingData);
