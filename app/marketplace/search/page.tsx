@@ -244,51 +244,57 @@ export default function SearchResults() {
   }, [query, categoryParam]);
 
   const renderListingCard = (listing: Listing) => (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-      <div className="aspect-video relative overflow-hidden">
-        <img
-          src={listing.thumbnail}
-          alt={listing.title}
-          className="object-cover w-full h-full"
-        />
-        {listing.status === 'sold' && (
-          <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
-        )}
-      </div>
-      <CardContent className="p-6">
-        <div className="flex items-center gap-2 mb-3">
-          {listing.type === "firearms" ? (
-            <div className="inline-flex">
-              <Image
-                src="/images/pistol-gun-icon.svg"
-                alt="Firearms"
-                width={16}
-                height={16}
-                className="mr-2"
-              />
-            </div>
-          ) : (
-            <div className="inline-flex">
-              <Package className="h-4 w-4 mr-2" />
-            </div>
+    <Link 
+      key={listing.id}
+      href={`/marketplace/listing/${slugify(listing.title)}`}
+      className="block"
+    >
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+        <div className="aspect-video relative overflow-hidden">
+          <img
+            src={listing.thumbnail}
+            alt={listing.title}
+            className="object-cover w-full h-full"
+          />
+          {listing.status === 'sold' && (
+            <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
           )}
-          <Badge variant="secondary">
-            {getCategoryLabel(listing.category, listing.type)}
-          </Badge>
         </div>
-        <h3 className="text-md font-semibold mb-2 line-clamp-1">
-          {listing.title}
-        </h3>
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[40px]">
-          {listing.description}
-        </p>
-        <div className="flex items-center justify-between">
-          <p className="text-lg font-bold">
-            {formatPrice(listing.price)}
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-3">
+            {listing.type === "firearms" ? (
+              <div className="inline-flex">
+                <Image
+                  src="/images/pistol-gun-icon.svg"
+                  alt="Firearms"
+                  width={16}
+                  height={16}
+                  className="mr-2"
+                />
+              </div>
+            ) : (
+              <div className="inline-flex">
+                <Package className="h-4 w-4 mr-2" />
+              </div>
+            )}
+            <Badge variant="secondary">
+              {getCategoryLabel(listing.category, listing.type)}
+            </Badge>
+          </div>
+          <h3 className="text-md font-semibold mb-2 line-clamp-1">
+            {listing.title}
+          </h3>
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[40px]">
+            {listing.description}
           </p>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="flex items-center justify-between">
+            <p className="text-lg font-bold">
+              {formatPrice(listing.price)}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 
   return (
