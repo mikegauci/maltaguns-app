@@ -62,8 +62,8 @@ export function Header() {
                 Blog
               </Button>
             </Link>
-            <Link href="/faq">
-              <Button variant="ghost">FAQ</Button>
+            <Link href="/help">
+              <Button variant="ghost">Help</Button>
             </Link>
             <Link href="/contact">
               <Button variant="ghost">Contact</Button>
@@ -113,8 +113,8 @@ export function Header() {
                 Blog
               </Button>
             </Link>
-            <Link href="/faq">
-              <Button variant="ghost" onClick={() => setMenuOpen(false)}>FAQ</Button>
+            <Link href="/help">
+              <Button variant="ghost" onClick={() => setMenuOpen(false)}>Help</Button>
             </Link>
             <Link href="/contact">
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>Contact</Button>
