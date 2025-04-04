@@ -41,7 +41,7 @@ import {
   Mail,
   Phone,
   Star,
-  Calendar
+  Calendar,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -62,13 +62,13 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 import { FeatureCreditDialog } from "@/components/feature-credit-dialog";
 import { CreditDialog } from "@/components/credit-dialog";
 import { EventCreditDialog } from "@/components/event-credit-dialog";
 import { useSupabase } from "@/components/providers/supabase-provider";
-import { LoadingState } from "@/components/ui/loading-state"
-import Image from "next/image"
+import { LoadingState } from "@/components/ui/loading-state";
+import Image from "next/image";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -164,7 +164,9 @@ export default function ProfilePage() {
   const [retailers, setRetailers] = useState<Retailer[]>([]);
   const [retailer, setRetailer] = useState<Retailer | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [retailerBlogPosts, setRetailerBlogPosts] = useState<RetailerBlogPost[]>([]);
+  const [retailerBlogPosts, setRetailerBlogPosts] = useState<
+    RetailerBlogPost[]
+  >([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -175,7 +177,9 @@ export default function ProfilePage() {
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [listingToFeature, setListingToFeature] = useState<string | null>(null);
   const [removeFeatureDialogOpen, setRemoveFeatureDialogOpen] = useState(false);
-  const [listingToRemoveFeature, setListingToRemoveFeature] = useState<string | null>(null);
+  const [listingToRemoveFeature, setListingToRemoveFeature] = useState<
+    string | null
+  >(null);
   const [listingCredits, setListingCredits] = useState(0);
   const [eventCredits, setEventCredits] = useState(0);
   const [showCreditDialog, setShowCreditDialog] = useState(false);
@@ -231,50 +235,65 @@ export default function ProfilePage() {
           }
 
           // Fetch featured listings data
-          const { data: featuredListingsData, error: featuredListingsError } = await supabase
-            .from("featured_listings")
-            .select("*")
-            .eq("user_id", userId);
+          const { data: featuredListingsData, error: featuredListingsError } =
+            await supabase
+              .from("featured_listings")
+              .select("*")
+              .eq("user_id", userId);
 
           if (featuredListingsError) {
-            console.error("Featured listings fetch error:", featuredListingsError.message);
+            console.error(
+              "Featured listings fetch error:",
+              featuredListingsError.message
+            );
           }
 
           // Create a map of listing IDs to their featured end dates
           const featuredEndDates = new Map(
-            (featuredListingsData || []).map(featured => [
+            (featuredListingsData || []).map((featured) => [
               featured.listing_id,
-              new Date(featured.end_date)
+              new Date(featured.end_date),
             ])
           );
 
           // Process listings to add feature status and expiration data
-          const listingsWithFeatures = (listingsData || []).map((listing: any) => {
-            const now = new Date();
-            const expirationDate = new Date(listing.expires_at);
-            const featuredEndDate = featuredEndDates.get(listing.id);
-            
-            const diffTime = expirationDate.getTime() - now.getTime();
-            const daysUntilExpiration = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
-            let featuredDaysRemaining = 0;
-            if (featuredEndDate && featuredEndDate > now) {
-              const featuredDiffTime = featuredEndDate.getTime() - now.getTime();
-              featuredDaysRemaining = Math.max(0, Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24)));
+          const listingsWithFeatures = (listingsData || []).map(
+            (listing: any) => {
+              const now = new Date();
+              const expirationDate = new Date(listing.expires_at);
+              const featuredEndDate = featuredEndDates.get(listing.id);
+
+              const diffTime = expirationDate.getTime() - now.getTime();
+              const daysUntilExpiration = Math.ceil(
+                diffTime / (1000 * 60 * 60 * 24)
+              );
+
+              let featuredDaysRemaining = 0;
+              if (featuredEndDate && featuredEndDate > now) {
+                const featuredDiffTime =
+                  featuredEndDate.getTime() - now.getTime();
+                featuredDaysRemaining = Math.max(
+                  0,
+                  Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24))
+                );
+              }
+
+              return {
+                ...listing,
+                is_featured: featuredEndDate ? featuredEndDate > now : false,
+                days_until_expiration: daysUntilExpiration,
+                featured_days_remaining: featuredDaysRemaining,
+                is_near_expiration:
+                  daysUntilExpiration <= 3 && daysUntilExpiration > 0,
+                is_expired: daysUntilExpiration <= 0,
+              };
             }
-            
-            return {
-              ...listing,
-              is_featured: featuredEndDate ? featuredEndDate > now : false,
-              days_until_expiration: daysUntilExpiration,
-              featured_days_remaining: featuredDaysRemaining,
-              is_near_expiration: daysUntilExpiration <= 3 && daysUntilExpiration > 0,
-              is_expired: daysUntilExpiration <= 0
-            };
-          });
+          );
 
           // Filter out expired listings as they'll be deleted soon
-          const activeListings = listingsWithFeatures.filter(listing => !listing.is_expired);
+          const activeListings = listingsWithFeatures.filter(
+            (listing) => !listing.is_expired
+          );
           setListings(activeListings);
 
           // Fetch user's blog posts
@@ -302,11 +321,15 @@ export default function ProfilePage() {
           if (retailerError) {
             console.error("Retailer fetch error:", retailerError.message);
           } else if (retailersData && retailersData.length > 0) {
-            console.log("Found retailers:", retailersData.length, retailersData);
-            
+            console.log(
+              "Found retailers:",
+              retailersData.length,
+              retailersData
+            );
+
             // Store all retailers
             setRetailers(retailersData);
-            
+
             // Also keep the first retailer in the single retailer state for backwards compatibility
             const currentRetailer = retailersData[0];
             setRetailer(currentRetailer);
@@ -337,10 +360,18 @@ export default function ProfilePage() {
                 .order("created_at", { ascending: false });
 
               if (postsError) {
-                console.error(`Retailer blog posts fetch error for ${retailer.business_name}:`, postsError.message);
+                console.error(
+                  `Retailer blog posts fetch error for ${retailer.business_name}:`,
+                  postsError.message
+                );
               } else if (postsData && postsData.length > 0) {
-                console.log(`Found ${postsData.length} posts for retailer ${retailer.business_name}`);
-                retailerPostsData = [...retailerPostsData, ...postsData as RetailerBlogPost[]];
+                console.log(
+                  `Found ${postsData.length} posts for retailer ${retailer.business_name}`
+                );
+                retailerPostsData = [
+                  ...retailerPostsData,
+                  ...(postsData as RetailerBlogPost[]),
+                ];
               }
             }
           }
@@ -358,30 +389,38 @@ export default function ProfilePage() {
           }
 
           // Fetch user's credits - Modified query
-          const { data: listingCreditsData, error: listingCreditsError } = await supabase
-            .from("credits")
-            .select("amount")
-            .eq("user_id", userId)
-            .maybeSingle();  // Changed from single() to maybeSingle()
+          const { data: listingCreditsData, error: listingCreditsError } =
+            await supabase
+              .from("credits")
+              .select("amount")
+              .eq("user_id", userId)
+              .maybeSingle(); // Changed from single() to maybeSingle()
 
           if (listingCreditsError) {
-            console.error("Listing credits fetch error:", listingCreditsError.message);
+            console.error(
+              "Listing credits fetch error:",
+              listingCreditsError.message
+            );
           }
 
-          const { data: eventCreditsData, error: eventCreditsError } = await supabase
-            .from("credits_events")
-            .select("amount")
-            .eq("user_id", userId)
-            .maybeSingle();  // Changed from single() to maybeSingle()
+          const { data: eventCreditsData, error: eventCreditsError } =
+            await supabase
+              .from("credits_events")
+              .select("amount")
+              .eq("user_id", userId)
+              .maybeSingle(); // Changed from single() to maybeSingle()
 
           if (eventCreditsError) {
-            console.error("Event credits fetch error:", eventCreditsError.message);
+            console.error(
+              "Event credits fetch error:",
+              eventCreditsError.message
+            );
           }
 
           // Set credits with proper null checking
           setListingCredits(listingCreditsData?.amount ?? 0);
           setEventCredits(eventCreditsData?.amount ?? 0);
-          
+
           // Update state with all fetched data
           setBlogPosts(blogData || []);
           setRetailerBlogPosts(retailerPostsData);
@@ -396,7 +435,8 @@ export default function ProfilePage() {
         toast({
           variant: "destructive",
           title: "Error loading profile",
-          description: "We encountered an error loading your profile information. Please refresh the page and try again.",
+          description:
+            "We encountered an error loading your profile information. Please refresh the page and try again.",
         });
       } finally {
         setLoading(false);
@@ -417,11 +457,11 @@ export default function ProfilePage() {
     }
 
     // Add the event listener
-    document.addEventListener('click', handleDocumentClick);
-    
+    document.addEventListener("click", handleDocumentClick);
+
     // Clean up
     return () => {
-      document.removeEventListener('click', handleDocumentClick);
+      document.removeEventListener("click", handleDocumentClick);
     };
   }, [openTooltipId]);
 
@@ -429,7 +469,7 @@ export default function ProfilePage() {
   const handleTooltipClick = (event: React.MouseEvent, listingId: string) => {
     // Stop propagation to prevent the document click handler from firing
     event.stopPropagation();
-    
+
     // Toggle tooltip: close if already open, open if closed
     setOpenTooltipId(openTooltipId === listingId ? null : listingId);
   };
@@ -596,9 +636,7 @@ export default function ProfilePage() {
           <CardContent>
             <div className="flex flex-col gap-4">
               <Link href="/login">
-                <Button className="w-full">
-                  Log In
-                </Button>
+                <Button className="w-full">Log In</Button>
               </Link>
               <Link href="/">
                 <Button variant="outline" className="w-full">
@@ -669,7 +707,7 @@ export default function ProfilePage() {
         toast({
           variant: "destructive",
           title: "Unauthorized",
-          description: "You must be logged in to delete a listing"
+          description: "You must be logged in to delete a listing",
         });
         return;
       }
@@ -682,7 +720,7 @@ export default function ProfilePage() {
         },
         body: JSON.stringify({
           listingId,
-          userId: session.session.user.id
+          userId: session.session.user.id,
         }),
       });
 
@@ -698,9 +736,9 @@ export default function ProfilePage() {
 
       toast({
         title: "Listing deleted",
-        description: "Your listing has been deleted successfully"
+        description: "Your listing has been deleted successfully",
       });
-      
+
       // Close the dialog
       setDeleteDialogOpen(false);
       setListingToDelete(null);
@@ -709,9 +747,10 @@ export default function ProfilePage() {
       toast({
         variant: "destructive",
         title: "Delete failed",
-        description: error instanceof Error ? error.message : "Failed to delete listing"
+        description:
+          error instanceof Error ? error.message : "Failed to delete listing",
       });
-      
+
       // Close the dialog even on error
       setDeleteDialogOpen(false);
       setListingToDelete(null);
@@ -750,7 +789,8 @@ export default function ProfilePage() {
 
       toast({
         title: "License removed",
-        description: "Your license has been removed successfully. Your account is no longer marked as a seller.",
+        description:
+          "Your license has been removed successfully. Your account is no longer marked as a seller.",
       });
     } catch (error) {
       toast({
@@ -765,10 +805,14 @@ export default function ProfilePage() {
   async function handleDeleteRetailer(retailerId: string) {
     try {
       // Confirm deletion
-      if (!window.confirm("Are you sure you want to delete this retailer profile? This action cannot be undone.")) {
+      if (
+        !window.confirm(
+          "Are you sure you want to delete this retailer profile? This action cannot be undone."
+        )
+      ) {
         return;
       }
-      
+
       const { error } = await supabase
         .from("retailers")
         .delete()
@@ -851,10 +895,13 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleRenewListing(listingId: string, showToast: boolean = true): Promise<void> {
+  async function handleRenewListing(
+    listingId: string,
+    showToast: boolean = true
+  ): Promise<void> {
     try {
       console.log(`Renewing listing: ${listingId}`);
-      
+
       // Call our simplified API endpoint to update the expiry
       const response = await fetch("/api/listings/update-expiry", {
         method: "POST",
@@ -862,40 +909,42 @@ export default function ProfilePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          listingId
+          listingId,
         }),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         console.error("API error:", errorData);
-        
+
         // Fallback to the RPC function if the API fails
         console.log("Trying fallback RPC method");
-        const { error } = await supabase.rpc('relist_listing', {
-          listing_id: listingId
+        const { error } = await supabase.rpc("relist_listing", {
+          listing_id: listingId,
         });
-        
+
         if (error) {
           console.error("RPC fallback error:", error);
           throw new Error("Failed to renew listing after multiple attempts");
         }
       }
-      
+
       // Update the UI
       setListings((prevListings) =>
         prevListings.map((listing) =>
-          listing.id === listingId 
-            ? { 
-                ...listing, 
-                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          listing.id === listingId
+            ? {
+                ...listing,
+                expires_at: new Date(
+                  Date.now() + 30 * 24 * 60 * 60 * 1000
+                ).toISOString(),
                 days_until_expiration: 30,
-                is_near_expiration: false
-              } 
+                is_near_expiration: false,
+              }
             : listing
         )
       );
-      
+
       // Only show toast if showToast is true
       if (showToast) {
         toast({
@@ -909,9 +958,7 @@ export default function ProfilePage() {
         variant: "destructive",
         title: "Renewal failed",
         description:
-          error instanceof Error
-            ? error.message
-            : "Failed to renew listing.",
+          error instanceof Error ? error.message : "Failed to renew listing.",
       });
     }
   }
@@ -920,12 +967,13 @@ export default function ProfilePage() {
   async function handleRenewalSuccess(): Promise<void> {
     try {
       if (!listingToFeature) return;
-      
-      const { data: userData, error: authError } = await supabase.auth.getUser();
+
+      const { data: userData, error: authError } =
+        await supabase.auth.getUser();
       if (authError) throw authError;
 
       console.log("Starting renewal process for listing:", listingToFeature);
-      
+
       // Step 1: Always update the expiry date to 30 days first
       console.log("Extending listing expiry to 30 days");
       const expiryResponse = await fetch("/api/listings/update-expiry", {
@@ -934,19 +982,19 @@ export default function ProfilePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          listingId: listingToFeature
+          listingId: listingToFeature,
         }),
       });
-      
+
       if (!expiryResponse.ok) {
         console.error("Error extending listing expiry");
         const errorData = await expiryResponse.json();
         throw new Error(errorData.error || "Failed to extend listing expiry");
       }
-      
+
       const expiryData = await expiryResponse.json();
       console.log("Expiry update response:", expiryData);
-      
+
       // Step 2: Call the feature renewal API
       console.log("Renewing featured status");
       const featureResponse = await fetch("/api/listings/renew-feature", {
@@ -956,39 +1004,42 @@ export default function ProfilePage() {
         },
         body: JSON.stringify({
           userId: userData.user.id,
-          listingId: listingToFeature
+          listingId: listingToFeature,
         }),
       });
-      
+
       if (!featureResponse.ok) {
         const errorData = await featureResponse.json();
         throw new Error(errorData.error || "Failed to renew feature");
       }
-      
+
       const featureData = await featureResponse.json();
       console.log("Feature API response:", featureData);
-      
+
       // Update the UI to reflect the changes
       setListings((prevListings) =>
         prevListings.map((listing) =>
-          listing.id === listingToFeature 
-            ? { 
-                ...listing, 
-                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          listing.id === listingToFeature
+            ? {
+                ...listing,
+                expires_at: new Date(
+                  Date.now() + 30 * 24 * 60 * 60 * 1000
+                ).toISOString(),
                 days_until_expiration: 30,
                 is_near_expiration: false,
                 is_featured: true,
-                featured_days_remaining: 15 // Assuming feature period is 15 days
-              } 
+                featured_days_remaining: 15, // Assuming feature period is 15 days
+              }
             : listing
         )
       );
-      
+
       toast({
         title: "Listing featured and renewed",
-        description: "Your listing has been featured for 15 days and renewed for 30 days.",
+        description:
+          "Your listing has been featured for 15 days and renewed for 30 days.",
       });
-      
+
       // Reset state
       setListingToFeature(null);
     } catch (error) {
@@ -997,9 +1048,7 @@ export default function ProfilePage() {
         variant: "destructive",
         title: "Featuring failed",
         description:
-          error instanceof Error
-            ? error.message
-            : "Failed to feature listing.",
+          error instanceof Error ? error.message : "Failed to feature listing.",
       });
     }
   }
@@ -1008,7 +1057,7 @@ export default function ProfilePage() {
   async function testUpdateExpiry(listingId: string) {
     try {
       console.log(`Testing direct expiry update for listing ${listingId}`);
-      
+
       // Call debug API
       const response = await fetch("/api/listings/debug", {
         method: "POST",
@@ -1016,51 +1065,59 @@ export default function ProfilePage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          listingId
+          listingId,
         }),
       });
-      
+
       const data = await response.json();
       console.log("Debug API response:", data);
-      
+
       // Update UI directly instead of refreshing the whole profile
       setListings((prevListings) =>
         prevListings.map((listing) =>
-          listing.id === listingId 
-            ? { 
-                ...listing, 
-                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          listing.id === listingId
+            ? {
+                ...listing,
+                expires_at: new Date(
+                  Date.now() + 30 * 24 * 60 * 60 * 1000
+                ).toISOString(),
                 days_until_expiration: 30,
-                is_near_expiration: false
-              } 
+                is_near_expiration: false,
+              }
             : listing
         )
       );
-      
+
       toast({
         title: "Debug completed",
-        description: "Check the console logs for details"
+        description: "Check the console logs for details",
       });
     } catch (error) {
       console.error("Debug test failed:", error);
       toast({
         variant: "destructive",
         title: "Test failed",
-        description: "Check the console for details"
+        description: "Check the console for details",
       });
     }
   }
 
   async function handleRemoveFeature(listingId: string): Promise<void> {
     try {
-      const { data: userData, error: authError } = await supabase.auth.getUser();
+      const { data: userData, error: authError } =
+        await supabase.auth.getUser();
       if (authError) throw authError;
 
-      console.log(`[REMOVE-FEATURE] Attempting to remove feature status for listing ${listingId}`);
-      
-      const response = await fetch(`/api/listings/feature?listingId=${listingId}&userId=${userData.user.id}`, {
-        method: 'DELETE',
-      });
+      console.log(
+        `[REMOVE-FEATURE] Attempting to remove feature status for listing ${listingId}`
+      );
+
+      const response = await fetch(
+        `/api/listings/feature?listingId=${listingId}&userId=${userData.user.id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -1068,26 +1125,29 @@ export default function ProfilePage() {
         throw new Error(errorData.error || "Failed to remove feature");
       }
 
-      console.log(`[REMOVE-FEATURE] Feature status successfully removed for listing ${listingId}`);
-      
+      console.log(
+        `[REMOVE-FEATURE] Feature status successfully removed for listing ${listingId}`
+      );
+
       // Update UI by removing ONLY feature status from this listing
       // but preserving the days_until_expiration
       setListings((prevListings) =>
         prevListings.map((listing) =>
-          listing.id === listingId 
-            ? { 
-                ...listing, 
+          listing.id === listingId
+            ? {
+                ...listing,
                 is_featured: false,
                 featured_days_remaining: 0,
                 // Preserve the days_until_expiration and is_near_expiration
-              } 
+              }
             : listing
         )
       );
 
       toast({
         title: "Feature removed",
-        description: "Your listing is no longer featured but its expiration date remains unchanged.",
+        description:
+          "Your listing is no longer featured but its expiration date remains unchanged.",
       });
     } catch (error) {
       console.error("Error removing feature:", error);
@@ -1217,11 +1277,17 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-primary" />
               <span className="font-medium">Status:</span>
-              <Badge 
+              <Badge
                 variant={profile.is_seller ? "default" : "secondary"}
-                className={profile.is_seller ? "bg-green-600 hover:bg-green-600 text-white" : ""}
+                className={
+                  profile.is_seller
+                    ? "bg-green-600 hover:bg-green-600 text-white"
+                    : ""
+                }
               >
-                {profile.is_seller ? "Verified Gun Seller" : "No license verified"}
+                {profile.is_seller
+                  ? "Verified Gun Seller"
+                  : "No license verified"}
               </Badge>
             </div>
 
@@ -1237,7 +1303,7 @@ export default function ProfilePage() {
                       alt="License"
                       className="w-64 h-auto rounded-md mb-4"
                     />
-                    <button 
+                    <button
                       onClick={handleRemoveLicense}
                       className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1 rounded-full hover:bg-opacity-100 transition-all"
                       title="Remove license"
@@ -1257,8 +1323,8 @@ export default function ProfilePage() {
                   className="hidden"
                   id="license-upload"
                 />
-                <label 
-                  htmlFor="license-upload" 
+                <label
+                  htmlFor="license-upload"
                   className="bg-black text-white px-4 py-2 rounded cursor-pointer hover:bg-gray-800 transition-colors flex items-center"
                 >
                   {profile.license_image ? (
@@ -1266,12 +1332,11 @@ export default function ProfilePage() {
                   ) : (
                     <Upload className="h-4 w-4 mr-2" />
                   )}
-                  {uploadingLicense 
-                    ? "Uploading..." 
-                    : profile.license_image 
-                      ? "Replace License" 
-                      : "Upload License"
-                  }
+                  {uploadingLicense
+                    ? "Uploading..."
+                    : profile.license_image
+                    ? "Replace License"
+                    : "Upload License"}
                 </label>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
@@ -1285,7 +1350,7 @@ export default function ProfilePage() {
                     }}
                   />
                 )}
-                </p>
+              </p>
             </div>
           </CardContent>
           {!profile.license_image && (
@@ -1295,10 +1360,19 @@ export default function ProfilePage() {
                 <span className="font-medium">Information:</span>
               </div>
               <p className="mb-3">
-                Maltaguns ensures that all firearms added to the site are owned by licensed individuals. For this reason, we require all sellers wishing to sell a firearm to upload a picture of their license only once and before they list their first firearm. The picture must include only the front page of the Malta police license issued to you, clearly displaying your name and address which must match those on your pofile. Uploaded images will not be shared with anyone and are strictly used for verification purposes only. Should you have any questions please email us on Info@maltaguns.com.
+                Maltaguns ensures that all firearms added to the site are owned
+                by licensed individuals. For this reason, we require all sellers
+                wishing to sell a firearm to upload a picture of their license
+                only once and before they list their first firearm. The picture
+                must include only the front page of the Malta police license
+                issued to you, clearly displaying your name and address which
+                must match those on your pofile. Uploaded images will not be
+                shared with anyone and are strictly used for verification
+                purposes only. Should you have any questions please email us on
+                Info@maltaguns.com.
               </p>
-              <div 
-                className="w-full max-w-md h-72 rounded-md bg-cover bg-center bg-no-repeat" 
+              <div
+                className="w-full max-w-md h-72 rounded-md bg-cover bg-center bg-no-repeat"
                 style={{ backgroundImage: "url('/license-sample.jpg')" }}
                 aria-label="Sample License"
               ></div>
@@ -1306,179 +1380,246 @@ export default function ProfilePage() {
           )}
         </Card>
 
-        {/* Retailer Profiles - Show all retailers */}
-        {retailers.length > 0 ? (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle>My Retailer Profiles</CardTitle>
-                <CardDescription>
-                  Manage your business presence on MaltaGuns
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {retailers.map((retailerItem) => (
-                  <div key={retailerItem.id} className="border rounded-lg p-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        {retailerItem.logo_url ? (
-                          <img
-                            src={retailerItem.logo_url}
-                            alt={retailerItem.business_name}
-                            className="w-16 h-16 object-contain rounded-lg"
+        {/* Listings */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div>
+              <CardTitle>My Listings</CardTitle>
+              <CardDescription>
+                Manage your marketplace listings
+              </CardDescription>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="bg-muted px-4 py-2 rounded-md">
+                  <span className="text-sm text-muted-foreground">
+                    Credits Remaining:
+                  </span>
+                  <span className="font-semibold ml-1">{listingCredits}</span>
+                </div>
+                <Button
+                  variant="default"
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => setShowCreditDialog(true)}
+                >
+                  Add more credits
+                </Button>
+              </div>
+            </div>
+            <Link href="/marketplace/create">
+              <Button className="bg-black text-white hover:bg-gray-800">
+                <Package className="mr-2 h-4 w-4" />
+                Create Listing
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {listings.map((listing) => (
+                <Card key={listing.id}>
+                  <CardContent className="p-4">
+                    {/* Top section with title and featured status */}
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex items-center gap-2">
+                        {listing.type === "firearms" ? (
+                          <Image
+                            src="/images/pistol-gun-icon.svg"
+                            alt="Firearms"
+                            width={16}
+                            height={16}
+                            className="mr-2"
                           />
                         ) : (
-                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                            <Store className="h-8 w-8 text-muted-foreground" />
-                          </div>
+                          <Package className="h-4 w-4 mr-2" />
                         )}
                         <div>
-                          <h3 className="font-semibold text-lg">
-                            {retailerItem.business_name}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            {retailerItem.location || 'No location specified'}
-                          </p>
-                          {!retailerItem.slug && (
-                            <p className="text-xs text-red-500">Missing slug - please edit your profile</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Link href={`/retailers/${retailerItem.slug || retailerItem.id}`}>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Page
-                          </Button>
-                        </Link>
-                        <Link href={`/retailers/${retailerItem.slug || retailerItem.id}/edit`}>
-                          <Button variant="outline" size="sm">
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit Profile
-                          </Button>
-                        </Link>
-                        <Link href={`/retailers/${retailerItem.slug || retailerItem.id}/blog/create`}>
-                          <Button variant="outline" size="sm">
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            New Blog Post
-                          </Button>
-                        </Link>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDeleteRetailer(retailerItem.id)}
-                          className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Retailer
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Retailer Blog Posts - Only show if user has posts */}
-            {retailerBlogPosts.length > 0 && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                  <div>
-                    <CardTitle>My Retailer Posts</CardTitle>
-                    <CardDescription>Manage your retailer blog posts</CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {retailerBlogPosts.map((post) => (
-                      <Card key={post.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="font-semibold">{post.title}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {format(new Date(post.created_at), "PPP")}
-                              </p>
-                              {/* Show which retailer this post belongs to */}
-                              {retailers.length > 1 && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {retailers.find(r => r.id === post.retailer_id)?.business_name || 'Unknown retailer'}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant={post.published ? "default" : "secondary"}
-                              >
-                                {post.published ? "Published" : "Draft"}
-                              </Badge>
-                              <div className="flex gap-2">
-                                {/* Find the retailer this post belongs to for URL */}
-                                {(() => {
-                                  const postRetailer = retailers.find(r => r.id === post.retailer_id);
-                                  const retailerPath = postRetailer ? 
-                                    `/retailers/${postRetailer.slug || postRetailer.id}` : 
-                                    '/retailers';
-                                  return (
-                                    <>
-                                      <Link href={`${retailerPath}/blog/${post.slug}`}>
-                                        <Button variant="outline" size="sm">
-                                          <Eye className="h-4 w-4 mr-2" />
-                                          View
-                                        </Button>
-                                      </Link>
-                                      <Link href={`${retailerPath}/blog/${post.slug}/edit`}>
-                                        <Button variant="outline" size="sm">
-                                          <Pencil className="h-4 w-4 mr-2" />
-                                          Edit
-                                        </Button>
-                                      </Link>
-                                    </>
-                                  );
-                                })()}
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-lg">
+                              {listing.title}
+                            </h3>
+                            {listing.is_featured && (
+                              <div className="flex items-center gap-2">
+                                <Badge className="bg-red-500 text-white hover:bg-red-600 flex items-center">
+                                  <Star className="h-3 w-3 mr-1" /> Featured
+                                </Badge>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => handleDeleteRetailerPost(post.id)}
-                                  className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                                  className="h-6 px-2 border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    setListingToRemoveFeature(listing.id);
+                                    setRemoveFeatureDialogOpen(true);
+                                  }}
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
+                                  <X className="h-3 w-3 mr-1" /> Remove
                                 </Button>
                               </div>
-                            </div>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        ) : (
-          profile?.is_seller && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Create Retailer Profile</CardTitle>
-                <CardDescription>
-                  Set up your business profile on MaltaGuns
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">
-                  Maltaguns allows businesses in Malta that provide services to the local community to advertise their services on Maltaguns. This may include gun dealers, gun smiths, airsoft equipement repair, wood stock restoration, engineering services or gun safe importers. If you you wish to advertise your store or services on Maltaguns, kindly send an email to info@maltaguns.com in order to gain access to create your retailer profile.
-                </p>
-                <Link href="/retailers/create">
-                  <Button>
-                    <Store className="h-4 w-4 mr-2" />
-                    Create Retailer Profile
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          )
-        )}
+                        </div>
+                      </div>
+                      <Badge className="text-base px-3 py-1">
+                        {formatPrice(listing.price)}
+                      </Badge>
+                    </div>
+
+                    {/* Middle section: Expiration info */}
+                    <div className="mb-4">
+                      <div className="text-sm text-muted-foreground flex flex-col gap-2">
+                        {/* Listing expiration */}
+                        <div className="flex items-center gap-2">
+                          <Calendar
+                            className={`h-4 w-4 ${
+                              listing.is_near_expiration ? "text-red-500" : ""
+                            }`}
+                          />
+                          <span
+                            className={
+                              listing.is_near_expiration
+                                ? "text-red-500 font-medium"
+                                : ""
+                            }
+                          >
+                            Expires in {listing.days_until_expiration} days
+                            {listing.is_near_expiration && (
+                              <span className="ml-1 text-red-500">
+                                (Will be removed when expired)
+                              </span>
+                            )}
+                          </span>
+
+                          {/* Move the extend expiry button here */}
+                          {(listing.days_until_expiration ?? 0) < 15 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRenewListing(listing.id)}
+                              className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200 ml-2"
+                            >
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Relist for 30 days
+                            </Button>
+                          )}
+                        </div>
+
+                        {/* Featured status expiry */}
+                        {listing.is_featured &&
+                          (listing.featured_days_remaining ?? 0) > 0 && (
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`flex items-center gap-2 ${
+                                  (listing.featured_days_remaining ?? 0) > 3
+                                    ? "text-green-600"
+                                    : "text-red-500"
+                                }`}
+                              >
+                                <Star className="h-4 w-4" />
+                                <span>
+                                  Featured ending in{" "}
+                                  {listing.featured_days_remaining} days
+                                </span>
+                              </div>
+                              {/* Add Renew Feature button if less than or equal to 3 days remaining */}
+                              {(listing.featured_days_remaining ?? 0) <= 3 && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div>
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => {
+                                            // Always set the listing to feature regardless of expiry date
+                                            setListingToFeature(listing.id);
+                                            setFeatureDialogOpen(true);
+                                          }}
+                                          className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200"
+                                        >
+                                          <Star className="h-4 w-4 mr-2" />
+                                          Renew Featured
+                                        </Button>
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      Renew featured status for this listing
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                          )}
+                      </div>
+                    </div>
+
+                    {/* Bottom section: Action buttons and status dropdown */}
+                    <div className="mt-4">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {/* Status dropdown */}
+                        <select
+                          value={listing.status}
+                          onChange={(e) =>
+                            handleListingStatusChange(
+                              listing.id,
+                              e.target.value
+                            )
+                          }
+                          className="text-sm border rounded h-9 px-3"
+                        >
+                          <option value="active">Active</option>
+                          <option value="sold">Sold</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
+
+                        {/* Action buttons */}
+                        <Link
+                          href={`/marketplace/listing/${slugify(
+                            listing.title
+                          )}`}
+                        >
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                        </Link>
+
+                        {listing.status === "sold" ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled
+                            className="opacity-50 cursor-not-allowed"
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit
+                          </Button>
+                        ) : (
+                          <Link
+                            href={`/marketplace/listing/${slugify(
+                              listing.title
+                            )}/edit`}
+                          >
+                            <Button variant="outline" size="sm">
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
+                          </Link>
+                        )}
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => confirmDeleteListing(listing.id)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Blog Posts - Only show if user has posts */}
         {blogPosts.length > 0 && (
@@ -1546,227 +1687,23 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        {/* Listings - Only show if user has listings */}
-        {listings.length > 0 && (
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <div>
-                <CardTitle>My Listings</CardTitle>
-                <CardDescription>
-                  Manage your marketplace listings
-                </CardDescription>
-                <div className="mt-4 flex items-center gap-4">
-                  <div className="bg-muted px-4 py-2 rounded-md">
-                    <span className="text-sm text-muted-foreground">Credits Remaining:</span>
-                    <span className="font-semibold ml-1">{listingCredits}</span>
-                  </div>
-                  <Button 
-                    variant="default" 
-                    className="bg-green-600 hover:bg-green-700 text-white" 
-                    onClick={() => setShowCreditDialog(true)}
-                  >
-                    Add more credits
-                  </Button>
-                </div>
-              </div>
-              <Link href="/marketplace/create">
-                <Button className="bg-black text-white hover:bg-gray-800">
-                  <Package className="mr-2 h-4 w-4" />
-                  Create Listing
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {listings.map((listing) => (
-                  <Card key={listing.id}>
-                    <CardContent className="p-4">
-                      {/* Top section with title and featured status */}
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-2">
-                          {listing.type === 'firearms' ? (
-                            <Image
-                              src="/images/pistol-gun-icon.svg"
-                              alt="Firearms"
-                              width={16}
-                              height={16}
-                              className="mr-2"
-                            />
-                          ) : (
-                            <Package className="h-4 w-4 mr-2" />
-                          )}
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-lg">{listing.title}</h3>
-                              {listing.is_featured && (
-                                <div className="flex items-center gap-2">
-                                  <Badge className="bg-red-500 text-white hover:bg-red-600 flex items-center">
-                                    <Star className="h-3 w-3 mr-1" /> Featured
-                                  </Badge>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-6 px-2 border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => {
-                                      setListingToRemoveFeature(listing.id);
-                                      setRemoveFeatureDialogOpen(true);
-                                    }}
-                                  >
-                                    <X className="h-3 w-3 mr-1" /> Remove
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <Badge className="text-base px-3 py-1">{formatPrice(listing.price)}</Badge>
-                      </div>
-                      
-                      {/* Middle section: Expiration info */}
-                      <div className="mb-4">
-                        <div className="text-sm text-muted-foreground flex flex-col gap-2">
-                          {/* Listing expiration */}
-                          <div className="flex items-center gap-2">
-                            <Calendar className={`h-4 w-4 ${listing.is_near_expiration ? 'text-red-500' : ''}`} />
-                            <span className={listing.is_near_expiration ? 'text-red-500 font-medium' : ''}>
-                              Expires in {listing.days_until_expiration} days
-                              {listing.is_near_expiration && (
-                                <span className="ml-1 text-red-500">
-                                  (Will be removed when expired)
-                                </span>
-                              )}
-                            </span>
-                            
-                            {/* Move the extend expiry button here */}
-                            {(listing.days_until_expiration ?? 0) < 15 && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleRenewListing(listing.id)}
-                                className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200 ml-2"
-                              >
-                                <RefreshCw className="h-4 w-4 mr-2" />
-                                Relist for 30 days
-                              </Button>
-                            )}
-                          </div>
-                          
-                          {/* Featured status expiry */}
-                          {listing.is_featured && (listing.featured_days_remaining ?? 0) > 0 && (
-                            <div className="flex items-center gap-2">
-                              <div className={`flex items-center gap-2 ${(listing.featured_days_remaining ?? 0) > 3 ? 'text-green-600' : 'text-red-500'}`}>
-                                <Star className="h-4 w-4" />
-                                <span>Featured ending in {listing.featured_days_remaining} days</span>
-                              </div>
-                              {/* Add Renew Feature button if less than or equal to 3 days remaining */}
-                              {(listing.featured_days_remaining ?? 0) <= 3 && (
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div>
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => {
-                                            // Always set the listing to feature regardless of expiry date
-                                            setListingToFeature(listing.id);
-                                            setFeatureDialogOpen(true);
-                                          }}
-                                          className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200"
-                                        >
-                                          <Star className="h-4 w-4 mr-2" />
-                                          Renew Featured
-                                        </Button>
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      Renew featured status for this listing
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Bottom section: Action buttons and status dropdown */}
-                      <div className="mt-4">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {/* Status dropdown */}
-                          <select
-                            value={listing.status}
-                            onChange={(e) => handleListingStatusChange(listing.id, e.target.value)}
-                            className="text-sm border rounded h-9 px-3"
-                          >
-                            <option value="active">Active</option>
-                            <option value="sold">Sold</option>
-                            <option value="inactive">Inactive</option>
-                          </select>
-                          
-                          {/* Action buttons */}
-                          <Link href={`/marketplace/listing/${slugify(listing.title)}`}>
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </Button>
-                          </Link>
-                          
-                          {listing.status === "sold" ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled
-                              className="opacity-50 cursor-not-allowed"
-                            >
-                              <Pencil className="h-4 w-4 mr-2" />
-                              Edit
-                            </Button>
-                          ) : (
-                            <Link href={`/marketplace/listing/${slugify(listing.title)}/edit`}>
-                              <Button variant="outline" size="sm">
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                            </Link>
-                          )}
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => confirmDeleteListing(listing.id)}
-                            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Events - Only show if user has events */}
         {events.length > 0 && (
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <div>
                 <CardTitle>My Events</CardTitle>
-                <CardDescription>
-                  Manage your published events
-                </CardDescription>
+                <CardDescription>Manage your published events</CardDescription>
                 <div className="mt-4 flex items-center gap-4">
                   <div className="bg-muted px-4 py-2 rounded-md">
-                    <span className="text-sm text-muted-foreground">Credits Remaining:</span>
+                    <span className="text-sm text-muted-foreground">
+                      Credits Remaining:
+                    </span>
                     <span className="font-semibold ml-1">{eventCredits}</span>
                   </div>
-                  <Button 
-                    variant="default" 
-                    className="bg-green-600 hover:bg-green-700 text-white" 
+                  <Button
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700 text-white"
                     onClick={() => setShowEventCreditDialog(true)}
                   >
                     Add more credits
@@ -1801,7 +1738,9 @@ export default function ProfilePage() {
                             </div>
                           )}
                           <div>
-                            <h3 className="font-semibold text-lg">{event.title}</h3>
+                            <h3 className="font-semibold text-lg">
+                              {event.title}
+                            </h3>
                             <div className="text-sm text-muted-foreground">
                               <p>{format(new Date(event.start_date), "PPP")}</p>
                               <p>{event.location}</p>
@@ -1839,6 +1778,217 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Retailer Profiles - Show all retailers */}
+        {retailers.length > 0 ? (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>My Retailer Profiles</CardTitle>
+                <CardDescription>
+                  Manage your business presence on MaltaGuns
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {retailers.map((retailerItem) => (
+                  <div key={retailerItem.id} className="border rounded-lg p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        {retailerItem.logo_url ? (
+                          <img
+                            src={retailerItem.logo_url}
+                            alt={retailerItem.business_name}
+                            className="w-16 h-16 object-contain rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                            <Store className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {retailerItem.business_name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {retailerItem.location || "No location specified"}
+                          </p>
+                          {!retailerItem.slug && (
+                            <p className="text-xs text-red-500">
+                              Missing slug - please edit your profile
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <Link
+                          href={`/retailers/${
+                            retailerItem.slug || retailerItem.id
+                          }`}
+                        >
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Page
+                          </Button>
+                        </Link>
+                        <Link
+                          href={`/retailers/${
+                            retailerItem.slug || retailerItem.id
+                          }/edit`}
+                        >
+                          <Button variant="outline" size="sm">
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Edit Profile
+                          </Button>
+                        </Link>
+                        <Link
+                          href={`/retailers/${
+                            retailerItem.slug || retailerItem.id
+                          }/blog/create`}
+                        >
+                          <Button variant="outline" size="sm">
+                            <BookOpen className="h-4 w-4 mr-2" />
+                            New Blog Post
+                          </Button>
+                        </Link>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteRetailer(retailerItem.id)}
+                          className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Retailer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Retailer Blog Posts - Only show if user has posts */}
+            {retailerBlogPosts.length > 0 && (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                  <div>
+                    <CardTitle>My Retailer Posts</CardTitle>
+                    <CardDescription>
+                      Manage your retailer blog posts
+                    </CardDescription>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {retailerBlogPosts.map((post) => (
+                      <Card key={post.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h3 className="font-semibold">{post.title}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(post.created_at), "PPP")}
+                              </p>
+                              {/* Show which retailer this post belongs to */}
+                              {retailers.length > 1 && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {retailers.find(
+                                    (r) => r.id === post.retailer_id
+                                  )?.business_name || "Unknown retailer"}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge
+                                variant={
+                                  post.published ? "default" : "secondary"
+                                }
+                              >
+                                {post.published ? "Published" : "Draft"}
+                              </Badge>
+                              <div className="flex gap-2">
+                                {/* Find the retailer this post belongs to for URL */}
+                                {(() => {
+                                  const postRetailer = retailers.find(
+                                    (r) => r.id === post.retailer_id
+                                  );
+                                  const retailerPath = postRetailer
+                                    ? `/retailers/${
+                                        postRetailer.slug || postRetailer.id
+                                      }`
+                                    : "/retailers";
+                                  return (
+                                    <>
+                                      <Link
+                                        href={`${retailerPath}/blog/${post.slug}`}
+                                      >
+                                        <Button variant="outline" size="sm">
+                                          <Eye className="h-4 w-4 mr-2" />
+                                          View
+                                        </Button>
+                                      </Link>
+                                      <Link
+                                        href={`${retailerPath}/blog/${post.slug}/edit`}
+                                      >
+                                        <Button variant="outline" size="sm">
+                                          <Pencil className="h-4 w-4 mr-2" />
+                                          Edit
+                                        </Button>
+                                      </Link>
+                                    </>
+                                  );
+                                })()}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() =>
+                                    handleDeleteRetailerPost(post.id)
+                                  }
+                                  className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
+        ) : (
+          profile?.is_seller && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Create Retailer Profile</CardTitle>
+                <CardDescription>
+                  Set up your business profile on MaltaGuns
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="mb-4">
+                  Maltaguns allows businesses in Malta that provide services to
+                  the local community to advertise their services on Maltaguns.
+                  This may include gun dealers, gun smiths, airsoft equipement
+                  repair, wood stock restoration, engineering services or gun
+                  safe importers. If you you wish to advertise your store or
+                  services on Maltaguns, kindly send an email to
+                  info@maltaguns.com in order to gain access to create your
+                  retailer profile.
+                </p>
+                <Link href="/retailers/create">
+                  <Button>
+                    <Store className="h-4 w-4 mr-2" />
+                    Create Retailer Profile
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )
+        )}
       </div>
 
       {/* Add the delete confirmation dialog */}
@@ -1847,19 +1997,22 @@ export default function ProfilePage() {
           <DialogHeader>
             <DialogTitle>Delete Listing</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this listing? This action cannot be undone.
+              Are you sure you want to delete this listing? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => listingToDelete && handleDeleteListing(listingToDelete)}
+            <Button
+              variant="destructive"
+              onClick={() =>
+                listingToDelete && handleDeleteListing(listingToDelete)
+              }
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Listing
@@ -1880,24 +2033,28 @@ export default function ProfilePage() {
       )}
 
       {/* Remove Feature Confirmation Dialog */}
-      <Dialog open={removeFeatureDialogOpen} onOpenChange={setRemoveFeatureDialogOpen}>
+      <Dialog
+        open={removeFeatureDialogOpen}
+        onOpenChange={setRemoveFeatureDialogOpen}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Remove Feature Status</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove the featured status from this listing? 
-              This will not refund your feature credit and your listing will no longer appear at the top of search results.
+              Are you sure you want to remove the featured status from this
+              listing? This will not refund your feature credit and your listing
+              will no longer appear at the top of search results.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setRemoveFeatureDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={() => {
                 if (listingToRemoveFeature) {
                   handleRemoveFeature(listingToRemoveFeature);
