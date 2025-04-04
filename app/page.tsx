@@ -407,9 +407,9 @@ export default function Home() {
             Create an account to start buying, selling, and connecting with the firearms community in Malta.
           </p>
           <div className="flex items-center justify-center gap-4">
-            <Link href="/register">
+            <Link href={isAuthenticated ? "/marketplace/create" : "/register"}>
               <Button size="lg" variant="secondary">
-                Create Account
+                {isAuthenticated ? "Post a Listing" : "Create Account"}
               </Button>
             </Link>
             <Link href="/marketplace">
