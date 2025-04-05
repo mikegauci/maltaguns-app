@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +34,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
+import React from "react";
 
 const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 
@@ -93,6 +101,8 @@ export default function Register() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [uploadingLicense, setUploadingLicense] = useState(false);
+  const [tooltipOpen, setTooltipOpen] = useState(false);
+  const tooltipTriggerRef = React.useRef<HTMLButtonElement>(null);
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -108,6 +118,43 @@ export default function Register() {
       contactPreference: "both",
     },
   });
+
+  // Toggle tooltip open state on click
+  const handleTooltipToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTooltipOpen(!tooltipOpen);
+  };
+
+  // Close tooltip when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      // Don't close if clicking the trigger element
+      if (tooltipTriggerRef.current && tooltipTriggerRef.current.contains(e.target as Node)) {
+        return;
+      }
+
+      // Don't close if clicking inside the tooltip content
+      const tooltipContent = document.querySelector('[role="tooltip"]');
+      if (tooltipContent && tooltipContent.contains(e.target as Node)) {
+        return;
+      }
+
+      setTooltipOpen(false);
+    };
+
+    // Only add the listener if the tooltip is open
+    if (tooltipOpen) {
+      // Use setTimeout to ensure this runs after the current click event
+      setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 0);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [tooltipOpen]);
 
   const watchInterestedInSelling = form.watch("interestedInSelling");
 
@@ -470,7 +517,41 @@ export default function Register() {
               {/* Only show license upload when checkbox is checked */}
               {watchInterestedInSelling && (
                 <div className="space-y-4 p-4 border rounded-md bg-muted/30">
-                  <h3 className="font-medium">User Verification</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-medium">User Verification</h3>
+                    <TooltipProvider>
+                      <Tooltip open={tooltipOpen}>
+                        <TooltipTrigger asChild onClick={handleTooltipToggle} ref={tooltipTriggerRef}>
+                          <span className="cursor-help">
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent 
+                          className="w-[calc(100vw-32px)] max-w-[320px] sm:max-w-md p-3 sm:p-4 text-xs" 
+                          sideOffset={5} 
+                          align="center"
+                          side="bottom"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <p>
+                            To ensure compliance with Maltese law and EU regulations, Maltaguns requires users who wish to sell firearms to upload a valid firearms license. Verification documents are used solely to confirm your eligibility to participate in firearm-related transactions on our platform.
+                          </p>
+                          <p className="mt-2">
+                            If you choose to use the platform without selling firearms, you can do so. You may verify your license at a later stage if you eventually decide to list firearms for sale.
+                          </p>
+                          <p className="mt-2">
+                            We are committed to safeguarding your privacy and ensuring the secure handling of your data. Your documents will be strictly reviewed for verification purposes only and will not be shared with any third parties or made accessible to anyone else.
+                          </p>
+                          <p className="mt-2">
+                            All data processing is conducted in full compliance with the General Data Protection Regulation (GDPR) and relevant Maltese legislation.
+                          </p>
+                          <p className="mt-2">
+                            For any questions or concerns regarding data processing or your privacy, please contact us at support@maltaguns.com.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
 
                   {/* License Upload */}
                   <FormField
