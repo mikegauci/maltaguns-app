@@ -5,8 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search";
-import { Store, BookOpen, Menu, X } from "lucide-react";
+import { Store, BookOpen, Menu, X, User } from "lucide-react";
 import { useSupabase } from "./providers/supabase-provider";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
   const router = useRouter();
@@ -67,25 +73,47 @@ export function Header() {
               <Button variant="ghost">Contact</Button>
             </Link>
             
-            {session?.user ? (
-              <>
-                <Link href="/profile">
-                  <Button variant="ghost">Profile</Button>
-                </Link>
-                <Button variant="outline" onClick={handleLogout}>
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="ghost">Login</Button>
-                </Link>
-                <Link href="/register">
-                  <Button>Register</Button>
-                </Link>
-              </>
-            )}
+            {/* Profile Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className={`rounded-full h-10 w-10 flex items-center justify-center bg-background ${session?.user ? 'border-green-500 border-2' : 'border'}`}>
+                  <User className="h-6 w-6" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-40 p-2 mt-2">
+                {session?.user ? (
+                  <>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link href="/profile" className="w-full">
+                        Account
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="cursor-pointer text-destructive" 
+                      onClick={handleLogout}
+                    >
+                      Log Out
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link href="/login" className="w-full">
+                        Login
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-default">
+                      <span className="text-sm text-muted-foreground">Or</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link href="/register" className="w-full">
+                        Register
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </nav>
         </div>
       </header>
@@ -116,6 +144,7 @@ export function Header() {
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>Contact</Button>
             </Link>
             
+            {/* Mobile Profile Dropdown */}
             {session?.user ? (
               <>
                 <Link href="/profile">
