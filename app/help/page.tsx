@@ -25,12 +25,12 @@ export default function HelpPage() {
 
         <div className="max-w-4xl mx-auto">
           <Tabs defaultValue="getting-started" className="mb-12">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="getting-started">Getting Started</TabsTrigger>
-              <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
-              <TabsTrigger value="regulations">Regulations</TabsTrigger>
-              <TabsTrigger value="account">Account</TabsTrigger>
-              <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
+            <TabsList className="flex flex-col sm:grid sm:grid-cols-5 w-full h-full sm:h-auto gap-2 sm:gap-0">
+              <TabsTrigger className="w-full" value="getting-started">Getting Started</TabsTrigger>
+              <TabsTrigger className="w-full" value="marketplace">Marketplace</TabsTrigger>
+              <TabsTrigger className="w-full" value="regulations">Regulations</TabsTrigger>
+              <TabsTrigger className="w-full" value="account">Account</TabsTrigger>
+              <TabsTrigger className="w-full" value="troubleshooting">Troubleshooting</TabsTrigger>
             </TabsList>
             
             {/* Getting Started Section */}
