@@ -49,7 +49,6 @@ export function Header() {
             </Link>
             <Link href="/retailers">
               <Button variant="ghost">
-                <Store className="h-4 w-4 mr-2" />
                 Retailers
               </Button>
             </Link>
@@ -58,7 +57,6 @@ export function Header() {
             </Link>
             <Link href="/blog">
               <Button variant="ghost">
-                <BookOpen className="h-4 w-4 mr-2" />
                 Blog
               </Button>
             </Link>
@@ -100,7 +98,6 @@ export function Header() {
             </Link>
             <Link href="/retailers">
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>
-                <Store className="h-4 w-4 mr-2" />
                 Retailers
               </Button>
             </Link>
@@ -109,7 +106,6 @@ export function Header() {
             </Link>
             <Link href="/blog">
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>
-                <BookOpen className="h-4 w-4 mr-2" />
                 Blog
               </Button>
             </Link>
