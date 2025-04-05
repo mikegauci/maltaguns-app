@@ -102,9 +102,9 @@ export function Header() {
                         Login
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-default">
+                    <div className="px-2 py-1.5">
                       <span className="text-sm text-muted-foreground">Or</span>
-                    </DropdownMenuItem>
+                    </div>
                     <DropdownMenuItem className="cursor-pointer">
                       <Link href="/register" className="w-full">
                         Register
