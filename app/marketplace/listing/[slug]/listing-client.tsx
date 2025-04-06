@@ -1,63 +1,77 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Package, ArrowLeft, Mail, Phone, Lock, Pencil, Calendar, User, ChevronLeft, ChevronRight, Star, Store, CheckCircle } from "lucide-react"
-import Link from "next/link"
-import { format } from "date-fns"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useSupabase } from "@/components/providers/supabase-provider"
-import { FeatureCreditDialog } from "@/components/feature-credit-dialog"
-import { ReportListingDialog } from "@/components/report-listing-dialog"
-import { AutoFeatureHandler } from "../../auto-feature-handler"
-import { toast } from "sonner"
-import { LoadingState } from "@/components/ui/loading-state"
-import Image from "next/image"
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Package,
+  ArrowLeft,
+  Mail,
+  Phone,
+  Lock,
+  Pencil,
+  Calendar,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  Star,
+  Store,
+  CheckCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSupabase } from "@/components/providers/supabase-provider";
+import { FeatureCreditDialog } from "@/components/feature-credit-dialog";
+import { ReportListingDialog } from "@/components/report-listing-dialog";
+import { AutoFeatureHandler } from "../../auto-feature-handler";
+import { toast } from "sonner";
+import { LoadingState } from "@/components/ui/loading-state";
+import Image from "next/image";
 
 // Default image to use when no images are provided
-const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
+const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg";
 
 interface ListingDetails {
-  id: string
-  title: string
-  description: string
-  price: number
-  category: string
-  subcategory?: string
-  calibre?: string
-  type: 'firearms' | 'non_firearms'
-  thumbnail: string
-  seller_id: string
-  created_at: string
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  subcategory?: string;
+  calibre?: string;
+  type: "firearms" | "non_firearms";
+  thumbnail: string;
+  seller_id: string;
+  created_at: string;
   seller: {
-    username: string
-    email: string | null
-    phone: string | null
-    contact_preference?: "email" | "phone" | "both"
-  } | null
-  images: string[]
-  status: string
+    username: string;
+    email: string | null;
+    phone: string | null;
+    contact_preference?: "email" | "phone" | "both";
+  } | null;
+  images: string[];
+  status: string;
 }
 
 function slugify(text: string) {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/--+/g, "-");
 }
 
 function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-MT', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(price)
+  return new Intl.NumberFormat("en-MT", {
+    style: "currency",
+    currency: "EUR",
+  }).format(price);
 }
 
-function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
+function getCategoryLabel(category: string, type: "firearms" | "non_firearms") {
   const firearmsCategories: Record<string, string> = {
     airguns: "Airguns",
     ammunition: "Ammunition",
@@ -69,19 +83,19 @@ function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
     black_powder: "Black powder",
     replica_deactivated: "Replica or Deactivated",
     crossbow: "Crossbow",
-    schedule_1: "Schedule 1 (automatic)"
-  }
+    schedule_1: "Schedule 1 (automatic)",
+  };
 
   const nonFirearmsCategories: Record<string, string> = {
     airsoft: "Airsoft",
     reloading: "Reloading",
     militaria: "Militaria",
-    accessories: "Accessories"
-  }
+    accessories: "Accessories",
+  };
 
-  return type === 'firearms' 
+  return type === "firearms"
     ? firearmsCategories[category] || category
-    : nonFirearmsCategories[category] || category
+    : nonFirearmsCategories[category] || category;
 }
 
 function getSubcategoryLabel(category: string, subcategory: string): string {
@@ -129,44 +143,54 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
     return subcategory;
   }
 
-  const categorySubcategories = subcategories[category as keyof typeof subcategories];
-  return categorySubcategories[subcategory as keyof typeof categorySubcategories] || subcategory;
+  const categorySubcategories =
+    subcategories[category as keyof typeof subcategories];
+  return (
+    categorySubcategories[subcategory as keyof typeof categorySubcategories] ||
+    subcategory
+  );
 }
 
-export default function ListingClient({ listing }: { listing: ListingDetails }) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const { supabase, session } = useSupabase()
-  const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [isFeatured, setIsFeatured] = useState(false)
-  const [showFeatureDialog, setShowFeatureDialog] = useState(false)
-  const [isOwner, setIsOwner] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [userId, setUserId] = useState<string | null>(null)
-  const [isRetailer, setIsRetailer] = useState(false)
-  const [showReportDialog, setShowReportDialog] = useState(false)
-  const [sessionChecked, setSessionChecked] = useState(false)
+export default function ListingClient({
+  listing,
+}: {
+  listing: ListingDetails;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { supabase, session } = useSupabase();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [showFeatureDialog, setShowFeatureDialog] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isRetailer, setIsRetailer] = useState(false);
+  const [showReportDialog, setShowReportDialog] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [isSellerVerified, setIsSellerVerified] = useState(false);
 
   // Use the first image from the listing, or the default if none are available
-  const images = listing.images.length > 0 ? listing.images : [DEFAULT_LISTING_IMAGE]
+  const images =
+    listing.images.length > 0 ? listing.images : [DEFAULT_LISTING_IMAGE];
 
   // Function to check if the current user is the owner of the listing
   async function checkOwnership() {
     try {
       console.log("Checking session...");
-      
+
       if (session?.user) {
         console.log("Session found:", {
           userId: session.user.id,
-          listingSellerId: listing.seller_id
+          listingSellerId: listing.seller_id,
         });
-        
+
         setUserId(session.user.id);
         setIsOwner(session.user.id === listing.seller_id);
         setSessionChecked(true);
         return session;
       }
-      
+
       console.log("No session found");
       setUserId(null);
       setIsOwner(false);
@@ -209,23 +233,48 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
 
     try {
       const { data, error } = await supabase
-        .from('retailers')
-        .select('id')
-        .eq('owner_id', listing.seller_id)
+        .from("retailers")
+        .select("id")
+        .eq("owner_id", listing.seller_id)
         .single();
-      
+
       if (error) {
-        if (error.code !== 'PGRST116') { // PGRST116 is the error code for "no rows returned"
+        if (error.code !== "PGRST116") {
+          // PGRST116 is the error code for "no rows returned"
           console.error("Error checking retailer status:", error);
         }
         setIsRetailer(false);
         return;
       }
-      
+
       setIsRetailer(!!data);
     } catch (error) {
       console.error("Error checking retailer status:", error);
       setIsRetailer(false);
+    }
+  }
+
+  // Function to check if seller is verified
+  async function checkIfSellerVerified() {
+    if (!listing.seller_id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("is_seller")
+        .eq("id", listing.seller_id)
+        .single();
+
+      if (error) {
+        console.error("Error checking seller verification status:", error);
+        setIsSellerVerified(false);
+        return;
+      }
+
+      setIsSellerVerified(!!data?.is_seller);
+    } catch (error) {
+      console.error("Error checking seller verification status:", error);
+      setIsSellerVerified(false);
     }
   }
 
@@ -236,14 +285,14 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
     async function initializeData() {
       try {
         setIsLoading(true);
-        
+
         // First check session and ownership
         const currentSession = await checkOwnership();
         console.log("Initial session check complete:", {
           hasSession: !!currentSession,
-          userId: currentSession?.user?.id
+          userId: currentSession?.user?.id,
         });
-        
+
         // If we're not logged in, we can skip other checks
         if (!currentSession) {
           if (mounted) {
@@ -256,7 +305,8 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
         if (mounted) {
           await Promise.all([
             checkIfFeatured(),
-            checkIfRetailer()
+            checkIfRetailer(),
+            checkIfSellerVerified(),
           ]);
         }
 
@@ -286,7 +336,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
     return () => {
       mounted = false;
       clearTimeout(timeoutId);
-    }
+    };
   }, [session, listing.id, listing.seller_id]);
 
   // Remove duplicate auth state listener
@@ -296,35 +346,31 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
 
   // Render debug info in development
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log("Component state:", {
         userId,
         isOwner,
         isLoading,
         sessionChecked,
-        hasSellerInfo: !!listing.seller
+        hasSellerInfo: !!listing.seller,
       });
     }
   }, [userId, isOwner, isLoading, sessionChecked, listing.seller]);
 
   function handleFeatureListing() {
     if (!userId) {
-      router.push('/login');
+      router.push("/login");
       return;
     }
     setShowFeatureDialog(true);
   }
 
   function prevImage() {
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? images.length - 1 : prev - 1
-    );
+    setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
   }
 
   function nextImage() {
-    setCurrentImageIndex((prev) => 
-      prev === images.length - 1 ? 0 : prev + 1
-    );
+    setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   }
 
   if (isLoading && !sessionChecked) {
@@ -341,7 +387,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
       userId,
       sessionChecked,
       hasSellerInfo: !!listing.seller,
-      sellerInfo: listing.seller
+      sellerInfo: listing.seller,
     });
 
     // Show loading state while checking session
@@ -357,8 +403,20 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
     if (userId && listing.seller) {
       return (
         <>
+          <div className="flex items-center gap-2 mb-3">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">
+              {isRetailer ? "Enterprise" : "Individual"}
+            </span>
+          </div>
           <div className="flex items-center gap-2">
             <p className="font-semibold">{listing.seller.username}</p>
+            {isSellerVerified && (
+              <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                Verified Gun Seller
+              </Badge>
+            )}
             {isRetailer && (
               <div
                 onClick={() => router.push(`/retailers/${listing.seller_id}`)}
@@ -371,28 +429,35 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
               </div>
             )}
           </div>
-          {listing.seller.email && (listing.seller.contact_preference === "email" || listing.seller.contact_preference === "both" || !listing.seller.contact_preference) && (
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <a
-                href={`mailto:${listing.seller.email}`}
-                className="text-primary hover:underline"
-              >
-                {listing.seller.email}
-              </a>
-            </div>
-          )}
-          {listing.seller.phone && (listing.seller.contact_preference === "phone" || listing.seller.contact_preference === "both" || !listing.seller.contact_preference) && (
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <a
-                href={`tel:${listing.seller.phone}`}
-                className="text-primary hover:underline"
-              >
-                {listing.seller.phone}
-              </a>
-            </div>
-          )}
+
+          {listing.seller.email &&
+            (listing.seller.contact_preference === "email" ||
+              listing.seller.contact_preference === "both" ||
+              !listing.seller.contact_preference) && (
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <a
+                  href={`mailto:${listing.seller.email}`}
+                  className="text-primary hover:underline"
+                >
+                  {listing.seller.email}
+                </a>
+              </div>
+            )}
+          {listing.seller.phone &&
+            (listing.seller.contact_preference === "phone" ||
+              listing.seller.contact_preference === "both" ||
+              !listing.seller.contact_preference) && (
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <a
+                  href={`tel:${listing.seller.phone}`}
+                  className="text-primary hover:underline"
+                >
+                  {listing.seller.phone}
+                </a>
+              </div>
+            )}
           {!isOwner && <ReportListingDialog listingId={listing.id} />}
         </>
       );
@@ -423,7 +488,9 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                 <Button className="w-full">Register to Contact Seller</Button>
               </Link>
               <Link href="/login" className="w-full">
-                <Button variant="outline" className="w-full">Login</Button>
+                <Button variant="outline" className="w-full">
+                  Login
+                </Button>
               </Link>
             </div>
           </div>
@@ -438,7 +505,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
         <div className="mb-6 flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => router.push('/marketplace')}
+            onClick={() => router.push("/marketplace")}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
@@ -451,22 +518,23 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                 variant="outline"
                 size="sm"
                 className="ml-2"
-                onClick={() => router.push(`/marketplace/listing/${slugify(listing.title)}/edit`)}
+                onClick={() =>
+                  router.push(
+                    `/marketplace/listing/${slugify(listing.title)}/edit`
+                  )
+                }
               >
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
               </Button>
-              
+
               {!isFeatured && (
-                <Button
-                  variant="default"
-                  onClick={handleFeatureListing}
-                >
+                <Button variant="default" onClick={handleFeatureListing}>
                   <Star className="h-4 w-4 mr-2" />
                   Feature Listing
                 </Button>
               )}
-              
+
               {isFeatured && (
                 <Badge className="flex items-center px-3 py-1 bg-red-500 text-white hover:bg-red-600">
                   <Star className="h-4 w-4 mr-2" />
@@ -485,7 +553,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
             userId={userId}
             listingId={listing.id}
             onSuccess={() => {
-              setIsFeatured(true)
+              setIsFeatured(true);
             }}
           />
         )}
@@ -502,8 +570,13 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                     alt={listing.title}
                     className="object-contain w-full h-full max-h-[500px]"
                   />
-                  {listing.status === 'sold' && (
-                    <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
+                  {listing.status === "sold" && (
+                    <Badge
+                      variant="destructive"
+                      className="absolute top-2 right-2"
+                    >
+                      Sold
+                    </Badge>
                   )}
                   {images.length > 1 && (
                     <>
@@ -534,7 +607,9 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                 <div
                   key={index}
                   className={`aspect-video cursor-pointer overflow-hidden rounded-lg border-2 ${
-                    index === currentImageIndex ? 'border-primary' : 'border-transparent'
+                    index === currentImageIndex
+                      ? "border-primary"
+                      : "border-transparent"
                   }`}
                   onClick={() => setCurrentImageIndex(index)}
                 >
@@ -551,7 +626,7 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
             <Card>
               <CardContent className="p-6 space-y-6">
                 <div className="flex items-center gap-2 mb-4">
-                  {listing.type === 'firearms' ? (
+                  {listing.type === "firearms" ? (
                     <Image
                       src="/images/pistol-gun-icon.svg"
                       alt="Firearms"
@@ -563,7 +638,8 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                     <Package className="h-5 w-5 mr-2" />
                   )}
                   <span className="text-sm text-muted-foreground">
-                    {listing.type === 'firearms' ? 'Firearms' : 'Non-Firearms'} Listing
+                    {listing.type === "firearms" ? "Firearms" : "Non-Firearms"}{" "}
+                    Listing
                   </span>
                 </div>
 
@@ -573,13 +649,14 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
                   </Badge>
                   {listing.subcategory && (
                     <Badge variant="outline">
-                      {getSubcategoryLabel(listing.category, listing.subcategory)}
+                      {getSubcategoryLabel(
+                        listing.category,
+                        listing.subcategory
+                      )}
                     </Badge>
                   )}
-                  {listing.type === 'firearms' && listing.calibre && (
-                    <Badge variant="secondary">
-                      {listing.calibre}
-                    </Badge>
+                  {listing.type === "firearms" && listing.calibre && (
+                    <Badge variant="secondary">{listing.calibre}</Badge>
                   )}
                 </div>
 
@@ -592,13 +669,17 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
 
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
                   <Calendar className="h-4 w-4" />
-                  <span>Listed on {format(new Date(listing.created_at), 'PPP')}</span>
+                  <span>
+                    Listed on {format(new Date(listing.created_at), "PPP")}
+                  </span>
                 </div>
 
                 {/* Description Section */}
                 <div className="border-t pt-4">
                   <h2 className="text-xl font-semibold mb-3">Description</h2>
-                  <p className="text-gray-700 whitespace-pre-line">{listing.description}</p>
+                  <p className="text-gray-700 whitespace-pre-line">
+                    {listing.description}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -621,5 +702,5 @@ export default function ListingClient({ listing }: { listing: ListingDetails }) 
       {/* Add the AutoFeatureHandler with the specific listing ID */}
       <AutoFeatureHandler listingId={listing.id} />
     </div>
-  )
+  );
 }
