@@ -404,7 +404,11 @@ export default function ListingClient({
       return (
         <>
           <div className="flex items-center gap-2 mb-3">
-            <User className="h-4 w-4 text-muted-foreground" />
+            {isRetailer ? (
+              <Store className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <User className="h-4 w-4 text-muted-foreground" />
+            )}
             <span className="text-sm text-muted-foreground">
               {isRetailer ? "Enterprise" : "Individual"}
             </span>
@@ -416,17 +420,6 @@ export default function ListingClient({
                 <CheckCircle className="h-3 w-3" />
                 Verified Gun Seller
               </Badge>
-            )}
-            {isRetailer && (
-              <div
-                onClick={() => router.push(`/retailers/${listing.seller_id}`)}
-                className="cursor-pointer"
-              >
-                <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  Verified Retailer
-                </Badge>
-              </div>
             )}
           </div>
 
