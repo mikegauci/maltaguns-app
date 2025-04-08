@@ -76,9 +76,9 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 px-4">
+        <div className="flex items-center justify-between mb-6">
           <Button
             variant="ghost"
             onClick={() => router.push("/blog")}
@@ -100,11 +100,11 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
           )}
         </div>
 
-        <Card>
-          <CardContent className="p-6 space-y-6">
+        <div className="bg-card rounded-lg overflow-hidden">
+          <div className="p-6">
             {/* Featured Image */}
             {post.featured_image ? (
-              <div className="aspect-video relative overflow-hidden rounded-lg bg-muted">
+              <div className="aspect-video relative overflow-hidden rounded-lg bg-muted mb-6">
                 <img
                   src={post.featured_image}
                   alt={post.title}
@@ -114,8 +114,8 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
             ) : null}
 
             {/* Post Header */}
-            <div className="space-y-2">
-              <h1 className="text-4xl font-bold">{post.title}</h1>
+            <div className="space-y-2 mb-6">
+              <h1 className="text-3xl font-bold">{post.title}</h1>
               <div className="flex items-center gap-4 text-muted-foreground">
                 <span>By {post.author.username}</span>
                 <span>•</span>
@@ -128,8 +128,8 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
               className="prose prose-neutral dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   )
