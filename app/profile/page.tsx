@@ -1417,26 +1417,24 @@ export default function ProfilePage() {
                 <Card key={listing.id}>
                   <CardContent className="p-4">
                     {/* Top section with title and featured status */}
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
+                      <div className="flex items-start gap-2 w-full sm:w-auto">
                         {listing.type === "firearms" ? (
                           <Image
                             src="/images/pistol-gun-icon.svg"
                             alt="Firearms"
                             width={16}
                             height={16}
-                            className="mr-2"
+                            className="mr-2 mt-1"
                           />
                         ) : (
-                          <Package className="h-4 w-4 mr-2" />
+                          <Package className="h-4 w-4 mr-2 mt-1" />
                         )}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold text-lg">
-                              {listing.title}
-                            </h3>
+                        <div className="flex-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <h3 className="font-semibold text-lg">{listing.title}</h3>
                             {listing.is_featured && (
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2 mt-2 sm:mt-0">
                                 <Badge className="bg-red-500 text-white hover:bg-red-600 flex items-center">
                                   <Star className="h-3 w-3 mr-1" /> Featured
                                 </Badge>
@@ -1456,7 +1454,7 @@ export default function ProfilePage() {
                           </div>
                         </div>
                       </div>
-                      <Badge className="text-base px-3 py-1">
+                      <Badge className="text-base px-3 py-1 self-start sm:self-center">
                         {formatPrice(listing.price)}
                       </Badge>
                     </div>
@@ -1465,26 +1463,28 @@ export default function ProfilePage() {
                     <div className="mb-4">
                       <div className="text-sm text-muted-foreground flex flex-col gap-2">
                         {/* Listing expiration */}
-                        <div className="flex items-center gap-2">
-                          <Calendar
-                            className={`h-4 w-4 ${
-                              listing.is_near_expiration ? "text-red-500" : ""
-                            }`}
-                          />
-                          <span
-                            className={
-                              listing.is_near_expiration
-                                ? "text-red-500 font-medium"
-                                : ""
-                            }
-                          >
-                            Expires in {listing.days_until_expiration} days
-                            {listing.is_near_expiration && (
-                              <span className="ml-1 text-red-500">
-                                (Will be removed when expired)
-                              </span>
-                            )}
-                          </span>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                          <div className="flex items-center gap-2">
+                            <Calendar
+                              className={`h-4 w-4 ${
+                                listing.is_near_expiration ? "text-red-500" : ""
+                              }`}
+                            />
+                            <span
+                              className={
+                                listing.is_near_expiration
+                                  ? "text-red-500 font-medium"
+                                  : ""
+                              }
+                            >
+                              Expires in {listing.days_until_expiration} days
+                              {listing.is_near_expiration && (
+                                <span className="ml-1 text-red-500">
+                                  (Will be removed when expired)
+                                </span>
+                              )}
+                            </span>
+                          </div>
 
                           {/* Move the extend expiry button here */}
                           {(listing.days_until_expiration ?? 0) < 15 && (
@@ -1492,7 +1492,7 @@ export default function ProfilePage() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleRenewListing(listing.id)}
-                              className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200 ml-2"
+                              className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200 w-full sm:w-auto"
                             >
                               <RefreshCw className="h-4 w-4 mr-2" />
                               Relist for 30 days
@@ -1503,7 +1503,7 @@ export default function ProfilePage() {
                         {/* Featured status expiry */}
                         {listing.is_featured &&
                           (listing.featured_days_remaining ?? 0) > 0 && (
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                               <div
                                 className={`flex items-center gap-2 ${
                                   (listing.featured_days_remaining ?? 0) > 3
@@ -1522,16 +1522,15 @@ export default function ProfilePage() {
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger asChild>
-                                      <div>
+                                      <div className="w-full sm:w-auto">
                                         <Button
                                           variant="outline"
                                           size="sm"
                                           onClick={() => {
-                                            // Always set the listing to feature regardless of expiry date
                                             setListingToFeature(listing.id);
                                             setFeatureDialogOpen(true);
                                           }}
-                                          className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200"
+                                          className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 w-full sm:w-auto"
                                         >
                                           <Star className="h-4 w-4 mr-2" />
                                           Renew Featured
@@ -1551,7 +1550,7 @@ export default function ProfilePage() {
 
                     {/* Bottom section: Action buttons and status dropdown */}
                     <div className="mt-4">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         {/* Status dropdown */}
                         <select
                           value={listing.status}
@@ -1561,7 +1560,7 @@ export default function ProfilePage() {
                               e.target.value
                             )
                           }
-                          className="text-sm border rounded h-9 px-3"
+                          className="text-sm border rounded h-9 px-3 w-full sm:w-auto"
                         >
                           <option value="active">Active</option>
                           <option value="sold">Sold</option>
@@ -1569,49 +1568,49 @@ export default function ProfilePage() {
                         </select>
 
                         {/* Action buttons */}
-                        <Link
-                          href={`/marketplace/listing/${slugify(
-                            listing.title
-                          )}`}
-                        >
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                        </Link>
-
-                        {listing.status === "sold" ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled
-                            className="opacity-50 cursor-not-allowed"
-                          >
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit
-                          </Button>
-                        ) : (
+                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                           <Link
-                            href={`/marketplace/listing/${slugify(
-                              listing.title
-                            )}/edit`}
+                            href={`/marketplace/listing/${slugify(listing.title)}`}
+                            className="w-full sm:w-auto"
                           >
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Button>
+                          </Link>
+
+                          {listing.status === "sold" ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled
+                              className="opacity-50 cursor-not-allowed w-full sm:w-auto"
+                            >
                               <Pencil className="h-4 w-4 mr-2" />
                               Edit
                             </Button>
-                          </Link>
-                        )}
+                          ) : (
+                            <Link
+                              href={`/marketplace/listing/${slugify(listing.title)}/edit`}
+                              className="w-full sm:w-auto"
+                            >
+                              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button>
+                            </Link>
+                          )}
 
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => confirmDeleteListing(listing.id)}
-                          className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => confirmDeleteListing(listing.id)}
+                            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 w-full sm:w-auto"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
