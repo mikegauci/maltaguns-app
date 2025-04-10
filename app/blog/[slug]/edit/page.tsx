@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote } from "lucide-react"
+import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote, Loader2, Image as ImageIcon } from "lucide-react"
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
@@ -31,6 +31,29 @@ const blogPostSchema = z.object({
 
 type BlogPostForm = z.infer<typeof blogPostSchema>
 
+async function uploadContentImage(file: File, supabase: any, userId: string) {
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${userId}-content-${Date.now()}-${Math.random()}.${fileExt}`
+  const filePath = `blog/content/${fileName}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('blog')
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: false
+    })
+
+  if (uploadError) {
+    throw uploadError
+  }
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('blog')
+    .getPublicUrl(filePath)
+
+  return publicUrl
+}
+
 export default function EditBlogPost({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -38,6 +61,7 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [postId, setPostId] = useState<string | null>(null)
+  const [uploadingContentImage, setUploadingContentImage] = useState(false)
 
   const editor = useEditor({
     extensions: [
@@ -248,6 +272,76 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
     }
   }
 
+  const addImage = async () => {
+    try {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      
+      input.onchange = async (event) => {
+        const file = (event.target as HTMLInputElement).files?.[0]
+        if (!file) return
+        
+        if (file.size > MAX_FILE_SIZE) {
+          toast({
+            variant: "destructive",
+            title: "File too large",
+            description: "Image must be less than 5MB",
+          })
+          return
+        }
+
+        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+          toast({
+            variant: "destructive",
+            title: "Invalid file type",
+            description: "Please upload a valid image file (JPEG, PNG, or WebP)",
+          })
+          return
+        }
+
+        setUploadingContentImage(true)
+        
+        try {
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+          if (sessionError || !session?.user.id) {
+            throw new Error("Authentication error")
+          }
+          
+          const imageUrl = await uploadContentImage(file, supabase, session.user.id)
+          
+          if (editor) {
+            editor.chain().focus().setImage({ src: imageUrl, alt: file.name }).run()
+          }
+          
+          toast({
+            title: "Image inserted",
+            description: "Your image has been added to the post"
+          })
+        } catch (error) {
+          console.error("Content image upload error:", error)
+          toast({
+            variant: "destructive",
+            title: "Upload failed",
+            description: error instanceof Error ? error.message : "Failed to upload image"
+          })
+        } finally {
+          setUploadingContentImage(false)
+        }
+      }
+      
+      input.click()
+    } catch (error) {
+      console.error("Error adding image:", error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add image to post"
+      })
+    }
+  }
+
   async function onSubmit(data: BlogPostForm) {
     if (!postId) return
 
@@ -369,6 +463,19 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
         >
           <Quote className="h-4 w-4" />
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={addImage}
+          disabled={uploadingContentImage}
+        >
+          {uploadingContentImage ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
+        </Button>
       </div>
     )
   }
@@ -472,8 +579,20 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isLoading || uploadingImage}>
-                  {isLoading ? "Updating..." : "Update Post"}
+                <Button 
+                  type="submit" 
+                  className="w-full"
+                  disabled={isLoading || uploadingImage || uploadingContentImage}
+                >
+                  {isLoading || uploadingImage || uploadingContentImage ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {uploadingImage ? "Uploading Image..." : 
+                       uploadingContentImage ? "Adding Image..." : "Saving Changes..."}
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </form>
             </Form>
