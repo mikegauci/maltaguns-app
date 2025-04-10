@@ -11,8 +11,8 @@ const AUTHORIZED_ADMIN_EMAILS = [
 const PROTECTED_ROUTES = [
   '/profile',
   '/marketplace/create',
-  '/events',
   '/events/create',
+  '/events/edit',
   '/retailers/create',
   '/blog/create'
 ]
