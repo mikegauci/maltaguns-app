@@ -125,7 +125,7 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
 
             {/* Post Content */}
             <div 
-              className="prose prose-neutral dark:prose-invert max-w-none"
+              className="prose prose-neutral dark:prose-invert max-w-none prose-a:text-red-600 prose-a:hover:text-red-800"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
           </div>

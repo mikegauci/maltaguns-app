@@ -9,15 +9,26 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote, Loader2, Image as ImageIcon } from "lucide-react"
+import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote, Loader2, Image as ImageIcon, Link as LinkIcon } from "lucide-react"
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import slug from 'slug'
 import { Database } from "@/lib/database.types"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 
 // List of authorized user IDs
 const AUTHORIZED_BLOG_AUTHORS = [
@@ -68,6 +79,9 @@ export default function CreateBlogPost() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false)
+  const [linkUrl, setLinkUrl] = useState("")
+  const [openInNewTab, setOpenInNewTab] = useState(true)
 
   useEffect(() => {
     let mounted = true
@@ -319,6 +333,54 @@ export default function CreateBlogPost() {
     }
   }
 
+  // Add this function to set a link
+  const setLink = () => {
+    if (!editor) return
+
+    // Check if text is selected
+    if (!editor.state.selection.empty) {
+      setLinkDialogOpen(true)
+    } else {
+      toast({
+        variant: "destructive",
+        title: "No text selected",
+        description: "Please select some text to add a link."
+      })
+    }
+  }
+
+  // Add this function to apply the link
+  const applyLink = () => {
+    if (!editor || !linkUrl) return
+
+    // Set link with appropriate target attribute
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange('link')
+      .setLink({ 
+        href: linkUrl, 
+        target: openInNewTab ? '_blank' : null
+      })
+      .run()
+
+    // Reset state
+    setLinkUrl("")
+    setLinkDialogOpen(false)
+  }
+
+  // Add this function to remove links
+  const removeLink = () => {
+    if (!editor) return
+    
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange('link')
+      .unsetLink()
+      .run()
+  }
+
   async function onSubmit(data: BlogPostForm) {
     try {
       setIsLoading(true)
@@ -452,6 +514,27 @@ export default function CreateBlogPost() {
             <ImageIcon className="h-4 w-4" />
           )}
         </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={setLink}
+          className={editor.isActive('link') ? 'bg-accent' : ''}
+        >
+          <LinkIcon className="h-4 w-4" />
+        </Button>
+        {editor.isActive('link') && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={removeLink}
+            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+          >
+            <LinkIcon className="h-4 w-4" />
+            Remove
+          </Button>
+        )}
       </div>
     )
   }
@@ -579,6 +662,50 @@ export default function CreateBlogPost() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add Link Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Link</DialogTitle>
+            <DialogDescription>
+              Add a URL to create a hyperlink from the selected text.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="url">URL</Label>
+              <Input
+                id="url"
+                placeholder="https://example.com"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="new-tab" 
+                checked={openInNewTab} 
+                onCheckedChange={(checked) => setOpenInNewTab(checked === true)}
+              />
+              <label
+                htmlFor="new-tab"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Open in new tab
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="button" onClick={applyLink} disabled={!linkUrl}>
+              Apply Link
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

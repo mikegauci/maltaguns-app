@@ -169,7 +169,7 @@ export default function RetailerBlogPostPage({ params }: { params: { slug: strin
               <h1 className="text-3xl font-bold mb-6">{post.title}</h1>
 
               <div 
-                className="prose max-w-none"
+                className="prose max-w-none prose-a:text-red-600 prose-a:hover:text-red-800"
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
             </div>

@@ -80,3 +80,10 @@
 .ProseMirror blockquote {
   @apply border-l-4 border-primary pl-4 my-4 italic;
 }
+
+/* Add custom styling for links in both editor and rendered content */
+.ProseMirror a,
+.prose a {
+  @apply text-red-600 hover:text-red-800 font-medium;
+  text-decoration: underline;
+}
