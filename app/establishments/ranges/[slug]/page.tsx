@@ -1,9 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { notFound } from "next/navigation";
-import RangeClient from "./range-client";
 import { headers } from "next/headers";
-
+import RangeClient from "./range-client";
 interface Range {
   id: string;
   business_name: string;

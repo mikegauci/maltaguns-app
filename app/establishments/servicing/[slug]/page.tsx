@@ -1,9 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { notFound } from "next/navigation";
-import ServicingClient from "./servicing-client";
 import { headers } from "next/headers";
-
+import ServicingClient from "./servicing-client";
 interface Servicing {
   id: string;
   business_name: string;

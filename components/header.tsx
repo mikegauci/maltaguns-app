@@ -101,9 +101,7 @@ export function Header() {
             <Link href="/help">
               <Button variant="ghost">Help</Button>
             </Link>
-            <Link href="/contact">
-              <Button variant="ghost">Contact</Button>
-            </Link>
+
             
             {/* Profile Dropdown */}
             <DropdownMenu>

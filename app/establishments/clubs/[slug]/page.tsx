@@ -1,8 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { notFound } from "next/navigation";
-import ClubClient from "./club-client";
 import { headers } from "next/headers";
+import ClubClient from "./club-client";
+
 
 interface Club {
   id: string;
