@@ -9,7 +9,7 @@ interface BlogPost {
   title: string
   content: string
   slug: string
-  featured_image: string
+  featured_image: string | null
   author_id: string
   published: boolean
   created_at: string
@@ -20,8 +20,28 @@ interface BlogPost {
     id: string
     business_name: string
     slug: string
-    logo_url: string
+    logo_url: string | null
   }
+}
+
+type SupabaseResponse = {
+  id: string
+  title: string
+  content: string
+  slug: string
+  featured_image: string | null
+  published: boolean
+  created_at: string
+  author_id: string
+  author: {
+    username: string
+  }
+  retailer: {
+    id: string
+    business_name: string
+    slug: string
+    logo_url: string | null
+  }[] | null
 }
 
 // Force dynamic rendering (disable static export)
@@ -43,7 +63,7 @@ export default async function BlogPost({ params }: { params: { slug: string } })
       published,
       created_at,
       author_id,
-      author:profiles(username),
+      author:profiles!blog_posts_author_id_fkey(username),
       retailer:stores(id, business_name, slug, logo_url)
     `)
     .eq("slug", params.slug)
@@ -64,8 +84,8 @@ export default async function BlogPost({ params }: { params: { slug: string } })
     published: post.published,
     created_at: post.created_at,
     author_id: post.author_id,
-    author: post.author?.[0] || { username: 'Unknown' },
-    retailer: post.retailer?.[0] || undefined
+    author: { username: (post as unknown as SupabaseResponse).author?.username || 'Unknown' },
+    retailer: (post as unknown as SupabaseResponse).retailer?.[0] || undefined
   }
 
   return <BlogPostClient post={blogPost} />
