@@ -113,8 +113,8 @@ export function Header() {
             {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className={`rounded-full h-10 w-10 flex items-center justify-center bg-background focus:outline-none ${session?.user ? 'border-green-500 border-2 focus:border-green-500' : 'border'}`}>
-                  <User className="h-6 w-6" />
+                <button className={`aspect-square rounded-full w-10 flex items-center justify-center bg-background focus:outline-none p-2 ${session?.user ? 'border-green-500 border-2 focus:border-green-500' : 'border'}`}>
+                  <User className="h-5 w-5" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-40 p-2 mt-2">
