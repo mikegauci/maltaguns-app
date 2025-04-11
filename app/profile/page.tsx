@@ -1888,13 +1888,13 @@ export default function ProfilePage() {
         ) : (
           <Card className="w-full mb-8">
             <CardHeader>
-              <CardTitle>Create a Store Profile</CardTitle>
+              <CardTitle>Create Establishment</CardTitle>
               <CardDescription>
                 Add your firearms business to the MaltaGuns directory
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Link href="/establishments/stores/create">
+              <Link href="/establishments/create">
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
                   Add Your Business

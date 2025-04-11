@@ -74,14 +74,14 @@ export default function RangesPage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">Shooting Ranges</h1>
           <p className="text-muted-foreground">
-            Discover shooting ranges and practice facilities across Malta
+            Find shooting ranges and facilities across Malta
           </p>
         </div>
 
         {/* Actions - Only show if authorized */}
         {isAuthorized && (
           <div className="flex justify-end">
-            <Link href="/establishments/ranges/create">
+            <Link href="/establishments/create">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your Range
@@ -96,7 +96,7 @@ export default function RangesPage() {
             <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">No shooting ranges listed yet.</p>
           </Card>
-        ) :
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ranges.map((range) => (
               <Link key={range.id} href={`/establishments/ranges/${range.slug || range.id}`}>
@@ -154,7 +154,7 @@ export default function RangesPage() {
               </Link>
             ))}
           </div>
-        }
+        )}
       </div>
     </div>
   )

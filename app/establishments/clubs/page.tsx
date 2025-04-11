@@ -9,7 +9,7 @@ import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { LoadingState } from "@/components/ui/loading-state"
 
-// List of authorized user IDs - you can update this to include specific users authorized to create clubs
+// List of authorized user IDs
 const AUTHORIZED_CLUB_CREATORS = [
   'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
   '1a95bbf9-3bca-414d-a99f-1f9c72c15588'
@@ -74,14 +74,14 @@ export default function ClubsPage() {
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">Shooting Clubs</h1>
           <p className="text-muted-foreground">
-            Find shooting clubs and associations across Malta
+            Find shooting clubs and ranges across Malta
           </p>
         </div>
 
         {/* Actions - Only show if authorized */}
         {isAuthorized && (
           <div className="flex justify-end">
-            <Link href="/establishments/clubs/create">
+            <Link href="/establishments/create">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your Club
@@ -96,7 +96,7 @@ export default function ClubsPage() {
             <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">No clubs listed yet.</p>
           </Card>
-        ) :
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {clubs.map((club) => (
               <Link key={club.id} href={`/establishments/clubs/${club.slug || club.id}`}>
@@ -154,7 +154,7 @@ export default function ClubsPage() {
               </Link>
             ))}
           </div>
-        }
+        )}
       </div>
     </div>
   )
