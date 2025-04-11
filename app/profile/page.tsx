@@ -1654,13 +1654,17 @@ export default function ProfilePage() {
                             {post.published ? "Published" : "Draft"}
                           </Badge>
                           <div className="flex gap-2">
-                            <Link href={`/blog/${post.slug}`}>
+                            <Link
+                              href={`/blog/${post.slug}`}
+                            >
                               <Button variant="outline" size="sm">
                                 <Eye className="h-4 w-4 mr-2" />
                                 View
                               </Button>
                             </Link>
-                            <Link href={`/blog/${post.slug}/edit`}>
+                            <Link
+                              href={`/blog/${post.slug}/edit`}
+                            >
                               <Button variant="outline" size="sm">
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
@@ -1840,9 +1844,7 @@ export default function ProfilePage() {
                           </Button>
                         </Link>
                         <Link
-                          href={`/retailers/${
-                            retailerItem.slug || retailerItem.id
-                          }/blog/create`}
+                          href={`/blog/create?retailer_id=${retailerItem.id}`}
                         >
                           <Button variant="outline" size="sm">
                             <BookOpen className="h-4 w-4 mr-2" />
@@ -1910,24 +1912,15 @@ export default function ProfilePage() {
                                   const postRetailer = retailers.find(
                                     (r) => r.id === post.retailer_id
                                   );
-                                  const retailerPath = postRetailer
-                                    ? `/retailers/${
-                                        postRetailer.slug || postRetailer.id
-                                      }`
-                                    : "/retailers";
                                   return (
                                     <>
-                                      <Link
-                                        href={`${retailerPath}/blog/${post.slug}`}
-                                      >
+                                      <Link href={`/blog/${post.slug}`}>
                                         <Button variant="outline" size="sm">
                                           <Eye className="h-4 w-4 mr-2" />
                                           View
                                         </Button>
                                       </Link>
-                                      <Link
-                                        href={`${retailerPath}/blog/${post.slug}/edit`}
-                                      >
+                                      <Link href={`/blog/${post.slug}/edit`}>
                                         <Button variant="outline" size="sm">
                                           <Pencil className="h-4 w-4 mr-2" />
                                           Edit

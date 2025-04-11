@@ -16,39 +16,52 @@ interface BlogPost {
   author: {
     username: string
   }
+  retailer_id: string
+  retailer?: {
+    id: string
+    business_name: string
+    slug: string
+    logo_url: string
+  }
 }
 
 // Force dynamic rendering (disable static export)
 export const dynamic = "force-dynamic"
 export const dynamicParams = true
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
-  try {
-    const supabase = createServerComponentClient<Database>({ cookies })
+export default async function BlogPost({ params }: { params: { slug: string } }) {
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient<Database>({ cookies: () => cookieStore })
 
-    const { data: post, error } = await supabase
-      .from("blog_posts")
-      .select(`
-        *,
-        author:profiles(username)
-      `)
-      .eq("slug", params.slug)
-      .eq("published", true)
-      .single()
+  const { data: post, error } = await supabase
+    .from("blog_posts")
+    .select(`
+      *,
+      author:profiles(username),
+      retailer:retailers(id, business_name, slug, logo_url)
+    `)
+    .eq("slug", params.slug)
+    .eq("published", true)
+    .single()
 
-    if (error) {
-      console.error('Error fetching blog post:', error)
-      notFound()
-    }
-
-    if (!post) {
-      console.log('Blog post not found:', params.slug)
-      notFound()
-    }
-
-    return <BlogPostClient post={post as BlogPost} />
-  } catch (error) {
-    console.error('Error in BlogPostPage:', error)
+  if (error || !post) {
     notFound()
   }
+  
+  // Convert the post to the expected interface
+  const blogPost: BlogPost = {
+    id: post.id,
+    title: post.title,
+    content: post.content,
+    slug: post.slug,
+    featured_image: post.featured_image,
+    published: post.published,
+    created_at: post.created_at,
+    author_id: post.author_id,
+    retailer_id: post.retailer_id,
+    author: post.author,
+    retailer: post.retailer || undefined
+  }
+
+  return <BlogPostClient post={blogPost} />
 }

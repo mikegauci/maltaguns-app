@@ -76,12 +76,23 @@ export default function CreateBlogPost() {
   const { toast } = useToast()
   const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
-  const [uploadingImage, setUploadingImage] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [featuredImageUrl, setFeaturedImageUrl] = useState("")
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState("")
   const [openInNewTab, setOpenInNewTab] = useState(true)
+  const [retailerId, setRetailerId] = useState<string | null>(null)
+
+  // Get retailer_id from URL if present
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get('retailer_id')
+    if (id) {
+      setRetailerId(id)
+    }
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -402,16 +413,20 @@ export default function CreateBlogPost() {
 
       const postSlug = slug(data.title)
 
+      // Add retailer_id if present
+      const postData = {
+        author_id: session.user.id,
+        title: data.title,
+        slug: postSlug,
+        content: data.content,
+        published: true,
+        featured_image: data.featuredImage || null,
+        retailer_id: retailerId
+      }
+
       const { error } = await supabase
         .from("blog_posts")
-        .insert({
-          author_id: session.user.id,
-          title: data.title,
-          slug: postSlug,
-          content: data.content,
-          published: true,
-          featured_image: data.featuredImage || null
-        })
+        .insert(postData)
 
       if (error) throw error
 

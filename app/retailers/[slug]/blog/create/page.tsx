@@ -342,9 +342,9 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
         featured_image = publicUrl
       }
       
-      // Create blog post with author_id
+      // Create blog post with author_id in blog_posts table
       const { data: post, error: postError } = await supabase
-        .from('retailer_blog_posts')
+        .from('blog_posts')
         .insert({
           title: title,
           content: editor.getHTML(),
@@ -366,7 +366,7 @@ export default function CreateRetailerBlogPost({ params }: { params: { slug: str
       })
       
       // Keep isLoading true during redirection
-      router.push(`/retailers/${params.slug}`)
+      router.push(`/blog/${slug}`)
     } catch (error) {
       console.error("Error creating blog post:", error)
       toast({

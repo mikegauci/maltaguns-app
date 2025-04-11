@@ -213,6 +213,82 @@ export interface Database {
           created_at?: string;
         };
       };
+      blog_posts: {
+        Row: {
+          id: string;
+          author_id: string;
+          title: string;
+          slug: string;
+          content: string;
+          featured_image: string | null;
+          published: boolean;
+          created_at: string;
+          updated_at: string;
+          retailer_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          author_id: string;
+          title: string;
+          slug: string;
+          content: string;
+          featured_image?: string | null;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          retailer_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          author_id?: string;
+          title?: string;
+          slug?: string;
+          content?: string;
+          featured_image?: string | null;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          retailer_id?: string | null;
+        };
+      };
+      retailer_blog_posts: {
+        Row: {
+          id: string;
+          retailer_id: string;
+          author_id: string;
+          title: string;
+          slug: string;
+          content: string;
+          featured_image: string | null;
+          published: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          retailer_id: string;
+          author_id: string;
+          title: string;
+          slug: string;
+          content: string;
+          featured_image?: string | null;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          retailer_id?: string;
+          author_id?: string;
+          title?: string;
+          slug?: string;
+          content?: string;
+          featured_image?: string | null;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {};
     Functions: {};

@@ -28,6 +28,12 @@ interface BlogPost {
   author: {
     username: string
   }
+  retailer?: {
+    id: string
+    business_name: string
+    slug: string
+    logo_url: string | null
+  }
 }
 
 function truncateText(text: string, words: number) {
@@ -63,12 +69,13 @@ export default function BlogPage() {
           setIsAuthorized(AUTHORIZED_BLOG_AUTHORS.includes(session.user.id))
         }
 
-        // Fetch blog posts
+        // Fetch blog posts with author data and retailer data
         const { data: postsData, error: postsError } = await supabase
           .from('blog_posts')
           .select(`
             *,
-            author:profiles(username)
+            author:profiles(username),
+            retailer:retailers(id, business_name, slug, logo_url)
           `)
           .eq('published', true)
           .order('created_at', { ascending: false })
@@ -169,6 +176,11 @@ export default function BlogPage() {
                   <CardContent className="p-6">
                     <div className="text-sm text-muted-foreground mb-2">
                       {format(new Date(post.created_at), 'MMM d, yyyy')} • By {post.author.username}
+                      {post.retailer && (
+                        <> • From <Link href={`/retailers/${post.retailer.slug}`} className="hover:underline">
+                          {post.retailer.business_name}
+                        </Link></>
+                      )}
                     </div>
                     <h2 className="text-xl font-semibold mb-2 line-clamp-2">
                       {post.title}

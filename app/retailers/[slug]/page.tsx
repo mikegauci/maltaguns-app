@@ -72,10 +72,10 @@ export default async function RetailerPage({ params }: { params: { slug: string 
     console.error("Error fetching listings:", listingsError);
   }
 
-  // First try to fetch blog posts with regular client
+  // Fetch blog posts from blog_posts table with retailer_id filter
   let { data: blogPosts, error: blogPostsError } = await supabase
-    .from("retailer_blog_posts")
-    .select("*")
+    .from("blog_posts")
+    .select("*, author:profiles(username)")
     .eq("retailer_id", retailer.id)
     .eq("published", true)
     .order("created_at", { ascending: false });
@@ -84,8 +84,8 @@ export default async function RetailerPage({ params }: { params: { slug: string 
   if (blogPostsError || !blogPosts || blogPosts.length === 0) {
     try {
       const { data: adminBlogPosts, error: adminError } = await supabaseAdmin
-        .from("retailer_blog_posts")
-        .select("*")
+        .from("blog_posts")
+        .select("*, author:profiles(username)")
         .eq("retailer_id", retailer.id)
         .eq("published", true)
         .order("created_at", { ascending: false });
@@ -101,45 +101,12 @@ export default async function RetailerPage({ params }: { params: { slug: string 
 
   // Process blog posts to ensure they have the correct structure
   const processedBlogPosts = (blogPosts || []).map(post => {
-    // Ensure the author property has the correct structure
+    // Ensure the author property exists and has the correct structure
     return {
       ...post,
-      author: { username: "Author" }
+      author: post.author || { username: "Author" }
     };
   });
-
-  // If no blog posts were found, try to create a test post directly
-  if (processedBlogPosts.length === 0) {
-    try {
-      // Create a test blog post without relying on author_id
-      const testPost = {
-        title: 'Test Blog Post ' + new Date().toISOString(),
-        slug: 'test-blog-post-' + Date.now(),
-        content: '<p>This is a test blog post created directly from the retailer page.</p>',
-        featured_image: null,
-        published: true,
-        author_id: null, // Set to null to avoid foreign key issues
-        retailer_id: retailer.id,
-        created_at: new Date().toISOString()
-      };
-      
-      // Insert the test post
-      const { data: insertedPost, error: insertError } = await supabase
-        .from('retailer_blog_posts')
-        .insert(testPost)
-        .select();
-      
-      if (!insertError && insertedPost && insertedPost.length > 0) {
-        const post = insertedPost[0];
-        processedBlogPosts.push({
-          ...post,
-          author: { username: 'Author' }
-        });
-      }
-    } catch (error) {
-      console.error("Error creating test blog post:", error);
-    }
-  }
 
   const retailerDetails: RetailerDetails = {
     ...retailer,

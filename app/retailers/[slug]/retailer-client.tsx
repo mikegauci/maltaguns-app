@@ -98,10 +98,10 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
     if (!hasBlogPosts && !loading) {
       const fetchBlogPosts = async () => {
         try {
-          // Fetch blog posts without the join to profiles
+          // Fetch blog posts from blog_posts table with retailer_id filter
           const { data, error } = await supabase
-            .from("retailer_blog_posts")
-            .select("*")
+            .from("blog_posts")
+            .select("*, author:profiles(username)")
             .eq("retailer_id", retailer.id)
             .eq("published", true)
             .order("created_at", { ascending: false });
@@ -109,13 +109,8 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
           if (error) {
             console.error("Error fetching blog posts from client:", error);
           } else if (data && data.length > 0) {
-            // Add default author information
-            const postsWithAuthor = data.map(post => ({
-              ...post,
-              author: { username: "Author" }
-            }));
-            
-            setBlogPosts(postsWithAuthor);
+            // Set the blog posts
+            setBlogPosts(data);
           }
         } catch (error) {
           console.error("Error in client-side fetch:", error);
@@ -141,7 +136,7 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
           
           {isOwner && (
             <div className="flex items-center gap-2">
-              <Link href={`/retailers/${retailer.slug}/blog/create`}>
+              <Link href={`/blog/create?retailer_id=${retailer.id}`}>
                 <Button className="bg-primary">
                   <Pencil className="h-4 w-4 mr-2" />
                   Create New Post
@@ -261,20 +256,29 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Latest Articles</h2>
-            {isOwner && (
-              <Link href={`/retailers/${retailer.slug}/blog/create`}>
-                <Button>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Create New Post
+            <div className="flex items-center gap-2">
+              {/* Write Post button with black background */}
+              <Link href={`/blog/create?retailer_id=${retailer.id}`}>
+                <Button className="bg-black hover:bg-gray-800 text-white">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Write Post
                 </Button>
               </Link>
-            )}
+              {isOwner && (
+                <Link href={`/blog/create?retailer_id=${retailer.id}`}>
+                  <Button>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Create New Post
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
           
           {blogPosts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {blogPosts.map((post) => (
-                <Link key={post.id} href={`/retailers/${retailer.slug}/blog/${post.slug}`}>
+                <Link key={post.id} href={`/blog/${post.slug}`}>
                   <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden">
                     <div className="aspect-video relative overflow-hidden bg-muted">
                       {post.featured_image ? (
