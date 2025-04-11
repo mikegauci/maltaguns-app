@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search";
 import { Store, BookOpen, Menu, X, User, ChevronDown, Users, Wrench, MapPin, Boxes } from "lucide-react";
@@ -16,8 +16,15 @@ import {
 
 export function Header() {
   const router = useRouter();
+  const pathname = usePathname();
   const { supabase, session } = useSupabase();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [establishmentsOpen, setEstablishmentsOpen] = useState(false);
+
+  // Close establishments submenu when route changes
+  useEffect(() => {
+    setEstablishmentsOpen(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -30,7 +37,7 @@ export function Header() {
       <header className="border-b">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/maltaguns.png" alt="MaltaGuns Logo" className="h-8 w-auto" />
+            <img src="/maltaguns.png" alt="MaltaGuns Logo" className="h-8 w-auto object-contain" />
           </Link>
 
           {/* Mobile search bar - visible only on mobile */}
@@ -47,7 +54,7 @@ export function Header() {
 
           <nav className="hidden md:flex items-center gap-4">
             {/* Desktop search bar - now before Marketplace */}
-            <div className="hidden md:block">
+            <div className="hidden md:block w-[400px] w-full">
               <SearchBar disableShortcut={false} />
             </div>
             <Link href="/marketplace">
@@ -156,37 +163,52 @@ export function Header() {
             </Link>
             
             {/* Mobile Establishments Section */}
-            <div className="border-l-2 border-muted pl-2">
-              <Button variant="ghost" className="w-full justify-start font-semibold">
+            <div>
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start"
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (pathname === '/establishments' && establishmentsOpen) {
+                    router.push('/establishments');
+                    setMenuOpen(false);
+                    setEstablishmentsOpen(false);
+                  } else {
+                    setEstablishmentsOpen(!establishmentsOpen);
+                  }
+                }}
+              >
                 Establishments
               </Button>
-              <div className="pl-4 flex flex-col gap-2 mt-1">
-                <Link href="/establishments">
-                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
-                    <Boxes className="h-4 w-4 mr-2" /> All
-                  </Button>
-                </Link>
-                <Link href="/establishments/stores">
-                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
-                    <Store className="h-4 w-4 mr-2" /> Stores
-                  </Button>
-                </Link>
-                <Link href="/establishments/clubs">
-                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
-                    <Users className="h-4 w-4 mr-2" /> Clubs
-                  </Button>
-                </Link>
-                <Link href="/establishments/servicing">
-                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
-                    <Wrench className="h-4 w-4 mr-2" /> Servicing
-                  </Button>
-                </Link>
-                <Link href="/establishments/ranges">
-                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
-                    <MapPin className="h-4 w-4 mr-2" /> Ranges
-                  </Button>
-                </Link>
-              </div>
+              {establishmentsOpen && (
+                <div className="pl-4 flex flex-col gap-2 mt-1">
+                  <Link href="/establishments">
+                    <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                      <Boxes className="h-4 w-4 mr-2" /> All
+                    </Button>
+                  </Link>
+                  <Link href="/establishments/stores">
+                    <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                      <Store className="h-4 w-4 mr-2" /> Stores
+                    </Button>
+                  </Link>
+                  <Link href="/establishments/clubs">
+                    <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                      <Users className="h-4 w-4 mr-2" /> Clubs
+                    </Button>
+                  </Link>
+                  <Link href="/establishments/servicing">
+                    <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                      <Wrench className="h-4 w-4 mr-2" /> Servicing
+                    </Button>
+                  </Link>
+                  <Link href="/establishments/ranges">
+                    <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                      <MapPin className="h-4 w-4 mr-2" /> Ranges
+                    </Button>
+                  </Link>
+                </div>
+              )}
             </div>
             
             <Link href="/events">

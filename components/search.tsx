@@ -131,11 +131,12 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
       <PopoverTrigger asChild>
         <Button 
           variant="outline" 
-          className="w-full md:w-auto flex items-center gap-2"
+          className="w-full flex items-center gap-2"
           onClick={() => setIsOpen(true)}
         >
           <SearchIcon className="h-4 w-4" />
-          <span>Search...</span>
+          <span className="md:hidden">Search...</span>
+          <span className="hidden md:inline">Search Listings...</span>
           {!disableShortcut && (
             <span className="text-xs text-muted-foreground ml-auto hidden md:inline">
               <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
