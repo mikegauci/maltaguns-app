@@ -77,6 +77,7 @@ import {
   Alert,
   AlertDescription,
 } from "@/components/ui/alert";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -206,6 +207,7 @@ export default function ProfilePage() {
   const [showCreditDialog, setShowCreditDialog] = useState(false);
   const [showEventCreditDialog, setShowEventCreditDialog] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
+  const [establishmentInfoOpen, setEstablishmentInfoOpen] = useState(false);
 
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
@@ -2296,8 +2298,16 @@ export default function ProfilePage() {
           <Card className="w-full mb-8">
             <CardHeader>
               <CardTitle>Create Establishment</CardTitle>
-              <CardDescription>
-                Add your firearms business to the MaltaGuns directory
+              <CardDescription className="flex items-center gap-2">
+                Create your business profile to connect with the local shooting community{" "}
+                <Button 
+                  variant="outline" 
+                  className="h-7 rounded-full text-xs font-normal flex items-center gap-1.5 border-muted-foreground/20" 
+                  onClick={() => setEstablishmentInfoOpen(true)}
+                >
+                  <Info className="h-3.5 w-3.5" />
+                  Read More
+                </Button>
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -2310,6 +2320,34 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         )}
+
+        {/* Establishment Info Dialog */}
+        <Dialog open={establishmentInfoOpen} onOpenChange={setEstablishmentInfoOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Business Opportunities on MaltaGuns</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4 text-sm">
+              <p>
+                Maltaguns provides businesses in Malta with a unique opportunity to connect with the local shooting and firearms community. Whether you are a licensed gun dealer, gunsmith, airsoft equipment repair specialist, wood stock restoration expert, engineering service provider, or gun safe importer, Maltaguns offers the ideal platform to enhance your visibility and reach your target audience.
+              </p>
+              <p>
+                By creating a retailer profile, your business will be prominently featured on our Retailers Page, allowing you to list your store and promote your services effectively. Additionally, retailers can maintain a dedicated blog to share updates, news, and insights directly with the community.
+              </p>
+              <p>
+                As a registered gun store, you will also benefit from Unlimited listings in the Firearms category while also gaining access to the restricted Ammunition and Powders category.
+              </p>
+              <p>
+                To take advantage of this opportunity and advertise your business on Maltaguns, please send an email to info@maltaguns.com to learn more and start building your profile today.
+              </p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEstablishmentInfoOpen(false)}>
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Add the delete confirmation dialog */}
