@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search";
-import { Store, BookOpen, Menu, X, User } from "lucide-react";
+import { Store, BookOpen, Menu, X, User, ChevronDown, Users, Wrench, MapPin } from "lucide-react";
 import { useSupabase } from "./providers/supabase-provider";
 import {
   DropdownMenu,
@@ -53,11 +53,38 @@ export function Header() {
             <Link href="/marketplace">
               <Button variant="ghost">Marketplace</Button>
             </Link>
-            <Link href="/establishments/stores">
-              <Button variant="ghost">
-                Stores
-              </Button>
-            </Link>
+            
+            {/* Establishments Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-1">
+                  Establishments <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-48 p-2 mt-2">
+                <DropdownMenuItem className="cursor-pointer">
+                  <Link href="/establishments/stores" className="w-full flex items-center">
+                    <Store className="h-4 w-4 mr-2" /> Stores
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <Link href="/establishments/clubs" className="w-full flex items-center">
+                    <Users className="h-4 w-4 mr-2" /> Clubs
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <Link href="/establishments/servicing" className="w-full flex items-center">
+                    <Wrench className="h-4 w-4 mr-2" /> Servicing
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="cursor-pointer">
+                  <Link href="/establishments/ranges" className="w-full flex items-center">
+                    <MapPin className="h-4 w-4 mr-2" /> Ranges
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             <Link href="/events">
               <Button variant="ghost">Events</Button>
             </Link>
@@ -124,11 +151,36 @@ export function Header() {
             <Link href="/marketplace">
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>Marketplace</Button>
             </Link>
-            <Link href="/establishments/stores">
-              <Button variant="ghost" onClick={() => setMenuOpen(false)}>
-                Stores
+            
+            {/* Mobile Establishments Section */}
+            <div className="border-l-2 border-muted pl-2">
+              <Button variant="ghost" className="w-full justify-start font-semibold">
+                Establishments
               </Button>
-            </Link>
+              <div className="pl-4 flex flex-col gap-2 mt-1">
+                <Link href="/establishments/stores">
+                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                    <Store className="h-4 w-4 mr-2" /> Stores
+                  </Button>
+                </Link>
+                <Link href="/establishments/clubs">
+                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                    <Users className="h-4 w-4 mr-2" /> Clubs
+                  </Button>
+                </Link>
+                <Link href="/establishments/servicing">
+                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                    <Wrench className="h-4 w-4 mr-2" /> Servicing
+                  </Button>
+                </Link>
+                <Link href="/establishments/ranges">
+                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                    <MapPin className="h-4 w-4 mr-2" /> Ranges
+                  </Button>
+                </Link>
+              </div>
+            </div>
+            
             <Link href="/events">
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>Events</Button>
             </Link>
