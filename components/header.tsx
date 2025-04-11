@@ -57,9 +57,6 @@ export function Header() {
             <div className="hidden md:block w-[400px] w-full">
               <SearchBar disableShortcut={false} />
             </div>
-            <Link href="/marketplace">
-              <Button variant="ghost">Marketplace</Button>
-            </Link>
             
             {/* Establishments Dropdown */}
             <DropdownMenu>
@@ -96,6 +93,10 @@ export function Header() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <Link href="/marketplace">
+              <Button variant="ghost">Marketplace</Button>
+            </Link>
             
             <Link href="/events">
               <Button variant="ghost">Events</Button>
