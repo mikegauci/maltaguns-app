@@ -510,13 +510,13 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <Card>
               <CardContent className="p-6">
-                <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
+                <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
                   <Image
-                    src="/images/pistol-gun-icon.svg"
+                    src="/images/pistol-gun-icon-white.svg"
                     alt="Firearms Marketplace"
                     width={24}
                     height={24}
-                    className="text-primary"
+                    className="text-white"
                   />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Marketplace</h3>
@@ -529,8 +529,8 @@ export default function Home() {
 
             <Card>
               <CardContent className="p-6">
-                <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-primary" />
+                <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <Shield className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Verified Sellers</h3>
                 <p className="text-muted-foreground">
@@ -542,8 +542,8 @@ export default function Home() {
 
             <Card>
               <CardContent className="p-6">
-                <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
-                  <Calendar className="h-6 w-6 text-primary" />
+                <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <Calendar className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Events</h3>
                 <p className="text-muted-foreground">
@@ -555,8 +555,8 @@ export default function Home() {
 
             <Card>
               <CardContent className="p-6">
-                <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-primary" />
+                <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
+                  <Users className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Community</h3>
                 <p className="text-muted-foreground">
@@ -729,8 +729,8 @@ export default function Home() {
             <Link href="/guides">
               <Card className="hover:shadow-lg transition-shadow h-full">
                 <CardContent className="p-6">
-                  <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
-                    <BookOpen className="h-6 w-6 text-primary" />
+                  <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
+                    <BookOpen className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="font-semibold text-lg mb-3">
                     Guides & Resources
@@ -766,8 +766,8 @@ export default function Home() {
             <Link href="/news">
               <Card className="hover:shadow-lg transition-shadow h-full">
                 <CardContent className="p-6">
-                  <div className="rounded-lg bg-primary/10 p-3 w-12 h-12 flex items-center justify-center mb-4">
-                    <Globe className="h-6 w-6 text-primary" />
+                  <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
+                    <Globe className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="font-semibold text-lg mb-3">Latest News</h3>
                   <p className="text-muted-foreground mb-4">
