@@ -122,23 +122,23 @@ export default function CreateFirearmsListing() {
 
           // Check if user is a retailer
           const { data: retailerData, error: retailerError } = await supabase
-            .from("retailers")
+            .from("stores")
             .select("id")
             .eq("owner_id", session.user.id)
-            .single()
+            .limit(1);
 
-          if (retailerError && retailerError.code !== 'PGRST116') {
-            console.error('Error checking retailer status:', retailerError)
+          if (retailerError) {
+            console.error('Error checking store status:', retailerError);
           }
 
-          setIsRetailer(!!retailerData)
+          setIsRetailer(!!retailerData?.[0]);
 
           // Get user credits
           const { data: creditsData, error: creditsError } = await supabase
             .from("credits")
             .select("amount")
             .eq("user_id", session.user.id)
-            .single()
+            .single();
 
           if (creditsError && creditsError.code !== 'PGRST116') {
             console.error('Error fetching credits:', creditsError)
@@ -146,7 +146,7 @@ export default function CreateFirearmsListing() {
 
           const currentCredits = creditsData?.amount || 0
           setCredits(currentCredits)
-          setHasCredits(currentCredits > 0 || !!retailerData)
+          setHasCredits(currentCredits > 0 || !!retailerData?.[0])
           setIsLoading(false)
         }
       } catch (error) {

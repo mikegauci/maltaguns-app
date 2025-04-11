@@ -201,7 +201,7 @@ export default function EstablishmentsPage() {
               {establishments.map((establishment) => (
                 <Link 
                   key={`${establishment.type}-${establishment.id}`} 
-                  href={`/establishments/${establishment.type}s/${establishment.slug || establishment.id}`}
+                  href={`/establishments/${establishment.type}/${establishment.slug || establishment.id}`}
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">

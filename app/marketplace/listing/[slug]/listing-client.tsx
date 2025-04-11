@@ -233,23 +233,20 @@ export default function ListingClient({
 
     try {
       const { data, error } = await supabase
-        .from("retailers")
+        .from("stores")
         .select("id")
         .eq("owner_id", listing.seller_id)
-        .single();
+        .limit(1);
 
       if (error) {
-        if (error.code !== "PGRST116") {
-          // PGRST116 is the error code for "no rows returned"
-          console.error("Error checking retailer status:", error);
-        }
+        console.error("Error checking store status:", error);
         setIsRetailer(false);
         return;
       }
 
-      setIsRetailer(!!data);
+      setIsRetailer(!!data?.[0]);
     } catch (error) {
-      console.error("Error checking retailer status:", error);
+      console.error("Error checking store status:", error);
       setIsRetailer(false);
     }
   }
