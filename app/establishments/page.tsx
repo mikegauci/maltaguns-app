@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Store } from "lucide-react"
+import { Store, Users, Wrench, MapPin } from "lucide-react"
 import Link from "next/link"
 
 export default function EstablishmentsPage() {
@@ -29,6 +29,60 @@ export default function EstablishmentsPage() {
                     <h3 className="font-semibold text-lg">Stores</h3>
                     <p className="text-muted-foreground">
                       Find licensed firearms dealers and stores across Malta
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/establishments/clubs">
+            <Card className="h-full hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                    <Users className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Clubs</h3>
+                    <p className="text-muted-foreground">
+                      Find shooting clubs and associations across Malta
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/establishments/servicing">
+            <Card className="h-full hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                    <Wrench className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Servicing</h3>
+                    <p className="text-muted-foreground">
+                      Find firearms repair and servicing centers across Malta
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/establishments/ranges">
+            <Card className="h-full hover:shadow-lg transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                    <MapPin className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">Ranges</h3>
+                    <p className="text-muted-foreground">
+                      Discover shooting ranges and practice facilities across Malta
                     </p>
                   </div>
                 </div>
