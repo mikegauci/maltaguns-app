@@ -43,6 +43,9 @@ import {
   Star,
   Calendar,
   Plus,
+  Users,
+  Wrench,
+  MapPin,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -126,6 +129,10 @@ interface Store {
   slug: string;
 }
 
+interface Club extends Store {}
+interface Servicing extends Store {}
+interface Range extends Store {}
+
 interface Event {
   id: string;
   title: string;
@@ -175,6 +182,9 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [servicing, setServicing] = useState<Servicing[]>([]);
+  const [ranges, setRanges] = useState<Range[]>([]);
   const [store, setStore] = useState<Store | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [storeBlogPosts, setStoreBlogPosts] = useState<StoreBlogPost[]>([]);
@@ -319,15 +329,18 @@ export default function ProfilePage() {
             // Continue even if there's an error
           }
 
-          // SIMPLIFIED APPROACH: Directly fetch store data
+          // Initialize store blog posts data collection
+          let storeBlogPostsData: StoreBlogPost[] = [];
+
+          // Fetch user's stores
           console.log("Fetching stores for user ID:", userId);
           const { data: storesData, error: storeError } = await supabase
             .from("stores")
             .select("*")
             .eq("owner_id", userId);
 
-          // Initialize variables for store posts
-          let storeBlogPostsData: StoreBlogPost[] = [];
+          // Variable to collect store blog posts
+          let allStoreBlogPosts: StoreBlogPost[] = [];
 
           if (storeError) {
             console.error("Store fetch error:", storeError.message);
@@ -361,7 +374,7 @@ export default function ProfilePage() {
                 }
               }
             }
-
+            
             // Fetch blog posts for all stores
             for (const store of storesData) {
               const { data: postsData, error: postsError } = await supabase
@@ -379,10 +392,103 @@ export default function ProfilePage() {
                 console.log(
                   `Found ${postsData.length} posts for store ${store.business_name}`
                 );
-                storeBlogPostsData = [
-                  ...storeBlogPostsData,
+                allStoreBlogPosts = [
+                  ...allStoreBlogPosts,
                   ...(postsData as StoreBlogPost[]),
                 ];
+              }
+            }
+          }
+
+          // Fetch user's clubs
+          console.log("Fetching clubs for user ID:", userId);
+          const { data: clubsData, error: clubsError } = await supabase
+            .from("clubs")
+            .select("*")
+            .eq("owner_id", userId);
+
+          if (clubsError) {
+            console.error("Clubs fetch error:", clubsError.message);
+          } else if (clubsData && clubsData.length > 0) {
+            console.log("Found clubs:", clubsData.length, clubsData);
+            setClubs(clubsData);
+
+            // Fix slugs for clubs if needed
+            for (const club of clubsData) {
+              if (!club.slug) {
+                const slug = slugify(club.business_name);
+                const { error: updateError } = await supabase
+                  .from("clubs")
+                  .update({ slug })
+                  .eq("id", club.id);
+
+                if (updateError) {
+                  console.error("Error updating club slug:", updateError);
+                } else {
+                  club.slug = slug;
+                }
+              }
+            }
+          }
+
+          // Fetch user's servicing establishments
+          console.log("Fetching servicing establishments for user ID:", userId);
+          const { data: servicingData, error: servicingError } = await supabase
+            .from("servicing")
+            .select("*")
+            .eq("owner_id", userId);
+
+          if (servicingError) {
+            console.error("Servicing fetch error:", servicingError.message);
+          } else if (servicingData && servicingData.length > 0) {
+            console.log("Found servicing:", servicingData.length, servicingData);
+            setServicing(servicingData);
+
+            // Fix slugs for servicing if needed
+            for (const service of servicingData) {
+              if (!service.slug) {
+                const slug = slugify(service.business_name);
+                const { error: updateError } = await supabase
+                  .from("servicing")
+                  .update({ slug })
+                  .eq("id", service.id);
+
+                if (updateError) {
+                  console.error("Error updating servicing slug:", updateError);
+                } else {
+                  service.slug = slug;
+                }
+              }
+            }
+          }
+
+          // Fetch user's ranges
+          console.log("Fetching ranges for user ID:", userId);
+          const { data: rangesData, error: rangesError } = await supabase
+            .from("ranges")
+            .select("*")
+            .eq("owner_id", userId);
+
+          if (rangesError) {
+            console.error("Ranges fetch error:", rangesError.message);
+          } else if (rangesData && rangesData.length > 0) {
+            console.log("Found ranges:", rangesData.length, rangesData);
+            setRanges(rangesData);
+
+            // Fix slugs for ranges if needed
+            for (const range of rangesData) {
+              if (!range.slug) {
+                const slug = slugify(range.business_name);
+                const { error: updateError } = await supabase
+                  .from("ranges")
+                  .update({ slug })
+                  .eq("id", range.id);
+
+                if (updateError) {
+                  console.error("Error updating range slug:", updateError);
+                } else {
+                  range.slug = slug;
+                }
               }
             }
           }
@@ -434,7 +540,7 @@ export default function ProfilePage() {
 
           // Update state with all fetched data
           setBlogPosts(blogData || []);
-          setStoreBlogPosts(storeBlogPostsData);
+          setStoreBlogPosts(allStoreBlogPosts);
           setEvents(eventsData || []);
         } else {
           // Just set loading to false if not logged in - will show login prompt instead of redirecting
@@ -818,36 +924,59 @@ export default function ProfilePage() {
       // Confirm deletion
       if (
         !window.confirm(
-          "Are you sure you want to delete this store profile? This action cannot be undone."
+          "Are you sure you want to delete this establishment profile? This action cannot be undone."
         )
       ) {
         return;
       }
 
+      // Check which type of establishment this is
+      const storeExists = stores.some(s => s.id === storeId);
+      const clubExists = clubs.some(c => c.id === storeId);
+      const servicingExists = servicing.some(s => s.id === storeId);
+      const rangeExists = ranges.some(r => r.id === storeId);
+
+      let tableName = "";
+      if (storeExists) tableName = "stores";
+      else if (clubExists) tableName = "clubs";
+      else if (servicingExists) tableName = "servicing";
+      else if (rangeExists) tableName = "ranges";
+      else {
+        throw new Error("Establishment not found");
+      }
+
       const { error } = await supabase
-        .from("stores")
+        .from(tableName)
         .delete()
         .eq("id", storeId);
 
       if (error) throw error;
 
-      setStores((prevStores) =>
-        prevStores.filter((store) => store.id !== storeId)
-      );
-      setStoreBlogPosts((prevPosts) =>
-        prevPosts.filter((post) => post.store_id !== storeId)
-      );
+      // Update the appropriate state array
+      if (storeExists) {
+        setStores((prevStores) => prevStores.filter((store) => store.id !== storeId));
+        setStoreBlogPosts((prevPosts) => prevPosts.filter((post) => post.store_id !== storeId));
+      }
+      else if (clubExists) {
+        setClubs((prevClubs) => prevClubs.filter((club) => club.id !== storeId));
+      }
+      else if (servicingExists) {
+        setServicing((prevServices) => prevServices.filter((service) => service.id !== storeId));
+      }
+      else if (rangeExists) {
+        setRanges((prevRanges) => prevRanges.filter((range) => range.id !== storeId));
+      }
 
       toast({
-        title: "Store deleted",
-        description: "Your store profile has been deleted successfully",
+        title: "Establishment deleted",
+        description: "Your establishment profile has been deleted successfully",
       });
     } catch (error) {
       toast({
-        variant: "destructive",
+        variant: "destructive", 
         title: "Error",
         description:
-          error instanceof Error ? error.message : "Failed to delete store",
+          error instanceof Error ? error.message : "Failed to delete establishment",
       });
     }
   }
@@ -1701,6 +1830,88 @@ export default function ProfilePage() {
           </Card>
         )}
 
+        {/* Store Blog Posts - Only show if user has store blog posts */}
+        {storeBlogPosts.length > 0 && (
+          <Card className="w-full mb-8">
+            <CardHeader>
+              <CardTitle>My Store Blog Posts</CardTitle>
+              <CardDescription>
+                Manage your store blog posts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {storeBlogPosts.map((post) => (
+                  <Card key={post.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">{post.title}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(post.created_at), "PPP")}
+                          </p>
+                          {/* Show which store this post belongs to */}
+                          {stores.length > 1 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {stores.find(
+                                (s) => s.id === post.store_id
+                              )?.business_name || "Unknown store"}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={
+                              post.published ? "default" : "secondary"
+                            }
+                          >
+                            {post.published ? "Published" : "Draft"}
+                          </Badge>
+                          <div className="flex gap-2">
+                            {/* Find the store this post belongs to for URL */}
+                            {(() => {
+                              const postStore = stores.find(
+                                (s) => s.id === post.store_id
+                              );
+                              return (
+                                <>
+                                  <Link href={`/blog/${post.slug}`}>
+                                    <Button variant="outline" size="sm">
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      View
+                                    </Button>
+                                  </Link>
+                                  <Link href={`/blog/${post.slug}/edit`}>
+                                    <Button variant="outline" size="sm">
+                                      <Pencil className="h-4 w-4 mr-2" />
+                                      Edit
+                                    </Button>
+                                  </Link>
+                                </>
+                              );
+                            })()}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleDeleteStorePost(post.id)
+                              }
+                              className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Events - Only show if user has events */}
         {events.length > 0 && (
           <Card className="mb-6">
@@ -1793,94 +2004,290 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        {/* Store Profiles - Show all stores */}
-        {stores.length > 0 ? (
+        {/* Replace the Store Profiles section with Establishments section */}
+        {stores.length > 0 || clubs.length > 0 || servicing.length > 0 || ranges.length > 0 ? (
           <Card className="w-full mb-8">
             <CardHeader>
-              <CardTitle>My Store Profiles</CardTitle>
+              <CardTitle>My Establishments</CardTitle>
               <CardDescription>
                 Manage your firearms business listings on MaltaGuns
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {stores.map((storeItem) => (
-                <div key={storeItem.id} className="border rounded-lg p-4">
-                  <div className="flex items-center gap-4 mb-4">
-                    {storeItem.logo_url ? (
-                      <img
-                        src={storeItem.logo_url}
-                        alt={storeItem.business_name}
-                        className="w-16 h-16 object-contain rounded-lg"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                        <Store className="h-8 w-8 text-muted-foreground" />
+              {/* Stores */}
+              {stores.length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold mb-3">Stores</h3>
+                  {stores.map((storeItem) => (
+                    <div key={storeItem.id} className="border rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-4 mb-4">
+                        {storeItem.logo_url ? (
+                          <img
+                            src={storeItem.logo_url}
+                            alt={storeItem.business_name}
+                            className="w-16 h-16 object-contain rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                            <Store className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-lg">{storeItem.business_name}</h3>
+                          <p className="text-muted-foreground text-sm">
+                            {storeItem.location || "No location specified"}
+                          </p>
+                          {!storeItem.slug && (
+                            <Badge variant="outline" className="mt-1">
+                              No slug
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <h3 className="font-semibold text-lg">{storeItem.business_name}</h3>
-                      <p className="text-muted-foreground text-sm">
-                        {storeItem.location || "No location specified"}
-                      </p>
-                      {!storeItem.slug && (
-                        <Badge variant="outline" className="mt-1">
-                          No slug
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    <Link
-                      href={`/establishments/stores/${
-                        storeItem.slug || storeItem.id
-                      }`}
-                      passHref
-                    >
-                      <Button size="sm" variant="outline">
-                        View Profile
-                      </Button>
-                    </Link>
-                    <Link
-                      href={`/establishments/stores/${
-                        storeItem.slug || storeItem.id
-                      }/edit`}
-                      passHref
-                    >
-                      <Button size="sm" variant="outline">
-                        Edit Profile
-                      </Button>
-                    </Link>
-                    <Link href={`/blog/create?store_id=${storeItem.id}`} passHref>
-                      <Button size="sm" variant="outline">
-                        Add Blog Post
-                      </Button>
-                    </Link>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDeleteStore(storeItem.id)}
-                    >
-                      Delete Profile
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {stores.length > 1 && (
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        <Link
+                          href={`/establishments/stores/${
+                            storeItem.slug || storeItem.id
+                          }`}
+                          passHref
+                        >
+                          <Button size="sm" variant="outline">
+                            View Profile
+                          </Button>
+                        </Link>
+                        <Link
+                          href={`/establishments/stores/${
+                            storeItem.slug || storeItem.id
+                          }/edit`}
+                          passHref
+                        >
+                          <Button size="sm" variant="outline">
+                            Edit Profile
+                          </Button>
+                        </Link>
+                        <Link href={`/blog/create?store_id=${storeItem.id}`} passHref>
+                          <Button size="sm" variant="outline">
+                            Add Blog Post
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteStore(storeItem.id)}
+                        >
+                          Delete Profile
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Clubs */}
+              {clubs.length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold mb-3">Clubs</h3>
+                  {clubs.map((club) => (
+                    <div key={club.id} className="border rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-4 mb-4">
+                        {club.logo_url ? (
+                          <img
+                            src={club.logo_url}
+                            alt={club.business_name}
+                            className="w-16 h-16 object-contain rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                            <Users className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-lg">{club.business_name}</h3>
+                          <p className="text-muted-foreground text-sm">
+                            {club.location || "No location specified"}
+                          </p>
+                          {!club.slug && (
+                            <Badge variant="outline" className="mt-1">
+                              No slug
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        <Link
+                          href={`/establishments/clubs/${
+                            club.slug || club.id
+                          }`}
+                          passHref
+                        >
+                          <Button size="sm" variant="outline">
+                            View Profile
+                          </Button>
+                        </Link>
+                        <Link
+                          href={`/establishments/clubs/${
+                            club.slug || club.id
+                          }/edit`}
+                          passHref
+                        >
+                          <Button size="sm" variant="outline">
+                            Edit Profile
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteStore(club.id)}
+                        >
+                          Delete Profile
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Servicing */}
+              {servicing.length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold mb-3">Servicing & Repair</h3>
+                  {servicing.map((service) => (
+                    <div key={service.id} className="border rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-4 mb-4">
+                        {service.logo_url ? (
+                          <img
+                            src={service.logo_url}
+                            alt={service.business_name}
+                            className="w-16 h-16 object-contain rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                            <Wrench className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-lg">{service.business_name}</h3>
+                          <p className="text-muted-foreground text-sm">
+                            {service.location || "No location specified"}
+                          </p>
+                          {!service.slug && (
+                            <Badge variant="outline" className="mt-1">
+                              No slug
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        <Link
+                          href={`/establishments/servicing/${
+                            service.slug || service.id
+                          }`}
+                          passHref
+                        >
+                          <Button size="sm" variant="outline">
+                            View Profile
+                          </Button>
+                        </Link>
+                        <Link
+                          href={`/establishments/servicing/${
+                            service.slug || service.id
+                          }/edit`}
+                          passHref
+                        >
+                          <Button size="sm" variant="outline">
+                            Edit Profile
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteStore(service.id)}
+                        >
+                          Delete Profile
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Ranges */}
+              {ranges.length > 0 && (
+                <>
+                  <h3 className="text-lg font-semibold mb-3">Shooting Ranges</h3>
+                  {ranges.map((range) => (
+                    <div key={range.id} className="border rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-4 mb-4">
+                        {range.logo_url ? (
+                          <img
+                            src={range.logo_url}
+                            alt={range.business_name}
+                            className="w-16 h-16 object-contain rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                            <MapPin className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-semibold text-lg">{range.business_name}</h3>
+                          <p className="text-muted-foreground text-sm">
+                            {range.location || "No location specified"}
+                          </p>
+                          {!range.slug && (
+                            <Badge variant="outline" className="mt-1">
+                              No slug
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        <Link
+                          href={`/establishments/ranges/${
+                            range.slug || range.id
+                          }`}
+                          passHref
+                        >
+                          <Button size="sm" variant="outline">
+                            View Profile
+                          </Button>
+                        </Link>
+                        <Link
+                          href={`/establishments/ranges/${
+                            range.slug || range.id
+                          }/edit`}
+                          passHref
+                        >
+                          <Button size="sm" variant="outline">
+                            Edit Profile
+                          </Button>
+                        </Link>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteStore(range.id)}
+                        >
+                          Delete Profile
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* Common messages */}
+              {(stores.length > 1 || clubs.length > 0 || servicing.length > 0 || ranges.length > 0) && (
                 <Alert className="mt-4 mb-2">
-                  {stores.find(
-                    (s) => !s.slug
-                  ) && (
+                  {[...stores, ...clubs, ...servicing, ...ranges].some(e => !e.slug) && (
                     <AlertDescription className="mb-2">
-                      Some of your stores do not have a properly formatted URL
+                      Some of your establishments do not have a properly formatted URL
                       slug. This will be fixed automatically.
                     </AlertDescription>
                   )}
-                  <AlertDescription>
-                    Note: You have multiple store profiles. While we
-                    support this, it's unusual to operate more than one firearms
-                    business.
-                  </AlertDescription>
                 </Alert>
               )}
             </CardContent>
@@ -1900,88 +2307,6 @@ export default function ProfilePage() {
                   Add Your Business
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Store Blog Posts - Only show if user has store blog posts */}
-        {storeBlogPosts.length > 0 && (
-          <Card className="w-full mb-8">
-            <CardHeader>
-              <CardTitle>My Store Blog Posts</CardTitle>
-              <CardDescription>
-                Manage your store blog posts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {storeBlogPosts.map((post) => (
-                  <Card key={post.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{post.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(post.created_at), "PPP")}
-                          </p>
-                          {/* Show which store this post belongs to */}
-                          {stores.length > 1 && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {stores.find(
-                                (s) => s.id === post.store_id
-                              )?.business_name || "Unknown store"}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              post.published ? "default" : "secondary"
-                            }
-                          >
-                            {post.published ? "Published" : "Draft"}
-                          </Badge>
-                          <div className="flex gap-2">
-                            {/* Find the store this post belongs to for URL */}
-                            {(() => {
-                              const postStore = stores.find(
-                                (s) => s.id === post.store_id
-                              );
-                              return (
-                                <>
-                                  <Link href={`/blog/${post.slug}`}>
-                                    <Button variant="outline" size="sm">
-                                      <Eye className="h-4 w-4 mr-2" />
-                                      View
-                                    </Button>
-                                  </Link>
-                                  <Link href={`/blog/${post.slug}/edit`}>
-                                    <Button variant="outline" size="sm">
-                                      <Pencil className="h-4 w-4 mr-2" />
-                                      Edit
-                                    </Button>
-                                  </Link>
-                                </>
-                              );
-                            })()}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleDeleteStorePost(post.id)
-                              }
-                              className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
             </CardContent>
           </Card>
         )}

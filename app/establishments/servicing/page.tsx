@@ -9,12 +9,6 @@ import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { LoadingState } from "@/components/ui/loading-state"
 
-// List of authorized user IDs
-const AUTHORIZED_SERVICING_CREATORS = [
-  'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
-  '1a95bbf9-3bca-414d-a99f-1f9c72c15588'
-]
-
 interface Servicing {
   id: string
   business_name: string
@@ -31,16 +25,14 @@ export default function ServicingPage() {
   const router = useRouter()
   const [servicingProviders, setServicingProviders] = useState<Servicing[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isAuthorized, setIsAuthorized] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     async function fetchServicingProviders() {
       try {
-        // Check authorization
+        // Check if user is authenticated
         const { data: { session } } = await supabase.auth.getSession()
-        if (session?.user) {
-          setIsAuthorized(AUTHORIZED_SERVICING_CREATORS.includes(session.user.id))
-        }
+        setIsAuthenticated(!!session)
 
         const { data, error } = await supabase
           .from('servicing')
@@ -78,8 +70,8 @@ export default function ServicingPage() {
           </p>
         </div>
 
-        {/* Actions - Only show if authorized */}
-        {isAuthorized && (
+        {/* Actions - Only show if authenticated */}
+        {isAuthenticated && (
           <div className="flex justify-end">
             <Link href="/establishments/create">
               <Button>

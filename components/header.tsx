@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search";
-import { Store, BookOpen, Menu, X, User, ChevronDown, Users, Wrench, MapPin } from "lucide-react";
+import { Store, BookOpen, Menu, X, User, ChevronDown, Users, Wrench, MapPin, Boxes } from "lucide-react";
 import { useSupabase } from "./providers/supabase-provider";
 import {
   DropdownMenu,
@@ -62,6 +62,11 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-48 p-2 mt-2">
+                <DropdownMenuItem className="cursor-pointer">
+                  <Link href="/establishments" className="w-full flex items-center">
+                    <Boxes className="h-4 w-4 mr-2" /> All
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem className="cursor-pointer">
                   <Link href="/establishments/stores" className="w-full flex items-center">
                     <Store className="h-4 w-4 mr-2" /> Stores
@@ -158,6 +163,11 @@ export function Header() {
                 Establishments
               </Button>
               <div className="pl-4 flex flex-col gap-2 mt-1">
+                <Link href="/establishments">
+                  <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
+                    <Boxes className="h-4 w-4 mr-2" /> All
+                  </Button>
+                </Link>
                 <Link href="/establishments/stores">
                   <Button variant="ghost" onClick={() => setMenuOpen(false)} className="w-full justify-start">
                     <Store className="h-4 w-4 mr-2" /> Stores
