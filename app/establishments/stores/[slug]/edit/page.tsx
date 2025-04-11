@@ -18,7 +18,7 @@ import { Database } from "@/lib/database.types"
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
-const retailerSchema = z.object({
+const storeSchema = z.object({
   businessName: z.string().min(2, "Business name is required"),
   location: z.string().min(5, "Location is required"),
   phone: z.string().min(8, "Phone number is required"),
@@ -28,19 +28,19 @@ const retailerSchema = z.object({
   logoUrl: z.string().optional()
 })
 
-type RetailerForm = z.infer<typeof retailerSchema>
+type StoreForm = z.infer<typeof storeSchema>
 
-export default function EditRetailerPage({ params }: { params: { slug: string } }) {
+export default function EditStorePage({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingLogo, setUploadingLogo] = useState(false)
-  const [retailerId, setRetailerId] = useState<string | null>(null)
+  const [storeId, setStoreId] = useState<string | null>(null)
   const [isAuthorized, setIsAuthorized] = useState(false)
 
-  const form = useForm<RetailerForm>({
-    resolver: zodResolver(retailerSchema),
+  const form = useForm<StoreForm>({
+    resolver: zodResolver(storeSchema),
     defaultValues: {
       businessName: "",
       location: "",
@@ -88,48 +88,48 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
           }
         }
 
-        // Fetch retailer by slug
-        const { data: retailer, error: retailerError } = await supabase
-          .from("retailers")
+        // Fetch store by slug
+        const { data: store, error: storeError } = await supabase
+          .from("stores")
           .select("*")
           .eq("slug", params.slug)
           .single()
 
-        if (retailerError || !retailer) {
-          console.error('Error fetching retailer:', retailerError)
+        if (storeError || !store) {
+          console.error('Error fetching store:', storeError)
           toast({
-            title: "Retailer not found",
-            description: "The retailer you're trying to edit doesn't exist.",
+            title: "Store not found",
+            description: "The store you're trying to edit doesn't exist.",
             variant: "destructive",
           })
-          router.push("/retailers")
+          router.push("/establishments/stores")
           return
         }
 
         // Check if user is the owner
-        if (retailer.owner_id !== session.user.id) {
+        if (store.owner_id !== session.user.id) {
           toast({
             title: "Unauthorized",
-            description: "You don't have permission to edit this retailer.",
+            description: "You don't have permission to edit this store.",
             variant: "destructive",
           })
-          router.push(`/retailers/${params.slug}`)
+          router.push(`/establishments/stores/${params.slug}`)
           return
         }
 
         if (mounted) {
-          setRetailerId(retailer.id)
+          setStoreId(store.id)
           setIsAuthorized(true)
 
           // Set form values
           form.reset({
-            businessName: retailer.business_name,
-            location: retailer.location,
-            phone: retailer.phone || "",
-            email: retailer.email || "",
-            description: retailer.description || "",
-            website: retailer.website || "",
-            logoUrl: retailer.logo_url || ""
+            businessName: store.business_name,
+            location: store.location,
+            phone: store.phone || "",
+            email: store.email || "",
+            description: store.description || "",
+            website: store.website || "",
+            logoUrl: store.logo_url || ""
           })
 
           setIsLoading(false)
@@ -160,10 +160,10 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
       return
     }
 
-    if (!retailerId) {
+    if (!storeId) {
       toast({
         title: "Error",
-        description: "Retailer information is missing.",
+        description: "Store information is missing.",
         variant: "destructive",
       })
       return
@@ -209,11 +209,11 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
       // Create a unique file name
       const fileExt = file.name.split('.').pop()
       const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-      const filePath = `retailers/${fileName}`
+      const filePath = `stores/${fileName}`
       
       // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
-        .from('retailers')
+        .from('stores')
         .upload(filePath, file, {
           cacheControl: "3600",
           upsert: false
@@ -225,7 +225,7 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
       
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('retailers')
+        .from('stores')
         .getPublicUrl(filePath)
         
       // Update form
@@ -247,73 +247,53 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
     }
   }
 
-  async function onSubmit(data: RetailerForm) {
-    if (!retailerId) {
-      toast({
-        title: "Error",
-        description: "Retailer information is missing.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsLoading(true)
-
+  async function onSubmit(data: StoreForm) {
     try {
-      // Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      setIsLoading(true)
       
-      if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
-      }
-      
-      if (!session?.user.id) {
-        throw new Error("Not authenticated")
+      if (!storeId) {
+        throw new Error("Store ID is missing")
       }
 
-      // Generate slug from business name
-      const slug = data.businessName
-        .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/--+/g, '-')
-
-      // Update retailer
-      const { error: updateError } = await supabase
-        .from("retailers")
+      // Create slug from business name if name has changed
+      let slugToUse = params.slug
+      if (form.formState.dirtyFields.businessName) {
+        slugToUse = data.businessName
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .replace(/--+/g, "-")
+      }
+      
+      const { error } = await supabase
+        .from("stores")
         .update({
           business_name: data.businessName,
           location: data.location,
           phone: data.phone,
           email: data.email,
           description: data.description,
-          website: data.website,
-          logo_url: data.logoUrl,
-          slug: slug
+          website: data.website || null,
+          logo_url: data.logoUrl || null,
+          slug: slugToUse
         })
-        .eq("id", retailerId)
-
-      if (updateError) {
-        console.error("Update error:", updateError)
-        throw updateError
-      }
-
+        .eq("id", storeId)
+      
+      if (error) throw error
+      
       toast({
-        title: "Retailer updated",
-        description: "Your retailer information has been updated successfully.",
+        title: "Store updated",
+        description: "Your store profile has been updated successfully."
       })
-
-      // Redirect to retailer page
-      router.push(`/retailers/${slug}`)
+      
+      router.push(`/establishments/stores/${slugToUse}`)
     } catch (error) {
-      console.error("Submit error:", error)
+      console.error("Edit error:", error)
       toast({
-        title: "Error",
-        description: "Failed to update retailer information.",
+        title: "Update failed",
+        description: error instanceof Error ? error.message : "Something went wrong",
         variant: "destructive",
       })
-    } finally {
       setIsLoading(false)
     }
   }
@@ -332,23 +312,23 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
 
   return (
     <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => router.push("/profile")}
+            onClick={() => router.push(`/establishments/stores/${params.slug}`)}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to profile
+            Back to store profile
           </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Edit Retailer Profile</CardTitle>
+            <CardTitle>Edit Store Profile</CardTitle>
             <CardDescription>
-              Update your business information and contact details
+              Update your firearms business profile on MaltaGuns
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -376,6 +356,13 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
                       <FormLabel>Business Logo</FormLabel>
                       <FormControl>
                         <div className="space-y-4">
+                          {field.value && (
+                            <img
+                              src={field.value}
+                              alt="Business logo preview"
+                              className="w-32 h-32 object-contain rounded-lg"
+                            />
+                          )}
                           <Input
                             type="file"
                             accept="image/*"
@@ -387,13 +374,6 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
                             <p className="text-sm text-muted-foreground">
                               Uploading logo...
                             </p>
-                          )}
-                          {field.value && (
-                            <img
-                              src={field.value}
-                              alt="Business logo preview"
-                              className="w-32 h-32 object-contain rounded-lg"
-                            />
                           )}
                         </div>
                       </FormControl>
@@ -438,7 +418,7 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
                       <FormItem>
                         <FormLabel>Email Address</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="info@maltaguns.com" {...field} />
+                          <Input type="email" placeholder="info@example.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -488,4 +468,4 @@ export default function EditRetailerPage({ params }: { params: { slug: string } 
       </div>
     </div>
   )
-}
+} 

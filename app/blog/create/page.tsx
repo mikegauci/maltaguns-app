@@ -83,14 +83,15 @@ export default function CreateBlogPost() {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState("")
   const [openInNewTab, setOpenInNewTab] = useState(true)
-  const [retailerId, setRetailerId] = useState<string | null>(null)
+  const [storeId, setStoreId] = useState<string | null>(null)
 
-  // Get retailer_id from URL if present
+  // Get store_id from URL if present
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    const id = params.get('retailer_id')
+    const id = params.get('store_id') || params.get('retailer_id') // Support both new and old parameter names
     if (id) {
-      setRetailerId(id)
+      console.log("Store ID from URL:", id)
+      setStoreId(id)
     }
   }, [])
 
@@ -413,7 +414,7 @@ export default function CreateBlogPost() {
 
       const postSlug = slug(data.title)
 
-      // Add retailer_id if present
+      // Add store_id if present
       const postData = {
         author_id: session.user.id,
         title: data.title,
@@ -421,7 +422,7 @@ export default function CreateBlogPost() {
         content: data.content,
         published: true,
         featured_image: data.featuredImage || null,
-        retailer_id: retailerId
+        store_id: storeId
       }
 
       const { error } = await supabase

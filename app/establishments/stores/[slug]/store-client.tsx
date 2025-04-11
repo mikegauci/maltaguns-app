@@ -10,7 +10,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
 
-interface Retailer {
+interface Store {
   id: string
   business_name: string
   logo_url: string | null
@@ -66,43 +66,43 @@ function truncateText(text: string, words: number) {
   return wordArray.slice(0, words).join(' ') + '...'
 }
 
-export default function RetailerClient({ retailer }: { retailer: Retailer }) {
+export default function StoreClient({ store }: { store: Store }) {
   const router = useRouter()
   const [isOwner, setIsOwner] = useState(false)
   const [blogPosts, setBlogPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   // Check if blog posts array is valid
-  const hasBlogPosts = Array.isArray(retailer.blogPosts) && retailer.blogPosts.length > 0;
+  const hasBlogPosts = Array.isArray(store.blogPosts) && store.blogPosts.length > 0;
 
   useEffect(() => {
-    // Check if current user is the owner of this retailer
+    // Check if current user is the owner of this store
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        setIsOwner(session.user.id === retailer.owner_id)
+        setIsOwner(session.user.id === store.owner_id)
       }
     })
 
     // Update blog posts if they change
-    if (Array.isArray(retailer.blogPosts)) {
-      setBlogPosts(retailer.blogPosts)
+    if (Array.isArray(store.blogPosts)) {
+      setBlogPosts(store.blogPosts)
     } else {
       setBlogPosts([]) // Set to empty array if not valid
     }
     
     setLoading(false)
-  }, [retailer.owner_id, retailer.blogPosts])
+  }, [store.owner_id, store.blogPosts])
 
   // Fetch blog posts directly from the client side as a fallback
   useEffect(() => {
     if (!hasBlogPosts && !loading) {
       const fetchBlogPosts = async () => {
         try {
-          // Fetch blog posts from blog_posts table with retailer_id filter
+          // Fetch blog posts from blog_posts table with store_id filter
           const { data, error } = await supabase
             .from("blog_posts")
             .select("*, author:profiles(username)")
-            .eq("retailer_id", retailer.id)
+            .eq("store_id", store.id)
             .eq("published", true)
             .order("created_at", { ascending: false });
             
@@ -119,7 +119,7 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
       
       fetchBlogPosts();
     }
-  }, [hasBlogPosts, loading, retailer.id]);
+  }, [hasBlogPosts, loading, store.id]);
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -127,16 +127,16 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
         <div className="mb-6 flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => router.push("/retailers")}
+            onClick={() => router.push("/establishments/stores")}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to retailers
+            Back to stores
           </Button>
           
           {isOwner && (
             <div className="flex items-center gap-2">
-              <Link href={`/blog/create?retailer_id=${retailer.id}`}>
+              <Link href={`/blog/create?store_id=${store.id}`}>
                 <Button className="bg-primary">
                   <Pencil className="h-4 w-4 mr-2" />
                   Create New Post
@@ -146,14 +146,14 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
           )}
         </div>
 
-        {/* Retailer Profile */}
+        {/* Store Profile */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-start gap-6">
-              {retailer.logo_url ? (
+              {store.logo_url ? (
                 <img
-                  src={retailer.logo_url}
-                  alt={retailer.business_name}
+                  src={store.logo_url}
+                  alt={store.business_name}
                   className="w-32 h-32 object-contain rounded-lg"
                 />
               ) : (
@@ -163,47 +163,47 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
               )}
 
               <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-4">{retailer.business_name}</h1>
+                <h1 className="text-3xl font-bold mb-4">{store.business_name}</h1>
                 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-muted-foreground" />
-                    <span>{retailer.location}</span>
+                    <span>{store.location}</span>
                   </div>
-                  {retailer.phone && (
+                  {store.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-5 w-5 text-muted-foreground" />
-                      <a href={`tel:${retailer.phone}`} className="hover:underline">
-                        {retailer.phone}
+                      <a href={`tel:${store.phone}`} className="hover:underline">
+                        {store.phone}
                       </a>
                     </div>
                   )}
-                  {retailer.email && (
+                  {store.email && (
                     <div className="flex items-center gap-2">
                       <Mail className="h-5 w-5 text-muted-foreground" />
-                      <a href={`mailto:${retailer.email}`} className="hover:underline">
-                        {retailer.email}
+                      <a href={`mailto:${store.email}`} className="hover:underline">
+                        {store.email}
                       </a>
                     </div>
                   )}
-                  {retailer.website && (
+                  {store.website && (
                     <div className="flex items-center gap-2">
                       <Globe className="h-5 w-5 text-muted-foreground" />
                       <a 
-                        href={retailer.website} 
+                        href={store.website} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="hover:underline"
                       >
-                        {retailer.website}
+                        {store.website}
                       </a>
                     </div>
                   )}
                 </div>
 
-                {retailer.description && (
+                {store.description && (
                   <p className="text-muted-foreground whitespace-pre-wrap">
-                    {retailer.description}
+                    {store.description}
                   </p>
                 )}
               </div>
@@ -215,13 +215,13 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
         <div>
           <h2 className="text-2xl font-bold mb-6">Available Listings</h2>
           
-          {retailer.listings.length === 0 ? (
+          {store.listings.length === 0 ? (
             <Card className="p-6 text-center">
               <p className="text-muted-foreground">No active listings available.</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {retailer.listings.map((listing) => (
+              {store.listings.map((listing) => (
                 <Link 
                   key={listing.id} 
                   href={`/marketplace/listing/${slugify(listing.title)}`}
@@ -255,67 +255,54 @@ export default function RetailerClient({ retailer }: { retailer: Retailer }) {
         {/* Blog Posts Section */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Latest Articles</h2>
-            <div className="flex items-center gap-2">
-              {/* Write Post button with black background */}
-              <Link href={`/blog/create?retailer_id=${retailer.id}`}>
-                <Button className="bg-black hover:bg-gray-800 text-white">
+            <h2 className="text-2xl font-bold">Latest Posts</h2>
+            
+            {isOwner && (
+              <Link href={`/blog/create?store_id=${store.id}`}>
+                <Button>
                   <BookOpen className="h-4 w-4 mr-2" />
                   Write Post
                 </Button>
               </Link>
-              {isOwner && (
-                <Link href={`/blog/create?retailer_id=${retailer.id}`}>
-                  <Button>
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Create New Post
-                  </Button>
-                </Link>
-              )}
-            </div>
+            )}
           </div>
           
-          {blogPosts.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {blogPosts.length === 0 ? (
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground">No blog posts available.</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {blogPosts.map((post) => (
                 <Link key={post.id} href={`/blog/${post.slug}`}>
                   <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden">
-                    <div className="aspect-video relative overflow-hidden bg-muted">
-                      {post.featured_image ? (
+                    {post.featured_image && (
+                      <div className="aspect-video relative overflow-hidden">
                         <img
                           src={post.featured_image}
                           alt={post.title}
                           className="object-cover w-full h-full"
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <BookOpen className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
-                    </div>
-                    <CardContent className="p-6">
-                      <div className="text-sm text-muted-foreground mb-2">
-                        {format(new Date(post.created_at), 'MMM d, yyyy')} • By {post.author?.username || 'Unknown'}
                       </div>
-                      <h2 className="text-xl font-semibold mb-2 line-clamp-2">
-                        {post.title}
-                      </h2>
-                      <p className="text-muted-foreground line-clamp-3">
-                        {truncateText(post.content, 20)}
+                    )}
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-lg mb-2">{post.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {format(new Date(post.created_at), "MMMM d, yyyy")} • By {post.author?.username || "Unknown"}
                       </p>
+                      {post.content && (
+                        <p className="text-muted-foreground line-clamp-3">
+                          {truncateText(post.content, 30)}
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
                 </Link>
               ))}
             </div>
-          ) : (
-            <Card className="p-6 text-center">
-              <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No articles published yet.</p>
-            </Card>
           )}
         </div>
       </div>
     </div>
   )
-}
+} 

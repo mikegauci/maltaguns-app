@@ -10,12 +10,12 @@ import { supabase } from "@/lib/supabase"
 import { LoadingState } from "@/components/ui/loading-state"
 
 // List of authorized user IDs
-const AUTHORIZED_RETAILER_CREATORS = [
+const AUTHORIZED_STORE_CREATORS = [
   'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
   '1a95bbf9-3bca-414d-a99f-1f9c72c15588'
 ]
 
-interface Retailer {
+interface Store {
   id: string
   business_name: string
   logo_url: string | null
@@ -27,42 +27,42 @@ interface Retailer {
   slug: string
 }
 
-export default function RetailersPage() {
+export default function StoresPage() {
   const router = useRouter()
-  const [retailers, setRetailers] = useState<Retailer[]>([])
+  const [stores, setStores] = useState<Store[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
-    async function fetchRetailers() {
+    async function fetchStores() {
       try {
         // Check authorization
         const { data: { session } } = await supabase.auth.getSession()
         if (session?.user) {
-          setIsAuthorized(AUTHORIZED_RETAILER_CREATORS.includes(session.user.id))
+          setIsAuthorized(AUTHORIZED_STORE_CREATORS.includes(session.user.id))
         }
 
         const { data, error } = await supabase
-          .from('retailers')
+          .from('stores')
           .select('*')
           .order('business_name', { ascending: true })
 
         if (error) throw error
-        setRetailers(data || [])
+        setStores(data || [])
       } catch (error) {
-        console.error('Error fetching retailers:', error)
+        console.error('Error fetching stores:', error)
       } finally {
         setIsLoading(false)
       }
     }
 
-    fetchRetailers()
+    fetchStores()
   }, [])
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <LoadingState message="Loading retailers..." />
+        <LoadingState message="Loading stores..." />
       </div>
     )
   }
@@ -72,16 +72,16 @@ export default function RetailersPage() {
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Hero Section */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Firearms Retailers</h1>
+          <h1 className="text-4xl font-bold mb-4">Firearms Stores</h1>
           <p className="text-muted-foreground">
-            Find licensed firearms dealers and retailers across Malta
+            Find licensed firearms dealers and stores across Malta
           </p>
         </div>
 
         {/* Actions - Only show if authorized */}
         {isAuthorized && (
           <div className="flex justify-end">
-            <Link href="/retailers/create">
+            <Link href="/establishments/stores/create">
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Your Business
@@ -90,23 +90,23 @@ export default function RetailersPage() {
           </div>
         )}
 
-        {/* Retailers Grid */}
-        {retailers.length === 0 ? (
+        {/* Stores Grid */}
+        {stores.length === 0 ? (
           <Card className="p-6 text-center">
             <Store className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No retailers listed yet.</p>
+            <p className="text-muted-foreground">No stores listed yet.</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {retailers.map((retailer) => (
-              <Link key={retailer.id} href={`/retailers/${retailer.slug || retailer.id}`}>
+            {stores.map((store) => (
+              <Link key={store.id} href={`/establishments/stores/${store.slug || store.id}`}>
                 <Card className="h-full hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-4">
-                      {retailer.logo_url ? (
+                      {store.logo_url ? (
                         <img
-                          src={retailer.logo_url}
-                          alt={retailer.business_name}
+                          src={store.logo_url}
+                          alt={store.business_name}
                           className="w-16 h-16 object-contain rounded-lg"
                         />
                       ) : (
@@ -115,37 +115,37 @@ export default function RetailersPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="font-semibold text-lg">{retailer.business_name}</h3>
+                        <h3 className="font-semibold text-lg">{store.business_name}</h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />
-                          <span>{retailer.location}</span>
+                          <span>{store.location}</span>
                         </div>
                       </div>
                     </div>
 
-                    {retailer.description && (
+                    {store.description && (
                       <p className="text-muted-foreground mb-4 line-clamp-2">
-                        {retailer.description}
+                        {store.description}
                       </p>
                     )}
 
                     <div className="space-y-2 text-sm">
-                      {retailer.phone && (
+                      {store.phone && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Phone className="h-4 w-4" />
-                          <span>{retailer.phone}</span>
+                          <span>{store.phone}</span>
                         </div>
                       )}
-                      {retailer.email && (
+                      {store.email && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Mail className="h-4 w-4" />
-                          <span>{retailer.email}</span>
+                          <span>{store.email}</span>
                         </div>
                       )}
-                      {retailer.website && (
+                      {store.website && (
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Globe className="h-4 w-4" />
-                          <span>{retailer.website}</span>
+                          <span>{store.website}</span>
                         </div>
                       )}
                     </div>
@@ -158,4 +158,4 @@ export default function RetailersPage() {
       </div>
     </div>
   )
-}
+} 

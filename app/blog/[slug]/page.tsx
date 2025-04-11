@@ -16,7 +16,6 @@ interface BlogPost {
   author: {
     username: string
   }
-  retailer_id: string
   retailer?: {
     id: string
     business_name: string
@@ -36,9 +35,16 @@ export default async function BlogPost({ params }: { params: { slug: string } })
   const { data: post, error } = await supabase
     .from("blog_posts")
     .select(`
-      *,
+      id,
+      title,
+      content,
+      slug,
+      featured_image,
+      published,
+      created_at,
+      author_id,
       author:profiles(username),
-      retailer:retailers(id, business_name, slug, logo_url)
+      retailer:stores(id, business_name, slug, logo_url)
     `)
     .eq("slug", params.slug)
     .eq("published", true)
@@ -58,9 +64,8 @@ export default async function BlogPost({ params }: { params: { slug: string } })
     published: post.published,
     created_at: post.created_at,
     author_id: post.author_id,
-    retailer_id: post.retailer_id,
-    author: post.author,
-    retailer: post.retailer || undefined
+    author: post.author?.[0] || { username: 'Unknown' },
+    retailer: post.retailer?.[0] || undefined
   }
 
   return <BlogPostClient post={blogPost} />

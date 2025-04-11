@@ -19,7 +19,6 @@ interface BlogPost {
   published: boolean
   created_at: string
   author_id: string
-  retailer_id?: string
   author: {
     username: string
   }
@@ -68,25 +67,9 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
       }
     }
 
-    // Fetch retailer if post has retailer_id but no retailer object
+    // Fetch retailer if post has retailer object
     async function fetchRetailer() {
-      if (post.retailer_id && !post.retailer) {
-        try {
-          const { data, error } = await supabase
-            .from('retailers')
-            .select('id, business_name, slug, logo_url')
-            .eq('id', post.retailer_id)
-            .single();
-            
-          if (error) {
-            console.error('Error fetching retailer:', error);
-          } else if (data && mounted) {
-            setRetailer(data);
-          }
-        } catch (error) {
-          console.error('Error in retailer fetch:', error);
-        }
-      } else if (post.retailer && mounted) {
+      if (post.retailer) {
         setRetailer(post.retailer);
       }
     }
@@ -97,7 +80,7 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
     return () => {
       mounted = false
     }
-  }, [post.author_id, post.retailer_id, post.retailer, supabase, toast])
+  }, [post.author_id, post.retailer, supabase, toast])
 
   if (isLoading) {
     return (
@@ -154,15 +137,15 @@ export default function BlogPostClient({ post }: { post: BlogPost }) {
                 <span>{format(new Date(post.created_at), 'MMMM d, yyyy')}</span>
                 
                 {/* Retailer info if available */}
-                {(retailer || post.retailer) && (
+                {retailer && (
                   <>
                     <span>•</span>
                     <Button
                       variant="link"
                       className="p-0 h-auto text-muted-foreground hover:text-primary"
-                      onClick={() => router.push(`/retailers/${(retailer || post.retailer).slug}`)}
+                      onClick={() => router.push(`/stores/${retailer.slug}`)}
                     >
-                      Posted by {(retailer || post.retailer).business_name}
+                      Posted by {retailer.business_name}
                     </Button>
                   </>
                 )}

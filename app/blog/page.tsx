@@ -73,9 +73,16 @@ export default function BlogPage() {
         const { data: postsData, error: postsError } = await supabase
           .from('blog_posts')
           .select(`
-            *,
+            id,
+            title,
+            slug,
+            content,
+            featured_image,
+            published,
+            created_at,
+            author_id,
             author:profiles(username),
-            retailer:retailers(id, business_name, slug, logo_url)
+            retailer:stores(id, business_name, slug, logo_url)
           `)
           .eq('published', true)
           .order('created_at', { ascending: false })
@@ -91,7 +98,20 @@ export default function BlogPage() {
         }
 
         if (mounted) {
-          setPosts(postsData || [])
+          // Map the data to match the expected BlogPost interface structure
+          const formattedPosts = postsData?.map(post => ({
+            id: post.id,
+            title: post.title,
+            slug: post.slug,
+            content: post.content,
+            featured_image: post.featured_image,
+            published: post.published,
+            created_at: post.created_at,
+            author: post.author?.[0] || { username: 'Unknown' },
+            retailer: post.retailer?.[0] || undefined
+          })) || []
+          
+          setPosts(formattedPosts)
           setIsLoading(false)
         }
       } catch (error) {
@@ -177,7 +197,7 @@ export default function BlogPage() {
                     <div className="text-sm text-muted-foreground mb-2">
                       {format(new Date(post.created_at), 'MMM d, yyyy')} • By {post.author.username}
                       {post.retailer && (
-                        <> • From <Link href={`/retailers/${post.retailer.slug}`} className="hover:underline">
+                        <> • From <Link href={`/stores/${post.retailer.slug}`} className="hover:underline">
                           {post.retailer.business_name}
                         </Link></>
                       )}

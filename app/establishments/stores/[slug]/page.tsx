@@ -1,10 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { notFound } from "next/navigation";
-import RetailerClient from "./retailer-client";
+import StoreClient from "./store-client";
 import { headers } from "next/headers";
 
-interface Retailer {
+interface Store {
   id: string;
   business_name: string;
   logo_url: string | null;
@@ -17,7 +17,7 @@ interface Retailer {
   slug: string;
 }
 
-interface RetailerDetails extends Retailer {
+interface StoreDetails extends Store {
   listings: {
     id: string;
     title: string;
@@ -45,26 +45,26 @@ export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 export const revalidate = 0; // Disable cache
 
-export default async function RetailerPage({ params }: { params: { slug: string } }) {
+export default async function StorePage({ params }: { params: { slug: string } }) {
   // Force cache revalidation
   headers();
   
-  // Fetch retailer details
-  const { data: retailer, error: retailerError } = await supabase
-    .from("retailers")
+  // Fetch store details
+  const { data: store, error: storeError } = await supabase
+    .from("stores")
     .select("*")
     .eq("slug", params.slug)
     .single();
 
-  if (retailerError || !retailer) {
+  if (storeError || !store) {
     notFound();
   }
 
-  // Fetch retailer's listings
+  // Fetch store's listings
   const { data: listings, error: listingsError } = await supabase
     .from("listings")
     .select("*")
-    .eq("seller_id", retailer.owner_id)
+    .eq("seller_id", store.owner_id)
     .eq("status", "active")
     .order("created_at", { ascending: false });
 
@@ -72,11 +72,11 @@ export default async function RetailerPage({ params }: { params: { slug: string 
     console.error("Error fetching listings:", listingsError);
   }
 
-  // Fetch blog posts from blog_posts table with retailer_id filter
+  // Fetch blog posts from blog_posts table with store_id filter
   let { data: blogPosts, error: blogPostsError } = await supabase
     .from("blog_posts")
     .select("*, author:profiles(username)")
-    .eq("retailer_id", retailer.id)
+    .eq("store_id", store.id)
     .eq("published", true)
     .order("created_at", { ascending: false });
 
@@ -86,7 +86,7 @@ export default async function RetailerPage({ params }: { params: { slug: string 
       const { data: adminBlogPosts, error: adminError } = await supabaseAdmin
         .from("blog_posts")
         .select("*, author:profiles(username)")
-        .eq("retailer_id", retailer.id)
+        .eq("store_id", store.id)
         .eq("published", true)
         .order("created_at", { ascending: false });
       
@@ -108,11 +108,11 @@ export default async function RetailerPage({ params }: { params: { slug: string 
     };
   });
 
-  const retailerDetails: RetailerDetails = {
-    ...retailer,
+  const storeDetails: StoreDetails = {
+    ...store,
     listings: listings || [],
     blogPosts: processedBlogPosts
   };
 
-  return <RetailerClient retailer={retailerDetails} />;
-}
+  return <StoreClient store={storeDetails} />;
+} 

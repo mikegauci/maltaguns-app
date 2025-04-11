@@ -53,9 +53,9 @@ export function Header() {
             <Link href="/marketplace">
               <Button variant="ghost">Marketplace</Button>
             </Link>
-            <Link href="/retailers">
+            <Link href="/establishments/stores">
               <Button variant="ghost">
-                Retailers
+                Stores
               </Button>
             </Link>
             <Link href="/events">
@@ -124,9 +124,9 @@ export function Header() {
             <Link href="/marketplace">
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>Marketplace</Button>
             </Link>
-            <Link href="/retailers">
+            <Link href="/establishments/stores">
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>
-                Retailers
+                Stores
               </Button>
             </Link>
             <Link href="/events">

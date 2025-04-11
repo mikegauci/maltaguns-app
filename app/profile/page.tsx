@@ -42,6 +42,7 @@ import {
   Phone,
   Star,
   Calendar,
+  Plus,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +70,10 @@ import { EventCreditDialog } from "@/components/event-credit-dialog";
 import { useSupabase } from "@/components/providers/supabase-provider";
 import { LoadingState } from "@/components/ui/loading-state";
 import Image from "next/image";
+import {
+  Alert,
+  AlertDescription,
+} from "@/components/ui/alert";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -80,13 +85,16 @@ interface BlogPost {
   created_at: string;
 }
 
-interface RetailerBlogPost {
+interface StoreBlogPost {
   id: string;
   title: string;
+  content: string;
   slug: string;
-  published: boolean;
+  featured_image: string | null;
   created_at: string;
-  retailer_id: string;
+  updated_at: string;
+  store_id: string;
+  published: boolean;
 }
 
 interface Listing {
@@ -105,11 +113,16 @@ interface Listing {
   is_expired: boolean;
 }
 
-interface Retailer {
+interface Store {
   id: string;
   business_name: string;
   logo_url: string | null;
   location: string;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  description: string | null;
+  owner_id: string;
   slug: string;
 }
 
@@ -161,12 +174,10 @@ export default function ProfilePage() {
   const { supabase, session } = useSupabase();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [retailers, setRetailers] = useState<Retailer[]>([]);
-  const [retailer, setRetailer] = useState<Retailer | null>(null);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [store, setStore] = useState<Store | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [retailerBlogPosts, setRetailerBlogPosts] = useState<
-    RetailerBlogPost[]
-  >([]);
+  const [storeBlogPosts, setStoreBlogPosts] = useState<StoreBlogPost[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -308,69 +319,69 @@ export default function ProfilePage() {
             // Continue even if there's an error
           }
 
-          // SIMPLIFIED APPROACH: Directly fetch retailer data
-          console.log("Fetching retailers for user ID:", userId);
-          const { data: retailersData, error: retailerError } = await supabase
-            .from("retailers")
+          // SIMPLIFIED APPROACH: Directly fetch store data
+          console.log("Fetching stores for user ID:", userId);
+          const { data: storesData, error: storeError } = await supabase
+            .from("stores")
             .select("*")
             .eq("owner_id", userId);
 
-          // Initialize variables for retailer posts
-          let retailerPostsData: RetailerBlogPost[] = [];
+          // Initialize variables for store posts
+          let storeBlogPostsData: StoreBlogPost[] = [];
 
-          if (retailerError) {
-            console.error("Retailer fetch error:", retailerError.message);
-          } else if (retailersData && retailersData.length > 0) {
+          if (storeError) {
+            console.error("Store fetch error:", storeError.message);
+          } else if (storesData && storesData.length > 0) {
             console.log(
-              "Found retailers:",
-              retailersData.length,
-              retailersData
+              "Found stores:",
+              storesData.length,
+              storesData
             );
 
-            // Store all retailers
-            setRetailers(retailersData);
+            // Store all stores
+            setStores(storesData);
 
-            // Also keep the first retailer in the single retailer state for backwards compatibility
-            const currentRetailer = retailersData[0];
-            setRetailer(currentRetailer);
+            // Also keep the first store in the single store state for backwards compatibility
+            const currentStore = storesData[0];
+            setStore(currentStore);
 
-            // Check and fix slugs for all retailers
-            for (const retailer of retailersData) {
-              if (!retailer.slug) {
-                const slug = slugify(retailer.business_name);
+            // Check and fix slugs for all stores
+            for (const store of storesData) {
+              if (!store.slug) {
+                const slug = slugify(store.business_name);
                 const { error: updateError } = await supabase
-                  .from("retailers")
+                  .from("stores")
                   .update({ slug })
-                  .eq("id", retailer.id);
+                  .eq("id", store.id);
 
                 if (updateError) {
-                  console.error("Error updating retailer slug:", updateError);
+                  console.error("Error updating store slug:", updateError);
                 } else {
-                  retailer.slug = slug;
+                  store.slug = slug;
                 }
               }
             }
 
-            // Fetch blog posts for all retailers
-            for (const retailer of retailersData) {
+            // Fetch blog posts for all stores
+            for (const store of storesData) {
               const { data: postsData, error: postsError } = await supabase
-                .from("retailer_blog_posts")
+                .from("store_blog_posts")
                 .select("*")
-                .eq("retailer_id", retailer.id)
+                .eq("store_id", store.id)
                 .order("created_at", { ascending: false });
 
               if (postsError) {
                 console.error(
-                  `Retailer blog posts fetch error for ${retailer.business_name}:`,
+                  `Store blog posts fetch error for ${store.business_name}:`,
                   postsError.message
                 );
-              } else if (postsData && postsData.length > 0) {
+              } else if (postsData) {
                 console.log(
-                  `Found ${postsData.length} posts for retailer ${retailer.business_name}`
+                  `Found ${postsData.length} posts for store ${store.business_name}`
                 );
-                retailerPostsData = [
-                  ...retailerPostsData,
-                  ...(postsData as RetailerBlogPost[]),
+                storeBlogPostsData = [
+                  ...storeBlogPostsData,
+                  ...(postsData as StoreBlogPost[]),
                 ];
               }
             }
@@ -423,7 +434,7 @@ export default function ProfilePage() {
 
           // Update state with all fetched data
           setBlogPosts(blogData || []);
-          setRetailerBlogPosts(retailerPostsData);
+          setStoreBlogPosts(storeBlogPostsData);
           setEvents(eventsData || []);
         } else {
           // Just set loading to false if not logged in - will show login prompt instead of redirecting
@@ -802,61 +813,61 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleDeleteRetailer(retailerId: string) {
+  async function handleDeleteStore(storeId: string) {
     try {
       // Confirm deletion
       if (
         !window.confirm(
-          "Are you sure you want to delete this retailer profile? This action cannot be undone."
+          "Are you sure you want to delete this store profile? This action cannot be undone."
         )
       ) {
         return;
       }
 
       const { error } = await supabase
-        .from("retailers")
+        .from("stores")
         .delete()
-        .eq("id", retailerId);
+        .eq("id", storeId);
 
       if (error) throw error;
 
-      setRetailers((prevRetailers) =>
-        prevRetailers.filter((retailer) => retailer.id !== retailerId)
+      setStores((prevStores) =>
+        prevStores.filter((store) => store.id !== storeId)
       );
-      setRetailerBlogPosts((prevPosts) =>
-        prevPosts.filter((post) => post.retailer_id !== retailerId)
+      setStoreBlogPosts((prevPosts) =>
+        prevPosts.filter((post) => post.store_id !== storeId)
       );
 
       toast({
-        title: "Retailer deleted",
-        description: "Your retailer profile has been deleted successfully",
+        title: "Store deleted",
+        description: "Your store profile has been deleted successfully",
       });
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Delete failed",
+        title: "Error",
         description:
-          error instanceof Error ? error.message : "Failed to delete retailer",
+          error instanceof Error ? error.message : "Failed to delete store",
       });
     }
   }
 
-  async function handleDeleteRetailerPost(postId: string) {
+  async function handleDeleteStorePost(postId: string) {
     try {
       const { error } = await supabase
-        .from("retailer_blog_posts")
+        .from("store_blog_posts")
         .delete()
         .eq("id", postId);
 
       if (error) throw error;
 
-      setRetailerBlogPosts((prevPosts) =>
+      setStoreBlogPosts((prevPosts) =>
         prevPosts.filter((post) => post.id !== postId)
       );
 
       toast({
         title: "Post deleted",
-        description: "Your retailer blog post has been deleted successfully",
+        description: "Your store blog post has been deleted successfully",
       });
     } catch (error) {
       toast({
@@ -1782,204 +1793,197 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        {/* Retailer Profiles - Show all retailers */}
-        {retailers.length > 0 ? (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle>My Retailer Profiles</CardTitle>
-                <CardDescription>
-                  Manage your business presence on MaltaGuns
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {retailers.map((retailerItem) => (
-                  <div key={retailerItem.id} className="border rounded-lg p-4">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-4">
-                        {retailerItem.logo_url ? (
-                          <img
-                            src={retailerItem.logo_url}
-                            alt={retailerItem.business_name}
-                            className="w-16 h-16 object-contain rounded-lg"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                            <Store className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        )}
+        {/* Store Profiles - Show all stores */}
+        {stores.length > 0 ? (
+          <Card className="w-full mb-8">
+            <CardHeader>
+              <CardTitle>My Store Profiles</CardTitle>
+              <CardDescription>
+                Manage your firearms business listings on MaltaGuns
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {stores.map((storeItem) => (
+                <div key={storeItem.id} className="border rounded-lg p-4">
+                  <div className="flex items-center gap-4 mb-4">
+                    {storeItem.logo_url ? (
+                      <img
+                        src={storeItem.logo_url}
+                        alt={storeItem.business_name}
+                        className="w-16 h-16 object-contain rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                        <Store className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-semibold text-lg">{storeItem.business_name}</h3>
+                      <p className="text-muted-foreground text-sm">
+                        {storeItem.location || "No location specified"}
+                      </p>
+                      {!storeItem.slug && (
+                        <Badge variant="outline" className="mt-1">
+                          No slug
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    <Link
+                      href={`/establishments/stores/${
+                        storeItem.slug || storeItem.id
+                      }`}
+                      passHref
+                    >
+                      <Button size="sm" variant="outline">
+                        View Profile
+                      </Button>
+                    </Link>
+                    <Link
+                      href={`/establishments/stores/${
+                        storeItem.slug || storeItem.id
+                      }/edit`}
+                      passHref
+                    >
+                      <Button size="sm" variant="outline">
+                        Edit Profile
+                      </Button>
+                    </Link>
+                    <Link href={`/blog/create?store_id=${storeItem.id}`} passHref>
+                      <Button size="sm" variant="outline">
+                        Add Blog Post
+                      </Button>
+                    </Link>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteStore(storeItem.id)}
+                    >
+                      Delete Profile
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {stores.length > 1 && (
+                <Alert className="mt-4 mb-2">
+                  {stores.find(
+                    (s) => !s.slug
+                  ) && (
+                    <AlertDescription className="mb-2">
+                      Some of your stores do not have a properly formatted URL
+                      slug. This will be fixed automatically.
+                    </AlertDescription>
+                  )}
+                  <AlertDescription>
+                    Note: You have multiple store profiles. While we
+                    support this, it's unusual to operate more than one firearms
+                    business.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="w-full mb-8">
+            <CardHeader>
+              <CardTitle>Create a Store Profile</CardTitle>
+              <CardDescription>
+                Add your firearms business to the MaltaGuns directory
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/establishments/stores/create">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your Business
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Store Blog Posts - Only show if user has store blog posts */}
+        {storeBlogPosts.length > 0 && (
+          <Card className="w-full mb-8">
+            <CardHeader>
+              <CardTitle>My Store Blog Posts</CardTitle>
+              <CardDescription>
+                Manage your store blog posts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {storeBlogPosts.map((post) => (
+                  <Card key={post.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="font-semibold text-lg">
-                            {retailerItem.business_name}
-                          </h3>
+                          <h3 className="font-semibold">{post.title}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {retailerItem.location || "No location specified"}
+                            {format(new Date(post.created_at), "PPP")}
                           </p>
-                          {!retailerItem.slug && (
-                            <p className="text-xs text-red-500">
-                              Missing slug - please edit your profile
+                          {/* Show which store this post belongs to */}
+                          {stores.length > 1 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {stores.find(
+                                (s) => s.id === post.store_id
+                              )?.business_name || "Unknown store"}
                             </p>
                           )}
                         </div>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Link
-                          href={`/retailers/${
-                            retailerItem.slug || retailerItem.id
-                          }`}
-                        >
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Page
-                          </Button>
-                        </Link>
-                        <Link
-                          href={`/retailers/${
-                            retailerItem.slug || retailerItem.id
-                          }/edit`}
-                        >
-                          <Button variant="outline" size="sm">
-                            <Pencil className="h-4 w-4 mr-2" />
-                            Edit Profile
-                          </Button>
-                        </Link>
-                        <Link
-                          href={`/blog/create?retailer_id=${retailerItem.id}`}
-                        >
-                          <Button variant="outline" size="sm">
-                            <BookOpen className="h-4 w-4 mr-2" />
-                            New Blog Post
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteRetailer(retailerItem.id)}
-                          className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Retailer
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Retailer Blog Posts - Only show if user has posts */}
-            {retailerBlogPosts.length > 0 && (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                  <div>
-                    <CardTitle>My Retailer Posts</CardTitle>
-                    <CardDescription>
-                      Manage your retailer blog posts
-                    </CardDescription>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {retailerBlogPosts.map((post) => (
-                      <Card key={post.id}>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="font-semibold">{post.title}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {format(new Date(post.created_at), "PPP")}
-                              </p>
-                              {/* Show which retailer this post belongs to */}
-                              {retailers.length > 1 && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {retailers.find(
-                                    (r) => r.id === post.retailer_id
-                                  )?.business_name || "Unknown retailer"}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Badge
-                                variant={
-                                  post.published ? "default" : "secondary"
-                                }
-                              >
-                                {post.published ? "Published" : "Draft"}
-                              </Badge>
-                              <div className="flex gap-2">
-                                {/* Find the retailer this post belongs to for URL */}
-                                {(() => {
-                                  const postRetailer = retailers.find(
-                                    (r) => r.id === post.retailer_id
-                                  );
-                                  return (
-                                    <>
-                                      <Link href={`/blog/${post.slug}`}>
-                                        <Button variant="outline" size="sm">
-                                          <Eye className="h-4 w-4 mr-2" />
-                                          View
-                                        </Button>
-                                      </Link>
-                                      <Link href={`/blog/${post.slug}/edit`}>
-                                        <Button variant="outline" size="sm">
-                                          <Pencil className="h-4 w-4 mr-2" />
-                                          Edit
-                                        </Button>
-                                      </Link>
-                                    </>
-                                  );
-                                })()}
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleDeleteRetailerPost(post.id)
-                                  }
-                                  className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </Button>
-                              </div>
-                            </div>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={
+                              post.published ? "default" : "secondary"
+                            }
+                          >
+                            {post.published ? "Published" : "Draft"}
+                          </Badge>
+                          <div className="flex gap-2">
+                            {/* Find the store this post belongs to for URL */}
+                            {(() => {
+                              const postStore = stores.find(
+                                (s) => s.id === post.store_id
+                              );
+                              return (
+                                <>
+                                  <Link href={`/blog/${post.slug}`}>
+                                    <Button variant="outline" size="sm">
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      View
+                                    </Button>
+                                  </Link>
+                                  <Link href={`/blog/${post.slug}/edit`}>
+                                    <Button variant="outline" size="sm">
+                                      <Pencil className="h-4 w-4 mr-2" />
+                                      Edit
+                                    </Button>
+                                  </Link>
+                                </>
+                              );
+                            })()}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleDeleteStorePost(post.id)
+                              }
+                              className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </Button>
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </>
-        ) : (
-          profile?.is_seller && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Create Retailer Profile</CardTitle>
-                <CardDescription>
-                  Set up your business profile on MaltaGuns
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">
-                  Maltaguns allows businesses in Malta that provide services to
-                  the local community to advertise their services on Maltaguns.
-                  This may include gun dealers, gun smiths, airsoft equipement
-                  repair, wood stock restoration, engineering services or gun
-                  safe importers. If you you wish to advertise your store or
-                  services on Maltaguns, kindly send an email to
-                  info@maltaguns.com in order to gain access to create your
-                  retailer profile.
-                </p>
-                <Link href="/retailers/create">
-                  <Button>
-                    <Store className="h-4 w-4 mr-2" />
-                    Create Retailer Profile
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          )
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
 
