@@ -87,3 +87,16 @@
   @apply text-red-600 hover:text-red-800 font-medium;
   text-decoration: underline;
 }
+
+/* Add custom styling for images in both editor and rendered content */
+.ProseMirror img,
+.prose img {
+  @apply w-full max-w-none my-4;
+  height: auto;
+}
+
+/* Add a container for images to maintain aspect ratio */
+.ProseMirror .image-container,
+.prose .image-container {
+  @apply relative w-full overflow-hidden my-4;
+}
