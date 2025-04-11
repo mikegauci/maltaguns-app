@@ -29,18 +29,20 @@ import {
   DialogClose
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
 
-const blogPostSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  content: z.string().min(10, "Content must be at least 10 characters"),
+const formSchema = z.object({
+  title: z.string().min(1, { message: "Title is required" }),
+  content: z.string().min(1, { message: "Content is required" }),
   featuredImage: z.string().optional(),
-  published: z.boolean(),
+  published: z.boolean().default(false),
+  category: z.enum(["news", "guides"], { required_error: "Please select a category" }),
 })
 
-type BlogPostForm = z.infer<typeof blogPostSchema>
+type FormData = z.infer<typeof formSchema>
 
 async function uploadContentImage(file: File, supabase: any, userId: string) {
   const fileExt = file.name.split('.').pop()
@@ -123,13 +125,14 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
     },
   })
 
-  const form = useForm<BlogPostForm>({
-    resolver: zodResolver(blogPostSchema),
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
       content: "",
       featuredImage: "",
-      published: true,
+      published: false,
+      category: "news",
     }
   })
 
@@ -212,6 +215,7 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
             content: post.content,
             featuredImage: post.featured_image || "",
             published: post.published,
+            category: post.category || "news",
           })
 
           if (editor) {
@@ -465,7 +469,7 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
       .run()
   }
 
-  async function onSubmit(data: BlogPostForm) {
+  async function onSubmit(data: FormData) {
     if (!postId) return
 
     try {
@@ -491,6 +495,7 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
           content: data.content,
           published: data.published,
           featured_image: data.featuredImage || null,
+          category: data.category,
           updated_at: new Date().toISOString()
         })
         .eq("id", postId)
@@ -699,6 +704,28 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
                           )}
                         </div>
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="news">News</SelectItem>
+                          <SelectItem value="guides">Guides</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

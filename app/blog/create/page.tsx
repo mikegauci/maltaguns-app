@@ -29,6 +29,7 @@ import {
   DialogClose
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // List of authorized user IDs
 const AUTHORIZED_BLOG_AUTHORS = [
@@ -43,6 +44,7 @@ const blogPostSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   content: z.string().min(10, "Content must be at least 10 characters"),
   featuredImage: z.string().optional(),
+  category: z.enum(["news", "guides"], { required_error: "Please select a category" })
 })
 
 type BlogPostForm = z.infer<typeof blogPostSchema>
@@ -220,6 +222,7 @@ export default function CreateBlogPost() {
       title: "",
       content: "",
       featuredImage: "",
+      category: undefined,
     }
   })
 
@@ -472,7 +475,7 @@ export default function CreateBlogPost() {
 
       const postSlug = slug(data.title)
 
-      // Add store_id if present
+      // Add store_id and category_id if present
       const postData = {
         author_id: session.user.id,
         title: data.title,
@@ -480,7 +483,8 @@ export default function CreateBlogPost() {
         content: data.content,
         published: true,
         featured_image: data.featuredImage || null,
-        store_id: storeId
+        store_id: storeId,
+        category: data.category
       }
 
       const { error } = await supabase
@@ -692,6 +696,31 @@ export default function CreateBlogPost() {
                           )}
                         </div>
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="news">News</SelectItem>
+                          <SelectItem value="guides">Guides</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
