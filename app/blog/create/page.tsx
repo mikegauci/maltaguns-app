@@ -186,19 +186,19 @@ export default function CreateBlogPost() {
         class: 'prose prose-neutral dark:prose-invert focus:outline-none min-h-[200px]',
       },
       handleClick: (view, pos, event) => {
-        const node = view.state.doc.nodeAt(pos)
-        if (node?.type.name === 'image') {
-          // Get the image attributes
-          const src = node.attrs.src
-          const alt = node.attrs.alt || ''
-          
-          // Set the selected image and open dialog
-          setSelectedImage({ src, alt })
-          setImageAltText(alt)
+        // Check if the clicked element is an image
+        const domEvent = event as MouseEvent
+        const element = domEvent.target as HTMLElement
+        
+        if (element.tagName === 'IMG') {
+          const img = element as HTMLImageElement
+          setSelectedImage({
+            src: img.src,
+            alt: img.alt || ''
+          })
+          setImageAltText(img.alt || '')
           setIsEditingExistingImage(true)
           setImageAltDialogOpen(true)
-          
-          // Prevent default editor behavior
           return true
         }
         return false
