@@ -46,6 +46,9 @@ import {
   Users,
   Wrench,
   MapPin,
+  CheckCircle2,
+  BanIcon,
+  ShoppingCart,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -78,6 +81,7 @@ import {
   AlertDescription,
 } from "@/components/ui/alert";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { cn } from "@/lib/utils";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -174,6 +178,82 @@ function slugify(text: string) {
     .replace(/\s+/g, "-")
     .replace(/--+/g, "-");
 }
+
+const StatusSelect = ({ 
+  value, 
+  onChange, 
+  className 
+}: { 
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+
+  const options = [
+    { value: 'active', label: 'Active', icon: CheckCircle2 },
+    { value: 'sold', label: 'Sold', icon: ShoppingCart },
+    { value: 'inactive', label: 'Inactive', icon: BanIcon }
+  ];
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div className="relative w-full">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={cn(
+          "w-full text-sm border rounded h-9 px-3 bg-white flex items-center sm:justify-start justify-center gap-2 cursor-pointer relative",
+          className
+        )}
+      >
+        {selectedOption && (
+          <>
+            <selectedOption.icon className="h-4 w-4" />
+            {selectedOption.label}
+          </>
+        )}
+        <svg 
+          className="h-4 w-4 sm:static sm:ml-2 absolute right-3" 
+          xmlns="http://www.w3.org/2000/svg" 
+          viewBox="0 0 20 20" 
+          fill="currentColor"
+        >
+          <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+        </svg>
+      </button>
+      
+      {open && (
+        <>
+          <div 
+            className="fixed inset-0" 
+            onClick={() => setOpen(false)}
+          />
+          <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+            {options.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={cn(
+                  "w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50",
+                  value === option.value && "bg-gray-50"
+                )}
+                onClick={() => {
+                  onChange(option.value);
+                  setOpen(false);
+                }}
+              >
+                <option.icon className="h-4 w-4" />
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -1309,21 +1389,24 @@ export default function ProfilePage() {
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Profile Information */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <CardHeader className="space-y-4">
             <div>
-              <CardTitle>Profile Information</CardTitle>
+              <CardTitle className="mb-2 sm:mb-0">Profile Information</CardTitle>
               <CardDescription>
                 Your personal information and account details
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              <Pencil className="h-4 w-4 mr-2" />
-              {isEditing ? "Cancel" : "Edit"}
-            </Button>
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditing(!isEditing)}
+                className="w-full sm:w-auto"
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                {isEditing ? "Cancel" : "Edit"}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {isEditing ? (
@@ -1524,14 +1607,16 @@ export default function ProfilePage() {
 
         {/* Listings */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardHeader className="space-y-4">
             <div>
               <CardTitle>My Listings</CardTitle>
               <CardDescription>
                 Manage your marketplace listings
               </CardDescription>
-              <div className="mt-4 flex items-center gap-4">
-                <div className="bg-muted px-4 py-2 rounded-md">
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                <div className="bg-muted px-4 py-2 rounded-md text-center sm:text-left">
                   <span className="text-sm text-muted-foreground">
                     Credits Remaining:
                   </span>
@@ -1545,13 +1630,13 @@ export default function ProfilePage() {
                   Add more credits
                 </Button>
               </div>
+              <Link href="/marketplace/create" className="sm:ml-auto">
+                <Button className="bg-black text-white hover:bg-gray-800 w-full">
+                  <Package className="mr-2 h-4 w-4" />
+                  Create Listing
+                </Button>
+              </Link>
             </div>
-            <Link href="/marketplace/create">
-              <Button className="bg-black text-white hover:bg-gray-800">
-                <Package className="mr-2 h-4 w-4" />
-                Create Listing
-              </Button>
-            </Link>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -1693,29 +1778,17 @@ export default function ProfilePage() {
                     {/* Bottom section: Action buttons and status dropdown */}
                     <div className="mt-4">
                       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        {/* Status dropdown */}
-                        <select
-                          value={listing.status}
-                          onChange={(e) =>
-                            handleListingStatusChange(
-                              listing.id,
-                              e.target.value
-                            )
-                          }
-                          className="text-sm border rounded h-9 px-3 w-full sm:w-auto"
-                        >
-                          <option value="active">Active</option>
-                          <option value="sold">Sold</option>
-                          <option value="inactive">Inactive</option>
-                        </select>
-
+                        <div className="w-full sm:w-auto">
+                          <StatusSelect
+                            value={listing.status}
+                            onChange={(value) => handleListingStatusChange(listing.id, value)}
+                          />
+                        </div>
+                        
                         {/* Action buttons */}
-                        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                          <Link
-                            href={`/marketplace/listing/${slugify(listing.title)}`}
-                            className="w-full sm:w-auto"
-                          >
-                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Link href={`/marketplace/listing/${slugify(listing.title)}`} className="w-full sm:w-auto">
+                            <Button variant="outline" size="sm" className="w-full">
                               <Eye className="h-4 w-4 mr-2" />
                               View
                             </Button>
@@ -1732,11 +1805,8 @@ export default function ProfilePage() {
                               Edit
                             </Button>
                           ) : (
-                            <Link
-                              href={`/marketplace/listing/${slugify(listing.title)}/edit`}
-                              className="w-full sm:w-auto"
-                            >
-                              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                            <Link href={`/marketplace/listing/${slugify(listing.title)}/edit`} className="w-full sm:w-auto">
+                              <Button variant="outline" size="sm" className="w-full">
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
                               </Button>
@@ -1765,63 +1835,59 @@ export default function ProfilePage() {
         {/* Blog Posts - Only show if user has posts */}
         {blogPosts.length > 0 && (
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardHeader className="space-y-4">
               <div>
                 <CardTitle>My Blog Posts</CardTitle>
                 <CardDescription>Manage your blog posts</CardDescription>
               </div>
-              <Link href="/blog/create">
-                <Button>
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Write Post
-                </Button>
-              </Link>
+              <div className="flex justify-end">
+                <Link href="/blog/create" className="w-full sm:w-auto">
+                  <Button className="w-full">
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Write Post
+                  </Button>
+                </Link>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {blogPosts.map((post) => (
                   <Card key={post.id}>
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
+                      <div className="flex flex-col space-y-4">
+                        <div className="flex flex-col space-y-2">
                           <h3 className="font-semibold">{post.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(post.created_at), "PPP")}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={post.published ? "default" : "secondary"}
-                          >
-                            {post.published ? "Published" : "Draft"}
-                          </Badge>
-                          <div className="flex gap-2">
-                            <Link
-                              href={`/blog/${post.slug}`}
-                            >
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-2" />
-                                View
-                              </Button>
-                            </Link>
-                            <Link
-                              href={`/blog/${post.slug}/edit`}
-                            >
-                              <Button variant="outline" size="sm">
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeletePost(post.id)}
-                              className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(post.created_at), "PPP")}
+                            </p>
+                            <Badge variant={post.published ? "default" : "secondary"}>
+                              {post.published ? "Published" : "Draft"}
+                            </Badge>
                           </div>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Link href={`/blog/${post.slug}`} className="w-full sm:w-auto">
+                            <Button variant="outline" size="sm" className="w-full">
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Button>
+                          </Link>
+                          <Link href={`/blog/${post.slug}/edit`} className="w-full sm:w-auto">
+                            <Button variant="outline" size="sm" className="w-full">
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Edit
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeletePost(post.id)}
+                            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 w-full sm:w-auto"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </Button>
                         </div>
                       </div>
                     </CardContent>
@@ -1917,12 +1983,14 @@ export default function ProfilePage() {
         {/* Events - Only show if user has events */}
         {events.length > 0 && (
           <Card className="mb-6">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardHeader className="space-y-4">
               <div>
                 <CardTitle>My Events</CardTitle>
                 <CardDescription>Manage your published events</CardDescription>
-                <div className="mt-4 flex items-center gap-4">
-                  <div className="bg-muted px-4 py-2 rounded-md">
+              </div>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                  <div className="bg-muted px-4 py-2 rounded-md text-center sm:text-left">
                     <span className="text-sm text-muted-foreground">
                       Credits Remaining:
                     </span>
@@ -1936,20 +2004,20 @@ export default function ProfilePage() {
                     Add more credits
                   </Button>
                 </div>
+                <Link href="/events/create" className="sm:ml-auto">
+                  <Button className="bg-black text-white hover:bg-gray-800 w-full">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Create Event
+                  </Button>
+                </Link>
               </div>
-              <Link href="/events/create">
-                <Button className="bg-black text-white hover:bg-gray-800">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Create Event
-                </Button>
-              </Link>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {events.map((event) => (
                   <Card key={event.id}>
                     <CardContent className="p-4">
-                      <div className="flex justify-between items-start gap-4">
+                      <div className="flex flex-col space-y-4">
                         <div className="flex gap-3">
                           {event.poster_url ? (
                             <div className="h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
@@ -1965,24 +2033,22 @@ export default function ProfilePage() {
                             </div>
                           )}
                           <div>
-                            <h3 className="font-semibold text-lg">
-                              {event.title}
-                            </h3>
+                            <h3 className="font-semibold text-lg">{event.title}</h3>
                             <div className="text-sm text-muted-foreground">
                               <p>{format(new Date(event.start_date), "PPP")}</p>
                               <p>{event.location}</p>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Link href={`/events/${event.slug || event.id}`}>
-                            <Button variant="outline" size="sm">
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Link href={`/events/${event.slug || event.id}`} className="w-full sm:w-auto">
+                            <Button variant="outline" size="sm" className="w-full">
                               <Eye className="h-4 w-4 mr-2" />
                               View
                             </Button>
                           </Link>
-                          <Link href={`/events/${event.slug || event.id}/edit`}>
-                            <Button variant="outline" size="sm">
+                          <Link href={`/events/${event.slug || event.id}/edit`} className="w-full sm:w-auto">
+                            <Button variant="outline" size="sm" className="w-full">
                               <Pencil className="h-4 w-4 mr-2" />
                               Edit
                             </Button>
@@ -1991,7 +2057,7 @@ export default function ProfilePage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDeleteEvent(event.id)}
-                            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 w-full sm:w-auto"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
