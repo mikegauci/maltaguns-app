@@ -258,7 +258,7 @@ export default function Home() {
         </div>
         <div className="relative mx-auto max-w-2xl py-32 sm:py-48 lg:py-56 px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-6xl font-bold sm:text-6xl mb-6 text-white">
+            <h1 className="text-5xl sm:text-6xl font-bold mb-6 text-white">
               Welcome to MaltaGuns
             </h1>
             <p className="text-lg leading-8 text-white/80 mb-8">
@@ -266,22 +266,23 @@ export default function Home() {
               Browse listings, read expert articles, and connect with fellow
               enthusiasts.
             </p>
-            <div className="flex items-center justify-center gap-x-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-x-6 w-full sm:w-auto">
               <Link
                 href={isAuthenticated ? "/marketplace/create" : "/register"}
+                className="w-[80%] sm:w-auto"
               >
                 <Button
                   size="lg"
-                  className="bg-white text-black border-white hover:bg-white/20"
+                  className="bg-white text-black border-white hover:bg-white/20 w-full"
                 >
                   {isAuthenticated ? "Post Listing" : "Join the Community"}
                 </Button>
               </Link>
-              <Link href="/marketplace">
+              <Link href="/marketplace" className="w-[80%] sm:w-auto">
                 <Button
                   variant="outline"
                   size="lg"
-                  className="bg-white/10 text-white border-white hover:bg-white/20"
+                  className="bg-white/10 text-white border-white hover:bg-white/20 w-full"
                 >
                   Browse Marketplace
                 </Button>
