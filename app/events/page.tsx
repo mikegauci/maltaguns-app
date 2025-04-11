@@ -270,19 +270,12 @@ export default function EventsPage() {
                 </div>
               </CardContent>
             </Card>
-            <Button
-              className="w-full"
-              onClick={() => {
-                if (!isAuthenticated) {
-                  router.push('/login')
-                  return
-                }
-                router.push('/events/create')
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Event
-            </Button>
+            <Link href="/events/create">
+              <Button className="w-full mt-4">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Event
+              </Button>
+            </Link>
           </div>
         </div>
 

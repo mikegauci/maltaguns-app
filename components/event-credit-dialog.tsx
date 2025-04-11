@@ -55,8 +55,8 @@ export function EventCreditDialog({ open, onOpenChange, userId, onSuccess }: Eve
     onOpenChange(newOpen);
   };
 
-  const handleBackToEvents = () => {
-    router.push("/events");
+  const handleBack = () => {
+    router.back();
     onOpenChange(false);
   };
 
@@ -82,10 +82,10 @@ export function EventCreditDialog({ open, onOpenChange, userId, onSuccess }: Eve
         <DialogFooter className="mt-6">
           <Button 
             variant="outline" 
-            onClick={handleBackToEvents}
+            onClick={handleBack}
             className="w-full border-black text-black hover:bg-gray-100"
           >
-            Back to Events
+            Go Back
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -202,6 +202,11 @@ export default function CreateEventPage() {
           const currentCredits = creditsData?.amount || 0
           setCredits(currentCredits)
           setHasCredits(currentCredits > 0)
+          
+          // Show credit dialog if credits are 0
+          if (currentCredits === 0) {
+            setShowCreditDialog(true)
+          }
 
           // Check URL parameters for Stripe success
           if (typeof window !== 'undefined') {
@@ -414,6 +419,25 @@ export default function CreateEventPage() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  // Show only the credit dialog if credits are 0
+  if (!hasCredits) {
+    return (
+      <div className="min-h-screen bg-background">
+        {userId && (
+          <EventCreditDialog
+            open={showCreditDialog}
+            onOpenChange={setShowCreditDialog}
+            userId={userId}
+            onSuccess={() => {
+              setShowCreditDialog(false)
+              setHasCredits(true)
+            }}
+          />
+        )}
       </div>
     )
   }
@@ -717,18 +741,6 @@ export default function CreateEventPage() {
             </Form>
           </CardContent>
         </Card>
-
-        {userId && (
-          <EventCreditDialog
-            open={showCreditDialog}
-            onOpenChange={setShowCreditDialog}
-            userId={userId}
-            onSuccess={() => {
-              setShowCreditDialog(false)
-              setHasCredits(true)
-            }}
-          />
-        )}
       </div>
     </div>
   )
