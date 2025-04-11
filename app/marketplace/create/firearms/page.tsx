@@ -82,87 +82,88 @@ export default function CreateFirearmsListing() {
     }
   })
 
-  useEffect(() => {
-    let mounted = true
+  const checkCredits = async () => {
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError)
+        router.push('/login')
+        return
+      }
 
-    async function checkCredits() {
-      try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (!session) {
+        console.log('No session found')
+        router.push('/login')
+        return
+      }
+
+      // Validate session expiry
+      const sessionExpiry = new Date(session.expires_at! * 1000)
+      const now = new Date()
+      const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
+      const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+
+      if (isNearExpiry) {
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
         
-        if (sessionError) {
-          console.error('Session error:', sessionError)
+        if (refreshError || !refreshedSession) {
+          console.error('Session refresh failed:', refreshError)
           router.push('/login')
           return
-        }
-
-        if (!session) {
-          console.log('No session found')
-          router.push('/login')
-          return
-        }
-
-        // Validate session expiry
-        const sessionExpiry = new Date(session.expires_at! * 1000)
-        const now = new Date()
-        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
-        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
-
-        if (isNearExpiry) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
-          if (refreshError || !refreshedSession) {
-            console.error('Session refresh failed:', refreshError)
-            router.push('/login')
-            return
-          }
-        }
-
-        if (mounted) {
-          setUserId(session.user.id)
-
-          // Check if user is a retailer
-          const { data: retailerData, error: retailerError } = await supabase
-            .from("stores")
-            .select("id")
-            .eq("owner_id", session.user.id)
-            .limit(1);
-
-          if (retailerError) {
-            console.error('Error checking store status:', retailerError);
-          }
-
-          setIsRetailer(!!retailerData?.[0]);
-
-          // Get user credits
-          const { data: creditsData, error: creditsError } = await supabase
-            .from("credits")
-            .select("amount")
-            .eq("user_id", session.user.id)
-            .single();
-
-          if (creditsError && creditsError.code !== 'PGRST116') {
-            console.error('Error fetching credits:', creditsError)
-          }
-
-          const currentCredits = creditsData?.amount || 0
-          setCredits(currentCredits)
-          setHasCredits(currentCredits > 0 || !!retailerData?.[0])
-          setIsLoading(false)
-        }
-      } catch (error) {
-        console.error('Error in checkCredits:', error)
-        if (mounted) {
-          setIsLoading(false)
         }
       }
+
+      setUserId(session.user.id)
+
+      // Check if user is a retailer
+      const { data: retailerData, error: retailerError } = await supabase
+        .from("stores")
+        .select("id")
+        .eq("owner_id", session.user.id)
+        .limit(1);
+
+      if (retailerError) {
+        console.error('Error checking store status:', retailerError);
+      }
+
+      setIsRetailer(!!retailerData?.[0]);
+
+      // Get user credits
+      const { data: creditsData, error: creditsError } = await supabase
+        .from("credits")
+        .select("amount")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (creditsError && creditsError.code !== 'PGRST116') {
+        console.error('Error fetching credits:', creditsError)
+      }
+
+      const currentCredits = creditsData?.amount || 0
+      setCredits(currentCredits)
+      setHasCredits(currentCredits > 0 || !!retailerData?.[0])
+      setIsLoading(false)
+
+      // Show credit dialog if credits are 0 and user is not a retailer
+      if (currentCredits === 0 && !retailerData?.[0]) {
+        setShowCreditDialog(true)
+      }
+    } catch (error) {
+      console.error('Error in checkCredits:', error)
+      setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
+    let mounted = true
 
     checkCredits()
 
     return () => {
       mounted = false
     }
-  }, [router, supabase])
+  }, [])
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
     try {
@@ -597,11 +598,19 @@ export default function CreateFirearmsListing() {
         {userId && (
           <CreditDialog 
             open={showCreditDialog} 
-            onOpenChange={setShowCreditDialog}
+            onOpenChange={(open) => {
+              setShowCreditDialog(open);
+              // If dialog is closed and user still has no credits, redirect to marketplace
+              if (!open && credits === 0 && !isRetailer) {
+                router.push('/marketplace/create');
+              }
+            }}
             userId={userId}
+            source="marketplace"
             onSuccess={() => {
+              // Refresh credits after purchase
+              checkCredits();
               setShowCreditDialog(false);
-              router.refresh();
             }}
           />
         )}

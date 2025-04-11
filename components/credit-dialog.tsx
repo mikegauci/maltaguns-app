@@ -29,9 +29,10 @@ interface CreditDialogProps {
   onOpenChange: (open: boolean) => void;
   userId: string;
   onSuccess?: () => void;
+  source?: 'profile' | 'marketplace';
 }
 
-export function CreditDialog({ open, onOpenChange, userId, onSuccess }: CreditDialogProps) {
+export function CreditDialog({ open, onOpenChange, userId, onSuccess, source }: CreditDialogProps) {
   const router = useRouter();
   useEffect(() => { void stripePromise; }, []);
 
@@ -58,9 +59,18 @@ export function CreditDialog({ open, onOpenChange, userId, onSuccess }: CreditDi
     }
   };
 
-  const handleReturnHome = () => {
-    router.push("/");
-    onOpenChange(false);
+  const handleBack = () => {
+    if (source === 'profile') {
+      // Just close the dialog if opened from profile
+      onOpenChange(false);
+    } else if (source === 'marketplace') {
+      // Return to marketplace create page
+      router.push('/marketplace/create');
+      onOpenChange(false);
+    } else {
+      // Default behavior - just close
+      onOpenChange(false);
+    }
   };
 
   // Prevent closing the dialog when clicking outside or pressing escape
@@ -98,10 +108,10 @@ export function CreditDialog({ open, onOpenChange, userId, onSuccess }: CreditDi
         <DialogFooter className="mt-6">
           <Button 
             variant="outline" 
-            onClick={handleReturnHome}
+            onClick={handleBack}
             className="w-full"
           >
-            Return to Home
+            Back
           </Button>
         </DialogFooter>
       </DialogContent>

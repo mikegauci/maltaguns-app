@@ -2396,6 +2396,7 @@ export default function ProfilePage() {
         open={showCreditDialog}
         onOpenChange={setShowCreditDialog}
         userId={profile?.id || ""}
+        source="profile"
         onSuccess={() => {
           toast({
             title: "Credits purchased",
