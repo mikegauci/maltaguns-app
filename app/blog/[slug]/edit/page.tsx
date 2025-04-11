@@ -76,11 +76,20 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState("")
   const [openInNewTab, setOpenInNewTab] = useState(true)
+  const [imageAltDialogOpen, setImageAltDialogOpen] = useState(false)
+  const [imageAltText, setImageAltText] = useState("")
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null)
+  const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null)
+  const [isEditingExistingImage, setIsEditingExistingImage] = useState(false)
 
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Image,
+      Image.configure({
+        HTMLAttributes: {
+          class: 'cursor-pointer hover:ring-2 hover:ring-primary/50 rounded-md',
+        },
+      }),
       Link.configure({
         openOnClick: false,
       }),
@@ -92,6 +101,24 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
     editorProps: {
       attributes: {
         class: 'prose prose-neutral dark:prose-invert focus:outline-none min-h-[200px]',
+      },
+      handleClick: (view, pos, event) => {
+        const node = view.state.doc.nodeAt(pos)
+        if (node?.type.name === 'image') {
+          // Get the image attributes
+          const src = node.attrs.src
+          const alt = node.attrs.alt || ''
+          
+          // Set the selected image and open dialog
+          setSelectedImage({ src, alt })
+          setImageAltText(alt)
+          setIsEditingExistingImage(true)
+          setImageAltDialogOpen(true)
+          
+          // Prevent default editor behavior
+          return true
+        }
+        return false
       },
     },
   })
@@ -314,35 +341,11 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
           return
         }
 
-        setUploadingContentImage(true)
-        
-        try {
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
-          if (sessionError || !session?.user.id) {
-            throw new Error("Authentication error")
-          }
-          
-          const imageUrl = await uploadContentImage(file, supabase, session.user.id)
-          
-          if (editor) {
-            editor.chain().focus().setImage({ src: imageUrl, alt: file.name }).run()
-          }
-          
-          toast({
-            title: "Image inserted",
-            description: "Your image has been added to the post"
-          })
-        } catch (error) {
-          console.error("Content image upload error:", error)
-          toast({
-            variant: "destructive",
-            title: "Upload failed",
-            description: error instanceof Error ? error.message : "Failed to upload image"
-          })
-        } finally {
-          setUploadingContentImage(false)
-        }
+        setPendingImageFile(file)
+        // Remove file extension from filename for alt text
+        const altTextWithoutExtension = file.name.replace(/\.[^/.]+$/, "")
+        setImageAltText(altTextWithoutExtension)
+        setImageAltDialogOpen(true)
       }
       
       input.click()
@@ -353,6 +356,67 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
         title: "Error",
         description: "Failed to add image to post"
       })
+    }
+  }
+
+  const handleImageInsert = async () => {
+    if (!imageAltText) return
+    
+    if (isEditingExistingImage && selectedImage) {
+      // Update existing image alt text
+      editor?.chain().focus().setImage({ 
+        src: selectedImage.src, 
+        alt: imageAltText 
+      }).run()
+      
+      toast({
+        title: "Alt text updated",
+        description: "Image alt text has been updated successfully"
+      })
+
+      // Reset state
+      setImageAltDialogOpen(false)
+      setImageAltText("")
+      setSelectedImage(null)
+      setIsEditingExistingImage(false)
+      return
+    }
+
+    if (!pendingImageFile) return
+    
+    setUploadingContentImage(true)
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+      if (sessionError || !session?.user.id) {
+        throw new Error("Authentication error")
+      }
+      
+      const imageUrl = await uploadContentImage(pendingImageFile, supabase, session.user.id)
+      
+      if (editor) {
+        editor.chain().focus().setImage({ src: imageUrl, alt: imageAltText }).run()
+      }
+      
+      toast({
+        title: "Image inserted",
+        description: "Your image has been added to the post"
+      })
+
+      // Reset state
+      setImageAltDialogOpen(false)
+      setImageAltText("")
+      setPendingImageFile(null)
+      setIsEditingExistingImage(false)
+    } catch (error) {
+      console.error("Content image upload error:", error)
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Failed to upload image"
+      })
+    } finally {
+      setUploadingContentImage(false)
     }
   }
 
@@ -685,7 +749,7 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
             <DialogHeader>
               <DialogTitle>Add Link</DialogTitle>
               <DialogDescription>
-                Add a URL to create a hyperlink from the selected text.
+                Enter the URL and choose if it should open in a new tab
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -693,31 +757,88 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
                 <Label htmlFor="url">URL</Label>
                 <Input
                   id="url"
-                  placeholder="https://example.com"
                   value={linkUrl}
                   onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://example.com"
                 />
               </div>
               <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="new-tab" 
-                  checked={openInNewTab} 
-                  onCheckedChange={(checked) => setOpenInNewTab(checked === true)}
+                <Checkbox
+                  id="new-tab"
+                  checked={openInNewTab}
+                  onCheckedChange={(checked) => setOpenInNewTab(checked as boolean)}
                 />
-                <label
-                  htmlFor="new-tab"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Open in new tab
-                </label>
+                <Label htmlFor="new-tab">Open in new tab</Label>
               </div>
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
+                <Button variant="secondary">Cancel</Button>
               </DialogClose>
-              <Button type="button" onClick={applyLink} disabled={!linkUrl}>
-                Apply Link
+              <Button onClick={applyLink} disabled={!linkUrl}>
+                Add Link
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Image Alt Text Dialog */}
+        <Dialog open={imageAltDialogOpen} onOpenChange={(open) => {
+          if (!open) {
+            setImageAltDialogOpen(false)
+            setImageAltText("")
+            setPendingImageFile(null)
+            setSelectedImage(null)
+            setIsEditingExistingImage(false)
+          }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{isEditingExistingImage ? 'Edit Image Alt Text' : 'Add Image Alt Text'}</DialogTitle>
+              <DialogDescription>
+                Enter alternative text to describe the image for accessibility
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="alt-text">Alt Text</Label>
+                <Input
+                  id="alt-text"
+                  value={imageAltText}
+                  onChange={(e) => setImageAltText(e.target.value)}
+                  placeholder="Describe the image"
+                />
+              </div>
+              {isEditingExistingImage && selectedImage && (
+                <div className="relative w-full aspect-video">
+                  <img
+                    src={selectedImage.src}
+                    alt={selectedImage.alt}
+                    className="rounded-md object-contain w-full h-full"
+                  />
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="secondary" onClick={() => {
+                  setPendingImageFile(null)
+                  setImageAltText("")
+                  setSelectedImage(null)
+                  setIsEditingExistingImage(false)
+                }}>
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button onClick={handleImageInsert} disabled={!imageAltText || (!isEditingExistingImage && uploadingContentImage)}>
+                {!isEditingExistingImage && uploadingContentImage ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  isEditingExistingImage ? "Update Alt Text" : "Insert Image"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
