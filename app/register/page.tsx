@@ -231,7 +231,7 @@ export default function Register() {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
           data: {
             username: data.username,
           },
@@ -263,7 +263,7 @@ export default function Register() {
         type: "signup",
         email: data.email,
         options: {
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
         },
       });
 
