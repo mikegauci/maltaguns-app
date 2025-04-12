@@ -4,9 +4,15 @@ import { Database } from '@/lib/database.types'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import BlogPostCard from '../../components/blog/BlogPostCard'
-
+import BlogPostCard from '@/app/components/blog/BlogPostCard'
 const validCategories = ['news', 'guides']
+
+// Generate static params for valid categories
+export function generateStaticParams() {
+  return validCategories.map((category) => ({
+    category: category,
+  }))
+}
 
 export default async function CategoryArchive({
   params
@@ -16,15 +22,10 @@ export default async function CategoryArchive({
   const supabase = createServerComponentClient<Database>({ cookies })
   const category = params.category.toLowerCase()
 
-  console.log('Category:', category) // Debug log
-
-  // Validate category
   if (!validCategories.includes(category)) {
-    console.log('Invalid category, valid options are:', validCategories) // Debug log
-    notFound()
+    return notFound()
   }
 
-  // Fetch posts for this category
   const { data: posts, error } = await supabase
     .from('blog_posts')
     .select('*')
@@ -36,8 +37,6 @@ export default async function CategoryArchive({
     console.error('Error fetching posts:', error)
     throw new Error('Failed to fetch posts')
   }
-
-  console.log('Posts found:', posts?.length || 0) // Debug log
 
   return (
     <div className="min-h-screen bg-background py-12">

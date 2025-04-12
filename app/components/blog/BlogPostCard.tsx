@@ -19,7 +19,7 @@ interface BlogPostCardProps {
 
 export default function BlogPostCard({ post }: BlogPostCardProps) {
   return (
-    <Link href={`/blog/${post.slug}`}>
+    <Link href={`/blog/${post.category}/${post.slug}`}>
       <Card className="h-full hover:shadow-lg transition-shadow duration-200">
         {post.featured_image && (
           <div className="relative w-full aspect-video">

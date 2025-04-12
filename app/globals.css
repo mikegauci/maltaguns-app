@@ -92,7 +92,6 @@
 .ProseMirror img,
 .prose img {
   @apply w-full max-w-none my-4;
-  height: auto;
 }
 
 /* Add a container for images to maintain aspect ratio */

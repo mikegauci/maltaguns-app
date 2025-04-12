@@ -455,58 +455,51 @@ export default function CreateBlogPost() {
   }
 
   async function onSubmit(data: BlogPostForm) {
+    setIsLoading(true)
     try {
-      setIsLoading(true)
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
-      if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+      if (sessionError || !session) {
+        throw new Error('Not authenticated')
       }
+
+      // Upload featured image if selected
+      let featured_image = data.featuredImage
       
-      if (!session?.user.id) {
-        throw new Error("Not authenticated")
-      }
+      // Create the blog post
+      const { data: post, error: createError } = await supabase
+        .from('blog_posts')
+        .insert([
+          {
+            title: data.title,
+            content: data.content,
+            featured_image,
+            published: true,
+            category: data.category,
+            author_id: session.user.id,
+            slug: slug(data.title)
+          }
+        ])
+        .select()
+        .single()
 
-      // Double-check authorization
-      if (!AUTHORIZED_BLOG_AUTHORS.includes(session.user.id)) {
-        throw new Error("Not authorized to create blog posts")
-      }
-
-      const postSlug = slug(data.title)
-
-      // Add store_id and category_id if present
-      const postData = {
-        author_id: session.user.id,
-        title: data.title,
-        slug: postSlug,
-        content: data.content,
-        published: true,
-        featured_image: data.featuredImage || null,
-        store_id: storeId,
-        category: data.category
-      }
-
-      const { error } = await supabase
-        .from("blog_posts")
-        .insert(postData)
-
-      if (error) throw error
+      if (createError) throw createError
 
       toast({
-        title: "Post created",
-        description: "Your blog post has been published successfully"
+        title: "Success",
+        description: "Blog post created successfully.",
       })
 
-      // Keep isLoading true during redirection
-      router.push(`/blog/${postSlug}`)
+      // Redirect to the new post with category in the URL
+      router.push(`/blog/${data.category}/${slug(data.title)}`)
     } catch (error) {
-      console.error("Submit error:", error)
+      console.error('Error creating post:', error)
       toast({
         variant: "destructive",
-        title: "Failed to create post",
-        description: error instanceof Error ? error.message : "Something went wrong"
+        title: "Error",
+        description: "Failed to create blog post. Please try again."
       })
+    } finally {
       setIsLoading(false)
     }
   }

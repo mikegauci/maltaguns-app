@@ -67,7 +67,7 @@ async function uploadContentImage(file: File, supabase: any, userId: string) {
   return publicUrl
 }
 
-export default function EditBlogPost({ params }: { params: { slug: string } }) {
+export default function EditBlogPost({ params }: { params: { category: string; slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClientComponentClient<Database>()
@@ -83,6 +83,7 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null)
   const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null)
   const [isEditingExistingImage, setIsEditingExistingImage] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const editor = useEditor({
     extensions: [
@@ -471,55 +472,58 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
 
   async function onSubmit(data: FormData) {
     if (!postId) return
-
+    
+    setIsSubmitting(true)
     try {
-      setIsLoading(true)
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
-      if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
-      }
-      
-      if (!session?.user.id) {
-        throw new Error("Not authenticated")
+      if (sessionError || !session) {
+        throw new Error('Not authenticated')
       }
 
-      const postSlug = slug(data.title)
+      // Upload featured image if selected
+      let featured_image = data.featuredImage
+      if (pendingImageFile) {
+        const { data: uploadData, error: uploadError } = await uploadContentImage(
+          pendingImageFile,
+          supabase,
+          session.user.id
+        )
+        if (uploadError) throw uploadError
+        featured_image = uploadData.path
+      }
 
+      // Update the blog post
       const { error: updateError } = await supabase
-        .from("blog_posts")
+        .from('blog_posts')
         .update({
           title: data.title,
-          slug: postSlug,
           content: data.content,
+          featured_image,
           published: data.published,
-          featured_image: data.featuredImage || null,
           category: data.category,
-          updated_at: new Date().toISOString()
+          slug: slug(data.title)
         })
-        .eq("id", postId)
+        .eq('id', postId)
 
-      if (updateError) {
-        console.error("Update error:", updateError)
-        throw updateError
-      }
+      if (updateError) throw updateError
 
       toast({
-        title: "Post updated",
-        description: "Your blog post has been updated successfully"
+        title: "Success",
+        description: "Blog post updated successfully.",
       })
 
-      router.push(`/blog/${postSlug}`)
+      // Redirect to the updated post with category in the URL
+      router.push(`/blog/${data.category}/${slug(data.title)}`)
     } catch (error) {
-      console.error("Submit error:", error)
+      console.error('Error updating post:', error)
       toast({
         variant: "destructive",
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Something went wrong"
+        title: "Error",
+        description: "Failed to update blog post. Please try again."
       })
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -643,11 +647,11 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => router.push("/profile")}
+            onClick={() => router.push(`/blog/${params.category}/${params.slug}`)}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to profile
+            Back to post
           </Button>
         </div>
 
@@ -753,9 +757,9 @@ export default function EditBlogPost({ params }: { params: { slug: string } }) {
                 <Button 
                   type="submit" 
                   className="w-full"
-                  disabled={isLoading || uploadingImage || uploadingContentImage}
+                  disabled={isSubmitting || uploadingImage || uploadingContentImage}
                 >
-                  {isLoading || uploadingImage || uploadingContentImage ? (
+                  {isSubmitting || uploadingImage || uploadingContentImage ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       {uploadingImage ? "Uploading Image..." : 
