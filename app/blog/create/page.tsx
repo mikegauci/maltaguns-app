@@ -86,21 +86,68 @@ export default function CreateBlogPost() {
   const [linkUrl, setLinkUrl] = useState("")
   const [openInNewTab, setOpenInNewTab] = useState(true)
   const [storeId, setStoreId] = useState<string | null>(null)
+  const [userStore, setUserStore] = useState<any>(null)
   const [imageAltDialogOpen, setImageAltDialogOpen] = useState(false)
   const [imageAltText, setImageAltText] = useState("")
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null)
   const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null)
   const [isEditingExistingImage, setIsEditingExistingImage] = useState(false)
 
-  // Get store_id from URL if present
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const id = params.get('store_id') || params.get('retailer_id') // Support both new and old parameter names
-    if (id) {
-      console.log("Store ID from URL:", id)
-      setStoreId(id)
+    let mounted = true
+
+    async function checkUserStore() {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError || !session) {
+          console.log('No session found')
+          return
+        }
+
+        // First check URL parameter (for backward compatibility)
+        const searchParams = new URLSearchParams(window.location.search)
+        const urlStoreId = searchParams.get('store_id')
+        
+        if (urlStoreId) {
+          console.log("Store ID from URL:", urlStoreId)
+          setStoreId(urlStoreId)
+          return
+        }
+
+        // If no store_id in URL, check if user owns a store
+        const { data: stores, error: storesError } = await supabase
+          .from('stores')
+          .select('id, business_name, slug')
+          .eq('owner_id', session.user.id)
+          .limit(1)
+          .single()
+        
+        if (storesError) {
+          if (storesError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
+            console.error('Error fetching user store:', storesError)
+          }
+          return
+        }
+
+        if (stores) {
+          console.log("User store found:", stores)
+          setStoreId(stores.id)
+          setUserStore(stores)
+        } else {
+          console.log("User does not own a store")
+        }
+      } catch (error) {
+        console.error('Error checking user store:', error)
+      }
     }
-  }, [])
+
+    checkUserStore()
+
+    return () => {
+      mounted = false
+    }
+  }, [supabase])
 
   useEffect(() => {
     let mounted = true
@@ -463,27 +510,38 @@ export default function CreateBlogPost() {
         throw new Error('Not authenticated')
       }
 
-      // Upload featured image if selected
-      let featured_image = data.featuredImage
-      
+      // Log the current storeId state
+      console.log("Creating blog post with store_id:", storeId)
+      if (userStore) {
+        console.log("Associated with store:", userStore.business_name)
+      }
+
       // Create the blog post
+      const postData = {
+        title: data.title,
+        content: data.content,
+        featured_image: data.featuredImage,
+        published: true,
+        category: data.category,
+        author_id: session.user.id,
+        store_id: storeId,
+        slug: slug(data.title)
+      }
+
+      console.log("Post data being sent:", postData)
+
       const { data: post, error: createError } = await supabase
         .from('blog_posts')
-        .insert([
-          {
-            title: data.title,
-            content: data.content,
-            featured_image,
-            published: true,
-            category: data.category,
-            author_id: session.user.id,
-            slug: slug(data.title)
-          }
-        ])
+        .insert([postData])
         .select()
         .single()
 
-      if (createError) throw createError
+      if (createError) {
+        console.error("Error creating blog post:", createError)
+        throw createError
+      }
+
+      console.log("Created blog post:", post)
 
       toast({
         title: "Success",

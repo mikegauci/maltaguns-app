@@ -40,6 +40,7 @@ interface Store {
     author: {
       username: string
     }
+    category: string
   }[]
 }
 
@@ -71,6 +72,7 @@ export default function StoreClient({ store }: { store: Store }) {
   const [isOwner, setIsOwner] = useState(false)
   const [blogPosts, setBlogPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // Check if blog posts array is valid
   const hasBlogPosts = Array.isArray(store.blogPosts) && store.blogPosts.length > 0;
@@ -95,31 +97,46 @@ export default function StoreClient({ store }: { store: Store }) {
 
   // Fetch blog posts directly from the client side as a fallback
   useEffect(() => {
-    if (!hasBlogPosts && !loading) {
-      const fetchBlogPosts = async () => {
-        try {
-          // Fetch blog posts from blog_posts table with store_id filter
-          const { data, error } = await supabase
-            .from("blog_posts")
-            .select("*, author:profiles(username)")
-            .eq("store_id", store.id)
-            .eq("published", true)
-            .order("created_at", { ascending: false });
+    const fetchBlogPosts = async () => {
+      try {
+        console.log(`Fetching blog posts for store ID: ${store.id}`)
+        setLoading(true)
+        
+        // Fetch blog posts from blog_posts table with store_id filter
+        const { data, error } = await supabase
+          .from("blog_posts")
+          .select(`
+            id,
+            title,
+            slug,
+            content,
+            featured_image,
+            created_at,
+            category,
+            author:profiles(username)
+          `)
+          .eq("store_id", store.id)
+          .eq("published", true)
+          .order("created_at", { ascending: false });
             
-          if (error) {
-            console.error("Error fetching blog posts from client:", error);
-          } else if (data && data.length > 0) {
-            // Set the blog posts
-            setBlogPosts(data);
-          }
-        } catch (error) {
-          console.error("Error in client-side fetch:", error);
+        if (error) {
+          console.error("Error fetching blog posts from client:", error);
+        } else if (data && data.length > 0) {
+          console.log(`Found ${data.length} blog posts for store:`, data);
+          // Set the blog posts
+          setBlogPosts(data);
+        } else {
+          console.log("No blog posts found for this store");
         }
-      };
-      
-      fetchBlogPosts();
-    }
-  }, [hasBlogPosts, loading, store.id]);
+      } catch (error) {
+        console.error("Error in client-side fetch:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBlogPosts();
+  }, [store.id, refreshTrigger]);
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -269,12 +286,17 @@ export default function StoreClient({ store }: { store: Store }) {
           
           {blogPosts.length === 0 ? (
             <Card className="p-6 text-center">
-              <p className="text-muted-foreground">No blog posts available.</p>
+              <p className="text-muted-foreground">
+                {loading ? "Loading posts..." : "No blog posts available."}
+              </p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {blogPosts.map((post) => (
-                <Link key={post.id} href={`/blog/${post.slug}`}>
+                <Link 
+                  key={post.id} 
+                  href={`/blog/${post.category || 'news'}/${post.slug}`}
+                >
                   <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden">
                     {post.featured_image && (
                       <div className="aspect-video relative overflow-hidden">
@@ -288,7 +310,8 @@ export default function StoreClient({ store }: { store: Store }) {
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-lg mb-2">{post.title}</h3>
                       <p className="text-sm text-muted-foreground mb-2">
-                        {format(new Date(post.created_at), "MMMM d, yyyy")} • By {post.author?.username || "Unknown"}
+                        {format(new Date(post.created_at), "MMMM d, yyyy")} • 
+                        By {post.author?.username || "Unknown"}
                       </p>
                       {post.content && (
                         <p className="text-muted-foreground line-clamp-3">

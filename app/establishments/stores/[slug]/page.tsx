@@ -34,6 +34,7 @@ interface StoreDetails extends Store {
     content: string;
     featured_image: string | null;
     created_at: string;
+    category: string;
     author: {
       username: string;
     };
@@ -60,6 +61,8 @@ export default async function StorePage({ params }: { params: { slug: string } }
     notFound();
   }
 
+  console.log(`Found store: ${store.business_name} (ID: ${store.id})`);
+
   // Fetch store's listings
   const { data: listings, error: listingsError } = await supabase
     .from("listings")
@@ -73,26 +76,59 @@ export default async function StorePage({ params }: { params: { slug: string } }
   }
 
   // Fetch blog posts from blog_posts table with store_id filter
+  console.log(`Fetching blog posts for store ID: ${store.id}`);
   let { data: blogPosts, error: blogPostsError } = await supabase
     .from("blog_posts")
-    .select("*, author:profiles(username)")
+    .select(`
+      id,
+      title,
+      slug,
+      content,
+      featured_image,
+      created_at,
+      category,
+      store_id,
+      author:profiles(username)
+    `)
     .eq("store_id", store.id)
     .eq("published", true)
     .order("created_at", { ascending: false });
 
+  if (blogPostsError) {
+    console.error(`Store blog posts fetch error for ${store.business_name}: ${blogPostsError.message}`);
+  } else {
+    console.log(`Found ${blogPosts?.length || 0} blog posts for ${store.business_name}`);
+  }
+
   // If there's an error or no posts found, try with admin client as fallback
   if (blogPostsError || !blogPosts || blogPosts.length === 0) {
     try {
+      console.log(`Trying admin client for store ID: ${store.id}`);
       const { data: adminBlogPosts, error: adminError } = await supabaseAdmin
         .from("blog_posts")
-        .select("*, author:profiles(username)")
+        .select(`
+          id,
+          title,
+          slug,
+          content,
+          featured_image,
+          created_at,
+          category,
+          store_id,
+          author:profiles(username)
+        `)
         .eq("store_id", store.id)
         .eq("published", true)
         .order("created_at", { ascending: false });
       
       if (!adminError && adminBlogPosts && adminBlogPosts.length > 0) {
+        console.log(`Found ${adminBlogPosts.length} blog posts with admin client`);
         blogPosts = adminBlogPosts;
         blogPostsError = null;
+      } else if (adminError) {
+        console.error(`Admin client error: ${adminError.message}`);
+      } else {
+        console.log("No blog posts found with admin client");
       }
     } catch (error) {
       console.error("Error using admin client:", error);
@@ -104,7 +140,8 @@ export default async function StorePage({ params }: { params: { slug: string } }
     // Ensure the author property exists and has the correct structure
     return {
       ...post,
-      author: post.author || { username: "Author" }
+      author: post.author || { username: "Author" },
+      category: post.category || "news" // Ensure category always has a value
     };
   });
 
