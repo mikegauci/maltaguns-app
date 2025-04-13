@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import BlogPostCard from '../components/blog/BlogPostCard'
 
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic'
+
 // List of authorized admin IDs
 const AUTHORIZED_ADMINS = [
   'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',

@@ -5,14 +5,11 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import BlogPostCard from '@/app/components/blog/BlogPostCard'
-const validCategories = ['news', 'guides']
 
-// Generate static params for valid categories
-export function generateStaticParams() {
-  return validCategories.map((category) => ({
-    category: category,
-  }))
-}
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic'
+
+const validCategories = ['news', 'guides']
 
 export default async function CategoryArchive({
   params
