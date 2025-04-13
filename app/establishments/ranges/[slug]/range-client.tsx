@@ -131,7 +131,7 @@ export default function RangeClient({ range }: { range: Range }) {
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to ranges
+            Back to Ranges
           </Button>
           
           {isOwner && (

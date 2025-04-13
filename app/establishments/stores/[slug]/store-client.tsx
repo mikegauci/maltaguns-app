@@ -148,7 +148,7 @@ export default function StoreClient({ store }: { store: Store }) {
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to stores
+            Back to Stores
           </Button>
           
           {isOwner && (

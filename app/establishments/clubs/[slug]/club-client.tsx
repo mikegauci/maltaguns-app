@@ -131,7 +131,7 @@ export default function ClubClient({ club }: { club: Club }) {
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to clubs
+            Back to Clubs
           </Button>
           
           {isOwner && (

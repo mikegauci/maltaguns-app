@@ -1,75 +1,95 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Store, MapPin, Phone, Mail, Globe, Plus } from "lucide-react"
-import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-import { LoadingState } from "@/components/ui/loading-state"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Store,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Plus,
+  ArrowLeft,
+} from "lucide-react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import { LoadingState } from "@/components/ui/loading-state";
 
 // List of authorized user IDs
 const AUTHORIZED_STORE_CREATORS = [
-  'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
-  '1a95bbf9-3bca-414d-a99f-1f9c72c15588'
-]
+  "e22da8c7-c6af-43b7-8ba0-5bc8946edcda",
+  "1a95bbf9-3bca-414d-a99f-1f9c72c15588",
+];
 
 interface Store {
-  id: string
-  business_name: string
-  logo_url: string | null
-  location: string
-  phone: string | null
-  email: string | null
-  description: string | null
-  website: string | null
-  slug: string
+  id: string;
+  business_name: string;
+  logo_url: string | null;
+  location: string;
+  phone: string | null;
+  email: string | null;
+  description: string | null;
+  website: string | null;
+  slug: string;
 }
 
 export default function StoresPage() {
-  const router = useRouter()
-  const [stores, setStores] = useState<Store[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAuthorized, setIsAuthorized] = useState(false)
+  const router = useRouter();
+  const [stores, setStores] = useState<Store[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
     async function fetchStores() {
       try {
         // Check authorization
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session?.user) {
-          setIsAuthorized(AUTHORIZED_STORE_CREATORS.includes(session.user.id))
+          setIsAuthorized(AUTHORIZED_STORE_CREATORS.includes(session.user.id));
         }
 
         const { data, error } = await supabase
-          .from('stores')
-          .select('*')
-          .order('business_name', { ascending: true })
+          .from("stores")
+          .select("*")
+          .order("business_name", { ascending: true });
 
-        if (error) throw error
-        setStores(data || [])
+        if (error) throw error;
+        setStores(data || []);
       } catch (error) {
-        console.error('Error fetching stores:', error)
+        console.error("Error fetching stores:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchStores()
-  }, [])
+    fetchStores();
+  }, []);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingState message="Loading stores..." />
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/establishments")}
+          className="flex items-center text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Establishments
+        </Button>
+
         {/* Hero Section */}
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">Firearms Stores</h1>
@@ -99,7 +119,10 @@ export default function StoresPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {stores.map((store) => (
-              <Link key={store.id} href={`/establishments/stores/${store.slug || store.id}`}>
+              <Link
+                key={store.id}
+                href={`/establishments/stores/${store.slug || store.id}`}
+              >
                 <Card className="h-full hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-4">
@@ -115,7 +138,9 @@ export default function StoresPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="font-semibold text-lg">{store.business_name}</h3>
+                        <h3 className="font-semibold text-lg">
+                          {store.business_name}
+                        </h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />
                           <span>{store.location}</span>
@@ -157,5 +182,5 @@ export default function StoresPage() {
         )}
       </div>
     </div>
-  )
-} 
+  );
+}

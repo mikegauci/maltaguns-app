@@ -1,67 +1,79 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { MapPin, Phone, Mail, Globe, Plus } from "lucide-react"
-import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-import { LoadingState } from "@/components/ui/loading-state"
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { MapPin, Phone, Mail, Globe, Plus, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import { LoadingState } from "@/components/ui/loading-state";
 
 interface Range {
-  id: string
-  business_name: string
-  logo_url: string | null
-  location: string
-  phone: string | null
-  email: string | null
-  description: string | null
-  website: string | null
-  slug: string
+  id: string;
+  business_name: string;
+  logo_url: string | null;
+  location: string;
+  phone: string | null;
+  email: string | null;
+  description: string | null;
+  website: string | null;
+  slug: string;
 }
 
 export default function RangesPage() {
-  const router = useRouter()
-  const [ranges, setRanges] = useState<Range[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const router = useRouter();
+  const [ranges, setRanges] = useState<Range[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     async function fetchRanges() {
       try {
         // Check if user is authenticated
-        const { data: { session } } = await supabase.auth.getSession()
-        setIsAuthenticated(!!session)
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
 
         const { data, error } = await supabase
-          .from('ranges')
-          .select('*')
-          .order('business_name', { ascending: true })
+          .from("ranges")
+          .select("*")
+          .order("business_name", { ascending: true });
 
-        if (error) throw error
-        setRanges(data || [])
+        if (error) throw error;
+        setRanges(data || []);
       } catch (error) {
-        console.error('Error fetching ranges:', error)
+        console.error("Error fetching ranges:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    fetchRanges()
-  }, [])
+    fetchRanges();
+  }, []);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingState message="Loading shooting ranges..." />
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/establishments")}
+          className="flex items-center text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Establishments
+        </Button>
+
         {/* Hero Section */}
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">Shooting Ranges</h1>
@@ -86,12 +98,17 @@ export default function RangesPage() {
         {ranges.length === 0 ? (
           <Card className="p-6 text-center">
             <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No shooting ranges listed yet.</p>
+            <p className="text-muted-foreground">
+              No shooting ranges listed yet.
+            </p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {ranges.map((range) => (
-              <Link key={range.id} href={`/establishments/ranges/${range.slug || range.id}`}>
+              <Link
+                key={range.id}
+                href={`/establishments/ranges/${range.slug || range.id}`}
+              >
                 <Card className="h-full hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-4">
@@ -107,7 +124,9 @@ export default function RangesPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="font-semibold text-lg">{range.business_name}</h3>
+                        <h3 className="font-semibold text-lg">
+                          {range.business_name}
+                        </h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />
                           <span>{range.location}</span>
@@ -149,5 +168,5 @@ export default function RangesPage() {
         )}
       </div>
     </div>
-  )
-} 
+  );
+}
