@@ -481,6 +481,26 @@ export default function EditBlogPost({ params }: { params: { category: string; s
         throw new Error('Not authenticated')
       }
 
+      // First get the current post to preserve establishment IDs
+      const { data: currentPost, error: getError } = await supabase
+        .from('blog_posts')
+        .select('store_id, servicing_id, club_id, range_id')
+        .eq('id', postId)
+        .single()
+        
+      if (getError) {
+        console.error('Error fetching current post data:', getError)
+        throw getError
+      }
+      
+      // Log which establishment IDs are being preserved
+      console.log('Preserving establishment IDs:', {
+        store_id: currentPost.store_id,
+        servicing_id: currentPost.servicing_id,
+        club_id: currentPost.club_id,
+        range_id: currentPost.range_id
+      })
+
       // Upload featured image if selected
       let featured_image = data.featuredImage
       if (pendingImageFile) {
@@ -493,7 +513,7 @@ export default function EditBlogPost({ params }: { params: { category: string; s
         featured_image = uploadData.path
       }
 
-      // Update the blog post
+      // Update the blog post while preserving establishment IDs
       const { error: updateError } = await supabase
         .from('blog_posts')
         .update({
@@ -502,7 +522,12 @@ export default function EditBlogPost({ params }: { params: { category: string; s
           featured_image,
           published: data.published,
           category: data.category,
-          slug: slug(data.title)
+          slug: slug(data.title),
+          // Preserve establishment IDs
+          store_id: currentPost.store_id,
+          servicing_id: currentPost.servicing_id,
+          club_id: currentPost.club_id,
+          range_id: currentPost.range_id
         })
         .eq('id', postId)
 

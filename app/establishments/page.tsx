@@ -17,7 +17,7 @@ interface Establishment {
   description: string | null
   website: string | null
   slug: string
-  type: "store" | "club" | "servicing" | "range"
+  type: "stores" | "club" | "servicing" | "range"
 }
 
 export default function EstablishmentsPage() {
@@ -59,7 +59,7 @@ export default function EstablishmentsPage() {
         
         // Combine all results and add type field
         const allEstablishments = [
-          ...(stores || []).map(store => ({ ...store, type: 'store' as const })),
+          ...(stores || []).map(store => ({ ...store, type: 'stores' as const })),
           ...(clubs || []).map(club => ({ ...club, type: 'club' as const })),
           ...(servicing || []).map(service => ({ ...service, type: 'servicing' as const })),
           ...(ranges || []).map(range => ({ ...range, type: 'range' as const }))
@@ -84,7 +84,7 @@ export default function EstablishmentsPage() {
   // Icon component based on establishment type
   const getEstablishmentIcon = (type: string) => {
     switch (type) {
-      case 'store':
+      case 'stores':
         return <Store className="h-8 w-8 text-muted-foreground" />
       case 'club':
         return <Users className="h-8 w-8 text-muted-foreground" />
@@ -201,7 +201,7 @@ export default function EstablishmentsPage() {
               {establishments.map((establishment) => (
                 <Link 
                   key={`${establishment.type}-${establishment.id}`} 
-                  href={`/establishments/${establishment.type}/${establishment.slug || establishment.id}`}
+                  href={`/establishments/${establishment.type === 'stores' ? 'stores' : establishment.type}/${establishment.slug || establishment.id}`}
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">

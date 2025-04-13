@@ -1381,7 +1381,7 @@ export default function ProfilePage() {
             ? error.message
             : "Failed to remove feature from listing.",
       });
-    }
+  }
   }
 
   return (

@@ -31,10 +31,10 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-// List of authorized user IDs
-const AUTHORIZED_BLOG_AUTHORS = [
+// List of admin user IDs
+const ADMIN_IDS = [
   'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
-  '1a95bbf9-3bca-414d-a99f-1f9c72c15588'
+  '1a95bbf9-3bca-414d-a99f-1f9c72c15588',
 ]
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -86,6 +86,9 @@ export default function CreateBlogPost() {
   const [linkUrl, setLinkUrl] = useState("")
   const [openInNewTab, setOpenInNewTab] = useState(true)
   const [storeId, setStoreId] = useState<string | null>(null)
+  const [servicingId, setServicingId] = useState<string | null>(null)
+  const [clubId, setClubId] = useState<string | null>(null)
+  const [rangeId, setRangeId] = useState<string | null>(null)
   const [userStore, setUserStore] = useState<any>(null)
   const [imageAltDialogOpen, setImageAltDialogOpen] = useState(false)
   const [imageAltText, setImageAltText] = useState("")
@@ -108,14 +111,29 @@ export default function CreateBlogPost() {
         // First check URL parameter (for backward compatibility)
         const searchParams = new URLSearchParams(window.location.search)
         const urlStoreId = searchParams.get('store_id')
+        const urlServicingId = searchParams.get('servicing_id')
+        const urlClubId = searchParams.get('club_id')
+        const urlRangeId = searchParams.get('range_id')
         
         if (urlStoreId) {
           console.log("Store ID from URL:", urlStoreId)
           setStoreId(urlStoreId)
           return
+        } else if (urlServicingId) {
+          console.log("Servicing ID from URL:", urlServicingId)
+          setServicingId(urlServicingId)
+          return
+        } else if (urlClubId) {
+          console.log("Club ID from URL:", urlClubId)
+          setClubId(urlClubId)
+          return
+        } else if (urlRangeId) {
+          console.log("Range ID from URL:", urlRangeId)
+          setRangeId(urlRangeId)
+          return
         }
 
-        // If no store_id in URL, check if user owns a store
+        // If no ID in URL, check if user owns an establishment
         const { data: stores, error: storesError } = await supabase
           .from('stores')
           .select('id, business_name, slug')
@@ -123,22 +141,61 @@ export default function CreateBlogPost() {
           .limit(1)
           .single()
         
-        if (storesError) {
-          if (storesError.code !== 'PGRST116') { // PGRST116 is "no rows returned" error
-            console.error('Error fetching user store:', storesError)
-          }
-          return
-        }
-
-        if (stores) {
+        if (!storesError && stores) {
           console.log("User store found:", stores)
           setStoreId(stores.id)
           setUserStore(stores)
-        } else {
-          console.log("User does not own a store")
+          return
         }
+
+        // If no store found, check if user owns a servicing business
+        const { data: servicing, error: servicingError } = await supabase
+          .from('servicing')
+          .select('id, business_name, slug')
+          .eq('owner_id', session.user.id)
+          .limit(1)
+          .single()
+        
+        if (!servicingError && servicing) {
+          console.log("User servicing business found:", servicing)
+          setServicingId(servicing.id)
+          setUserStore(servicing) // Reuse userStore for UI consistency
+          return
+        }
+
+        // If no servicing found, check if user owns a club
+        const { data: club, error: clubError } = await supabase
+          .from('clubs')
+          .select('id, business_name, slug')
+          .eq('owner_id', session.user.id)
+          .limit(1)
+          .single()
+        
+        if (!clubError && club) {
+          console.log("User club found:", club)
+          setClubId(club.id)
+          setUserStore(club) // Reuse userStore for UI consistency
+          return
+        }
+
+        // If no club found, check if user owns a range
+        const { data: range, error: rangeError } = await supabase
+          .from('ranges')
+          .select('id, business_name, slug')
+          .eq('owner_id', session.user.id)
+          .limit(1)
+          .single()
+        
+        if (!rangeError && range) {
+          console.log("User range found:", range)
+          setRangeId(range.id)
+          setUserStore(range) // Reuse userStore for UI consistency
+          return
+        }
+
+        console.log("User does not own any establishment")
       } catch (error) {
-        console.error('Error checking user store:', error)
+        console.error('Error checking user establishments:', error)
       }
     }
 
@@ -184,19 +241,91 @@ export default function CreateBlogPost() {
           }
         }
 
-        if (!AUTHORIZED_BLOG_AUTHORS.includes(session.user.id)) {
+        // Check if user is an admin
+        let isAdmin = ADMIN_IDS.includes(session.user.id)
+        let hasEstablishment = false
+        
+        if (!isAdmin) {
+          // Check if user has any establishment
+          console.log("Checking if user has establishments...")
+          
+          // Check if user has a store
+          const { data: store, error: storeError } = await supabase
+            .from('stores')
+            .select('id')
+            .eq('owner_id', session.user.id)
+            .maybeSingle()
+            
+          if (storeError) {
+            console.error("Error checking store ownership:", storeError)
+          } else if (store) {
+            console.log("User has a store")
+            hasEstablishment = true
+          }
+          
+          // Check if user has a club
+          if (!hasEstablishment) {
+            const { data: club, error: clubError } = await supabase
+              .from('clubs')
+              .select('id')
+              .eq('owner_id', session.user.id)
+              .maybeSingle()
+              
+            if (clubError) {
+              console.error("Error checking club ownership:", clubError)
+            } else if (club) {
+              console.log("User has a club")
+              hasEstablishment = true
+            }
+          }
+          
+          // Check if user has a range
+          if (!hasEstablishment) {
+            const { data: range, error: rangeError } = await supabase
+              .from('ranges')
+              .select('id')
+              .eq('owner_id', session.user.id)
+              .maybeSingle()
+              
+            if (rangeError) {
+              console.error("Error checking range ownership:", rangeError)
+            } else if (range) {
+              console.log("User has a range")
+              hasEstablishment = true
+            }
+          }
+          
+          // Check if user has a servicing business
+          if (!hasEstablishment) {
+            const { data: servicing, error: servicingError } = await supabase
+              .from('servicing')
+              .select('id')
+              .eq('owner_id', session.user.id)
+              .maybeSingle()
+              
+            if (servicingError) {
+              console.error("Error checking servicing ownership:", servicingError)
+            } else if (servicing) {
+              console.log("User has a servicing business")
+              hasEstablishment = true
+            }
+          }
+        }
+
+        if (isAdmin || hasEstablishment) {
+          console.log(`User authorized: ${isAdmin ? 'Admin' : 'Establishment owner'}`)
+          if (mounted) {
+            setIsAuthorized(true)
+            setIsLoading(false)
+          }
+        } else {
+          console.log("User not authorized")
           toast({
             variant: "destructive",
             title: "Unauthorized",
             description: "You are not authorized to create blog posts.",
           })
           router.push('/blog')
-          return
-        }
-
-        if (mounted) {
-          setIsAuthorized(true)
-          setIsLoading(false)
         }
       } catch (error) {
         console.error('Error in session initialization:', error)
@@ -213,6 +342,31 @@ export default function CreateBlogPost() {
       mounted = false
     }
   }, [router, supabase, toast])
+
+  // Get store_id from URL if present
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search)
+    const storeIdParam = searchParams.get('store_id')
+    const servicingIdParam = searchParams.get('servicing_id')
+    const clubIdParam = searchParams.get('club_id')
+    const rangeIdParam = searchParams.get('range_id')
+    
+    if (storeIdParam) {
+      console.log("Store ID from URL:", storeIdParam)
+      setStoreId(storeIdParam)
+    } else if (servicingIdParam) {
+      console.log("Servicing ID from URL:", servicingIdParam)
+      setServicingId(servicingIdParam)
+    } else if (clubIdParam) {
+      console.log("Club ID from URL:", clubIdParam)
+      setClubId(clubIdParam)
+    } else if (rangeIdParam) {
+      console.log("Range ID from URL:", rangeIdParam)
+      setRangeId(rangeIdParam)
+    } else {
+      console.log("No establishment ID found in URL")
+    }
+  }, [])
 
   const editor = useEditor({
     extensions: [
@@ -510,11 +664,12 @@ export default function CreateBlogPost() {
         throw new Error('Not authenticated')
       }
 
-      // Log the current storeId state
-      console.log("Creating blog post with store_id:", storeId)
-      if (userStore) {
-        console.log("Associated with store:", userStore.business_name)
-      }
+      console.log("Creating blog post with establishments:", {
+        store_id: storeId,
+        servicing_id: servicingId,
+        club_id: clubId, 
+        range_id: rangeId
+      })
 
       // Create the blog post
       const postData = {
@@ -525,6 +680,9 @@ export default function CreateBlogPost() {
         category: data.category,
         author_id: session.user.id,
         store_id: storeId,
+        servicing_id: servicingId,
+        club_id: clubId,
+        range_id: rangeId,
         slug: slug(data.title)
       }
 

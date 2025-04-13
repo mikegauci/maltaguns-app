@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Wrench, MapPin, Phone, Mail, Globe, ArrowLeft, BookOpen, Pencil } from "lucide-react"
+import { Store as StoreIcon, MapPin, Phone, Mail, Globe, ArrowLeft, BookOpen, Pencil } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
@@ -40,6 +40,7 @@ interface Servicing {
     author: {
       username: string
     }
+    category: string
   }[]
 }
 
@@ -71,6 +72,7 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
   const [isOwner, setIsOwner] = useState(false)
   const [blogPosts, setBlogPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // Check if blog posts array is valid
   const hasBlogPosts = Array.isArray(servicing.blogPosts) && servicing.blogPosts.length > 0;
@@ -95,31 +97,46 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
 
   // Fetch blog posts directly from the client side as a fallback
   useEffect(() => {
-    if (!hasBlogPosts && !loading) {
-      const fetchBlogPosts = async () => {
-        try {
-          // Fetch blog posts from blog_posts table with servicing_id filter
-          const { data, error } = await supabase
-            .from("blog_posts")
-            .select("*, author:profiles(username)")
-            .eq("servicing_id", servicing.id)
-            .eq("published", true)
-            .order("created_at", { ascending: false });
+    const fetchBlogPosts = async () => {
+      try {
+        console.log(`Fetching blog posts for servicing ID: ${servicing.id}`)
+        setLoading(true)
+        
+        // Fetch blog posts from blog_posts table with servicing_id filter
+        const { data, error } = await supabase
+          .from("blog_posts")
+          .select(`
+            id,
+            title,
+            slug,
+            content,
+            featured_image,
+            created_at,
+            category,
+            author:profiles(username)
+          `)
+          .eq("servicing_id", servicing.id)
+          .eq("published", true)
+          .order("created_at", { ascending: false });
             
-          if (error) {
-            console.error("Error fetching blog posts from client:", error);
-          } else if (data && data.length > 0) {
-            // Set the blog posts
-            setBlogPosts(data);
-          }
-        } catch (error) {
-          console.error("Error in client-side fetch:", error);
+        if (error) {
+          console.error("Error fetching blog posts from client:", error);
+        } else if (data && data.length > 0) {
+          console.log(`Found ${data.length} blog posts for servicing:`, data);
+          // Set the blog posts
+          setBlogPosts(data);
+        } else {
+          console.log("No blog posts found for this servicing");
         }
-      };
+      } catch (error) {
+        console.error("Error in client-side fetch:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
       
-      fetchBlogPosts();
-    }
-  }, [hasBlogPosts, loading, servicing.id]);
+    fetchBlogPosts();
+  }, [servicing.id, refreshTrigger]);
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -158,7 +175,7 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
                 />
               ) : (
                 <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center">
-                  <Wrench className="h-12 w-12 text-muted-foreground" />
+                  <StoreIcon className="h-12 w-12 text-muted-foreground" />
                 </div>
               )}
 
@@ -202,53 +219,112 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
                 </div>
 
                 {servicing.description && (
-                  <div className="mt-6">
-                    <h2 className="text-xl font-semibold mb-2">About</h2>
-                    <p className="text-muted-foreground">{servicing.description}</p>
-                  </div>
+                  <p className="text-muted-foreground whitespace-pre-wrap">
+                    {servicing.description}
+                  </p>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Blog Posts Section */}
-        {blogPosts.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <BookOpen className="h-5 w-5" />
-              <h2 className="text-2xl font-bold">Blog Posts</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {blogPosts.map((post) => (
-                <Link key={post.id} href={`/blog/${post.slug}`}>
-                  <Card className="h-full hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      {post.featured_image && (
-                        <div className="aspect-video mb-4 overflow-hidden rounded-md">
-                          <img
-                            src={post.featured_image}
-                            alt={post.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
-                      <div className="flex items-center text-sm text-muted-foreground mb-2">
-                        <span>{post.author?.username || "Author"}</span>
-                        <span className="mx-2">•</span>
-                        <span>{format(new Date(post.created_at), "MMM d, yyyy")}</span>
-                      </div>
-                      <p className="text-muted-foreground">
-                        {truncateText(post.content, 30)}
+        {/* Listings Section */}
+        <div>
+          <h2 className="text-2xl font-bold mb-6">Available Listings</h2>
+          
+          {servicing.listings.length === 0 ? (
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground">No active listings available.</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {servicing.listings.map((listing) => (
+                <Link 
+                  key={listing.id} 
+                  href={`/marketplace/listing/${slugify(listing.title)}`}
+                >
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="aspect-video relative overflow-hidden">
+                      <img
+                        src={listing.thumbnail}
+                        alt={listing.title}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                    <CardContent className="p-4">
+                      <Badge className="mb-2">
+                        {listing.type === 'firearms' ? 'Firearms' : 'Non-Firearms'}
+                      </Badge>
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-1">
+                        {listing.title}
+                      </h3>
+                      <p className="text-lg font-bold text-primary">
+                        {formatPrice(listing.price)}
                       </p>
                     </CardContent>
                   </Card>
                 </Link>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Blog Posts Section */}
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">Latest Posts</h2>
+            
+            {isOwner && (
+              <Link href={`/blog/create?servicing_id=${servicing.id}`}>
+                <Button>
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Write Post
+                </Button>
+              </Link>
+            )}
           </div>
-        )}
+          
+          {blogPosts.length === 0 ? (
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground">
+                {loading ? "Loading posts..." : "No blog posts available."}
+              </p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {blogPosts.map((post) => (
+                <Link 
+                  key={post.id} 
+                  href={`/blog/${post.category || 'news'}/${post.slug}`}
+                >
+                  <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden">
+                    {post.featured_image && (
+                      <div className="aspect-video relative overflow-hidden">
+                        <img
+                          src={post.featured_image}
+                          alt={post.title}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    )}
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-lg mb-2">{post.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {format(new Date(post.created_at), "MMMM d, yyyy")} • 
+                        By {post.author?.username || "Unknown"}
+                      </p>
+                      {post.content && (
+                        <p className="text-muted-foreground line-clamp-3">
+                          {truncateText(post.content, 30)}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
