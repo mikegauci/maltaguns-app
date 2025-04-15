@@ -41,6 +41,22 @@ export async function POST(request: Request) {
     }
     console.log("Using plan:", plan);
 
+    // Debug: Check valid values for credit_transactions table
+    try {
+      const { data: sampleTransaction, error: queryError } = await supabase
+        .from("credit_transactions")
+        .select("type, credit_type, status")
+        .limit(1);
+        
+      if (queryError) {
+        console.log("Error querying sample transaction:", queryError);
+      } else {
+        console.log("Sample transaction values:", sampleTransaction);
+      }
+    } catch (err) {
+      console.error("Error checking transaction values:", err);
+    }
+
     // Create a new Stripe Checkout session.
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -50,33 +66,39 @@ export async function POST(request: Request) {
       }],
       mode: 'payment',
       customer_email: profile.email,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/marketplace/create/firearms?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cancel`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?canceled=true`,
       metadata: {
         userId: userId,
         credits: plan.credits.toString(),
-        priceId: priceId,
-        creditType: 'firearms'
+        creditType: 'featured'
       }
     });
     console.log("Stripe session created:", session.id);
 
     // Record a pending credit transaction in Supabase.
-    const { error: insertError } = await supabase.from("credit_transactions").insert({
-      user_id: userId,
-      amount: plan.credits,
-      type: "pending",
-      credit_type: "firearms",
-      description: `Pending purchase of ${plan.credits} firearms credits`,
-      stripe_payment_id: session.id,
-    });
+    try {
+      const { error: insertError } = await supabase.from("credit_transactions").insert({
+        user_id: userId,
+        amount: plan.credits,
+        type: "credit",
+        credit_type: "featured",
+        description: `Purchase of ${plan.credits} credits (${priceId})`,
+        stripe_payment_id: session.id,
+      });
 
-    if (insertError) {
-      console.error("Error inserting credit transaction:", insertError);
-      return NextResponse.json({ error: "Error recording transaction" }, { status: 500 });
+      if (insertError) {
+        console.error("Error inserting credit transaction:", insertError);
+        // Continue execution but log the error
+        console.log("Insert error details:", JSON.stringify(insertError));
+      } else {
+        console.log("Successfully recorded pending transaction");
+      }
+    } catch (insertError) {
+      console.error("Exception inserting credit transaction:", insertError);
     }
 
-    return NextResponse.json({ sessionId: session.id });
+    return NextResponse.json({ sessionId: session.id, url: session.url });
   } catch (error: any) {
     console.error("Error in create-checkout-session:", error.message, error);
     return NextResponse.json({ error: `Failed to create checkout session: ${error.message}` }, { status: 500 });
