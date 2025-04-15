@@ -584,7 +584,7 @@ export default function Home() {
             {featuredEstablishments.map((establishment) => (
               <Link
                 key={`${establishment.type}-${establishment.id}`}
-                href={`/establishments/${establishment.type}/${
+                href={`/establishments/${establishment.type === 'store' ? 'stores' : establishment.type}/${
                   establishment.slug || establishment.id
                 }`}
               >
