@@ -66,7 +66,7 @@ export async function POST(request: Request) {
       }],
       mode: 'payment',
       customer_email: profile.email,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/profile?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/profile?success=true`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/profile?canceled=true`,
       metadata: {
         userId: userId,
