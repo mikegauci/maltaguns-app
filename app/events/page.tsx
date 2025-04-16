@@ -192,17 +192,18 @@ export default function EventsPage() {
                 month={currentMonth}
                 onMonthChange={setCurrentMonth}
                 className="w-full p-0"
+                weekStartsOn={1}
                 classNames={{
                   months: "w-full",
                   month: "w-full space-y-4",
                   caption: "hidden",
-                  table: "w-full border-collapse",
+                  table: "w-full border-collapse border border-border",
                   head_row: "flex w-full",
-                  head_cell: "text-muted-foreground flex-1 font-normal text-[0.8rem] py-2 border-b w-[calc(100%/7)]",
+                  head_cell: "text-muted-foreground flex-1 font-normal text-[0.8rem] py-2 border-b border-r last:border-r-0 w-[calc(100%/7)] [&:nth-child(6)]:text-orange-600 [&:nth-child(7)]:text-orange-600",
                   row: "flex w-full mt-0",
-                  cell: "relative flex-1 h-[120px] p-0 text-center border-r last:border-r-0 border-b last-of-type:border-b-0 hover:bg-accent hover:text-accent-foreground focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md w-[calc(100%/7)]",
-                  day: "h-full w-full p-2 font-normal aria-selected:opacity-100 hover:bg-transparent",
-                  day_today: "bg-accent text-accent-foreground",
+                  cell: "relative flex-1 h-[120px] p-0 text-center border-r last:border-r-0 border-b last-of-type:border-b-0 hover:bg-accent/50 hover:text-accent-foreground focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md w-[calc(100%/7)] [&:nth-child(6)]:bg-orange-50 [&:nth-child(7)]:bg-orange-50 dark:[&:nth-child(6)]:bg-orange-950/20 dark:[&:nth-child(7)]:bg-orange-950/20 [&:has(.today)]:hover:bg-primary/90 [&:has(.today)]:hover:text-primary-foreground",
+                  day: "h-full w-full p-2 font-normal aria-selected:opacity-100",
+                  day_today: "bg-primary text-primary-foreground rounded-md today",
                   day_outside: "text-muted-foreground opacity-50",
                   day_disabled: "text-muted-foreground opacity-50",
                   day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
@@ -214,10 +215,17 @@ export default function EventsPage() {
                     const events = getDayEvents(date)
                     const isToday = date.toDateString() === new Date().toDateString()
                     const isPast = isBefore(startOfDay(date), startOfDay(new Date()))
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6
                     
                     return (
                       <div className="w-full h-full flex flex-col">
-                        <span className={`text-sm p-1 ${isToday ? "font-bold text-primary-foreground" : "text-foreground"}`}>
+                        <span className={`text-sm p-1 rounded-md ${
+                          isToday 
+                            ? "font-bold text-primary-foreground" 
+                            : isWeekend
+                            ? "text-orange-600 font-medium"
+                            : "text-foreground"
+                        }`}>
                           {date.getDate()}
                           {isToday && <span className="ml-1 text-[0.7rem]">Today</span>}
                         </span>
@@ -231,6 +239,8 @@ export default function EventsPage() {
                               <div className={`text-xs p-1 rounded ${
                                 isPast 
                                   ? "bg-muted text-muted-foreground hover:bg-muted/80" 
+                                  : isWeekend
+                                  ? "bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/50"
                                   : "bg-primary/10 text-primary hover:bg-primary/20"
                               } truncate transition-colors`}>
                                 {truncateTitle(event.title)}
