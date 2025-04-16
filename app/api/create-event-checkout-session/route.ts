@@ -29,13 +29,13 @@ export async function POST(request: Request) {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [{
-        price: 'price_1QrLQgLT4uq5YHtWJ3bzhwEC', // Replace with actual Stripe price ID for event credits
+        price: 'price_1REOokPnR92CMKYG8MYTHKnM',
         quantity: 1,
       }],
       mode: 'payment',
       customer_email: profile.email,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/events/create?success=true&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/events/create`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/events/create?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/profile?canceled=true`,
       metadata: {
         userId: userId,
         credits: "1",
