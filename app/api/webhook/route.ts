@@ -46,6 +46,27 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       console.log('[WEBHOOK-SINGULAR] Session ID:', session.id);
       console.log('[WEBHOOK-SINGULAR] Session metadata:', session.metadata);
+      console.log('[WEBHOOK-SINGULAR] Session payment status:', session.payment_status);
+      console.log('[WEBHOOK-SINGULAR] Event ID:', event.id);
+      
+      // Global idempotency check - check if we've already processed this payment
+      try {
+        const { data: existingCompletedTx, error: txCheckError } = await supabaseAdmin
+          .from('credit_transactions')
+          .select('*')
+          .eq('stripe_payment_id', session.id)
+          .eq('status', 'completed')
+          .limit(1);
+          
+        if (txCheckError) {
+          console.error('[WEBHOOK-SINGULAR] Error checking completed transactions:', txCheckError);
+        } else if (existingCompletedTx && existingCompletedTx.length > 0) {
+          console.log('[WEBHOOK-SINGULAR] Payment already processed, skipping to maintain idempotency');
+          return NextResponse.json({ skipped: true, reason: "Payment already processed" });
+        }
+      } catch (error) {
+        console.error('[WEBHOOK-SINGULAR] Error in idempotency check:', error);
+      }
       
       // Extract metadata from session
       const userId = session.metadata?.userId;
@@ -70,6 +91,26 @@ export async function POST(request: Request) {
             console.error('[WEBHOOK-SINGULAR] Error finding transaction:', findError);
           } else {
             console.log('[WEBHOOK-SINGULAR] Found transactions:', existingTx);
+            
+            // Check if transaction is already completed to prevent duplicate processing
+            if (existingTx && existingTx.length > 0 && existingTx[0].status === 'completed') {
+              console.log('[WEBHOOK-SINGULAR] Transaction already completed, skipping to prevent duplication');
+              return NextResponse.json({ skipped: true, reason: "Transaction already processed" });
+            }
+            
+            // Extra safeguard - check if we've already added these credits by looking at transaction description
+            const { data: recentCredits, error: recentError } = await supabaseAdmin
+              .from('credit_transactions')
+              .select('*')
+              .eq('user_id', userId)
+              .eq('stripe_payment_id', session.id)
+              .eq('status', 'completed')
+              .limit(1);
+              
+            if (!recentError && recentCredits && recentCredits.length > 0) {
+              console.log('[WEBHOOK-SINGULAR] Already processed this payment ID, skipping');
+              return NextResponse.json({ skipped: true, reason: "Payment already processed" });
+            }
           }
           
           // Update the transaction status to completed
