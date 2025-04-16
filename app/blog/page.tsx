@@ -21,7 +21,14 @@ export default async function BlogPage() {
   // Fetch posts
   const { data: posts, error } = await supabase
     .from('blog_posts')
-    .select('*')
+    .select(`
+      *,
+      author:profiles(username),
+      store:stores(id, business_name, slug),
+      club:clubs(id, business_name, slug),
+      range:ranges(id, business_name, slug),
+      servicing:servicing(id, business_name, slug)
+    `)
     .eq('published', true)
     .order('created_at', { ascending: false })
 
@@ -29,6 +36,20 @@ export default async function BlogPage() {
     console.error('Error fetching posts:', error)
     throw new Error('Failed to fetch posts')
   }
+
+  // Add debug logging for establishment data
+  console.log("Found posts with establishment data:", posts.map(post => ({
+    id: post.id,
+    title: post.title,
+    hasStore: post.store && post.store.length > 0,
+    hasClub: post.club && post.club.length > 0,
+    hasRange: post.range && post.range.length > 0,
+    hasServicing: post.servicing && post.servicing.length > 0,
+    store_id: post.store_id,
+    club_id: post.club_id,
+    range_id: post.range_id,
+    servicing_id: post.servicing_id
+  })));
 
   // Check if current user is authorized to create posts
   let canCreate = false

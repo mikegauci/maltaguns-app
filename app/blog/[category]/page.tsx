@@ -25,7 +25,14 @@ export default async function CategoryArchive({
 
   const { data: posts, error } = await supabase
     .from('blog_posts')
-    .select('*')
+    .select(`
+      *,
+      author:profiles!blog_posts_author_id_fkey (*),
+      stores:store_id (*),
+      clubs:club_id (*),
+      ranges:range_id (*),
+      servicing:servicing_id (*)
+    `)
     .eq('category', category)
     .eq('published', true)
     .order('created_at', { ascending: false })

@@ -9,6 +9,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
+import BlogPostCard from "@/app/components/blog/BlogPostCard"
 
 interface Servicing {
   id: string
@@ -291,36 +292,9 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
               </p>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {blogPosts.map((post) => (
-                <Link 
-                  key={post.id} 
-                  href={`/blog/${post.category || 'news'}/${post.slug}`}
-                >
-                  <Card className="h-full hover:shadow-lg transition-shadow overflow-hidden">
-                    {post.featured_image && (
-                      <div className="aspect-video relative overflow-hidden">
-                        <img
-                          src={post.featured_image}
-                          alt={post.title}
-                          className="object-cover w-full h-full"
-                        />
-                      </div>
-                    )}
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg mb-2">{post.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {format(new Date(post.created_at), "MMMM d, yyyy")} • 
-                        By {post.author?.username || "Unknown"}
-                      </p>
-                      {post.content && (
-                        <p className="text-muted-foreground line-clamp-3">
-                          {truncateText(post.content, 30)}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Link>
+                <BlogPostCard key={post.id} post={post} />
               ))}
             </div>
           )}
