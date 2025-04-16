@@ -93,18 +93,6 @@ interface BlogPost {
   created_at: string;
 }
 
-interface StoreBlogPost {
-  id: string;
-  title: string;
-  content: string;
-  slug: string;
-  featured_image: string | null;
-  created_at: string;
-  updated_at: string;
-  store_id: string;
-  published: boolean;
-}
-
 interface Listing {
   id: string;
   title: string;
@@ -268,7 +256,6 @@ export default function ProfilePage() {
   const [ranges, setRanges] = useState<Range[]>([]);
   const [store, setStore] = useState<Store | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
-  const [storeBlogPosts, setStoreBlogPosts] = useState<StoreBlogPost[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -412,17 +399,13 @@ export default function ProfilePage() {
           }
 
           // Initialize store blog posts data collection
-          let storeBlogPostsData: StoreBlogPost[] = [];
-
+          
           // Fetch user's stores
           console.log("Fetching stores for user ID:", userId);
           const { data: storesData, error: storeError } = await supabase
             .from("stores")
             .select("*")
             .eq("owner_id", userId);
-
-          // Variable to collect store blog posts
-          let allStoreBlogPosts: StoreBlogPost[] = [];
 
           if (storeError) {
             console.error("Store fetch error:", storeError.message);
@@ -457,29 +440,6 @@ export default function ProfilePage() {
               }
             }
             
-            // Fetch blog posts for all stores
-            for (const store of storesData) {
-              const { data: postsData, error: postsError } = await supabase
-                .from("store_blog_posts")
-                .select("*")
-                .eq("store_id", store.id)
-                .order("created_at", { ascending: false });
-
-              if (postsError) {
-                console.error(
-                  `Store blog posts fetch error for ${store.business_name}:`,
-                  postsError.message
-                );
-              } else if (postsData) {
-                console.log(
-                  `Found ${postsData.length} posts for store ${store.business_name}`
-                );
-                allStoreBlogPosts = [
-                  ...allStoreBlogPosts,
-                  ...(postsData as StoreBlogPost[]),
-                ];
-              }
-            }
           }
 
           // Fetch user's clubs
@@ -622,7 +582,6 @@ export default function ProfilePage() {
 
           // Update state with all fetched data
           setBlogPosts(blogData || []);
-          setStoreBlogPosts(allStoreBlogPosts);
           setEvents(eventsData || []);
         } else {
           // Just set loading to false if not logged in - will show login prompt instead of redirecting
@@ -1037,7 +996,6 @@ export default function ProfilePage() {
       // Update the appropriate state array
       if (storeExists) {
         setStores((prevStores) => prevStores.filter((store) => store.id !== storeId));
-        setStoreBlogPosts((prevPosts) => prevPosts.filter((post) => post.store_id !== storeId));
       }
       else if (clubExists) {
         setClubs((prevClubs) => prevClubs.filter((club) => club.id !== storeId));
@@ -1059,33 +1017,6 @@ export default function ProfilePage() {
         title: "Error",
         description:
           error instanceof Error ? error.message : "Failed to delete establishment",
-      });
-    }
-  }
-
-  async function handleDeleteStorePost(postId: string) {
-    try {
-      const { error } = await supabase
-        .from("store_blog_posts")
-        .delete()
-        .eq("id", postId);
-
-      if (error) throw error;
-
-      setStoreBlogPosts((prevPosts) =>
-        prevPosts.filter((post) => post.id !== postId)
-      );
-
-      toast({
-        title: "Post deleted",
-        description: "Your store blog post has been deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Delete failed",
-        description:
-          error instanceof Error ? error.message : "Failed to delete post",
       });
     }
   }
@@ -1888,88 +1819,6 @@ export default function ProfilePage() {
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete
                           </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Store Blog Posts - Only show if user has store blog posts */}
-        {storeBlogPosts.length > 0 && (
-          <Card className="w-full mb-8">
-            <CardHeader>
-              <CardTitle>My Store Blog Posts</CardTitle>
-              <CardDescription>
-                Manage your store blog posts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {storeBlogPosts.map((post) => (
-                  <Card key={post.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold">{post.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {format(new Date(post.created_at), "PPP")}
-                          </p>
-                          {/* Show which store this post belongs to */}
-                          {stores.length > 1 && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {stores.find(
-                                (s) => s.id === post.store_id
-                              )?.business_name || "Unknown store"}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              post.published ? "default" : "secondary"
-                            }
-                          >
-                            {post.published ? "Published" : "Draft"}
-                          </Badge>
-                          <div className="flex gap-2">
-                            {/* Find the store this post belongs to for URL */}
-                            {(() => {
-                              const postStore = stores.find(
-                                (s) => s.id === post.store_id
-                              );
-                              return (
-                                <>
-                                  <Link href={`/blog/${post.slug}`}>
-                                    <Button variant="outline" size="sm">
-                                      <Eye className="h-4 w-4 mr-2" />
-                                      View
-                                    </Button>
-                                  </Link>
-                                  <Link href={`/blog/${post.slug}/edit`}>
-                                    <Button variant="outline" size="sm">
-                                      <Pencil className="h-4 w-4 mr-2" />
-                                      Edit
-                                    </Button>
-                                  </Link>
-                                </>
-                              );
-                            })()}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleDeleteStorePost(post.id)
-                              }
-                              className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
-                          </div>
                         </div>
                       </div>
                     </CardContent>
