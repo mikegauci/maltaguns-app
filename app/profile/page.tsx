@@ -1766,13 +1766,13 @@ export default function ProfilePage() {
         {/* Blog Posts - Only show if user has posts */}
         {blogPosts.length > 0 && (
           <Card>
-            <CardHeader className="space-y-4">
-              <div>
-                <CardTitle>My Blog Posts</CardTitle>
-                <CardDescription>Manage your blog posts</CardDescription>
-              </div>
-              <div className="flex justify-end">
-                <Link href="/blog/create" className="w-full sm:w-auto">
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
+                <div>
+                  <CardTitle>My Blog Posts</CardTitle>
+                  <CardDescription>Manage your blog posts</CardDescription>
+                </div>
+                <Link href="/blog/create" className="mt-4 sm:mt-0 w-full sm:w-auto">
                   <Button className="w-full">
                     <BookOpen className="h-4 w-4 mr-2" />
                     Write Post
