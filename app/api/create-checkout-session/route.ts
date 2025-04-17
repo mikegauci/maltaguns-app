@@ -29,9 +29,9 @@ export async function POST(request: Request) {
       Map your internal price IDs from Stripe Dashboard - Products to the corresponding Stripe Price IDs and credit amounts.
     */
     const planMapping: Record<string, { stripePriceId: string; credits: number }> = {
-      "price_1credit": { stripePriceId: "price_1QrHYBLT4uq5YHtWP7qIyCSq", credits: 1 },      // €15
-      "price_5credits": { stripePriceId: "price_1QrJf7LT4uq5YHtWMHerJRiB", credits: 5 },     // €65
-      "price_10credits": { stripePriceId: "price_1QrJgbLT4uq5YHtW7egQnVup", credits: 10 }    // €100
+      "price_1credit": { stripePriceId: "price_1REOVJPnR92CMKYG6C8vfrGx", credits: 1 },      // €10
+      "price_5credits": { stripePriceId: "price_1REOVsPnR92CMKYGewbJKt8I", credits: 5 },     // €30
+      "price_10credits": { stripePriceId: "price_1REOWRPnR92CMKYGqwPeb0Sa", credits: 10 }    // €50
     };
 
     const plan = planMapping[priceId];

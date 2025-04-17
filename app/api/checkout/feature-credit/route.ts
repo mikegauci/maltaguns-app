@@ -12,7 +12,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 // This should be your actual price ID from Stripe dashboard
-const FEATURE_LISTING_PRICE_ID = "price_1QydHBLT4uq5YHtWYofw182m";
+const FEATURE_LISTING_PRICE_ID = "price_1REOokPnR92CMKYG8MYTHKnM";
 
 // Helper function to generate a slug from a string
 function slugify(text: string) {
