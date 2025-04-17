@@ -145,6 +145,17 @@ interface Event {
   slug: string | null;
 }
 
+interface CreditTransaction {
+  id: string;
+  amount: number;
+  type: "credit" | "debit";
+  stripe_payment_id: string | null;
+  created_at: string;
+  credit_type: "featured" | "event" | null;
+  description: string | null;
+  status: string | null;
+}
+
 const profileSchema = z.object({
   phone: z.string().min(1, "Phone number is required"),
   address: z.string().min(1, "Address is required"),
@@ -257,6 +268,8 @@ export default function ProfilePage() {
   const [store, setStore] = useState<Store | null>(null);
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
+  const [listingIdToTitleMap, setListingIdToTitleMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [uploadingLicense, setUploadingLicense] = useState(false);
@@ -583,6 +596,52 @@ export default function ProfilePage() {
           // Update state with all fetched data
           setBlogPosts(blogData || []);
           setEvents(eventsData || []);
+
+          // Fetch user's credit transactions
+          const { data: transactionsData, error: transactionsError } = await supabase
+            .from("credit_transactions")
+            .select("*")
+            .eq("user_id", userId)
+            .order("created_at", { ascending: false });
+
+          if (transactionsError) {
+            console.error("Transactions fetch error:", transactionsError.message);
+            // Continue even if there's an error
+          }
+
+          setCreditTransactions(transactionsData || []);
+          
+          // Extract listing IDs from transaction descriptions
+          const listingIds: string[] = [];
+          transactionsData?.forEach(transaction => {
+            if (transaction.description && transaction.description.includes("Feature listing purchase for listing")) {
+              const match = transaction.description.match(/Feature listing purchase for listing ([0-9a-f-]+)/);
+              if (match && match[1]) {
+                listingIds.push(match[1]);
+              }
+            }
+          });
+          
+          // Fetch listing titles if there are IDs to look up
+          if (listingIds.length > 0) {
+            const { data: listingsData, error: listingsFetchError } = await supabase
+              .from("listings")
+              .select("id, title")
+              .in("id", listingIds);
+              
+            if (listingsFetchError) {
+              console.error("Error fetching listing titles:", listingsFetchError.message);
+            } else if (listingsData) {
+              // Create a map of listing IDs to titles
+              const idToTitleMap = listingsData.reduce((map, listing) => {
+                map[listing.id] = listing.title;
+                return map;
+              }, {} as Record<string, string>);
+              
+              setListingIdToTitleMap(idToTitleMap);
+            }
+          }
+          
         } else {
           // Just set loading to false if not logged in - will show login prompt instead of redirecting
           setLoading(false);
@@ -1824,6 +1883,92 @@ export default function ProfilePage() {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Add this new Card component for Payment History after any appropriate existing section - e.g. after blog posts */}
+        {creditTransactions.length > 0 && (
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
+                <div>
+                  <CardTitle>Payment History</CardTitle>
+                  <CardDescription>Your transaction history on MaltaGuns</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                <table className="w-full border-collapse">
+                  <thead className="sticky top-0 bg-background z-10">
+                    <tr className="text-left border-b">
+                      <th className="pb-3 pt-1 pl-4 pr-6 font-medium text-muted-foreground bg-background w-[160px]">Date</th>
+                      <th className="pb-3 pt-1 px-4 font-medium text-muted-foreground bg-background w-[140px]">Type</th>
+                      <th className="pb-3 pt-1 px-4 font-medium text-muted-foreground bg-background w-[100px]">Amount</th>
+                      <th className="pb-3 pt-1 px-4 font-medium text-muted-foreground bg-background">Description</th>
+                      <th className="pb-3 pt-1 px-4 font-medium text-muted-foreground bg-background w-[140px] text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {creditTransactions.map((transaction: CreditTransaction) => {
+                      // Process description to replace listing IDs with titles
+                      let description = transaction.description 
+                        ? transaction.description.replace(/\s*\(price_\d+credits?\)\s*/g, "")
+                        : "—";
+                        
+                      // Replace listing IDs with titles if available
+                      if (description.includes("Feature listing purchase for listing")) {
+                        const match = description.match(/Feature listing purchase for listing ([0-9a-f-]+)/);
+                        if (match && match[1] && listingIdToTitleMap[match[1]]) {
+                          description = description.replace(
+                            `Feature listing purchase for listing ${match[1]}`,
+                            `Feature listing purchase for "${listingIdToTitleMap[match[1]]}"`
+                          );
+                        }
+                      }
+                      
+                      return (
+                        <tr key={transaction.id} className="border-b border-muted hover:bg-muted/20">
+                          <td className="py-4 pl-4 pr-6 text-sm">
+                            {format(new Date(transaction.created_at), "PPP")}
+                          </td>
+                          <td className="py-4 px-4 text-sm align-top">
+                            <div className="flex flex-col gap-2">
+                              <Badge variant={transaction.type === "credit" ? "default" : "secondary"}>
+                                {transaction.type === "credit" ? "Purchase" : "Usage"}
+                              </Badge>
+                              {transaction.credit_type && (
+                                <Badge variant="outline">
+                                  {transaction.credit_type === "featured" ? "Feature" : "Event"}
+                                </Badge>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-4 px-4 text-sm">
+                            <span className={transaction.type === "credit" ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
+                              {transaction.type === "credit" ? "+" : "-"}{transaction.amount}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-sm">
+                            {description}
+                          </td>
+                          <td className="py-4 px-4 text-sm text-right">
+                            {transaction.status ? (
+                              <Badge variant={
+                                transaction.status === "completed" ? "default" : 
+                                transaction.status === "pending" ? "outline" : "secondary"
+                              }>
+                                {transaction.status}
+                              </Badge>
+                            ) : "—"}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>
