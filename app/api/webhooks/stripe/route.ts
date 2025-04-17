@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined');
@@ -45,10 +46,38 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       console.log('[WEBHOOK-PLURAL] Session ID:', session.id);
       console.log('[WEBHOOK-PLURAL] Session metadata:', session.metadata);
+      console.log('[WEBHOOK-PLURAL] Event ID:', event.id);
+      
+      // Global idempotency check - check if we've already processed this payment
+      try {
+        const { data: existingCompletedTx, error: txCheckError } = await supabaseAdmin
+          .from('credit_transactions')
+          .select('*')
+          .eq('stripe_payment_id', session.id)
+          .eq('status', 'completed')
+          .limit(1);
+          
+        if (txCheckError) {
+          console.error('[WEBHOOK-PLURAL] Error checking completed transactions:', txCheckError);
+        } else if (existingCompletedTx && existingCompletedTx.length > 0) {
+          console.log('[WEBHOOK-PLURAL] Payment already processed, skipping to maintain idempotency');
+          return NextResponse.json({ skipped: true, reason: "Payment already processed" });
+        }
+      } catch (error) {
+        console.error('[WEBHOOK-PLURAL] Error in idempotency check:', error);
+      }
       
       // Extract userId and listingId from session metadata
       const userId = session.metadata?.userId;
       const listingId = session.metadata?.listingId;
+      const credits = session.metadata?.credits;
+      const creditType = session.metadata?.creditType;
+
+      // Skip credit purchase events - these are handled by the /api/webhook endpoint
+      if (credits && creditType === 'featured' && !listingId) {
+        console.log('[WEBHOOK-PLURAL] Skipping credit purchase event - handled by singular webhook');
+        return NextResponse.json({ skipped: true, reason: "Credit purchase handled by other webhook" });
+      }
 
       if (!userId || !listingId) {
         console.error('[WEBHOOK-PLURAL] Missing userId or listingId in metadata');

@@ -46,6 +46,27 @@ export async function POST(request: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       console.log('[WEBHOOK-SINGULAR] Session ID:', session.id);
       console.log('[WEBHOOK-SINGULAR] Session metadata:', session.metadata);
+      console.log('[WEBHOOK-SINGULAR] Session payment status:', session.payment_status);
+      console.log('[WEBHOOK-SINGULAR] Event ID:', event.id);
+      
+      // Global idempotency check - check if we've already processed this payment
+      try {
+        const { data: existingCompletedTx, error: txCheckError } = await supabaseAdmin
+          .from('credit_transactions')
+          .select('*')
+          .eq('stripe_payment_id', session.id)
+          .eq('status', 'completed')
+          .limit(1);
+          
+        if (txCheckError) {
+          console.error('[WEBHOOK-SINGULAR] Error checking completed transactions:', txCheckError);
+        } else if (existingCompletedTx && existingCompletedTx.length > 0) {
+          console.log('[WEBHOOK-SINGULAR] Payment already processed, skipping to maintain idempotency');
+          return NextResponse.json({ skipped: true, reason: "Payment already processed" });
+        }
+      } catch (error) {
+        console.error('[WEBHOOK-SINGULAR] Error in idempotency check:', error);
+      }
       
       // Extract metadata from session
       const userId = session.metadata?.userId;
@@ -70,6 +91,26 @@ export async function POST(request: Request) {
             console.error('[WEBHOOK-SINGULAR] Error finding transaction:', findError);
           } else {
             console.log('[WEBHOOK-SINGULAR] Found transactions:', existingTx);
+            
+            // Check if transaction is already completed to prevent duplicate processing
+            if (existingTx && existingTx.length > 0 && existingTx[0].status === 'completed') {
+              console.log('[WEBHOOK-SINGULAR] Transaction already completed, skipping to prevent duplication');
+              return NextResponse.json({ skipped: true, reason: "Transaction already processed" });
+            }
+            
+            // Extra safeguard - check if we've already added these credits by looking at transaction description
+            const { data: recentCredits, error: recentError } = await supabaseAdmin
+              .from('credit_transactions')
+              .select('*')
+              .eq('user_id', userId)
+              .eq('stripe_payment_id', session.id)
+              .eq('status', 'completed')
+              .limit(1);
+              
+            if (!recentError && recentCredits && recentCredits.length > 0) {
+              console.log('[WEBHOOK-SINGULAR] Already processed this payment ID, skipping');
+              return NextResponse.json({ skipped: true, reason: "Payment already processed" });
+            }
           }
           
           // Update the transaction status to completed
@@ -93,68 +134,139 @@ export async function POST(request: Request) {
           // Add credits to user's account - using the existing credits table
           console.log('[WEBHOOK-SINGULAR] Adding credits to user account');
           
-          // Look for existing credit record for this user
-          const { data: creditData, error: creditError } = await supabaseAdmin
-            .from('credits')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
+          // Handle different credit types
+          if (creditType === 'event') {
+            // Event credits go to credits_events table
+            console.log('[WEBHOOK-SINGULAR] Processing event credits');
             
-          if (creditError && creditError.code !== 'PGRST116') { // PGRST116 = not found
-            console.error('[WEBHOOK-SINGULAR] Error getting credit record:', creditError);
-            return NextResponse.json(
-              { error: 'Error fetching credit record' },
-              { status: 500 }
-            );
-          }
-          
-          if (creditData) {
-            // Update existing credits
-            console.log('[WEBHOOK-SINGULAR] Existing credits found:', creditData);
-            const currentCredits = parseInt(creditData.amount) || 0;
-            const newCredits = currentCredits + parseInt(credits);
-            
-            console.log(`[WEBHOOK-SINGULAR] Updating credits from ${currentCredits} to ${newCredits}`);
-            
-            const { error: updateError } = await supabaseAdmin
-              .from('credits')
-              .update({
-                amount: newCredits.toString(), // Convert to string since your data shows amount as string
-                updated_at: new Date().toISOString()
-              })
-              .eq('user_id', userId);
+            // Look for existing event credit record for this user
+            const { data: eventCreditData, error: eventCreditError } = await supabaseAdmin
+              .from('credits_events')
+              .select('*')
+              .eq('user_id', userId)
+              .single();
               
-            if (updateError) {
-              console.error('[WEBHOOK-SINGULAR] Error updating credits:', updateError);
+            if (eventCreditError && eventCreditError.code !== 'PGRST116') { // PGRST116 = not found
+              console.error('[WEBHOOK-SINGULAR] Error getting event credit record:', eventCreditError);
               return NextResponse.json(
-                { error: 'Error updating credits' },
+                { error: 'Error fetching event credit record' },
                 { status: 500 }
               );
             }
             
-            console.log(`[WEBHOOK-SINGULAR] Updated credits. New balance: ${newCredits}`);
+            if (eventCreditData) {
+              // Update existing event credits
+              console.log('[WEBHOOK-SINGULAR] Existing event credits found:', eventCreditData);
+              const currentCredits = parseInt(eventCreditData.amount) || 0;
+              const newCredits = currentCredits + parseInt(credits);
+              
+              console.log(`[WEBHOOK-SINGULAR] Updating event credits from ${currentCredits} to ${newCredits}`);
+              
+              const { error: updateError } = await supabaseAdmin
+                .from('credits_events')
+                .update({
+                  amount: newCredits.toString(), // Convert to string since your data shows amount as string
+                  updated_at: new Date().toISOString()
+                })
+                .eq('user_id', userId);
+                
+              if (updateError) {
+                console.error('[WEBHOOK-SINGULAR] Error updating event credits:', updateError);
+                return NextResponse.json(
+                  { error: 'Error updating event credits' },
+                  { status: 500 }
+                );
+              }
+              
+              console.log(`[WEBHOOK-SINGULAR] Updated event credits. New balance: ${newCredits}`);
+            } else {
+              // Create new event credit record
+              console.log('[WEBHOOK-SINGULAR] No existing event credits found, creating new record');
+              
+              const { error: insertError } = await supabaseAdmin
+                .from('credits_events')
+                .insert({
+                  user_id: userId,
+                  amount: credits.toString(), // Convert to string since your data shows amount as string
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (insertError) {
+                console.error('[WEBHOOK-SINGULAR] Error creating event credit record:', insertError);
+                return NextResponse.json(
+                  { error: 'Error creating event credit record' },
+                  { status: 500 }
+                );
+              }
+              
+              console.log(`[WEBHOOK-SINGULAR] Created new event credit record with ${credits} credits`);
+            }
           } else {
-            // Create new credit record
-            console.log('[WEBHOOK-SINGULAR] No existing credits found, creating new record');
-            
-            const { error: insertError } = await supabaseAdmin
+            // Featured credits go to credits table
+            // Look for existing credit record for this user
+            const { data: creditData, error: creditError } = await supabaseAdmin
               .from('credits')
-              .insert({
-                user_id: userId,
-                amount: credits.toString(), // Convert to string since your data shows amount as string
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
+              .select('*')
+              .eq('user_id', userId)
+              .single();
               
-            if (insertError) {
-              console.error('[WEBHOOK-SINGULAR] Error creating credit record:', insertError);
+            if (creditError && creditError.code !== 'PGRST116') { // PGRST116 = not found
+              console.error('[WEBHOOK-SINGULAR] Error getting credit record:', creditError);
               return NextResponse.json(
-                { error: 'Error creating credit record' },
+                { error: 'Error fetching credit record' },
                 { status: 500 }
               );
             }
             
-            console.log(`[WEBHOOK-SINGULAR] Created new credit record with ${credits} credits`);
+            if (creditData) {
+              // Update existing credits
+              console.log('[WEBHOOK-SINGULAR] Existing credits found:', creditData);
+              const currentCredits = parseInt(creditData.amount) || 0;
+              const newCredits = currentCredits + parseInt(credits);
+              
+              console.log(`[WEBHOOK-SINGULAR] Updating credits from ${currentCredits} to ${newCredits}`);
+              
+              const { error: updateError } = await supabaseAdmin
+                .from('credits')
+                .update({
+                  amount: newCredits.toString(), // Convert to string since your data shows amount as string
+                  updated_at: new Date().toISOString()
+                })
+                .eq('user_id', userId);
+                
+              if (updateError) {
+                console.error('[WEBHOOK-SINGULAR] Error updating credits:', updateError);
+                return NextResponse.json(
+                  { error: 'Error updating credits' },
+                  { status: 500 }
+                );
+              }
+              
+              console.log(`[WEBHOOK-SINGULAR] Updated credits. New balance: ${newCredits}`);
+            } else {
+              // Create new credit record
+              console.log('[WEBHOOK-SINGULAR] No existing credits found, creating new record');
+              
+              const { error: insertError } = await supabaseAdmin
+                .from('credits')
+                .insert({
+                  user_id: userId,
+                  amount: credits.toString(), // Convert to string since your data shows amount as string
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (insertError) {
+                console.error('[WEBHOOK-SINGULAR] Error creating credit record:', insertError);
+                return NextResponse.json(
+                  { error: 'Error creating credit record' },
+                  { status: 500 }
+                );
+              }
+              
+              console.log(`[WEBHOOK-SINGULAR] Created new credit record with ${credits} credits`);
+            }
           }
           
           console.log('[WEBHOOK-SINGULAR] Webhook processing completed successfully');

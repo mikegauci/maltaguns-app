@@ -9,6 +9,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { format } from "date-fns"
+import BlogPostCard from "@/app/components/blog/BlogPostCard"
 
 interface Range {
   id: string
@@ -219,32 +220,9 @@ export default function RangeClient({ range }: { range: Range }) {
               <BookOpen className="h-5 w-5" />
               <h2 className="text-2xl font-bold">Blog Posts</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {blogPosts.map((post) => (
-                <Link key={post.id} href={`/blog/${post.slug}`}>
-                  <Card className="h-full hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      {post.featured_image && (
-                        <div className="aspect-video mb-4 overflow-hidden rounded-md">
-                          <img
-                            src={post.featured_image}
-                            alt={post.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <h3 className="text-xl font-semibold mb-2">{post.title}</h3>
-                      <div className="flex items-center text-sm text-muted-foreground mb-2">
-                        <span>{post.author?.username || "Author"}</span>
-                        <span className="mx-2">•</span>
-                        <span>{format(new Date(post.created_at), "MMM d, yyyy")}</span>
-                      </div>
-                      <p className="text-muted-foreground">
-                        {truncateText(post.content, 30)}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <BlogPostCard key={post.id} post={post} />
               ))}
             </div>
           </div>
