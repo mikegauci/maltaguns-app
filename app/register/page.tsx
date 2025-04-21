@@ -134,10 +134,7 @@ export default function Register() {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       // Don't close if clicking the trigger element
-      if (
-        tooltipTriggerRef.current &&
-        tooltipTriggerRef.current.contains(e.target as Node)
-      ) {
+      if (tooltipTriggerRef.current && tooltipTriggerRef.current.contains(e.target as Node)) {
         return;
       }
 
@@ -154,12 +151,12 @@ export default function Register() {
     if (tooltipOpen) {
       // Use setTimeout to ensure this runs after the current click event
       setTimeout(() => {
-        document.addEventListener("mousedown", handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
       }, 0);
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [tooltipOpen]);
 
@@ -467,26 +464,6 @@ export default function Register() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="interestedInSelling"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        I&apos;m interested in selling firearms
-                      </FormLabel>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
               {/* Contact Preference - shown for all users */}
               <FormField
                 control={form.control}
@@ -521,6 +498,26 @@ export default function Register() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="interestedInSelling"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        I&apos;m interested in selling firearms
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
               {/* Only show license upload when checkbox is checked */}
               {watchInterestedInSelling && (
                 <div className="space-y-4 p-4 border rounded-md bg-muted/30">
@@ -528,52 +525,32 @@ export default function Register() {
                     <h3 className="font-medium">User Verification</h3>
                     <TooltipProvider>
                       <Tooltip open={tooltipOpen}>
-                        <TooltipTrigger
-                          asChild
-                          onClick={handleTooltipToggle}
-                          ref={tooltipTriggerRef}
-                        >
+                        <TooltipTrigger asChild onClick={handleTooltipToggle} ref={tooltipTriggerRef}>
                           <span className="cursor-help">
                             <Info className="h-4 w-4 text-muted-foreground" />
                           </span>
                         </TooltipTrigger>
-                        <TooltipContent
-                          className="w-[calc(100vw-32px)] max-w-[320px] sm:max-w-md p-3 sm:p-4 text-xs"
-                          sideOffset={5}
+                        <TooltipContent 
+                          className="w-[calc(100vw-32px)] max-w-[320px] sm:max-w-md p-3 sm:p-4 text-xs" 
+                          sideOffset={5} 
                           align="center"
                           side="bottom"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <p>
-                            To ensure compliance with Maltese law and EU
-                            regulations, Maltaguns requires users who wish to
-                            sell firearms to upload a valid firearms license.
-                            Verification documents are used solely to confirm
-                            your eligibility to participate in firearm-related
-                            transactions on our platform.
+                            To ensure compliance with Maltese law and EU regulations, Maltaguns requires users who wish to sell firearms to upload a valid firearms license. Verification documents are used solely to confirm your eligibility to participate in firearm-related transactions on our platform.
                           </p>
                           <p className="mt-2">
-                            If you choose to use the platform without selling
-                            firearms, you can do so. You may verify your license
-                            at a later stage if you eventually decide to list
-                            firearms for sale.
+                            If you choose to use the platform without selling firearms, you can do so. You may verify your license at a later stage if you eventually decide to list firearms for sale.
                           </p>
                           <p className="mt-2">
-                            We are committed to safeguarding your privacy and
-                            ensuring the secure handling of your data. Your
-                            documents will be strictly reviewed for verification
-                            purposes only and will not be shared with any third
-                            parties or made accessible to anyone else.
+                            We are committed to safeguarding your privacy and ensuring the secure handling of your data. Your documents will be strictly reviewed for verification purposes only and will not be shared with any third parties or made accessible to anyone else.
                           </p>
                           <p className="mt-2">
-                            All data processing is conducted in full compliance
-                            with the General Data Protection Regulation (GDPR)
-                            and relevant Maltese legislation.
+                            All data processing is conducted in full compliance with the General Data Protection Regulation (GDPR) and relevant Maltese legislation.
                           </p>
                           <p className="mt-2">
-                            For any questions or concerns regarding data
-                            processing or your privacy, please contact us at
-                            support@maltaguns.com.
+                            For any questions or concerns regarding data processing or your privacy, please contact us at support@maltaguns.com.
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -594,25 +571,10 @@ export default function Register() {
                                 type="button"
                                 variant="default"
                                 className="bg-black hover:bg-black/90 text-white w-fit flex items-center gap-2 rounded-xl"
-                                onClick={() =>
-                                  document
-                                    .getElementById("license-upload")
-                                    ?.click()
-                                }
+                                onClick={() => document.getElementById('license-upload')?.click()}
                                 disabled={uploadingLicense}
                               >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="24"
-                                  height="24"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="w-5 h-5"
-                                >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
                                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                   <polyline points="17 8 12 3 7 8" />
                                   <line x1="12" y1="3" x2="12" y2="15" />
@@ -638,24 +600,11 @@ export default function Register() {
                               <div className="mt-4 space-y-2">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2 text-green-600">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="24"
-                                      height="24"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      className="w-5 h-5"
-                                    >
-                                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                      <polyline points="22 4 12 14.01 9 11.01" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5">
+                                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                      <polyline points="22 4 12 14.01 9 11.01"/>
                                     </svg>
-                                    <span className="font-medium">
-                                      License uploaded successfully
-                                    </span>
+                                    <span className="font-medium">License uploaded successfully</span>
                                   </div>
                                   <Button
                                     type="button"
@@ -671,9 +620,9 @@ export default function Register() {
                                   </Button>
                                 </div>
                                 <div className="relative w-full h-48 rounded-lg overflow-hidden border">
-                                  <img
-                                    src={field.value}
-                                    alt="Uploaded license"
+                                  <img 
+                                    src={field.value} 
+                                    alt="Uploaded license" 
                                     className="w-full h-full object-cover"
                                   />
                                 </div>
@@ -702,8 +651,8 @@ export default function Register() {
                     <div className="space-y-1 leading-none">
                       <FormLabel>
                         I agree to the{" "}
-                        <Link
-                          href="/terms"
+                        <Link 
+                          href="/terms" 
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary underline hover:no-underline"
