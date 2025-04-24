@@ -13,13 +13,19 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, LogOut, User } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const loginSchema = z.object({
   identifier: z.string().min(1, "Username or email is required"),
   password: z.string().min(1, "Password is required"),
 })
 
+const resetPasswordSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+})
+
 type LoginForm = z.infer<typeof loginSchema>
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 
 interface DebugInfo {
   sessionAfterLogin?: any
@@ -30,11 +36,21 @@ export default function Login() {
   const searchParams = useSearchParams()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [isResetLoading, setIsResetLoading] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [resetError, setResetError] = useState<string | null>(null)
   const [debugInfo, setDebugInfo] = useState<DebugInfo>({})
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const supabase = createClientComponentClient()
+
+  const resetForm = useForm<ResetPasswordForm>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  })
 
   useEffect(() => {
     let mounted = true
@@ -167,6 +183,36 @@ export default function Login() {
     }
   }
 
+  async function handleResetPassword(data: ResetPasswordForm) {
+    try {
+      setIsResetLoading(true)
+      setResetError(null)
+      
+      // Define the redirect URL for password reset
+      const redirectTo = `${window.location.origin}/reset-password`
+      console.log(`Setting password reset redirect to: ${redirectTo}`)
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
+        redirectTo: redirectTo,
+      })
+      
+      if (error) throw error
+      
+      toast({
+        title: "Password reset email sent",
+        description: "Check your email for a link to reset your password.",
+      })
+      
+      setResetDialogOpen(false)
+      resetForm.reset()
+    } catch (error) {
+      console.error('Reset password error:', error)
+      setResetError(error instanceof Error ? error.message : "Failed to send reset email")
+    } finally {
+      setIsResetLoading(false)
+    }
+  }
+
   if (isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
@@ -261,6 +307,16 @@ export default function Login() {
                 )}
               />
 
+              <div className="text-sm text-right">
+                <button 
+                  type="button" 
+                  onClick={() => setResetDialogOpen(true)}
+                  className="text-primary hover:underline focus:outline-none"
+                >
+                  Forgot password?
+                </button>
+              </div>
+
               {error && (
                 <div className="text-sm text-destructive">
                   {error}
@@ -285,6 +341,63 @@ export default function Login() {
           </Form>
         </CardContent>
       </Card>
+
+      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address and we'll send you a link to reset your password.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...resetForm}>
+            <form onSubmit={resetForm.handleSubmit(handleResetPassword)} className="space-y-4">
+              <FormField
+                control={resetForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your email address" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {resetError && (
+                <div className="text-sm text-destructive">
+                  {resetError}
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setResetDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={isResetLoading}
+                >
+                  {isResetLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    "Send Reset Link"
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
