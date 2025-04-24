@@ -23,6 +23,7 @@ interface User {
   created_at: string
   is_admin: boolean
   is_seller: boolean
+  license_image: string | null
 }
 
 // List of authorized admin emails
@@ -56,6 +57,7 @@ function UsersPageComponent() {
     password: "",
     is_admin: false,
     is_seller: false,
+    license_image: null as string | null,
   })
   const supabase = createClientComponentClient()
 
@@ -117,6 +119,29 @@ function UsersPageComponent() {
       ),
     },
     {
+      accessorKey: "license_image",
+      header: "License",
+      cell: ({ row }) => {
+        const licenseUrl = row.getValue("license_image") as string | null
+        return (
+          <div className="flex items-center">
+            {licenseUrl ? (
+              <a 
+                href={licenseUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-blue-500 hover:underline"
+              >
+                View License
+              </a>
+            ) : (
+              "No license"
+            )}
+          </div>
+        )
+      },
+    },
+    {
       id: "actions",
       cell: ({ row }) => {
         const user = row.original
@@ -176,7 +201,7 @@ function UsersPageComponent() {
       // Now fetch users with all fields including roles
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username, email, created_at, is_admin, is_seller")
+        .select("id, username, email, created_at, is_admin, is_seller, license_image")
         .order("created_at", { ascending: false })
 
       if (error) {
@@ -231,6 +256,7 @@ function UsersPageComponent() {
       password: "",
       is_admin: false,
       is_seller: false,
+      license_image: null,
     })
     setIsCreateDialogOpen(true)
   }
@@ -243,6 +269,7 @@ function UsersPageComponent() {
       password: "",
       is_admin: user.is_admin,
       is_seller: user.is_seller,
+      license_image: user.license_image,
     })
     setIsEditDialogOpen(true)
   }
@@ -308,6 +335,45 @@ function UsersPageComponent() {
     }
   }
 
+  async function handleDeleteLicense() {
+    if (!selectedUser || !formData.license_image) return
+
+    try {
+      setIsSubmitting(true)
+
+      // Update profile to remove license_image and set is_seller to false
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          license_image: null,
+          is_seller: false,
+        })
+        .eq("id", selectedUser.id)
+
+      if (profileError) throw profileError
+
+      // Update local state
+      setFormData({
+        ...formData,
+        license_image: null,
+        is_seller: false,
+      })
+
+      toast({
+        title: "Success",
+        description: "License image deleted successfully",
+      })
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete license image",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   async function handleEditSubmit() {
     if (!selectedUser) return
 
@@ -329,6 +395,7 @@ function UsersPageComponent() {
           email: formData.email,
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
+          license_image: formData.license_image,
         })
         .eq("id", selectedUser.id)
 
@@ -521,6 +588,39 @@ function UsersPageComponent() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
             />
           </div>
+          {formData.license_image && (
+            <div className="space-y-2">
+              <Label>License Image</Label>
+              <div className="border p-2 rounded-md">
+                <div className="flex flex-col gap-2">
+                  <a 
+                    href={formData.license_image} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="text-blue-500 hover:underline flex items-center gap-2"
+                  >
+                    <img 
+                      src={formData.license_image} 
+                      alt="License" 
+                      className="w-20 h-20 object-cover border rounded"
+                    />
+                    <span>View Full Size</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handleDeleteLicense}
+                    disabled={isSubmitting}
+                    className="text-red-500 hover:underline text-sm flex items-center gap-1 mt-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete License Image
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Switch
