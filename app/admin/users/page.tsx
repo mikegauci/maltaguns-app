@@ -347,16 +347,16 @@ function UsersPageComponent() {
     try {
       setIsSubmitting(true)
 
-      // Update profile to remove license_image and set is_seller to false
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          license_image: null,
-          is_seller: false,
-        })
-        .eq("id", selectedUser.id)
+      // Use the API endpoint to delete the license
+      const response = await fetch(`/api/users/${selectedUser.id}/license`, {
+        method: 'DELETE',
+      })
 
-      if (profileError) throw profileError
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete license image')
+      }
 
       // Update local state
       setFormData({
@@ -369,6 +369,10 @@ function UsersPageComponent() {
         title: "Success",
         description: "License image deleted successfully",
       })
+      
+      // Close the edit dialog and refresh the users list
+      setIsEditDialogOpen(false)
+      fetchUsers()
     } catch (error) {
       toast({
         variant: "destructive",
