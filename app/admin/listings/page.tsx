@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ColumnDef } from "@tanstack/react-table"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataTable } from "@/components/admin/data-table"
 import { FormDialog } from "@/components/admin/form-dialog"
@@ -17,6 +17,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import dynamic from "next/dynamic"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface Listing {
   id: string
@@ -34,6 +39,7 @@ interface Listing {
   created_at: string
   updated_at: string
   expires_at: string
+  featured: boolean
   seller?: {
     username: string
     email: string
@@ -67,6 +73,8 @@ function ListingsPageComponent() {
     subcategory: "",
     calibre: "",
     status: "active",
+    featured: false,
+    expires_at: null as Date | null,
   })
   const supabase = createClientComponentClient()
 
@@ -97,6 +105,21 @@ function ListingsPageComponent() {
       accessorKey: "title",
       header: "Title",
       enableSorting: true,
+      cell: ({ row }) => {
+        const title = row.getValue("title") as string
+        const featured = row.original.featured
+        
+        return (
+          <div className="flex items-center gap-2">
+            {featured && (
+              <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full mr-1">
+                Featured
+              </span>
+            )}
+            {title}
+          </div>
+        )
+      }
     },
     {
       accessorKey: "seller",
@@ -218,6 +241,17 @@ function ListingsPageComponent() {
         throw new Error('No active session')
       }
 
+      // Fetch featured listings
+      const { data: featuredData, error: featuredError } = await supabase
+        .from("featured_listings")
+        .select("listing_id")
+      
+      if (featuredError) {
+        console.error('Fetch featured listings error:', featuredError)
+      }
+      
+      const featuredListingIds = new Set(featuredData?.map(item => item.listing_id) || [])
+
       // Fetch listings with seller information
       const { data, error } = await supabase
         .from("listings")
@@ -247,7 +281,13 @@ function ListingsPageComponent() {
         firstListing: data[0]
       })
       
-      setListings(data)
+      // Add featured flag to listings
+      const listingsWithFeaturedStatus = data.map(listing => ({
+        ...listing,
+        featured: featuredListingIds.has(listing.id)
+      }))
+      
+      setListings(listingsWithFeaturedStatus)
     } catch (error) {
       console.error('Error in fetchListings:', error)
       toast({
@@ -273,6 +313,8 @@ function ListingsPageComponent() {
       subcategory: listing.subcategory || "",
       calibre: listing.calibre || "",
       status: listing.status,
+      featured: listing.featured || false,
+      expires_at: listing.expires_at ? parseISO(listing.expires_at) : null,
     })
     setIsEditDialogOpen(true)
   }
@@ -289,7 +331,7 @@ function ListingsPageComponent() {
       setIsSubmitting(true)
 
       // Update listing
-      const { error } = await supabase
+      const { error: listingError } = await supabase
         .from("listings")
         .update({
           title: formData.title,
@@ -301,10 +343,34 @@ function ListingsPageComponent() {
           calibre: formData.calibre || null,
           status: formData.status,
           updated_at: new Date().toISOString(),
+          ...(formData.expires_at && { expires_at: formData.expires_at.toISOString() }),
         })
         .eq("id", selectedListing.id)
 
-      if (error) throw error
+      if (listingError) throw listingError
+
+      // Handle featured status
+      if (formData.featured && !selectedListing.featured) {
+        // Add to featured_listings if not already featured
+        const { error: featureError } = await supabase
+          .from("featured_listings")
+          .insert({
+            listing_id: selectedListing.id,
+            user_id: selectedListing.seller_id,
+            start_date: new Date().toISOString(),
+            end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+          })
+        
+        if (featureError) throw featureError
+      } else if (!formData.featured && selectedListing.featured) {
+        // Remove from featured_listings if currently featured
+        const { error: unfeatureError } = await supabase
+          .from("featured_listings")
+          .delete()
+          .eq("listing_id", selectedListing.id)
+        
+        if (unfeatureError) throw unfeatureError
+      }
 
       toast({
         title: "Success",
@@ -487,6 +553,46 @@ function ListingsPageComponent() {
                 onChange={(e) => setFormData({ ...formData, calibre: e.target.value })}
               />
             </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="edit-featured"
+              checked={formData.featured}
+              onCheckedChange={(checked) => setFormData({ ...formData, featured: checked })}
+            />
+            <Label htmlFor="edit-featured">Featured Listing</Label>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="edit-expires">Expiry Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.expires_at && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.expires_at ? (
+                    format(formData.expires_at, "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.expires_at || undefined}
+                  onSelect={(date) => setFormData({ ...formData, expires_at: date || null })}
+                  initialFocus
+                  disabled={(date) => date < new Date()}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </FormDialog>
