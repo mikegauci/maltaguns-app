@@ -87,14 +87,17 @@ function UsersPageComponent() {
     {
       accessorKey: "username",
       header: "Username",
+      enableSorting: true,
     },
     {
       accessorKey: "email",
       header: "Email",
+      enableSorting: true,
     },
     {
       accessorKey: "created_at",
       header: "Created At",
+      enableSorting: true,
       cell: ({ row }) => {
         const date = row.getValue("created_at") as string
         return date ? format(new Date(date), "PPP") : "N/A"
@@ -103,6 +106,7 @@ function UsersPageComponent() {
     {
       accessorKey: "is_admin",
       header: "Admin",
+      enableSorting: true,
       cell: ({ row }) => (
         <div className="flex items-center">
           {row.getValue("is_admin") ? "Yes" : "No"}
@@ -112,6 +116,7 @@ function UsersPageComponent() {
     {
       accessorKey: "is_seller",
       header: "Seller",
+      enableSorting: true,
       cell: ({ row }) => (
         <div className="flex items-center">
           {row.getValue("is_seller") ? "Yes" : "No"}
@@ -121,6 +126,7 @@ function UsersPageComponent() {
     {
       accessorKey: "license_image",
       header: "License",
+      enableSorting: true,
       cell: ({ row }) => {
         const licenseUrl = row.getValue("license_image") as string | null
         return (

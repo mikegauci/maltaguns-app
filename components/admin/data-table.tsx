@@ -135,13 +135,23 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                    <TableHead 
+                      key={header.id}
+                      className={header.column.getCanSort() ? "cursor-pointer select-none" : ""}
+                      onClick={header.column.getCanSort() ? header.column.getToggleSortingHandler() : undefined}
+                    >
+                      <div className="flex items-center">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                        {{
+                          asc: <ChevronDown className="ml-2 h-4 w-4 rotate-180" />,
+                          desc: <ChevronDown className="ml-2 h-4 w-4" />,
+                        }[header.column.getIsSorted() as string] ?? null}
+                      </div>
                     </TableHead>
                   )
                 })}
