@@ -24,6 +24,7 @@ interface User {
   is_admin: boolean
   is_seller: boolean
   license_image: string | null
+  is_disabled: boolean
 }
 
 // List of authorized admin emails
@@ -58,6 +59,7 @@ function UsersPageComponent() {
     is_admin: false,
     is_seller: false,
     license_image: null as string | null,
+    is_disabled: false,
   })
   const supabase = createClientComponentClient()
 
@@ -148,6 +150,18 @@ function UsersPageComponent() {
       },
     },
     {
+      accessorKey: "is_disabled",
+      header: "Status",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <div className="flex items-center">
+          {row.getValue("is_disabled") ? 
+            <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800">Disabled</span> : 
+            <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">Active</span>}
+        </div>
+      ),
+    },
+    {
       id: "actions",
       cell: ({ row }) => {
         const user = row.original
@@ -155,6 +169,13 @@ function UsersPageComponent() {
           <ActionCell
             onEdit={() => handleEdit(user)}
             onDelete={() => handleDelete(user)}
+            extraActions={[
+              {
+                label: user.is_disabled ? "Enable User" : "Disable User",
+                onClick: () => handleToggleDisabled(user),
+                variant: user.is_disabled ? "default" : "destructive"
+              }
+            ]}
           />
         )
       },
@@ -167,16 +188,13 @@ function UsersPageComponent() {
 
   async function initializeAdminUsers() {
     try {
-      const response = await fetch('/api/admin/init', {
-        method: 'POST'
+      // Use our new admin API - the users API already handles admin initialization
+      await fetch('/api/admin/users', {
+        method: 'GET'
       })
       
-      if (!response.ok) {
-        throw new Error('Failed to initialize admin users')
-      }
-      
-      // Refresh the users list
-      await fetchUsers()
+      // The API automatically handles admin initialization, so we just need to refresh
+      fetchUsers()
     } catch (error) {
       console.error('Error initializing admin users:', error)
     }
@@ -204,43 +222,32 @@ function UsersPageComponent() {
         userEmail: session.user.email
       })
 
-      // Now fetch users with all fields including roles
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, username, email, created_at, is_admin, is_seller, license_image")
-        .order("created_at", { ascending: false })
-
-      if (error) {
-        console.error('Fetch users error:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        })
-        throw error
+      // Use the API instead of direct Supabase call to bypass RLS
+      const response = await fetch('/api/admin/users', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch users')
       }
       
-      if (!data) {
-        console.error('No data returned from profiles query')
-        throw new Error('No data returned from profiles query')
-      }
-
-      // Check if current user should be an admin but isn't
-      const currentUser = data.find(user => user.id === session.user.id)
-      if (currentUser && 
-          AUTHORIZED_ADMIN_EMAILS.includes(currentUser.email.toLowerCase()) && 
-          !currentUser.is_admin) {
-        console.log('Initializing admin privileges for authorized user')
-        await initializeAdminUsers()
-        return // fetchUsers will be called again after initialization
+      const data = await response.json()
+      
+      if (!data || !data.users) {
+        console.error('No data returned from users API')
+        throw new Error('No data returned from users API')
       }
 
       console.log('Successfully fetched users:', {
-        count: data.length,
-        firstUser: data[0]
+        count: data.users.length,
+        firstUser: data.users[0]
       })
       
-      setUsers(data)
+      setUsers(data.users)
     } catch (error) {
       console.error('Error in fetchUsers:', error)
       toast({
@@ -263,6 +270,7 @@ function UsersPageComponent() {
       is_admin: false,
       is_seller: false,
       license_image: null,
+      is_disabled: false,
     })
     setIsCreateDialogOpen(true)
   }
@@ -276,6 +284,7 @@ function UsersPageComponent() {
       is_admin: user.is_admin,
       is_seller: user.is_seller,
       license_image: user.license_image,
+      is_disabled: user.is_disabled,
     })
     setIsEditDialogOpen(true)
   }
@@ -319,6 +328,7 @@ function UsersPageComponent() {
           email: formData.email,
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
+          is_disabled: formData.is_disabled,
         })
 
       if (profileError) throw profileError
@@ -406,6 +416,7 @@ function UsersPageComponent() {
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
           license_image: formData.license_image,
+          is_disabled: formData.is_disabled,
         })
         .eq("id", selectedUser.id)
 
@@ -467,6 +478,44 @@ function UsersPageComponent() {
         variant: "destructive",
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to delete user",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleToggleDisabled(user: User) {
+    try {
+      setIsSubmitting(true)
+      
+      // Use the API endpoint to toggle the disabled status
+      const response = await fetch(`/api/users/${user.id}/disable`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          disabled: !user.is_disabled
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || `Failed to ${user.is_disabled ? 'enable' : 'disable'} user`)
+      }
+
+      toast({
+        title: "Success",
+        description: `User ${user.is_disabled ? 'enabled' : 'disabled'} successfully`,
+      })
+
+      fetchUsers()
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : `Failed to ${user.is_disabled ? 'enable' : 'disable'} user`,
       })
     } finally {
       setIsSubmitting(false)
@@ -647,6 +696,14 @@ function UsersPageComponent() {
                 onCheckedChange={(checked) => setFormData({ ...formData, is_seller: checked })}
               />
               <Label htmlFor="edit-is_seller">Seller</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="edit-is_disabled"
+                checked={formData.is_disabled}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_disabled: checked })}
+              />
+              <Label htmlFor="edit-is_disabled">Disabled</Label>
             </div>
           </div>
         </div>

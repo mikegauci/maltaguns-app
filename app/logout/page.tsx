@@ -3,6 +3,7 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { forceLogout } from '@/lib/auth-utils'
 
 export default function LogoutPage() {
   const router = useRouter()
@@ -10,11 +11,18 @@ export default function LogoutPage() {
 
   useEffect(() => {
     async function logout() {
-      await supabase.auth.signOut()
-      router.push('/login')
+      try {
+        // Try standard logout first
+        await supabase.auth.signOut()
+      } catch (error) {
+        console.error('Error during standard logout:', error)
+      } finally {
+        // Always perform force logout to ensure clean state
+        forceLogout()
+      }
     }
     logout()
-  }, [supabase, router])
+  }, [supabase])
 
   return <div>Logging out...</div>
 } 

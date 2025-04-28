@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { useToast } from "@/hooks/use-toast"
 import { Loader2, LogOut, User } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { forceLogout } from "@/lib/auth-utils"
 
 const loginSchema = z.object({
   identifier: z.string().min(1, "Username or email is required"),
@@ -43,6 +44,7 @@ export default function Login() {
   const [resetError, setResetError] = useState<string | null>(null)
   const [debugInfo, setDebugInfo] = useState<DebugInfo>({})
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
+  const [isDisabled, setIsDisabled] = useState(false)
   const supabase = createClientComponentClient()
 
   const resetForm = useForm<ResetPasswordForm>({
@@ -51,6 +53,27 @@ export default function Login() {
       email: "",
     },
   })
+
+  useEffect(() => {
+    // Check for error message in URL params
+    const errorMsg = searchParams.get('error')
+    if (errorMsg) {
+      setError(errorMsg)
+      
+      // If the error is about a disabled account, set the disabled flag
+      if (errorMsg.includes('disabled')) {
+        setIsDisabled(true)
+        
+        // Clear any existing session to avoid auth errors
+        if (typeof window !== 'undefined') {
+          // Clear session from localStorage to prevent auth errors
+          localStorage.removeItem('supabase.auth.token')
+          // Force immediate logout if account is disabled
+          forceLogout()
+        }
+      }
+    }
+  }, [searchParams])
 
   useEffect(() => {
     let mounted = true
@@ -64,24 +87,45 @@ export default function Login() {
           return
         }
         
-        if (session && mounted) {
-          setIsAuthenticated(true)
-          setUserEmail(session.user.email || null)
+        if (session) {
+          // Check if this user's account is disabled by querying the profiles table
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('is_disabled')
+            .eq('id', session.user.id)
+            .single()
           
-          // Check for saved redirect location first
-          const savedRedirect = localStorage.getItem('redirectAfterLogin')
-          if (savedRedirect) {
-            console.log(`Auto-redirecting to saved location: ${savedRedirect}`)
-            localStorage.removeItem('redirectAfterLogin')
-            // Use replace instead of push to avoid adding to history
-            router.replace(savedRedirect)
-          } else {
-            // Only redirect to home if explicitly requested or no redirect is specified
-            const redirectTo = searchParams.get('redirectTo')
-            if (redirectTo) {
-              router.replace(redirectTo)
+          if (profileError) {
+            console.error('Error fetching profile:', profileError)
+          }
+          
+          // If profile exists and is disabled, set disabled flag
+          if (profileData && profileData.is_disabled === true) {
+            setIsDisabled(true)
+            setError("Your account has been disabled by an administrator")
+            return
+          }
+          
+          // Not disabled, proceed with normal authenticated flow
+          if (mounted) {
+            setIsAuthenticated(true)
+            setUserEmail(session.user.email || null)
+            
+            // Check for saved redirect location first
+            const savedRedirect = localStorage.getItem('redirectAfterLogin')
+            if (savedRedirect) {
+              console.log(`Auto-redirecting to saved location: ${savedRedirect}`)
+              localStorage.removeItem('redirectAfterLogin')
+              // Use replace instead of push to avoid adding to history
+              router.replace(savedRedirect)
+            } else {
+              // Only redirect to home if explicitly requested or no redirect is specified
+              const redirectTo = searchParams.get('redirectTo')
+              if (redirectTo) {
+                router.replace(redirectTo)
+              }
+              // Don't auto-redirect if there's no explicit direction
             }
-            // Don't auto-redirect if there's no explicit direction
           }
         }
       } catch (error) {
@@ -94,7 +138,7 @@ export default function Login() {
     return () => {
       mounted = false
     }
-  }, [supabase.auth, router, searchParams])
+  }, [supabase.auth, router, searchParams, isDisabled])
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -104,28 +148,10 @@ export default function Login() {
     },
   })
 
-  async function handleLogout() {
-    try {
-      setIsLoading(true)
-      const { error } = await supabase.auth.signOut()
-      if (error) throw error
-
-      toast({
-        title: "Logged out successfully",
-        description: "You have been signed out of your account.",
-      })
-
-      router.push('/')
-      router.refresh()
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to log out",
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  // Direct logout that doesn't get stuck in a loading state
+  function handleLogout() {
+    // Directly call forceLogout without waiting - prevents getting stuck
+    forceLogout();
   }
 
   async function onSubmit(data: LoginForm) {
@@ -151,6 +177,18 @@ export default function Login() {
         email = userData.email
       }
       
+      // Check if the user's account is disabled before sign in
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_disabled')
+        .eq('email', email)
+        .single()
+      
+      if (!profileError && profileData && profileData.is_disabled === true) {
+        setIsDisabled(true)
+        throw new Error("Your account has been disabled by an administrator")
+      }
+      
       // Sign in with email
       const { error } = await supabase.auth.signInWithPassword({
         email: email,
@@ -158,6 +196,12 @@ export default function Login() {
       })
       
       if (error) {
+        // Check if error message contains "disabled" and set the flag
+        if (error.message.includes('disabled')) {
+          setIsDisabled(true)
+          // Just throw the error to display the message
+          throw error
+        }
         throw error
       }
 
@@ -213,7 +257,7 @@ export default function Login() {
     }
   }
 
-  if (isAuthenticated) {
+  if (isAuthenticated && !isDisabled) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
@@ -237,20 +281,10 @@ export default function Login() {
               <Button 
                 variant="destructive" 
                 onClick={handleLogout}
-                disabled={isLoading}
                 className="w-full"
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Logging out...
-                  </>
-                ) : (
-                  <>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log Out
-                  </>
-                )}
+                <LogOut className="mr-2 h-4 w-4" />
+                Log Out
               </Button>
               
               <Button 
@@ -259,6 +293,35 @@ export default function Login() {
                 className="w-full"
               >
                 Go to Homepage
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  // Handle the disabled account case
+  if (isDisabled) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-destructive text-center">Account Suspended</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4">
+              <div className="p-4 rounded-md text-center bg-destructive/10 border border-destructive text-destructive mb-4 font-medium">
+                <p>Your account has been suspended. If you believe this is an error, please contact our <a href="mailto:support@maltaguns.com" className="text-primary hover:underline">support team</a></p>
+              </div>
+              
+              <Button 
+                variant="destructive" 
+                onClick={forceLogout}
+                className="w-full"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Return to Homepage
               </Button>
             </div>
           </CardContent>
@@ -277,6 +340,12 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && !isDisabled && (
+            <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive mb-4">
+              {error}
+            </div>
+          )}
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -316,12 +385,6 @@ export default function Login() {
                   Forgot password?
                 </button>
               </div>
-
-              {error && (
-                <div className="text-sm text-destructive">
-                  {error}
-                </div>
-              )}
 
               <Button 
                 type="submit" 

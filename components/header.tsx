@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search";
 import { Store, BookOpen, Menu, X, User, ChevronDown, Users, Wrench, MapPin, Boxes } from "lucide-react";
 import { useSupabase } from "./providers/supabase-provider";
+import { forceLogout } from "@/lib/auth-utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,10 +27,17 @@ export function Header() {
     setEstablishmentsOpen(false);
   }, [pathname]);
 
+  // More reliable logout that ensures complete session cleanup
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+    try {
+      // First try the standard logout
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error('Error during standard logout:', error);
+    } finally {
+      // Always perform force logout to ensure clean state
+      forceLogout();
+    }
   };
 
   return (

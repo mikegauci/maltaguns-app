@@ -115,6 +115,37 @@ export async function middleware(req: NextRequest) {
       }
     }
 
+    // If user is logged in, check if they are disabled
+    if (session) {
+      try {
+        // Get user profile to check disabled status
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_disabled')
+          .eq('id', session.user.id)
+          .single()
+
+        // If user is disabled, sign them out and redirect to login page with message
+        if (profile?.is_disabled) {
+          // Sign out the user
+          await supabase.auth.signOut()
+          
+          // Redirect to login page with error message, using rewrite instead of redirect
+          // to avoid session checks that could cause auth errors
+          return NextResponse.rewrite(new URL('/login?error=Your+account+has+been+disabled.+Please+contact+support.', req.url), { 
+            headers: {
+              'Cache-Control': 'no-store, must-revalidate',
+              'Pragma': 'no-cache'
+            }
+          })
+        }
+      } catch (error) {
+        console.error('Error checking disabled status:', error)
+        // Continue without blocking access since this is just a secondary check
+        // The main enforcement is through RLS policies
+      }
+    }
+
     // Add cache control headers to prevent stale session states
     res.headers.set('Cache-Control', 'no-store, must-revalidate')
     res.headers.set('Pragma', 'no-cache')

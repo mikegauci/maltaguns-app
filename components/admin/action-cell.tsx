@@ -20,6 +20,13 @@ interface ActionCellProps {
     label: string
     onClick: () => void
     icon?: React.ReactNode
+    variant?: string
+  }[]
+  extraActions?: {
+    label: string
+    onClick: () => void
+    icon?: React.ReactNode
+    variant?: string
   }[]
 }
 
@@ -28,8 +35,12 @@ export function ActionCell({
   onDelete,
   onView,
   customActions = [],
+  extraActions = [],
 }: ActionCellProps) {
   const [isMounted, setIsMounted] = useState(false)
+  
+  // Combine customActions and extraActions for backward compatibility
+  const allCustomActions = [...customActions, ...extraActions]
 
   // Prevent hydration issues by only rendering after component is mounted
   useEffect(() => {
@@ -65,11 +76,15 @@ export function ActionCell({
           </DropdownMenuItem>
         )}
         
-        {customActions.length > 0 && (
+        {allCustomActions.length > 0 && (
           <>
             {(onView || onEdit) && <DropdownMenuSeparator />}
-            {customActions.map((action, index) => (
-              <DropdownMenuItem key={index} onClick={action.onClick}>
+            {allCustomActions.map((action, index) => (
+              <DropdownMenuItem 
+                key={index} 
+                onClick={action.onClick}
+                className={action.variant === "destructive" ? "text-destructive focus:text-destructive" : ""}
+              >
                 {action.icon && <span className="mr-2">{action.icon}</span>}
                 {action.label}
               </DropdownMenuItem>
