@@ -28,7 +28,7 @@ function AdminDashboardComponent() {
       </div>
       
       <Tabs defaultValue="overview" onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-7 w-full">
+        <TabsList className="grid grid-cols-8 w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="listings">Listings</TabsTrigger>
@@ -36,6 +36,7 @@ function AdminDashboardComponent() {
           <TabsTrigger value="blogs">Blogs</TabsTrigger>
           <TabsTrigger value="retailers">Retailers</TabsTrigger>
           <TabsTrigger value="retailer-blogs">Retailer Blogs</TabsTrigger>
+          <TabsTrigger value="credits">Credits</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
@@ -75,6 +76,12 @@ function AdminDashboardComponent() {
               description="Manage retailer blog posts" 
               href="/admin/retailer-blogs"
               icon="📰"
+            />
+            <AdminCard 
+              title="Credits" 
+              description="Manage user credits" 
+              href="/admin/credits"
+              icon="💳"
             />
           </div>
         </TabsContent>
@@ -170,6 +177,22 @@ function AdminDashboardComponent() {
             <CardContent>
               <Link href="/admin/retailer-blogs" className="text-blue-500 hover:underline">
                 Go to Retailer Blog Management →
+              </Link>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="credits">
+          <Card>
+            <CardHeader>
+              <CardTitle>Credit Management</CardTitle>
+              <CardDescription>
+                View and manage user credits
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/admin/credits" className="text-blue-500 hover:underline">
+                Go to Credit Management →
               </Link>
             </CardContent>
           </Card>
