@@ -13,6 +13,8 @@ export interface Database {
         Row: {
           id: string;
           username: string;
+          first_name: string | null;
+          last_name: string | null;
           birthday: string;
           phone: string | null;
           address: string | null;
@@ -24,6 +26,8 @@ export interface Database {
         Insert: {
           id: string;
           username: string;
+          first_name?: string | null;
+          last_name?: string | null;
           birthday: string;
           phone?: string | null;
           address?: string | null;
@@ -35,6 +39,8 @@ export interface Database {
         Update: {
           id?: string;
           username?: string;
+          first_name?: string | null;
+          last_name?: string | null;
           birthday?: string;
           phone?: string | null;
           address?: string | null;

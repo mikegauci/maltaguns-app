@@ -157,6 +157,8 @@ interface CreditTransaction {
 }
 
 const profileSchema = z.object({
+  first_name: z.string().min(1, "First name is required"),
+  last_name: z.string().min(1, "Last name is required"),
   phone: z.string().min(1, "Phone number is required"),
   address: z.string().min(1, "Address is required"),
 });
@@ -292,6 +294,8 @@ export default function ProfilePage() {
   const form = useForm<ProfileForm>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
+      first_name: "",
+      last_name: "",
       phone: "",
       address: "",
     },
@@ -321,6 +325,8 @@ export default function ProfilePage() {
           // Set profile data immediately
           setProfile(profileData);
           form.reset({
+            first_name: profileData.first_name || "",
+            last_name: profileData.last_name || "",
             phone: profileData.phone || "",
             address: profileData.address || "",
           });
@@ -779,6 +785,8 @@ export default function ProfilePage() {
       const { error } = await supabase
         .from("profiles")
         .update({
+          first_name: data.first_name,
+          last_name: data.last_name,
           phone: data.phone,
           address: data.address,
         })
@@ -787,7 +795,13 @@ export default function ProfilePage() {
       if (error) throw error;
 
       setProfile((prev) =>
-        prev ? { ...prev, phone: data.phone, address: data.address } : null
+        prev ? { 
+          ...prev, 
+          first_name: data.first_name,
+          last_name: data.last_name,
+          phone: data.phone, 
+          address: data.address 
+        } : null
       );
       setIsEditing(false);
 
@@ -1405,37 +1419,66 @@ export default function ProfilePage() {
                   onSubmit={form.handleSubmit(onSubmit)}
                   className="space-y-4"
                 >
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="+356 1234 5678" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="first_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="John" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={form.control}
-                    name="address"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="123 Main St, Valletta"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={form.control}
+                      name="last_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Doe" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input placeholder="+356 1234 5678" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="address"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="123 Main St, Valletta"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <Button type="submit">Save Changes</Button>
                 </form>
               </Form>
@@ -1452,6 +1495,18 @@ export default function ProfilePage() {
                     Email
                   </p>
                   <p className="text-lg">{profile.email || "Not provided"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    First Name
+                  </p>
+                  <p className="text-lg">{profile.first_name || "Not provided"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Last Name
+                  </p>
+                  <p className="text-lg">{profile.last_name || "Not provided"}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">

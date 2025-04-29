@@ -55,6 +55,8 @@ const registerSchema = z
         message: "Username cannot contain '@' or '.' characters",
       }),
     email: z.string().email("Invalid email address"),
+    first_name: z.string().min(1, "First name is required"),
+    last_name: z.string().min(1, "Last name is required"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -112,6 +114,8 @@ export default function Register() {
     defaultValues: {
       username: "",
       email: "",
+      first_name: "",
+      last_name: "",
       password: "",
       confirmPassword: "",
       birthday: "",
@@ -252,6 +256,8 @@ export default function Register() {
         id: userId,
         username: data.username,
         email: data.email,
+        first_name: data.first_name,
+        last_name: data.last_name,
         birthday: data.birthday,
         phone: data.phone,
         address: data.address,
@@ -321,6 +327,50 @@ export default function Register() {
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="first_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="John"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            form.trigger("first_name");
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="last_name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Doe"
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            form.trigger("last_name");
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
