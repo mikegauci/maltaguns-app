@@ -28,16 +28,6 @@ function AdminDashboardComponent() {
       </div>
       
       <Tabs defaultValue="overview" onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid grid-cols-8 w-full">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="listings">Listings</TabsTrigger>
-          <TabsTrigger value="events">Events</TabsTrigger>
-          <TabsTrigger value="blogs">Blogs</TabsTrigger>
-          <TabsTrigger value="retailers">Retailers</TabsTrigger>
-          <TabsTrigger value="retailer-blogs">Retailer Blogs</TabsTrigger>
-          <TabsTrigger value="credits">Credits</TabsTrigger>
-        </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
