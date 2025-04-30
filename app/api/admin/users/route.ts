@@ -43,7 +43,7 @@ export async function GET() {
     // Fetch all users with admin client
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, username, email, created_at, is_admin, is_seller, is_verified, license_image, is_disabled")
+      .select("id, username, email, created_at, is_admin, is_seller, is_verified, license_image, is_disabled, first_name, last_name")
       .order("created_at", { ascending: false })
     
     if (error) {
@@ -53,9 +53,78 @@ export async function GET() {
         { status: 500 }
       )
     }
+
+    // Fetch establishments and associate with users
+    const { data: stores } = await supabaseAdmin
+      .from("stores")
+      .select("owner_id, business_name")
+    
+    const { data: clubs } = await supabaseAdmin
+      .from("clubs")
+      .select("owner_id, name")
+    
+    const { data: servicing } = await supabaseAdmin
+      .from("servicing")
+      .select("owner_id, name")
+    
+    const { data: ranges } = await supabaseAdmin
+      .from("ranges")
+      .select("owner_id, name")
+    
+    // Create a map of user IDs to their establishments
+    const userEstablishments = new Map()
+    
+    stores?.forEach(store => {
+      if (!userEstablishments.has(store.owner_id)) {
+        userEstablishments.set(store.owner_id, []);
+      }
+      userEstablishments.get(store.owner_id).push({ type: 'store', name: store.business_name });
+    });
+    
+    clubs?.forEach(club => {
+      if (!userEstablishments.has(club.owner_id)) {
+        userEstablishments.set(club.owner_id, []);
+      }
+      userEstablishments.get(club.owner_id).push({ type: 'club', name: club.name });
+    });
+    
+    servicing?.forEach(service => {
+      if (!userEstablishments.has(service.owner_id)) {
+        userEstablishments.set(service.owner_id, []);
+      }
+      userEstablishments.get(service.owner_id).push({ type: 'servicing', name: service.name });
+    });
+    
+    ranges?.forEach(range => {
+      if (!userEstablishments.has(range.owner_id)) {
+        userEstablishments.set(range.owner_id, []);
+      }
+      userEstablishments.get(range.owner_id).push({ type: 'range', name: range.name });
+    });
+    
+    // Fetch users who have purchased credits
+    const { data: credits } = await supabaseAdmin
+      .from("credits")
+      .select("user_id, amount")
+    
+    // Create a map of user IDs to their credit information
+    const userCredits = new Map();
+    credits?.forEach(credit => {
+      userCredits.set(credit.user_id, credit.amount);
+    });
+    
+    // Add establishment data and credit info to users
+    const usersWithData = data.map(user => {
+      return {
+        ...user,
+        establishments: userEstablishments.get(user.id) || [],
+        purchasedBefore: userCredits.has(user.id),
+        creditAmount: userCredits.get(user.id) || 0
+      };
+    });
     
     return NextResponse.json({ 
-      users: data,
+      users: usersWithData,
       count: data.length
     })
     

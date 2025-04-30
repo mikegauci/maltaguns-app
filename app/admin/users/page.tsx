@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ColumnDef } from "@tanstack/react-table"
+import { ColumnDef, VisibilityState } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataTable } from "@/components/admin/data-table"
@@ -17,6 +17,11 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import dynamic from "next/dynamic"
 import { CheckCircle2, AlertCircle } from "lucide-react"
 
+interface Establishment {
+  type: 'store' | 'club' | 'servicing' | 'range'
+  name: string
+}
+
 interface User {
   id: string
   username: string
@@ -27,6 +32,11 @@ interface User {
   is_verified: boolean
   license_image: string | null
   is_disabled: boolean
+  first_name: string | null
+  last_name: string | null
+  establishments: Establishment[]
+  purchasedBefore: boolean
+  creditAmount: number
 }
 
 // List of authorized admin emails
@@ -41,6 +51,37 @@ export default function UsersPage() {
   return <UsersPageContent />
 }
 
+// Helper functions for establishment styling
+function getEstablishmentColor(type: string): string {
+  switch (type) {
+    case 'store':
+      return 'bg-blue-100 text-blue-800';
+    case 'club':
+      return 'bg-green-100 text-green-800';
+    case 'servicing':
+      return 'bg-orange-100 text-orange-800';
+    case 'range':
+      return 'bg-purple-100 text-purple-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
+
+function getEstablishmentLabel(type: string): string {
+  switch (type) {
+    case 'store':
+      return 'Store';
+    case 'club':
+      return 'Club';
+    case 'servicing':
+      return 'Servicing';
+    case 'range':
+      return 'Range';
+    default:
+      return type;
+  }
+}
+
 function UsersPageComponent() {
   const router = useRouter()
   const { toast } = useToast()
@@ -51,6 +92,9 @@ function UsersPageComponent() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    is_admin: false,  // Hide is_admin column by default
+  })
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -60,6 +104,8 @@ function UsersPageComponent() {
     is_verified: false,
     license_image: null as string | null,
     is_disabled: false,
+    first_name: "" as string | null,
+    last_name: "" as string | null,
   })
   const supabase = createClientComponentClient()
 
@@ -90,10 +136,37 @@ function UsersPageComponent() {
       accessorKey: "username",
       header: "Username",
       enableSorting: true,
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <div className="flex flex-col">
+            <div>{user.username}</div>
+            <div className="text-sm text-muted-foreground">{user.email}</div>
+            {user.establishments && user.establishments.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {user.establishments.map((establishment, idx) => (
+                  <span 
+                    key={idx} 
+                    className={`text-xs px-2 py-0.5 rounded-full ${getEstablishmentColor(establishment.type)}`}
+                    title={establishment.name}
+                  >
+                    {getEstablishmentLabel(establishment.type)}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
-      accessorKey: "email",
-      header: "Email",
+      accessorKey: "first_name",
+      header: "First Name",
+      enableSorting: true,
+    },
+    {
+      accessorKey: "last_name",
+      header: "Last Name",
       enableSorting: true,
     },
     {
@@ -169,6 +242,30 @@ function UsersPageComponent() {
             )}
           </div>
         )
+      },
+    },
+    {
+      accessorKey: "purchasedBefore",
+      header: "Purchased Before?",
+      enableSorting: true,
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <div className="flex flex-col">
+            <div className="flex items-center">
+              {user.purchasedBefore ? (
+                <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">Yes</span>
+              ) : (
+                <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-800">No</span>
+              )}
+            </div>
+            {user.purchasedBefore && (
+              <div className="text-sm text-muted-foreground mt-1">
+                Credits: {user.creditAmount}
+              </div>
+            )}
+          </div>
+        );
       },
     },
     {
@@ -301,6 +398,8 @@ function UsersPageComponent() {
       is_verified: false,
       license_image: null,
       is_disabled: false,
+      first_name: "",
+      last_name: "",
     })
     setIsCreateDialogOpen(true)
   }
@@ -316,6 +415,8 @@ function UsersPageComponent() {
       is_verified: user.is_verified,
       license_image: user.license_image,
       is_disabled: user.is_disabled,
+      first_name: user.first_name,
+      last_name: user.last_name,
     })
     setIsEditDialogOpen(true)
   }
@@ -352,6 +453,8 @@ function UsersPageComponent() {
           id: userId,
           username: formData.username,
           email: formData.email,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
           is_disabled: formData.is_disabled,
@@ -432,6 +535,8 @@ function UsersPageComponent() {
         .update({
           username: formData.username,
           email: formData.email,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
           is_verified: formData.is_verified,
@@ -599,6 +704,7 @@ function UsersPageComponent() {
         searchPlaceholder="Search users..."
         onCreateNew={handleCreate}
         createButtonText="Create User"
+        defaultColumnVisibility={columnVisibility}
       />
 
       {/* Create User Dialog */}
@@ -630,6 +736,24 @@ function UsersPageComponent() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="first_name">First Name</Label>
+              <Input
+                id="first_name"
+                value={formData.first_name || ""}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="last_name">Last Name</Label>
+              <Input
+                id="last_name"
+                value={formData.last_name || ""}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
               />
             </div>
           </div>
@@ -693,6 +817,24 @@ function UsersPageComponent() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-first_name">First Name</Label>
+              <Input
+                id="edit-first_name"
+                value={formData.first_name || ""}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-last_name">Last Name</Label>
+              <Input
+                id="edit-last_name"
+                value={formData.last_name || ""}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
               />
             </div>
           </div>
