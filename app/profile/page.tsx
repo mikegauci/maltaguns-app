@@ -773,6 +773,7 @@ export default function ProfilePage() {
           title: "License uploaded and verified",
           description:
             "Your license has been uploaded and verified successfully. Your account is now marked as a verified seller.",
+          className: "bg-green-600 text-white border-green-600",
         });
       } else {
         toast({
@@ -780,6 +781,7 @@ export default function ProfilePage() {
           description:
             "Your license has been uploaded but could not be automatically verified. An administrator will review your license manually.",
           variant: "default",
+          className: "bg-amber-100 text-amber-800 border-amber-200",
         });
       }
     } catch (error) {
@@ -1593,7 +1595,7 @@ export default function ProfilePage() {
                     }
                   >
                     {profile.is_verified
-                      ? "Verified"
+                      ? "License Verified"
                       : "Pending Verification"}
                   </Badge>
                   {!profile.is_verified && profile.license_image && (
