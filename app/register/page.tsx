@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -42,8 +42,10 @@ import {
 } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import React from "react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { verifyLicenseImage } from "@/utils/license-verification";
 
-const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+const phoneRegex = /^(356|)(\d{8})$/;
 
 const registerSchema = z
   .object({
@@ -80,6 +82,7 @@ const registerSchema = z
     address: z.string().min(5, "Address must be at least 5 characters"),
     interestedInSelling: z.boolean().default(false),
     licenseImage: z.any().optional(),
+    isVerified: z.boolean().default(false),
     contactPreference: z.enum(["email", "phone", "both"]).default("both"),
     acceptTerms: z.boolean().refine((val) => val === true, {
       message: "You must accept the terms and conditions",
@@ -193,6 +196,9 @@ export default function Register() {
         return;
       }
 
+      // Verify the license image using OCR
+      const { isVerified } = await verifyLicenseImage(file);
+      
       const fileExt = file.name.split(".").pop();
       const fileName = `license-${Date.now()}-${Math.random()
         .toString(36)
@@ -213,11 +219,24 @@ export default function Register() {
         .getPublicUrl(filePath);
 
       form.setValue("licenseImage", publicUrlData.publicUrl);
+      // Store verification status to use during registration
+      form.setValue("isVerified", isVerified);
 
-      toast({
-        title: "License uploaded",
-        description: "Your license has been uploaded successfully.",
-      });
+      if (isVerified) {
+        toast({
+          title: "License uploaded and verified",
+          description:
+            "Your license has been uploaded and verified successfully.",
+          className: "bg-green-600 text-white border-green-600",
+        });
+      } else {
+        toast({
+          title: "License uploaded",
+          description:
+            "Your license has been uploaded but could not be automatically verified. An administrator will review your license manually. You may still proceed to register your account.",
+          className: "bg-amber-100 text-amber-800 border-amber-200",
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -262,6 +281,7 @@ export default function Register() {
         phone: data.phone,
         address: data.address,
         is_seller: data.interestedInSelling,
+        is_verified: data.isVerified,
         license_image: data.interestedInSelling ? data.licenseImage : null,
         contact_preference: data.contactPreference,
       });
