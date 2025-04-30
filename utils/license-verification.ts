@@ -13,6 +13,7 @@ export async function verifyLicenseImage(file: File): Promise<{
   orientation: 'correct' | 'rotated' | 'unknown';
   rotationAngle: number;
   correctedImageUrl?: string;
+  hasDate: boolean;
 }> {
   try {
     if (!file) {
@@ -49,7 +50,7 @@ export async function verifyLicenseImage(file: File): Promise<{
     }
     
     // Check expiration date
-    const { isExpired, expiryDate } = checkExpirationDate(text);
+    const { isExpired, expiryDate, hasDate } = checkExpirationDate(text);
     
     return { 
       isVerified, 
@@ -58,7 +59,8 @@ export async function verifyLicenseImage(file: File): Promise<{
       expiryDate, 
       orientation, 
       rotationAngle: bestRotation,
-      correctedImageUrl: bestImage 
+      correctedImageUrl: bestImage,
+      hasDate
     };
   } catch (error) {
     console.error('License verification error:', error);
@@ -68,7 +70,8 @@ export async function verifyLicenseImage(file: File): Promise<{
       isExpired: true, 
       expiryDate: null, 
       orientation: 'unknown', 
-      rotationAngle: 0 
+      rotationAngle: 0,
+      hasDate: false
     };
   }
 }
@@ -191,7 +194,7 @@ function rotateImage(base64Image: string, angle: number): Promise<string> {
  * @param text The OCR extracted text from the license
  * @returns Object with expiration status and the extracted date
  */
-function checkExpirationDate(text: string): { isExpired: boolean; expiryDate: string | null } {
+function checkExpirationDate(text: string): { isExpired: boolean; expiryDate: string | null; hasDate: boolean } {
   try {
     // Define regex patterns to find dates after "Valida sa:" or "Valid till:"
     const validaSaPattern = /Valida sa:.*?(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i;
@@ -204,8 +207,9 @@ function checkExpirationDate(text: string): { isExpired: boolean; expiryDate: st
     // Extract the date from whichever pattern matched
     const dateStr = validaSaMatch?.[1] || validTillMatch?.[1];
     
+    // If no date string found, indicate this
     if (!dateStr) {
-      return { isExpired: true, expiryDate: null };
+      return { isExpired: false, expiryDate: null, hasDate: false };
     }
     
     // Parse the date string into a Date object
@@ -225,7 +229,7 @@ function checkExpirationDate(text: string): { isExpired: boolean; expiryDate: st
         year = year < 50 ? 2000 + year : 1900 + year;
       }
     } else {
-      return { isExpired: true, expiryDate: null };
+      return { isExpired: false, expiryDate: null, hasDate: false };
     }
     
     const expiryDate = new Date(year, month, day);
@@ -238,11 +242,12 @@ function checkExpirationDate(text: string): { isExpired: boolean; expiryDate: st
     
     return { 
       isExpired, 
-      expiryDate: expiryDate.toISOString().split('T')[0] // Format as YYYY-MM-DD
+      expiryDate: expiryDate.toISOString().split('T')[0], // Format as YYYY-MM-DD
+      hasDate: true
     };
   } catch (error) {
     console.error('Error checking expiration date:', error);
-    return { isExpired: true, expiryDate: null };
+    return { isExpired: false, expiryDate: null, hasDate: false };
   }
 }
 
