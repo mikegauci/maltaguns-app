@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -197,7 +197,20 @@ export default function Register() {
       }
 
       // Verify the license image using OCR
-      const { isVerified } = await verifyLicenseImage(file);
+      const { isVerified, isExpired, expiryDate, text } = await verifyLicenseImage(file);
+      
+      // If the license is expired, don't allow it to be uploaded
+      if (isExpired) {
+        toast({
+          variant: "destructive",
+          title: "Expired license",
+          description: expiryDate 
+            ? `This license expired on ${expiryDate}. Please upload a valid license.` 
+            : "This license appears to be expired. Please upload a valid license.",
+        });
+        setUploadingLicense(false);
+        return;
+      }
       
       const fileExt = file.name.split(".").pop();
       const fileName = `license-${Date.now()}-${Math.random()
@@ -225,8 +238,9 @@ export default function Register() {
       if (isVerified) {
         toast({
           title: "License uploaded and verified",
-          description:
-            "Your license has been uploaded and verified successfully.",
+          description: expiryDate 
+            ? `Your license has been verified and is valid until ${expiryDate}.` 
+            : "Your license has been uploaded and verified successfully.",
           className: "bg-green-600 text-white border-green-600",
         });
       } else {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -80,7 +80,6 @@ import {
   Alert,
   AlertDescription,
 } from "@/components/ui/alert";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cn } from "@/lib/utils";
 import { verifyLicenseImage } from "@/utils/license-verification";
 
@@ -726,7 +725,20 @@ export default function ProfilePage() {
       }
 
       // Verify the license image using OCR
-      const { isVerified } = await verifyLicenseImage(file);
+      const { isVerified, isExpired, expiryDate, text } = await verifyLicenseImage(file);
+
+      // If the license is expired, don't allow it to be uploaded
+      if (isExpired) {
+        toast({
+          variant: "destructive",
+          title: "Expired license",
+          description: expiryDate 
+            ? `This license expired on ${expiryDate}. Please upload a valid license.` 
+            : "This license appears to be expired. Please upload a valid license.",
+        });
+        setUploadingLicense(false);
+        return;
+      }
 
       const fileExt = file.name.split(".").pop();
       const fileName = `license-${Date.now()}-${Math.random()
@@ -771,8 +783,9 @@ export default function ProfilePage() {
       if (isVerified) {
         toast({
           title: "License uploaded and verified",
-          description:
-            "Your license has been uploaded and verified successfully. Your account is now marked as a verified seller.",
+          description: expiryDate 
+            ? `Your license has been verified and is valid until ${expiryDate}.` 
+            : "Your license has been uploaded and verified successfully. Your account is now marked as a verified seller.",
           className: "bg-green-600 text-white border-green-600",
         });
       } else {
