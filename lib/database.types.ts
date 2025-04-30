@@ -19,6 +19,7 @@ export interface Database {
           phone: string | null;
           address: string | null;
           is_seller: boolean;
+          is_verified: boolean;
           license_image: string | null;
           created_at: string;
           email: string | null;
@@ -32,6 +33,7 @@ export interface Database {
           phone?: string | null;
           address?: string | null;
           is_seller?: boolean;
+          is_verified?: boolean;
           license_image?: string | null;
           created_at?: string;
           email?: string | null;
@@ -45,6 +47,7 @@ export interface Database {
           phone?: string | null;
           address?: string | null;
           is_seller?: boolean;
+          is_verified?: boolean;
           license_image?: string | null;
           created_at?: string;
           email?: string | null;

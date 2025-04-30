@@ -82,6 +82,7 @@ import {
 } from "@/components/ui/alert";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { cn } from "@/lib/utils";
+import { verifyLicenseImage } from "@/utils/license-verification";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
@@ -724,6 +725,9 @@ export default function ProfilePage() {
         return;
       }
 
+      // Verify the license image using OCR
+      const { isVerified } = await verifyLicenseImage(file);
+
       const fileExt = file.name.split(".").pop();
       const fileName = `license-${Date.now()}-${Math.random()
         .toString(36)
@@ -741,11 +745,13 @@ export default function ProfilePage() {
       } = supabase.storage.from("licenses").getPublicUrl(filePath);
 
       // Update both license_image and is_seller status
+      // Set is_verified based on OCR verification result
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
           license_image: publicUrl,
           is_seller: true, // Automatically set as seller when license is uploaded
+          is_verified: isVerified, // Set verification status based on OCR result
         })
         .eq("id", profile?.id);
 
@@ -757,15 +763,25 @@ export default function ProfilePage() {
               ...prev,
               license_image: publicUrl,
               is_seller: true,
+              is_verified: isVerified,
             }
           : null
       );
 
-      toast({
-        title: "License uploaded",
-        description:
-          "Your license has been uploaded successfully. Your account is now marked as a seller.",
-      });
+      if (isVerified) {
+        toast({
+          title: "License uploaded and verified",
+          description:
+            "Your license has been uploaded and verified successfully. Your account is now marked as a verified seller.",
+        });
+      } else {
+        toast({
+          title: "License uploaded",
+          description:
+            "Your license has been uploaded but could not be automatically verified. An administrator will review your license manually.",
+          variant: "default",
+        });
+      }
     } catch (error) {
       toast({
         variant: "destructive",
@@ -1003,6 +1019,7 @@ export default function ProfilePage() {
         .update({
           license_image: null,
           is_seller: false, // Remove seller status when license is removed
+          is_verified: false, // Reset verification status when license is removed
         })
         .eq("id", profile.id);
 
@@ -1014,6 +1031,7 @@ export default function ProfilePage() {
               ...prev,
               license_image: null,
               is_seller: false,
+              is_verified: false,
             }
           : null
       );
@@ -1544,21 +1562,56 @@ export default function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              <span className="font-medium">Status:</span>
-              <Badge
-                variant={profile.is_seller ? "default" : "secondary"}
-                className={
-                  profile.is_seller
-                    ? "bg-green-600 hover:bg-green-600 text-white"
-                    : ""
-                }
-              >
-                {profile.is_seller
-                  ? "Verified Gun Seller"
-                  : "No license verified"}
-              </Badge>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                <span className="font-medium">Seller Status:</span>
+                <Badge
+                  variant={profile.is_seller ? "default" : "secondary"}
+                  className={
+                    profile.is_seller
+                      ? "bg-green-600 hover:bg-green-600 text-white"
+                      : ""
+                  }
+                >
+                  {profile.is_seller
+                    ? "Registered Seller"
+                    : "Not a Seller"}
+                </Badge>
+              </div>
+              
+              {profile.is_seller && (
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className={`h-5 w-5 ${profile.is_verified ? "text-green-600" : "text-amber-500"}`} />
+                  <span className="font-medium">Verification:</span>
+                  <Badge
+                    variant={profile.is_verified ? "default" : "outline"}
+                    className={
+                      profile.is_verified
+                        ? "bg-green-600 hover:bg-green-600 text-white"
+                        : "border-amber-500 text-amber-500"
+                    }
+                  >
+                    {profile.is_verified
+                      ? "Verified"
+                      : "Pending Verification"}
+                  </Badge>
+                  {!profile.is_verified && profile.license_image && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="w-[200px] text-xs">
+                            Your license has been uploaded but is pending verification. This may take up to 24 hours. You can still create non-firearm listings.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">

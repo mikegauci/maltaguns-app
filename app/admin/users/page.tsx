@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import dynamic from "next/dynamic"
+import { CheckCircle2, AlertCircle } from "lucide-react"
 
 interface User {
   id: string
@@ -23,6 +24,7 @@ interface User {
   created_at: string
   is_admin: boolean
   is_seller: boolean
+  is_verified: boolean
   license_image: string | null
   is_disabled: boolean
 }
@@ -58,6 +60,7 @@ function UsersPageComponent() {
     password: "",
     is_admin: false,
     is_seller: false,
+    is_verified: false,
     license_image: null as string | null,
     is_disabled: false,
   })
@@ -126,6 +129,28 @@ function UsersPageComponent() {
       ),
     },
     {
+      accessorKey: "is_verified",
+      header: "Verified",
+      enableSorting: true,
+      cell: ({ row }) => (
+        <div className="flex items-center">
+          {row.getValue("is_verified") ? (
+            <span className="flex items-center gap-1 text-green-600">
+              <CheckCircle2 className="h-4 w-4" />
+              Yes
+            </span>
+          ) : row.getValue("is_seller") ? (
+            <span className="flex items-center gap-1 text-amber-500">
+              <AlertCircle className="h-4 w-4" />
+              Pending
+            </span>
+          ) : (
+            "N/A"
+          )}
+        </div>
+      ),
+    },
+    {
       accessorKey: "license_image",
       header: "License",
       enableSorting: true,
@@ -174,7 +199,14 @@ function UsersPageComponent() {
                 label: user.is_disabled ? "Enable User" : "Disable User",
                 onClick: () => handleToggleDisabled(user),
                 variant: user.is_disabled ? "default" : "destructive"
-              }
+              },
+              ...(user.is_seller ? [
+                {
+                  label: user.is_verified ? "Unverify License" : "Verify License",
+                  onClick: () => handleToggleVerification(user),
+                  variant: user.is_verified ? "destructive" : "default"
+                }
+              ] : [])
             ]}
           />
         )
@@ -269,6 +301,7 @@ function UsersPageComponent() {
       password: "",
       is_admin: false,
       is_seller: false,
+      is_verified: false,
       license_image: null,
       is_disabled: false,
     })
@@ -283,6 +316,7 @@ function UsersPageComponent() {
       password: "",
       is_admin: user.is_admin,
       is_seller: user.is_seller,
+      is_verified: user.is_verified,
       license_image: user.license_image,
       is_disabled: user.is_disabled,
     })
@@ -415,6 +449,7 @@ function UsersPageComponent() {
           email: formData.email,
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
+          is_verified: formData.is_verified,
           license_image: formData.license_image,
           is_disabled: formData.is_disabled,
         })
@@ -516,6 +551,44 @@ function UsersPageComponent() {
         variant: "destructive",
         title: "Error",
         description: error instanceof Error ? error.message : `Failed to ${user.is_disabled ? 'enable' : 'disable'} user`,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleToggleVerification(user: User) {
+    try {
+      setIsSubmitting(true)
+      
+      // Use the API endpoint to toggle the verification status
+      const response = await fetch(`/api/users/${user.id}/verify-license`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          verified: !user.is_verified
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || `Failed to ${user.is_verified ? 'unverify' : 'verify'} user`)
+      }
+
+      toast({
+        title: "Success",
+        description: `User ${user.is_verified ? 'unverified' : 'verified'} successfully`,
+      })
+
+      fetchUsers()
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : `Failed to ${user.is_verified ? 'unverify' : 'verify'} user`,
       })
     } finally {
       setIsSubmitting(false)
@@ -696,6 +769,14 @@ function UsersPageComponent() {
                 onCheckedChange={(checked) => setFormData({ ...formData, is_seller: checked })}
               />
               <Label htmlFor="edit-is_seller">Seller</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="edit-is_verified"
+                checked={formData.is_verified}
+                onCheckedChange={(checked) => setFormData({ ...formData, is_verified: checked })}
+              />
+              <Label htmlFor="edit-is_verified">Verified</Label>
             </div>
             <div className="flex items-center space-x-2">
               <Switch
