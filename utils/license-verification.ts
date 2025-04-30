@@ -10,20 +10,25 @@ export async function verifyLicenseImage(file: File): Promise<{
   text: string; 
   isExpired: boolean;
   expiryDate: string | null;
+  orientation: 'correct' | 'rotated' | 'unknown';
+  rotationAngle: number;
+  correctedImageUrl?: string;
 }> {
   try {
     if (!file) {
       throw new Error('No file provided');
     }
     
+    // Auto-rotate the image for best OCR results
+    const { bestImage, bestRotation, bestConfidence, bestText } = await findBestOrientation(file);
+    
     // Create a Tesseract worker
     const worker = await createWorker('eng');
     
-    // Convert file to base64 for Tesseract
-    const base64Image = await fileToBase64(file);
-    
-    // Recognize text in the image
-    const { data: { text } } = await worker.recognize(base64Image);
+    // Use the best rotated image we found
+    const { confidence, text } = bestText 
+      ? { confidence: bestConfidence, text: bestText } 
+      : (await worker.recognize(bestImage)).data;
     
     // Terminate the worker
     await worker.terminate();
@@ -31,14 +36,154 @@ export async function verifyLicenseImage(file: File): Promise<{
     // Check if the text contains the required string
     const isVerified = text.includes('POLICE GENERAL HEADQUARTERS');
     
+    // Check orientation based on confidence score
+    let orientation: 'correct' | 'rotated' | 'unknown' = 'unknown';
+    
+    // If confidence is very low and we can't find key license words, it might still be rotated
+    const hasKeywords = /police|valid|headquarters|license|firearms/i.test(text);
+    
+    if (confidence > 70 && hasKeywords) {
+      orientation = 'correct';
+    } else if (confidence < 40 && !hasKeywords) {
+      orientation = 'rotated';
+    }
+    
     // Check expiration date
     const { isExpired, expiryDate } = checkExpirationDate(text);
     
-    return { isVerified, text, isExpired, expiryDate };
+    return { 
+      isVerified, 
+      text, 
+      isExpired, 
+      expiryDate, 
+      orientation, 
+      rotationAngle: bestRotation,
+      correctedImageUrl: bestImage 
+    };
   } catch (error) {
     console.error('License verification error:', error);
-    return { isVerified: false, text: '', isExpired: true, expiryDate: null };
+    return { 
+      isVerified: false, 
+      text: '', 
+      isExpired: true, 
+      expiryDate: null, 
+      orientation: 'unknown', 
+      rotationAngle: 0 
+    };
   }
+}
+
+/**
+ * Attempts to find the best orientation for an image by trying different rotations
+ * @param file The image file to process
+ * @returns The best orientation and processed image
+ */
+async function findBestOrientation(file: File): Promise<{ 
+  bestImage: string; 
+  bestRotation: number; 
+  bestConfidence: number;
+  bestText: string;
+}> {
+  try {
+    // Convert file to base64 for processing
+    const originalImageBase64 = await fileToBase64(file);
+    
+    // Try each rotation angle
+    const rotationAngles = [0, 90, 180, 270];
+    let bestRotation = 0;
+    let bestConfidence = 0;
+    let bestText = '';
+    let bestImage = originalImageBase64;
+    
+    // Create a Tesseract worker once and reuse for all rotations
+    const worker = await createWorker('eng');
+    
+    // Try each rotation and find the one with highest confidence
+    for (const angle of rotationAngles) {
+      // Only rotate if not 0 degrees
+      const imageToProcess = angle === 0 
+        ? originalImageBase64 
+        : await rotateImage(originalImageBase64, angle);
+      
+      // Perform OCR on this rotation
+      const result = await worker.recognize(imageToProcess);
+      const { confidence, text } = result.data;
+      
+      // Check for keywords that might indicate this is the correct orientation
+      const keywords = ['police', 'valid', 'headquarters', 'license', 'firearms', 'malta'];
+      const keywordMatches = keywords.filter(keyword => 
+        text.toLowerCase().includes(keyword.toLowerCase())
+      ).length;
+      
+      // Create a combined score that considers both confidence and keyword matches
+      const combinedScore = confidence + (keywordMatches * 5);
+      
+      // If this rotation produced better results, save it
+      if (combinedScore > bestConfidence) {
+        bestRotation = angle;
+        bestConfidence = combinedScore;
+        bestText = text;
+        bestImage = imageToProcess;
+      }
+    }
+    
+    // Clean up
+    await worker.terminate();
+    
+    return { bestImage, bestRotation, bestConfidence, bestText };
+  } catch (error) {
+    console.error('Error finding best orientation:', error);
+    return { 
+      bestImage: await fileToBase64(file), 
+      bestRotation: 0, 
+      bestConfidence: 0,
+      bestText: ''
+    };
+  }
+}
+
+/**
+ * Rotates an image by the specified angle
+ * @param base64Image Base64 encoded image
+ * @param angle Rotation angle in degrees
+ * @returns Promise resolving to rotated base64 image
+ */
+function rotateImage(base64Image: string, angle: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+      
+      // Adjust canvas size for rotation
+      if (angle === 90 || angle === 270) {
+        canvas.width = img.height;
+        canvas.height = img.width;
+      } else {
+        canvas.width = img.width;
+        canvas.height = img.height;
+      }
+      
+      // Translate and rotate
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((angle * Math.PI) / 180);
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      
+      // Get the rotated image
+      resolve(canvas.toDataURL('image/jpeg', 0.95));
+    };
+    
+    img.onerror = () => {
+      reject(new Error('Failed to load image'));
+    };
+    
+    img.src = base64Image;
+  });
 }
 
 /**

@@ -724,8 +724,8 @@ export default function ProfilePage() {
         return;
       }
 
-      // Verify the license image using OCR
-      const { isVerified, isExpired, expiryDate, text } = await verifyLicenseImage(file);
+      // Verify the license image using OCR - this now includes auto-rotation
+      const { isVerified, isExpired, expiryDate, text, orientation, rotationAngle, correctedImageUrl } = await verifyLicenseImage(file);
 
       // If the license is expired, don't allow it to be uploaded
       if (isExpired) {
@@ -740,6 +740,21 @@ export default function ProfilePage() {
         return;
       }
 
+      // If the orientation is still problematic after auto-rotation, warn the user
+      if (orientation === 'rotated') {
+        toast({
+          title: "Image may be difficult to read",
+          description: "The system had trouble reading your license clearly, but has attempted to correct its orientation automatically.",
+          className: "bg-amber-100 text-amber-800 border-amber-200",
+        });
+        // Continue with upload - don't block it
+      }
+
+      // Use the corrected image URL if available
+      const imageToUpload = correctedImageUrl 
+        ? await urlToFile(correctedImageUrl, `rotated-${file.name}`, file.type)
+        : file;
+
       const fileExt = file.name.split(".").pop();
       const fileName = `license-${Date.now()}-${Math.random()
         .toString(36)
@@ -748,7 +763,7 @@ export default function ProfilePage() {
 
       const { error: uploadError } = await supabase.storage
         .from("licenses")
-        .upload(filePath, file);
+        .upload(filePath, imageToUpload);
 
       if (uploadError) throw uploadError;
 
@@ -807,6 +822,19 @@ export default function ProfilePage() {
     } finally {
       setUploadingLicense(false);
     }
+  }
+
+  /**
+   * Converts a data URL to a File object
+   * @param url The data URL to convert
+   * @param filename The name for the new file
+   * @param mimeType The MIME type of the file
+   * @returns A Promise that resolves to a File object
+   */
+  async function urlToFile(url: string, filename: string, mimeType: string): Promise<File> {
+    const res = await fetch(url);
+    const buf = await res.arrayBuffer();
+    return new File([buf], filename, { type: mimeType });
   }
 
   async function onSubmit(data: ProfileForm) {
@@ -1637,9 +1665,11 @@ export default function ProfilePage() {
                   </p>
                   <div className="relative inline-block">
                     <img
+                      id="profile-license-preview"
                       src={profile.license_image}
                       alt="License"
                       className="w-64 h-auto rounded-md mb-4"
+                      data-rotation="0"
                     />
                     <button
                       onClick={handleRemoveLicense}
