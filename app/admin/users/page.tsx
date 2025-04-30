@@ -30,10 +30,7 @@ interface User {
 }
 
 // List of authorized admin emails
-const AUTHORIZED_ADMIN_EMAILS = [
-  "etsy@motorelement.com",
-  "info@maltaguns.com"
-]
+const AUTHORIZED_ADMIN_EMAILS: string[] = []
 
 // Use dynamic import with SSR disabled to prevent hydration issues
 const UsersPageContent = dynamic(() => Promise.resolve(UsersPageComponent), { 
@@ -332,11 +329,6 @@ function UsersPageComponent() {
     try {
       setIsSubmitting(true)
 
-      // Check if trying to create an admin user with unauthorized email
-      if (formData.is_admin && !AUTHORIZED_ADMIN_EMAILS.includes(formData.email.toLowerCase())) {
-        throw new Error("Only specific users can be granted admin privileges")
-      }
-
       // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -433,13 +425,6 @@ function UsersPageComponent() {
 
     try {
       setIsSubmitting(true)
-
-      // Check if trying to grant admin privileges to unauthorized email
-      if (formData.is_admin && 
-          !AUTHORIZED_ADMIN_EMAILS.includes(formData.email.toLowerCase()) &&
-          (!selectedUser.is_admin || selectedUser.email !== formData.email)) {
-        throw new Error("Only specific users can be granted admin privileges")
-      }
 
       // Update profile
       const { error: profileError } = await supabase

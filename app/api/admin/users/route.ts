@@ -3,10 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
-const AUTHORIZED_ADMIN_EMAILS = [
-  "etsy@motorelement.com",
-  "info@maltaguns.com"
-]
+const AUTHORIZED_ADMIN_EMAILS: string[] = []
 
 export async function GET() {
   try {
@@ -23,9 +20,14 @@ export async function GET() {
       )
     }
     
-    // Check if the user is an admin
-    const userEmail = session.user.email
-    if (!userEmail || !AUTHORIZED_ADMIN_EMAILS.includes(userEmail.toLowerCase())) {
+    // Get the user's profile to check if they are an admin
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("is_admin")
+      .eq("id", session.user.id)
+      .single()
+    
+    if (profileError || !profileData || !profileData.is_admin) {
       return NextResponse.json(
         { error: "Unauthorized - Admin privileges required" },
         { status: 403 }
@@ -50,26 +52,6 @@ export async function GET() {
         { error: `Failed to fetch users: ${error.message}` },
         { status: 500 }
       )
-    }
-    
-    // Check if the current user should be an admin but isn't
-    const currentUser = data.find(user => user.id === session.user.id)
-    if (currentUser && 
-      AUTHORIZED_ADMIN_EMAILS.includes(currentUser.email.toLowerCase()) && 
-      !currentUser.is_admin) {
-      
-      // Update the user to be an admin
-      const { error: updateError } = await supabaseAdmin
-        .from("profiles")
-        .update({ is_admin: true })
-        .eq("id", currentUser.id)
-      
-      if (updateError) {
-        console.error('Error updating admin status:', updateError)
-      } else {
-        // Update the user in the result set
-        currentUser.is_admin = true
-      }
     }
     
     return NextResponse.json({ 

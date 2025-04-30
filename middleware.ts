@@ -3,10 +3,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import type { AuthResponse } from '@supabase/supabase-js'
 
-const AUTHORIZED_ADMIN_EMAILS = [
-  "etsy@motorelement.com",
-  "info@maltaguns.com"
-]
+const AUTHORIZED_ADMIN_EMAILS: string[] = []
 
 const PROTECTED_ROUTES = [
   '/profile',
@@ -107,10 +104,21 @@ export async function middleware(req: NextRequest) {
 
     // For admin routes, check authorization
     if (isAdminRoute) {
-      const userEmail = session.user.email
+      try {
+        // Get user profile to check admin status
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single()
 
-      if (!userEmail || !AUTHORIZED_ADMIN_EMAILS.includes(userEmail.toLowerCase())) {
-        console.log('User not authorized for admin:', userEmail)
+        // Redirect if not an admin
+        if (!profile?.is_admin) {
+          console.log('User not authorized for admin', session.user.email)
+          return NextResponse.redirect(new URL('/', req.url))
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error)
         return NextResponse.redirect(new URL('/', req.url))
       }
     }
