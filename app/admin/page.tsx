@@ -56,16 +56,10 @@ function AdminDashboardComponent() {
               icon="📝"
             />
             <AdminCard 
-              title="Retailers" 
-              description="Manage retailer profiles" 
-              href="/admin/retailers"
+              title="Establishments" 
+              description="Manage establishment profiles" 
+              href="/admin/establishments"
               icon="🏪"
-            />
-            <AdminCard 
-              title="Retailer Blogs" 
-              description="Manage retailer blog posts" 
-              href="/admin/retailer-blogs"
-              icon="📰"
             />
             <AdminCard 
               title="Credits" 
@@ -143,30 +137,14 @@ function AdminDashboardComponent() {
         <TabsContent value="retailers">
           <Card>
             <CardHeader>
-              <CardTitle>Retailer Management</CardTitle>
+              <CardTitle>Establishment Management</CardTitle>
               <CardDescription>
-                Create, view, edit, and delete retailer profiles
+                Create, view, edit, and delete establishment profiles
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Link href="/admin/retailers" className="text-blue-500 hover:underline">
-                Go to Retailer Management →
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="retailer-blogs">
-          <Card>
-            <CardHeader>
-              <CardTitle>Retailer Blog Management</CardTitle>
-              <CardDescription>
-                Create, view, edit, and delete retailer blog posts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/admin/retailer-blogs" className="text-blue-500 hover:underline">
-                Go to Retailer Blog Management →
+                Go to Establishment Management →
               </Link>
             </CardContent>
           </Card>

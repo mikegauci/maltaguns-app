@@ -61,7 +61,7 @@ export async function GET() {
     
     const { data: clubs } = await supabaseAdmin
       .from("clubs")
-      .select("owner_id, name")
+      .select("owner_id, business_name")
     
     const { data: servicing } = await supabaseAdmin
       .from("servicing")
@@ -69,7 +69,7 @@ export async function GET() {
     
     const { data: ranges } = await supabaseAdmin
       .from("ranges")
-      .select("owner_id, name")
+      .select("owner_id, business_name")
     
     // Create a map of user IDs to their establishments
     const userEstablishments = new Map()
@@ -85,7 +85,7 @@ export async function GET() {
       if (!userEstablishments.has(club.owner_id)) {
         userEstablishments.set(club.owner_id, []);
       }
-      userEstablishments.get(club.owner_id).push({ type: 'club', name: club.name });
+      userEstablishments.get(club.owner_id).push({ type: 'club', name: club.business_name });
     });
     
     servicing?.forEach(service => {
@@ -99,7 +99,7 @@ export async function GET() {
       if (!userEstablishments.has(range.owner_id)) {
         userEstablishments.set(range.owner_id, []);
       }
-      userEstablishments.get(range.owner_id).push({ type: 'range', name: range.name });
+      userEstablishments.get(range.owner_id).push({ type: 'range', name: range.business_name });
     });
     
     // Fetch users who have purchased credits
