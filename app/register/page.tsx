@@ -329,16 +329,7 @@ export default function Register() {
       });
 
       if (profileError) throw profileError;
-
-      // Send another verification email just in case
-      await supabase.auth.resend({
-        type: "signup",
-        email: data.email,
-        options: {
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
-        },
-      });
-
+      
       toast({
         title: "Registration successful!",
         description:
