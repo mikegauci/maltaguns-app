@@ -4,7 +4,7 @@
 
 /**
  * Force logout by clearing all auth-related data from localStorage and cookies,
- * then redirecting to the homepage with a cache-busting parameter
+ * then redirecting to the homepage
  */
 export function forceLogout() {
   // Clear all Supabase auth data from localStorage
@@ -25,7 +25,7 @@ export function forceLogout() {
       }
     });
     
-    // Redirect to homepage with cache-busting query param
-    window.location.href = `/?cache=${Date.now()}`;
+    // Redirect to homepage without cache-busting query param
+    window.location.href = '/';
   }
 } 
