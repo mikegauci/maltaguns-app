@@ -67,6 +67,12 @@ function AdminDashboardComponent() {
               href="/admin/credits"
               icon="💳"
             />
+            <AdminCard 
+              title="Event Credits" 
+              description="Manage event credits" 
+              href="/admin/event-credits"
+              icon="🎫"
+            />
           </div>
         </TabsContent>
         
@@ -161,6 +167,22 @@ function AdminDashboardComponent() {
             <CardContent>
               <Link href="/admin/credits" className="text-blue-500 hover:underline">
                 Go to Credit Management →
+              </Link>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="event-credits">
+          <Card>
+            <CardHeader>
+              <CardTitle>Event Credit Management</CardTitle>
+              <CardDescription>
+                View and manage event credits
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Link href="/admin/event-credits" className="text-blue-500 hover:underline">
+                Go to Event Credit Management →
               </Link>
             </CardContent>
           </Card>
