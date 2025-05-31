@@ -78,6 +78,15 @@ function ListingsPageComponent() {
   })
   const supabase = createClientComponentClient()
 
+  // Helper function to create URL-friendly slugs from titles
+  function slugify(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/--+/g, "-");
+  }
+
   const columns: ColumnDef<Listing>[] = [
     {
       id: "select",
@@ -213,7 +222,7 @@ function ListingsPageComponent() {
           <ActionCell
             onEdit={() => handleEdit(listing)}
             onDelete={() => handleDelete(listing)}
-            onView={() => window.open(`/listings/${listing.id}`, '_blank')}
+            onView={() => window.open(`/marketplace/listing/${slugify(listing.title)}`, '_blank')}
           />
         )
       },
