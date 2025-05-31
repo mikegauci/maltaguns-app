@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/search";
-import { Store, BookOpen, Menu, X, User, ChevronDown, Users, Wrench, MapPin, Boxes } from "lucide-react";
+import { Store, BookOpen, Menu, X, User, ChevronDown, Users, Wrench, MapPin, Boxes, Heart } from "lucide-react";
 import { useSupabase } from "./providers/supabase-provider";
 import { forceLogout } from "@/lib/auth-utils";
 import {
@@ -132,6 +132,11 @@ export function Header() {
                     <DropdownMenuItem className="cursor-pointer">
                       <Link href="/profile" className="w-full">
                         Account
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer">
+                      <Link href="/wishlist" className="w-full">
+                        Wishlist
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem 

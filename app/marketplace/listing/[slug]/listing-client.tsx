@@ -30,6 +30,7 @@ import { AutoFeatureHandler } from "../../auto-feature-handler";
 import { toast } from "sonner";
 import { LoadingState } from "@/components/ui/loading-state";
 import Image from "next/image";
+import { WishlistButton } from "@/components/wishlist-button";
 
 // Default image to use when no images are provided
 const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg";
@@ -448,6 +449,19 @@ export default function ListingClient({
                 </a>
               </div>
             )}
+          
+          {/* Add Wishlist Button for non-owners */}
+          {!isOwner && (
+            <div className="mt-4 pt-4 border-t">
+              <WishlistButton 
+                listingId={listing.id} 
+                showText={true}
+                variant="outline"
+                className="w-full"
+              />
+            </div>
+          )}
+          
           {!isOwner && <ReportListingDialog listingId={listing.id} />}
         </>
       );

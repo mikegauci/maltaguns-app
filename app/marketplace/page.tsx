@@ -11,12 +11,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Package, Star, Plus } from "lucide-react";
+import { Package, Star, Plus, Heart } from "lucide-react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { AutoFeatureHandler } from "./auto-feature-handler";
 import { LoadingState } from "@/components/ui/loading-state";
 import Image from "next/image";
+import { WishlistButton } from "@/components/wishlist-button";
 
 interface Listing {
   id: string;
@@ -231,6 +232,17 @@ export default function Marketplace() {
               <Star className="h-3 w-3 mr-1" /> Featured
             </Badge>
           )}
+          <div 
+            className="absolute bottom-2 right-2"
+            onClick={(e) => e.preventDefault()}
+          >
+            <WishlistButton 
+              listingId={listing.id}
+              size="sm"
+              variant="ghost"
+              className="bg-background/80 hover:bg-background/90"
+            />
+          </div>
         </div>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-3">
@@ -347,12 +359,20 @@ export default function Marketplace() {
             </p>
           </div>
         </div>
-        <Link href="/marketplace/create">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Listing
-          </Button>
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <Link href="/marketplace/create">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Listing
+            </Button>
+          </Link>
+          <Link href="/wishlist">
+            <Button variant="outline">
+              <Heart className="mr-2 h-4 w-4" />
+              My Wishlist
+            </Button>
+          </Link>
+        </div>
 
         {/* Add the AutoFeatureHandler with no specific listingId */}
         <AutoFeatureHandler />
