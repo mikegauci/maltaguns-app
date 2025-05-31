@@ -59,13 +59,14 @@ export async function POST(req: NextRequest) {
       newType, 
       name, 
       location, 
-      otherFields 
+      logo_url, 
+      ...otherFields 
     } = await req.json();
     
     console.log("Request data:", { id, currentType, newType, name, location });
 
     // Verify required fields
-    if (!id || !currentType || !newType) {
+    if (!id || !currentType || !newType || !name || !location) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -84,6 +85,7 @@ export async function POST(req: NextRequest) {
       
       const updateData: any = {
         location,
+        logo_url: logo_url || null,
         ...otherFields
       };
       
@@ -166,7 +168,7 @@ export async function POST(req: NextRequest) {
       description: currentRecord.description,
       website: currentRecord.website,
       slug: currentRecord.slug,
-      logo_url: currentRecord.logo_url,
+      logo_url: logo_url !== undefined ? logo_url : currentRecord.logo_url,
       created_at: new Date().toISOString(),
     };
     
