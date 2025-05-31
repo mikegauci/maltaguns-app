@@ -18,8 +18,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { Mail, Phone } from "lucide-react"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Database } from "@/lib/database.types"
 
 const contactFormSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -33,7 +31,6 @@ type ContactFormValues = z.infer<typeof contactFormSchema>
 export default function ContactPage() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const supabase = createClientComponentClient<Database>()
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -49,17 +46,19 @@ export default function ContactPage() {
     setIsSubmitting(true)
 
     try {
-      // Store the contact form submission in Supabase
-      const { error } = await supabase
-        .from('contact_messages')
-        .insert({
-          name: data.name,
-          email: data.email,
-          subject: data.subject,
-          message: data.message
-        })
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
 
-      if (error) throw error
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send message')
+      }
 
       toast({
         title: "Message sent",
@@ -72,7 +71,7 @@ export default function ContactPage() {
       toast({
         variant: "destructive",
         title: "Something went wrong",
-        description: "Your message couldn't be sent. Please try again later.",
+        description: error instanceof Error ? error.message : "Your message couldn't be sent. Please try again later.",
       })
     } finally {
       setIsSubmitting(false)
