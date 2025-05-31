@@ -77,6 +77,15 @@ type EventFormType = {
   posterUrl?: string;
 }
 
+// Add slugify function
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/--+/g, '-')
+}
+
 const eventSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
@@ -342,6 +351,9 @@ export default function CreateEventPage() {
         throw new Error("Not authenticated")
       }
 
+      // Generate slug from title
+      const slug = slugify(data.title)
+
       // Create the event with correct column names
       const { data: event, error: eventError } = await supabase
         .from("events")
@@ -359,7 +371,8 @@ export default function CreateEventPage() {
           email: data.email || null,
           price: data.price || null,
           poster_url: posterUrl || null,
-          created_by: session.user.id
+          created_by: session.user.id,
+          slug: slug
         })
         .select()
         .single()
@@ -402,7 +415,8 @@ export default function CreateEventPage() {
       })
 
       // Keep isSubmitting true during redirection
-      router.push(`/events/${event.id}`)
+      // Redirect to the slug instead of ID
+      router.push(`/events/${slug}`)
     } catch (error) {
       console.error("Submit error:", error)
       toast({

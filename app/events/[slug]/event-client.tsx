@@ -36,17 +36,45 @@ interface EventClientProps {
 export default function EventClient({ event }: EventClientProps) {
   const router = useRouter()
   const [isOwner, setIsOwner] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    async function checkOwnership() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user?.id === event.created_by) {
-        setIsOwner(true)
+    // Function to update owner status based on session
+    const updateOwnerStatus = (session: import('@supabase/supabase-js').Session | null) => {
+      console.log('=== DEBUG UPDATE OWNER STATUS ===');
+      console.log('Session user ID:', session?.user?.id);
+      console.log('Event created_by:', event.created_by);
+      console.log('Event object:', event);
+
+      if (session?.user?.id) {
+        setCurrentUserId(session.user.id);
+        const isUserOwner = session.user.id === event.created_by;
+        console.log('Is owner?', isUserOwner);
+        setIsOwner(isUserOwner);
+      } else {
+        setCurrentUserId(null);
+        setIsOwner(false);
+        console.log('Is owner? false (no session or user ID)');
       }
-    }
-    
-    checkOwnership()
-  }, [event.created_by])
+    };
+
+    // Attempt to get the session immediately
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial getSession() call result:', session);
+      updateOwnerStatus(session);
+    });
+
+    // Listen for auth state changes
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed. Event:', _event, 'New session:', session);
+      updateOwnerStatus(session);
+    });
+
+    // Cleanup subscription on component unmount
+    return () => {
+      authSubscription?.unsubscribe();
+    };
+  }, [event.created_by, supabase.auth]); // Add supabase.auth as a dependency
 
   const formatTime = (time: string | null) => {
     if (!time) return null;
@@ -103,7 +131,8 @@ export default function EventClient({ event }: EventClientProps) {
               </div>
             </div>
             
-            {isOwner && (
+            {/* Always show edit button if user matches, similar to profile page */}
+            {currentUserId && currentUserId === event.created_by && (
               <Button 
                 onClick={() => router.push(`/events/${event.slug || event.id}/edit`)}
                 className="flex items-center"
