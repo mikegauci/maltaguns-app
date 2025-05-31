@@ -60,7 +60,7 @@ export default function EstablishmentsPage() {
         // Combine all results and add type field
         const allEstablishments = [
           ...(stores || []).map(store => ({ ...store, type: 'stores' as const })),
-          ...(clubs || []).map(club => ({ ...club, type: 'club' as const })),
+          ...(clubs || []).map(club => ({ ...club, type: 'clubs' as const })),
           ...(servicing || []).map(service => ({ ...service, type: 'servicing' as const })),
           ...(ranges || []).map(range => ({ ...range, type: 'range' as const }))
         ]
