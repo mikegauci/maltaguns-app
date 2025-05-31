@@ -94,9 +94,45 @@ export default async function BlogPage() {
       debugInfo.hasStore = true
     }
     
-    // ⚠️ TEMPORARY FIX: Allow all logged-in users to write blog posts until we resolve the establishments issue
-    console.log("⚠️ TEMPORARILY allowing all logged-in users to write posts")
-    canCreate = true
+    // Check if user has other establishments (clubs, ranges, servicing)
+    const { data: club } = await supabase
+      .from('clubs')
+      .select('id')
+      .eq('owner_id', userId)
+      .maybeSingle()
+      
+    if (club) {
+      console.log("User has club with ID:", club.id)
+      canCreate = true
+      userEstablishment = { ...club, type: 'club' }
+      debugInfo.hasClub = true
+    }
+    
+    const { data: range } = await supabase
+      .from('ranges')
+      .select('id')
+      .eq('owner_id', userId)
+      .maybeSingle()
+      
+    if (range) {
+      console.log("User has range with ID:", range.id)
+      canCreate = true
+      userEstablishment = { ...range, type: 'range' }
+      debugInfo.hasRange = true
+    }
+    
+    const { data: servicing } = await supabase
+      .from('servicing')
+      .select('id')
+      .eq('owner_id', userId)
+      .maybeSingle()
+      
+    if (servicing) {
+      console.log("User has servicing with ID:", servicing.id)
+      canCreate = true
+      userEstablishment = { ...servicing, type: 'servicing' }
+      debugInfo.hasServicing = true
+    }
   }
   
   console.log("Authorization summary:", { canCreate, debugInfo })

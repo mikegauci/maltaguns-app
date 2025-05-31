@@ -704,7 +704,6 @@ function UsersPageComponent() {
         searchPlaceholder="Search users..."
         onCreateNew={handleCreate}
         createButtonText="Create User"
-        defaultColumnVisibility={columnVisibility}
       />
 
       {/* Create User Dialog */}
