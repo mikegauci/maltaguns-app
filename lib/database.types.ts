@@ -234,6 +234,12 @@ export interface Database {
           created_at: string;
           updated_at: string;
           retailer_id: string | null;
+          category: string;
+          store_id: string | null;
+          club_id: string | null;
+          range_id: string | null;
+          servicing_id: string | null;
+          view_count: number | null;
         };
         Insert: {
           id?: string;
@@ -246,6 +252,12 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           retailer_id?: string | null;
+          category: string;
+          store_id?: string | null;
+          club_id?: string | null;
+          range_id?: string | null;
+          servicing_id?: string | null;
+          view_count?: number | null;
         };
         Update: {
           id?: string;
@@ -258,6 +270,12 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           retailer_id?: string | null;
+          category?: string;
+          store_id?: string | null;
+          club_id?: string | null;
+          range_id?: string | null;
+          servicing_id?: string | null;
+          view_count?: number | null;
         };
       };
       retailer_blog_posts: {

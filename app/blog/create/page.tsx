@@ -683,7 +683,8 @@ export default function CreateBlogPost() {
         servicing_id: servicingId,
         club_id: clubId,
         range_id: rangeId,
-        slug: slug(data.title)
+        slug: slug(data.title),
+        view_count: 0
       }
 
       console.log("Post data being sent:", postData)

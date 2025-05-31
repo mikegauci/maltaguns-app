@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Pencil, Store, Users, MapPin, Wrench } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import ViewTracker from '@/app/components/blog/ViewTracker'
 
 interface BlogPost {
   id: string
@@ -235,6 +236,7 @@ export default async function BlogPost({ params }: { params: { category: string;
 
   return (
     <div className="min-h-screen bg-background py-12">
+      <ViewTracker postId={post.id} />
       <div className="container max-w-screen-lg mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
           <Link href="/blog" className="text-muted-foreground hover:text-foreground">
