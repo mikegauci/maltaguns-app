@@ -38,7 +38,6 @@ interface DataTableProps<TData, TValue> {
   searchPlaceholder?: string
   onCreateNew?: () => void
   createButtonText?: string
-  defaultColumnVisibility?: VisibilityState
 }
 
 export function DataTable<TData, TValue>({
@@ -48,19 +47,17 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = "Search...",
   onCreateNew,
   createButtonText = "Create New",
-  defaultColumnVisibility = {},
 }: DataTableProps<TData, TValue>) {
   const [isMounted, setIsMounted] = useState(false)
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(defaultColumnVisibility)
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
 
   // Prevent hydration issues by only rendering after component is mounted
   useEffect(() => {
     setIsMounted(true)
-    setColumnVisibility(defaultColumnVisibility)
-  }, [defaultColumnVisibility])
+  }, [])
 
   const table = useReactTable({
     data,
@@ -118,7 +115,7 @@ export function DataTable<TData, TValue>({
                         column.toggleVisibility(!!value)
                       }
                     >
-                      {column.id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {column.id}
                     </DropdownMenuCheckboxItem>
                   )
                 })}
