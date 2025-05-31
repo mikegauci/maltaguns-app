@@ -1,207 +1,89 @@
 "use client"
 
-import { useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
+import { Card, CardContent } from "@/components/ui/card"
 import { Mail, Phone } from "lucide-react"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Database } from "@/lib/database.types"
-
-const contactFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  subject: z.string().min(5, "Subject must be at least 5 characters"),
-  message: z.string().min(10, "Message must be at least 10 characters")
-})
-
-type ContactFormValues = z.infer<typeof contactFormSchema>
+import Script from "next/script"
 
 export default function ContactPage() {
-  const { toast } = useToast()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const supabase = createClientComponentClient<Database>()
-
-  const form = useForm<ContactFormValues>({
-    resolver: zodResolver(contactFormSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      subject: "",
-      message: ""
-    }
-  })
-
-  async function onSubmit(data: ContactFormValues) {
-    setIsSubmitting(true)
-
-    try {
-      // Store the contact form submission in Supabase
-      const { error } = await supabase
-        .from('contact_messages')
-        .insert({
-          name: data.name,
-          email: data.email,
-          subject: data.subject,
-          message: data.message
-        })
-
-      if (error) throw error
-
-      toast({
-        title: "Message sent",
-        description: "Thank you for contacting us. We will get back to you soon.",
-      })
-
-      form.reset()
-    } catch (error) {
-      console.error("Error submitting contact form:", error)
-      toast({
-        variant: "destructive",
-        title: "Something went wrong",
-        description: "Your message couldn't be sent. Please try again later.",
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-background py-16">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold tracking-tight">Contact Us</h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Have a question or feedback? We'd love to hear from you. Fill out the form below and our team will get back to you as soon as possible.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <div className="md:col-span-1 space-y-6">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4">Contact Information</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <Mail className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">info@maltaguns.com</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <Phone className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="font-medium">+356 1234 5678</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+    <>
+      {/* Freshdesk widget scripts */}
+      <Script 
+        src="https://s3.amazonaws.com/assets.freshdesk.com/widget/freshwidget.js" 
+        strategy="afterInteractive"
+      />
+      
+      <div className="min-h-screen bg-background py-16">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold tracking-tight">Contact Us</h1>
+            <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+              Have a question or feedback? We'd love to hear from you. Fill out the form below
+              and our team will get back to you as soon as possible.
+            </p>
           </div>
 
-          <div className="md:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Send a Message</CardTitle>
-                <CardDescription>
-                  Fill out the form below to get in touch with us
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input type="email" placeholder="your@email.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="md:col-span-1 space-y-6">
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold text-lg mb-4">Contact Information</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 p-2 rounded-full">
+                        <Mail className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Email</p>
+                        <p className="font-medium">info@maltaguns.com</p>
+                      </div>
                     </div>
 
-                    <FormField
-                      control={form.control}
-                      name="subject"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Subject</FormLabel>
-                          <FormControl>
-                            <Input placeholder="What's this about?" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 p-2 rounded-full">
+                        <Phone className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Phone</p>
+                        <p className="font-medium">+356 1234 5678</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-                    <FormField
-                      control={form.control}
-                      name="message"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Message</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Your message..." 
-                              className="min-h-[150px]" 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                      {isSubmitting ? "Sending..." : "Send Message"}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+            <div className="md:col-span-2">
+              <Card>
+                <CardContent className="p-6">
+                  {/* Freshdesk widget styles */}
+                  <style jsx>{`
+                    @import url(https://s3.amazonaws.com/assets.freshdesk.com/widget/freshwidget.css);
+                    
+                    .freshwidget-embedded-form {
+                      border: none;
+                      border-radius: 8px;
+                      background: transparent;
+                    }
+                  `}</style>
+                  
+                  {/* Freshdesk embedded form */}
+                  <iframe 
+                    title="Feedback Form" 
+                    className="freshwidget-embedded-form" 
+                    id="freshwidget-embedded-form" 
+                    src="https://maltaguns.freshdesk.com/widgets/feedback_widget/new?&widgetType=embedded&formTitle=Reach+out+to+us&submitTitle=Send+Message&searchArea=no" 
+                    scrolling="no"
+                    height="500px" 
+                    width="100%" 
+                    frameBorder="0"
+                  />
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 } 
