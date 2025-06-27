@@ -405,13 +405,21 @@ function ListingsPageComponent() {
     try {
       setIsSubmitting(true)
 
-      // Delete listing
-      const { error } = await supabase
-        .from("listings")
-        .delete()
-        .eq("id", selectedListing.id)
+      // Use admin delete API route
+      const response = await fetch("/api/admin/listings/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          listingId: selectedListing.id,
+        }),
+      });
 
-      if (error) throw error
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete listing");
+      }
 
       toast({
         title: "Success",

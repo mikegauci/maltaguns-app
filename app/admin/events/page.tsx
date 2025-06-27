@@ -322,13 +322,21 @@ function EventsPageComponent() {
     try {
       setIsSubmitting(true)
 
-      // Delete event
-      const { error } = await supabase
-        .from("events")
-        .delete()
-        .eq("id", selectedEvent.id)
+      // Use admin delete API route
+      const response = await fetch("/api/admin/events/delete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          eventId: selectedEvent.id,
+        }),
+      });
 
-      if (error) throw error
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete event");
+      }
 
       toast({
         title: "Success",

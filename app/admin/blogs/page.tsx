@@ -16,11 +16,7 @@ import { Trash2, Edit, Eye, Search, Filter, Users, Store, MapPin, Wrench, ArrowU
 import { format } from "date-fns"
 import Link from "next/link"
 
-// List of authorized admin IDs
-const AUTHORIZED_ADMINS = [
-  'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
-  '1a95bbf9-3bca-414d-a99f-1f9c72c15588'
-]
+// Remove hardcoded admin list - use database is_admin field instead
 
 interface BlogPost {
   id: string
@@ -74,7 +70,14 @@ export default function AdminBlogsPage() {
           return
         }
 
-        if (!AUTHORIZED_ADMINS.includes(session.user.id)) {
+        // Check if user is admin using database field
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single()
+
+        if (profileError || !profile || !profile.is_admin) {
           toast({
             variant: "destructive",
             title: "Unauthorized",
