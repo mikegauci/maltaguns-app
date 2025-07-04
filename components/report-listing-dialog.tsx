@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { supabase } from "@/lib/supabase"
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Flag } from "lucide-react"
 
 interface ReportListingDialogProps {
@@ -42,6 +42,7 @@ const reportReasons = [
 export function ReportListingDialog({ listingId }: ReportListingDialogProps) {
   const router = useRouter()
   const { toast } = useToast()
+  const supabase = createClientComponentClient()
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState<string>("")
   const [description, setDescription] = useState("")
@@ -60,8 +61,8 @@ export function ReportListingDialog({ listingId }: ReportListingDialogProps) {
     setIsSubmitting(true)
 
     try {
-      const { data: session } = await supabase.auth.getSession()
-      if (!session?.session?.user?.id) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
         toast({
           title: "Error",
           description: "You must be logged in to report a listing",
@@ -73,7 +74,7 @@ export function ReportListingDialog({ listingId }: ReportListingDialogProps) {
 
       const { error } = await supabase.from("reported_listings").insert({
         listing_id: listingId,
-        reporter_id: session.session.user.id,
+        reporter_id: session.user.id,
         reason,
         description: description.trim() || null,
       })
