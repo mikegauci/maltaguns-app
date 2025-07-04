@@ -17,10 +17,10 @@ const nextConfig = {
       config.externals.push({
         bufferutil: 'bufferutil',
         'utf-8-validate': 'utf-8-validate',
-      });
+      })
     }
-    return config;
+    return config
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

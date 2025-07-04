@@ -1,11 +1,11 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Facebook, Instagram, Twitter, Mail, Phone } from "lucide-react";
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Facebook, Instagram, Twitter, Mail, Phone } from 'lucide-react'
 
 export function Footer() {
-  const currentYear = new Date().getFullYear();
+  const currentYear = new Date().getFullYear()
 
   return (
     <footer className="border-t bg-background">
@@ -132,15 +132,15 @@ export function Footer() {
               </Link>
             </div>
             <div className="space-y-2">
-              <a 
-                href="mailto:info@maltaguns.com" 
+              <a
+                href="mailto:info@maltaguns.com"
                 className="flex items-center gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
               >
                 <Mail className="h-4 w-4" />
                 <span>info@maltaguns.com</span>
               </a>
-              <a 
-                href="https://wa.link/kqa3o5" 
+              <a
+                href="https://wa.link/kqa3o5"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
@@ -167,5 +167,5 @@ export function Footer() {
         </div>
       </div>
     </footer>
-  );
+  )
 }

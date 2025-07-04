@@ -1,20 +1,39 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft, Trash2 } from "lucide-react"
-import { Database } from "@/lib/database.types"
+import { ArrowLeft, Trash2 } from 'lucide-react'
+import { Database } from '@/lib/database.types'
 import {
   Dialog,
   DialogContent,
@@ -22,72 +41,77 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
-const DEFAULT_LISTING_IMAGE = "/images/maltaguns-default-img.jpg"
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]
+const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
 
 const firearmsCategories = {
-  "airguns": "Airguns",
-  "ammunition": "Ammunition",
-  "black_powder": "Black powder",
-  "carbines": "Carbines",
-  "crossbow": "Crossbow",
-  "pistols": "Pistols",
-  "replica_deactivated": "Replica or Deactivated",
-  "revolvers": "Revolvers",
-  "rifles": "Rifles",
-  "schedule_1": "Schedule 1 (automatic)",
-  "shotguns": "Shotguns"
+  airguns: 'Airguns',
+  ammunition: 'Ammunition',
+  black_powder: 'Black powder',
+  carbines: 'Carbines',
+  crossbow: 'Crossbow',
+  pistols: 'Pistols',
+  replica_deactivated: 'Replica or Deactivated',
+  revolvers: 'Revolvers',
+  rifles: 'Rifles',
+  schedule_1: 'Schedule 1 (automatic)',
+  shotguns: 'Shotguns',
 } as const
 
 const nonFirearmsCategories = {
-  "airsoft": "Airsoft",
-  "reloading": "Reloading",
-  "militaria": "Militaria",
-  "accessories": "Accessories"
+  airsoft: 'Airsoft',
+  reloading: 'Reloading',
+  militaria: 'Militaria',
+  accessories: 'Accessories',
 } as const
 
 const subcategories = {
-  "airsoft": {
-    "airsoft_guns": "Airsoft Guns",
-    "bbs_co2": "BBs & CO2",
-    "batteries_electronics": "Batteries & Electronics",
-    "clothing": "Clothing",
-    "other": "Other"
+  airsoft: {
+    airsoft_guns: 'Airsoft Guns',
+    bbs_co2: 'BBs & CO2',
+    batteries_electronics: 'Batteries & Electronics',
+    clothing: 'Clothing',
+    other: 'Other',
   },
-  "reloading": {
-    "presses": "Presses",
-    "dies": "Dies",
-    "tools": "Tools",
-    "tumblers_media": "Tumblers & Media",
-    "primers_heads": "Primers & Heads",
-    "other": "Other"
+  reloading: {
+    presses: 'Presses',
+    dies: 'Dies',
+    tools: 'Tools',
+    tumblers_media: 'Tumblers & Media',
+    primers_heads: 'Primers & Heads',
+    other: 'Other',
   },
-  "militaria": {
-    "uniforms": "Uniforms",
-    "helmets": "Helmets",
-    "swords_bayonets_knives": "Swords, Bayonets & Knives",
-    "medals_badges": "Medals & Badges",
-    "other": "Other"
+  militaria: {
+    uniforms: 'Uniforms',
+    helmets: 'Helmets',
+    swords_bayonets_knives: 'Swords, Bayonets & Knives',
+    medals_badges: 'Medals & Badges',
+    other: 'Other',
   },
-  "accessories": {
-    "cleaning_maintenance": "Cleaning & Maintenance",
-    "bipods_stands": "Bipods & Stands",
-    "slings_holsters": "Slings & Holsters",
-    "scopes_sights_optics": "Scopes, Sights & Optics",
-    "magazines": "Magazines",
-    "books_manuals": "Books & Manuals",
-    "hunting_equipment": "Hunting Equipment",
-    "safes_cabinets": "Safes & Cabinets",
-    "ammo_boxes": "Ammo Boxes",
-    "gun_cases": "Gun Cases",
-    "safety_equipment": "Safety Equipment",
-    "grips": "Grips",
-    "other": "Other"
-  }
+  accessories: {
+    cleaning_maintenance: 'Cleaning & Maintenance',
+    bipods_stands: 'Bipods & Stands',
+    slings_holsters: 'Slings & Holsters',
+    scopes_sights_optics: 'Scopes, Sights & Optics',
+    magazines: 'Magazines',
+    books_manuals: 'Books & Manuals',
+    hunting_equipment: 'Hunting Equipment',
+    safes_cabinets: 'Safes & Cabinets',
+    ammo_boxes: 'Ammo Boxes',
+    gun_cases: 'Gun Cases',
+    safety_equipment: 'Safety Equipment',
+    grips: 'Grips',
+    other: 'Other',
+  },
 } as const
 
 // Helper function to slugify text
@@ -100,11 +124,11 @@ function slugify(text: string) {
 }
 
 const listingSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters"),
-  description: z.string().min(20, "Description must be at least 20 characters"),
-  price: z.coerce.number().min(1, "Price must be at least €1"),
-  type: z.enum(["firearms", "non_firearms"]),
-  category: z.string().min(1, "Please select a category"),
+  title: z.string().min(5, 'Title must be at least 5 characters'),
+  description: z.string().min(20, 'Description must be at least 20 characters'),
+  price: z.coerce.number().min(1, 'Price must be at least €1'),
+  type: z.enum(['firearms', 'non_firearms']),
+  category: z.string().min(1, 'Please select a category'),
   subcategory: z.string().optional(),
   calibre: z.string().optional(),
 })
@@ -115,36 +139,43 @@ type ListingForm = z.infer<typeof listingSchema>
 function parseImageUrls(images: string): string[] {
   try {
     // Handle PostgreSQL array format: {"url1","url2"}
-    if (typeof images === 'string' && images.startsWith('{') && images.endsWith('}')) {
+    if (
+      typeof images === 'string' &&
+      images.startsWith('{') &&
+      images.endsWith('}')
+    ) {
       // Remove the curly braces and split by commas
-      const content = images.substring(1, images.length - 1);
+      const content = images.substring(1, images.length - 1)
       // Handle empty array
-      if (!content) return [];
-      
+      if (!content) return []
+
       // Split by commas, but respect quotes
-      return content.split(',')
+      return content
+        .split(',')
         .map(url => url.trim())
-        .map(url => url.startsWith('"') && url.endsWith('"') 
-          ? url.substring(1, url.length - 1) 
-          : url);
+        .map(url =>
+          url.startsWith('"') && url.endsWith('"')
+            ? url.substring(1, url.length - 1)
+            : url
+        )
     }
-    
+
     // If it's already an array, return it
     if (Array.isArray(images)) {
-      return images;
+      return images
     }
-    
+
     // Try parsing as JSON if it's not in PostgreSQL format
     try {
-      const parsed = JSON.parse(images);
-      return Array.isArray(parsed) ? parsed : [];
+      const parsed = JSON.parse(images)
+      return Array.isArray(parsed) ? parsed : []
     } catch {
       // If all else fails, return an empty array
-      return [];
+      return []
     }
   } catch (error) {
-    console.error("Error parsing image URLs:", error);
-    return [];
+    console.error('Error parsing image URLs:', error)
+    return []
   }
 }
 
@@ -154,7 +185,9 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [listingId, setListingId] = useState<string | null>(null)
-  const [selectedType, setSelectedType] = useState<"firearms" | "non_firearms" | null>(null)
+  const [selectedType, setSelectedType] = useState<
+    'firearms' | 'non_firearms' | null
+  >(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [existingImages, setExistingImages] = useState<string[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
@@ -168,13 +201,13 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   const form = useForm<ListingForm>({
     resolver: zodResolver(listingSchema),
     defaultValues: {
-      title: "",
-      description: "",
+      title: '',
+      description: '',
       price: 0,
-      type: "firearms",
-      category: "",
-      subcategory: "",
-      calibre: "",
+      type: 'firearms',
+      category: '',
+      subcategory: '',
+      calibre: '',
     },
   })
 
@@ -184,8 +217,11 @@ export default function EditListing({ params }: { params: { slug: string } }) {
     async function initializeSession() {
       try {
         // Get session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         if (sessionError) {
           console.error('Session error:', sessionError)
           router.push('/login')
@@ -205,8 +241,11 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
 
         if (isNearExpiry) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession()
+
           if (refreshError || !refreshedSession) {
             console.error('Session refresh failed:', refreshError)
             router.push('/login')
@@ -216,33 +255,34 @@ export default function EditListing({ params }: { params: { slug: string } }) {
 
         // Fetch listing by slug
         const { data, error } = await supabase
-          .from("listings")
-          .select("*")
+          .from('listings')
+          .select('*')
           .filter('title', 'ilike', `%${params.slug.replace(/-/g, ' ')}%`)
 
         if (error || !data || data.length === 0) {
           console.error('Error fetching listing:', error)
           toast({
-            title: "Listing not found",
+            title: 'Listing not found',
             description: "The listing you're trying to edit doesn't exist.",
-            variant: "destructive",
+            variant: 'destructive',
           })
-          router.push("/marketplace")
+          router.push('/marketplace')
           return
         }
 
         // Find the best match by comparing the slugified title with the provided slug
-        const listing = data.find(item => {
-          const itemSlug = slugify(item.title)
-          return itemSlug === params.slug || itemSlug.includes(params.slug)
-        }) || data[0]
+        const listing =
+          data.find(item => {
+            const itemSlug = slugify(item.title)
+            return itemSlug === params.slug || itemSlug.includes(params.slug)
+          }) || data[0]
 
         // Check if user is the owner
         if (listing.seller_id !== session.user.id) {
           toast({
-            title: "Unauthorized",
+            title: 'Unauthorized',
             description: "You don't have permission to edit this listing.",
-            variant: "destructive",
+            variant: 'destructive',
           })
           router.push(`/marketplace/listing/${params.slug}`)
           return
@@ -253,7 +293,7 @@ export default function EditListing({ params }: { params: { slug: string } }) {
           setSelectedType(listing.type)
           setSelectedCategory(listing.category)
           setIsAuthorized(true)
-          
+
           // Parse the images from PostgreSQL format
           const parsedImages = parseImageUrls(listing.images)
           setExistingImages(parsedImages)
@@ -265,8 +305,8 @@ export default function EditListing({ params }: { params: { slug: string } }) {
             price: listing.price,
             type: listing.type,
             category: listing.category,
-            subcategory: listing.subcategory || "",
-            calibre: listing.calibre || "",
+            subcategory: listing.subcategory || '',
+            calibre: listing.calibre || '',
           })
 
           // Create preview URLs for existing images
@@ -276,9 +316,9 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       } catch (error) {
         console.error('Error in session initialization:', error)
         toast({
-          title: "Error",
-          description: "Failed to initialize session. Please try again.",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Failed to initialize session. Please try again.',
+          variant: 'destructive',
         })
         if (mounted) {
           setIsLoading(false)
@@ -301,57 +341,60 @@ export default function EditListing({ params }: { params: { slug: string } }) {
 
     if (!listingId) {
       toast({
-        title: "Error",
-        description: "Listing information is missing.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Listing information is missing.',
+        variant: 'destructive',
       })
       return
     }
 
     const files = Array.from(event.target.files)
-    
+
     if (files.length + previewUrls.length > MAX_FILES) {
       toast({
-        title: "Too many files",
+        title: 'Too many files',
         description: `Maximum ${MAX_FILES} images allowed`,
-        variant: "destructive",
+        variant: 'destructive',
       })
       return
     }
-    
+
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
         toast({
-          title: "File too large",
+          title: 'File too large',
           description: `${file.name} exceeds 5MB limit`,
-          variant: "destructive",
+          variant: 'destructive',
         })
         return
       }
-      
+
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         toast({
-          title: "Invalid file type",
+          title: 'Invalid file type',
           description: `${file.name} is not a supported image format`,
-          variant: "destructive",
+          variant: 'destructive',
         })
         return
       }
     }
-    
+
     setIsUploading(true)
-    
+
     try {
       // Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       for (const file of files) {
@@ -359,39 +402,39 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         const fileExt = file.name.split('.').pop()
         const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `listings/${listingId}/${fileName}`
-        
+
         // Upload file to Supabase Storage
         const { error: uploadError } = await supabase.storage
           .from('listings')
           .upload(filePath, file, {
-            cacheControl: "3600",
-            upsert: false
+            cacheControl: '3600',
+            upsert: false,
           })
-          
+
         if (uploadError) {
           throw uploadError
         }
-        
+
         // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('listings')
-          .getPublicUrl(filePath)
-        
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('listings').getPublicUrl(filePath)
+
         // Add to preview URLs
         setPreviewUrls(prev => [...prev, publicUrl])
         setNewImages(prev => [...prev, file])
       }
-      
+
       toast({
-        title: "Images uploaded",
-        description: "Your images have been uploaded successfully.",
+        title: 'Images uploaded',
+        description: 'Your images have been uploaded successfully.',
       })
     } catch (error) {
-      console.error("Image upload error:", error)
+      console.error('Image upload error:', error)
       toast({
-        title: "Upload failed",
-        description: "Failed to upload images. Please try again.",
-        variant: "destructive",
+        title: 'Upload failed',
+        description: 'Failed to upload images. Please try again.',
+        variant: 'destructive',
       })
     } finally {
       setIsUploading(false)
@@ -415,9 +458,9 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   async function onSubmit(data: ListingForm) {
     if (!listingId) {
       toast({
-        title: "Error",
-        description: "Listing information is missing.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Listing information is missing.',
+        variant: 'destructive',
       })
       return
     }
@@ -427,57 +470,60 @@ export default function EditListing({ params }: { params: { slug: string } }) {
 
     try {
       // Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       // 1. Upload new images
       const uploadedImageUrls: string[] = []
-      
+
       if (newImages.length > 0) {
         for (let i = 0; i < newImages.length; i++) {
           const file = newImages[i]
           const fileExt = file.name.split('.').pop()
           const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
           const filePath = `listings/${listingId}/${fileName}`
-          
+
           const { error: uploadError } = await supabase.storage
             .from('listings')
             .upload(filePath, file, {
-              cacheControl: "3600",
-              upsert: false
+              cacheControl: '3600',
+              upsert: false,
             })
-            
+
           if (uploadError) {
-            console.error("Upload error:", uploadError)
+            console.error('Upload error:', uploadError)
             throw uploadError
           }
-          
+
           const { data: urlData } = supabase.storage
             .from('listings')
             .getPublicUrl(filePath)
           uploadedImageUrls.push(urlData.publicUrl)
-          
+
           // Update progress
           setUploadProgress(Math.round(((i + 1) / newImages.length) * 50))
         }
       } else {
         setUploadProgress(50)
       }
-      
+
       // 2. Delete images marked for deletion
       if (imagesToDelete.length > 0) {
         for (const imageUrl of imagesToDelete) {
           // Don't delete the default image
           if (imageUrl === DEFAULT_LISTING_IMAGE) continue
-          
+
           // Extract the path from the URL
           const urlParts = imageUrl.split('/')
           const bucketIndex = urlParts.findIndex(part => part === 'listings')
@@ -486,26 +532,27 @@ export default function EditListing({ params }: { params: { slug: string } }) {
             const { error: deleteError } = await supabase.storage
               .from('listings')
               .remove([path])
-            
+
             if (deleteError) {
-              console.error("Delete error:", deleteError)
+              console.error('Delete error:', deleteError)
               // Continue with other deletions even if one fails
             }
           }
         }
       }
-      
+
       // 3. Combine remaining existing images with new uploaded images
-      const remainingExistingImages = Array.isArray(existingImages) 
+      const remainingExistingImages = Array.isArray(existingImages)
         ? existingImages.filter(url => !imagesToDelete.includes(url))
         : []
       const allImages = [...remainingExistingImages, ...uploadedImageUrls]
-      
+
       // 4. Format the images as a PostgreSQL array literal, use default image if no images
-      const formattedImages = allImages.length > 0 
-        ? `{${allImages.map(url => `"${url}"`).join(',')}}`
-        : `{"${DEFAULT_LISTING_IMAGE}"}`
-      
+      const formattedImages =
+        allImages.length > 0
+          ? `{${allImages.map(url => `"${url}"`).join(',')}}`
+          : `{"${DEFAULT_LISTING_IMAGE}"}`
+
       // 5. Update the listing in the database
       const { error: updateError } = await supabase
         .from('listings')
@@ -522,26 +569,29 @@ export default function EditListing({ params }: { params: { slug: string } }) {
           updated_at: new Date().toISOString(),
         })
         .eq('id', listingId)
-      
+
       if (updateError) {
-        console.error("Update error:", updateError)
+        console.error('Update error:', updateError)
         throw updateError
       }
-      
+
       setUploadProgress(100)
-      
+
       toast({
-        title: "Listing updated",
-        description: "Your listing has been updated successfully."
+        title: 'Listing updated',
+        description: 'Your listing has been updated successfully.',
       })
 
       router.push(`/marketplace/listing/${slugify(data.title)}`)
     } catch (error) {
-      console.error("Submit error:", error)
+      console.error('Submit error:', error)
       toast({
-        variant: "destructive",
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update listing. Please try again."
+        variant: 'destructive',
+        title: 'Update failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update listing. Please try again.',
       })
     } finally {
       setIsUploading(false)
@@ -552,35 +602,38 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   async function handleDeleteListing() {
     if (!listingId) {
       toast({
-        title: "Error",
-        description: "Listing information is missing.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Listing information is missing.',
+        variant: 'destructive',
       })
       return
     }
 
     try {
       // Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       // Instead of deleting directly, use the server-side API
-      const response = await fetch("/api/listings/delete", {
-        method: "POST",
+      const response = await fetch('/api/listings/delete', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           listingId,
-          userId: session.user.id
+          userId: session.user.id,
         }),
       })
 
@@ -588,24 +641,25 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       if (!response.ok) {
         // Get the detailed error message from the API response
         const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to delete listing")
+        throw new Error(errorData.error || 'Failed to delete listing')
       }
 
       toast({
-        title: "Listing deleted",
-        description: "Your listing has been deleted successfully."
+        title: 'Listing deleted',
+        description: 'Your listing has been deleted successfully.',
       })
 
       // Redirect to profile
-      router.push("/profile")
+      router.push('/profile')
     } catch (error) {
-      console.error("Delete error:", error)
+      console.error('Delete error:', error)
       toast({
-        variant: "destructive",
-        title: "Delete failed",
-        description: error instanceof Error 
-          ? error.message 
-          : "Failed to delete listing. Please try again or contact support if the issue persists."
+        variant: 'destructive',
+        title: 'Delete failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete listing. Please try again or contact support if the issue persists.',
       })
     } finally {
       setDeleteDialogOpen(false)
@@ -626,23 +680,21 @@ export default function EditListing({ params }: { params: { slug: string } }) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="mb-6 hover:bg-muted"
         onClick={() => router.back()}
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
-      
+
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-2xl">Edit Listing</CardTitle>
-              <CardDescription>
-                Update your listing information
-              </CardDescription>
+              <CardDescription>Update your listing information</CardDescription>
             </div>
             <Button
               variant="destructive"
@@ -663,19 +715,24 @@ export default function EditListing({ params }: { params: { slug: string } }) {
             </div>
           ) : (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8"
+              >
                 <div className="grid gap-6 sm:grid-cols-1">
                   <FormField
                     control={form.control}
                     name="title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Title</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Title
+                        </FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Enter listing title" 
-                            className="h-10" 
-                            {...field} 
+                          <Input
+                            placeholder="Enter listing title"
+                            className="h-10"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -683,19 +740,21 @@ export default function EditListing({ params }: { params: { slug: string } }) {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-1">
                   <FormField
                     control={form.control}
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Description</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Description
+                        </FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Describe your item in detail" 
+                          <Textarea
+                            placeholder="Describe your item in detail"
                             className="min-h-32 resize-y"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -703,42 +762,48 @@ export default function EditListing({ params }: { params: { slug: string } }) {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Price (€)</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Price (€)
+                        </FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            min="0" 
+                          <Input
+                            type="number"
+                            min="0"
                             step="0.01"
-                            placeholder="0.00" 
+                            placeholder="0.00"
                             className="h-10"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Type</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Type
+                        </FormLabel>
                         <Select
                           disabled={isUploading}
-                          onValueChange={(value: "firearms" | "non_firearms") => {
+                          onValueChange={(
+                            value: 'firearms' | 'non_firearms'
+                          ) => {
                             field.onChange(value)
                             setSelectedType(value)
-                            form.setValue("category", "")
-                            form.setValue("subcategory", "")
+                            form.setValue('category', '')
+                            form.setValue('subcategory', '')
                           }}
                           defaultValue={field.value}
                         >
@@ -749,7 +814,9 @@ export default function EditListing({ params }: { params: { slug: string } }) {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="firearms">Firearms</SelectItem>
-                            <SelectItem value="non_firearms">Non-Firearms</SelectItem>
+                            <SelectItem value="non_firearms">
+                              Non-Firearms
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -757,20 +824,22 @@ export default function EditListing({ params }: { params: { slug: string } }) {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Category</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Category
+                        </FormLabel>
                         <Select
                           disabled={!selectedType || isUploading}
-                          onValueChange={(value) => {
+                          onValueChange={value => {
                             field.onChange(value)
                             setSelectedCategory(value)
-                            form.setValue("subcategory", "")
+                            form.setValue('subcategory', '')
                           }}
                           defaultValue={field.value}
                         >
@@ -780,70 +849,86 @@ export default function EditListing({ params }: { params: { slug: string } }) {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {selectedType === "firearms" ? (
-                              Object.entries(firearmsCategories).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))
-                            ) : selectedType === "non_firearms" ? (
-                              Object.entries(nonFirearmsCategories).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))
-                            ) : null}
+                            {selectedType === 'firearms'
+                              ? Object.entries(firearmsCategories).map(
+                                  ([value, label]) => (
+                                    <SelectItem key={value} value={value}>
+                                      {label}
+                                    </SelectItem>
+                                  )
+                                )
+                              : selectedType === 'non_firearms'
+                                ? Object.entries(nonFirearmsCategories).map(
+                                    ([value, label]) => (
+                                      <SelectItem key={value} value={value}>
+                                        {label}
+                                      </SelectItem>
+                                    )
+                                  )
+                                : null}
                           </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
-                  {selectedType === "non_firearms" && selectedCategory && subcategories[selectedCategory as keyof typeof subcategories] && (
-                    <FormField
-                      control={form.control}
-                      name="subcategory"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium">Subcategory</FormLabel>
-                          <Select
-                            disabled={isUploading}
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger className="h-10">
-                                <SelectValue placeholder="Select subcategory" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {Object.entries(subcategories[selectedCategory as keyof typeof subcategories]).map(([value, label]) => (
-                                <SelectItem key={value} value={value}>
-                                  {label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                  
-                  {selectedType === "firearms" && (
+
+                  {selectedType === 'non_firearms' &&
+                    selectedCategory &&
+                    subcategories[
+                      selectedCategory as keyof typeof subcategories
+                    ] && (
+                      <FormField
+                        control={form.control}
+                        name="subcategory"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-base font-medium">
+                              Subcategory
+                            </FormLabel>
+                            <Select
+                              disabled={isUploading}
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
+                              <FormControl>
+                                <SelectTrigger className="h-10">
+                                  <SelectValue placeholder="Select subcategory" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {Object.entries(
+                                  subcategories[
+                                    selectedCategory as keyof typeof subcategories
+                                  ]
+                                ).map(([value, label]) => (
+                                  <SelectItem key={value} value={value}>
+                                    {label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+
+                  {selectedType === 'firearms' && (
                     <FormField
                       control={form.control}
                       name="calibre"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">Calibre</FormLabel>
+                          <FormLabel className="text-base font-medium">
+                            Calibre
+                          </FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="e.g. 9mm, .22LR, 12 gauge" 
+                            <Input
+                              placeholder="e.g. 9mm, .22LR, 12 gauge"
                               className="h-10"
-                              {...field} 
-                              value={field.value || ""}
+                              {...field}
+                              value={field.value || ''}
                             />
                           </FormControl>
                           <FormMessage />
@@ -852,20 +937,26 @@ export default function EditListing({ params }: { params: { slug: string } }) {
                     />
                   )}
                 </div>
-                
+
                 <div className="space-y-4 pt-4 border-t">
                   <div>
-                    <FormLabel className="text-base font-medium">Images</FormLabel>
+                    <FormLabel className="text-base font-medium">
+                      Images
+                    </FormLabel>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Upload up to {MAX_FILES} images. First image will be used as thumbnail.
+                      Upload up to {MAX_FILES} images. First image will be used
+                      as thumbnail.
                     </p>
-                    
+
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
                       {previewUrls.map((url, index) => (
-                        <div key={index} className="relative aspect-square rounded-md overflow-hidden border shadow-sm">
-                          <img 
-                            src={url} 
-                            alt={`Preview ${index}`} 
+                        <div
+                          key={index}
+                          className="relative aspect-square rounded-md overflow-hidden border shadow-sm"
+                        >
+                          <img
+                            src={url}
+                            alt={`Preview ${index}`}
                             className="w-full h-full object-cover"
                           />
                           <Button
@@ -885,11 +976,13 @@ export default function EditListing({ params }: { params: { slug: string } }) {
                           )}
                         </div>
                       ))}
-                      
+
                       {previewUrls.length < MAX_FILES && (
                         <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-square hover:bg-muted/50 transition-colors">
                           <span className="text-3xl mb-1">+</span>
-                          <span className="text-sm text-center text-muted-foreground px-2">Add Image</span>
+                          <span className="text-sm text-center text-muted-foreground px-2">
+                            Add Image
+                          </span>
                           <input
                             type="file"
                             accept="image/*"
@@ -901,23 +994,23 @@ export default function EditListing({ params }: { params: { slug: string } }) {
                       )}
                     </div>
                   </div>
-                  
+
                   {isUploading && (
                     <div className="w-full bg-muted rounded-full h-3 mb-6">
-                      <div 
-                        className="bg-primary h-3 rounded-full transition-all duration-300" 
+                      <div
+                        className="bg-primary h-3 rounded-full transition-all duration-300"
                         style={{ width: `${uploadProgress}%` }}
                       ></div>
                     </div>
                   )}
-                  
+
                   <div className="pt-4">
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
                       className="w-full h-12 text-base font-medium"
                       disabled={isUploading}
                     >
-                      {isUploading ? "Updating..." : "Update Listing"}
+                      {isUploading ? 'Updating...' : 'Update Listing'}
                     </Button>
                   </div>
                 </div>
@@ -933,20 +1026,18 @@ export default function EditListing({ params }: { params: { slug: string } }) {
           <DialogHeader>
             <DialogTitle>Delete Listing</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this listing? This action cannot be undone.
+              Are you sure you want to delete this listing? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteListing}
-            >
+            <Button variant="destructive" onClick={handleDeleteListing}>
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Listing
             </Button>
@@ -955,4 +1046,4 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       </Dialog>
     </div>
   )
-} 
+}

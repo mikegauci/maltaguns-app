@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { supabase } from "@/lib/supabase";
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 
 import {
   Dialog,
@@ -10,142 +10,146 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-react'
 
 // Price amount in EUR
-const FEATURE_PRICE = 5;
+const FEATURE_PRICE = 5
 
 interface FeatureListingDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  userId: string;
-  listingId: string;
-  onSuccess?: () => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  userId: string
+  listingId: string
+  onSuccess?: () => void
 }
 
-export function FeatureCreditDialog({ 
-  open, 
-  onOpenChange, 
-  userId, 
+export function FeatureCreditDialog({
+  open,
+  onOpenChange,
+  userId,
   listingId,
-  onSuccess 
+  onSuccess,
 }: FeatureListingDialogProps) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [isRenewal, setIsRenewal] = useState(false);
-  const [featuredDaysRemaining, setFeaturedDaysRemaining] = useState(0);
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [isRenewal, setIsRenewal] = useState(false)
+  const [featuredDaysRemaining, setFeaturedDaysRemaining] = useState(0)
 
   useEffect(() => {
     // Check if this is a renewal
     const checkFeatureStatus = async () => {
       try {
-        const now = new Date().toISOString();
-        
+        const now = new Date().toISOString()
+
         // Check for an existing feature in the featured_listings table
         const { data: feature, error: featureError } = await supabase
           .from('featured_listings')
           .select('*')
           .eq('listing_id', listingId)
           .gt('end_date', now)
-          .maybeSingle();
-          
+          .maybeSingle()
+
         if (featureError) {
-          console.error('Error checking feature status:', featureError);
-          return;
+          console.error('Error checking feature status:', featureError)
+          return
         }
-        
+
         if (feature) {
-          const endDate = new Date(feature.end_date);
-          const currentDate = new Date();
-          const daysRemaining = Math.ceil((endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24));
-          setFeaturedDaysRemaining(daysRemaining);
+          const endDate = new Date(feature.end_date)
+          const currentDate = new Date()
+          const daysRemaining = Math.ceil(
+            (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+          )
+          setFeaturedDaysRemaining(daysRemaining)
           // Remove free renewal - always treat as a new feature purchase
-          setIsRenewal(false);
+          setIsRenewal(false)
         }
       } catch (error) {
-        console.error('Error checking feature status:', error);
+        console.error('Error checking feature status:', error)
       }
-    };
+    }
 
     if (open) {
-      checkFeatureStatus();
+      checkFeatureStatus()
     }
-  }, [open, listingId]);
+  }, [open, listingId])
 
   const handlePurchase = async () => {
     try {
-      setLoading(true);
-      
+      setLoading(true)
+
       // First, extend the listing expiry to 30 days
-      const expiryResponse = await fetch("/api/listings/update-expiry", {
-        method: "POST",
+      const expiryResponse = await fetch('/api/listings/update-expiry', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          listingId
+          listingId,
         }),
-      });
-      
+      })
+
       if (!expiryResponse.ok) {
-        const errorData = await expiryResponse.json();
-        throw new Error(errorData.error || "Failed to extend listing expiry");
+        const errorData = await expiryResponse.json()
+        throw new Error(errorData.error || 'Failed to extend listing expiry')
       }
 
       // Then proceed with the feature purchase
-      const response = await fetch("/api/checkout/feature-credit", {
-        method: "POST",
+      const response = await fetch('/api/checkout/feature-credit', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           userId,
-          listingId
+          listingId,
         }),
-      });
-      
+      })
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create checkout session");
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create checkout session')
       }
-      
-      const data = await response.json();
+
+      const data = await response.json()
       if (data.url) {
-        router.push(data.url);
+        router.push(data.url)
       } else {
-        throw new Error("No checkout URL returned");
+        throw new Error('No checkout URL returned')
       }
     } catch (error) {
-      console.error("Error:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to process request");
+      console.error('Error:', error)
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to process request'
+      )
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!loading) {
-      onOpenChange(newOpen);
+      onOpenChange(newOpen)
       if (!newOpen) {
-        setSuccess(false);
-        setIsRenewal(false);
+        setSuccess(false)
+        setIsRenewal(false)
       }
     }
-  };
+  }
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {success ? "Listing Featured!" : "Feature Your Listing"}
+            {success ? 'Listing Featured!' : 'Feature Your Listing'}
           </DialogTitle>
           <DialogDescription>
             {success
-              ? "Your listing will now appear at the top of search results for 15 days."
+              ? 'Your listing will now appear at the top of search results for 15 days.'
               : `Feature your listing for €${FEATURE_PRICE} to make it stand out and appear at the top of search results for 15 days.`}
           </DialogDescription>
         </DialogHeader>
@@ -178,7 +182,8 @@ export function FeatureCreditDialog({
               </svg>
             </div>
             <p className="text-center text-sm text-muted-foreground mt-2">
-              Your listing will now appear at the top of search results for 15 days.
+              Your listing will now appear at the top of search results for 15
+              days.
             </p>
           </div>
         )}
@@ -191,19 +196,22 @@ export function FeatureCreditDialog({
               disabled={loading}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {loading 
-                ? "Processing..." 
-                : isRenewal 
-                ? "Renew Feature" 
-                : `Purchase Feature (€${FEATURE_PRICE})`}
+              {loading
+                ? 'Processing...'
+                : isRenewal
+                  ? 'Renew Feature'
+                  : `Purchase Feature (€${FEATURE_PRICE})`}
             </Button>
           ) : (
-            <Button onClick={() => router.push("/marketplace")} className="w-full">
+            <Button
+              onClick={() => router.push('/marketplace')}
+              className="w-full"
+            >
               Back to Marketplace
             </Button>
           )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-} 
+  )
+}

@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 // List of authorized admin IDs
 const AUTHORIZED_ADMINS = [
   'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
-  '1a95bbf9-3bca-414d-a99f-1f9c72c15588'
+  '1a95bbf9-3bca-414d-a99f-1f9c72c15588',
 ]
 
 export default async function BlogPage() {
@@ -21,14 +21,16 @@ export default async function BlogPage() {
   // Fetch posts
   const { data: posts, error } = await supabase
     .from('blog_posts')
-    .select(`
+    .select(
+      `
       *,
       author:profiles(username),
       store:stores(id, business_name, slug),
       club:clubs(id, business_name, slug),
       range:ranges(id, business_name, slug),
       servicing:servicing(id, business_name, slug)
-    `)
+    `
+    )
     .eq('published', true)
     .order('created_at', { ascending: false })
 
@@ -38,18 +40,21 @@ export default async function BlogPage() {
   }
 
   // Add debug logging for establishment data
-  console.log("Found posts with establishment data:", posts.map(post => ({
-    id: post.id,
-    title: post.title,
-    hasStore: post.store && post.store.length > 0,
-    hasClub: post.club && post.club.length > 0,
-    hasRange: post.range && post.range.length > 0,
-    hasServicing: post.servicing && post.servicing.length > 0,
-    store_id: post.store_id,
-    club_id: post.club_id,
-    range_id: post.range_id,
-    servicing_id: post.servicing_id
-  })));
+  console.log(
+    'Found posts with establishment data:',
+    posts.map(post => ({
+      id: post.id,
+      title: post.title,
+      hasStore: post.store && post.store.length > 0,
+      hasClub: post.club && post.club.length > 0,
+      hasRange: post.range && post.range.length > 0,
+      hasServicing: post.servicing && post.servicing.length > 0,
+      store_id: post.store_id,
+      club_id: post.club_id,
+      range_id: post.range_id,
+      servicing_id: post.servicing_id,
+    }))
+  )
 
   // Check if current user is authorized to create posts
   let canCreate = false
@@ -61,22 +66,24 @@ export default async function BlogPage() {
     hasStore: false,
     hasClub: false,
     hasRange: false,
-    hasServicing: false
+    hasServicing: false,
   }
 
   // Get current session
-  const { data: { session } } = await supabase.auth.getSession()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
   if (session?.user) {
     userId = session.user.id
     debugInfo.userId = userId
-    
-    console.log("User logged in:", userId)
-    
+
+    console.log('User logged in:', userId)
+
     // Check if user is an admin
     if (AUTHORIZED_ADMINS.includes(userId)) {
       canCreate = true
       debugInfo.isAdmin = true
-      console.log("User is admin")
+      console.log('User is admin')
     }
 
     // Check if user has a store
@@ -85,61 +92,61 @@ export default async function BlogPage() {
       .select('id')
       .eq('owner_id', userId)
       .maybeSingle()
-      
-    if (storeError) console.error("Store query error:", storeError)
+
+    if (storeError) console.error('Store query error:', storeError)
     if (store) {
-      console.log("User has store with ID:", store.id)
+      console.log('User has store with ID:', store.id)
       canCreate = true
       userEstablishment = { ...store, type: 'store' }
       debugInfo.hasStore = true
     }
-    
+
     // Check if user has other establishments (clubs, ranges, servicing)
     const { data: club } = await supabase
       .from('clubs')
       .select('id')
       .eq('owner_id', userId)
       .maybeSingle()
-      
+
     if (club) {
-      console.log("User has club with ID:", club.id)
+      console.log('User has club with ID:', club.id)
       canCreate = true
       userEstablishment = { ...club, type: 'club' }
       debugInfo.hasClub = true
     }
-    
+
     const { data: range } = await supabase
       .from('ranges')
       .select('id')
       .eq('owner_id', userId)
       .maybeSingle()
-      
+
     if (range) {
-      console.log("User has range with ID:", range.id)
+      console.log('User has range with ID:', range.id)
       canCreate = true
       userEstablishment = { ...range, type: 'range' }
       debugInfo.hasRange = true
     }
-    
+
     const { data: servicing } = await supabase
       .from('servicing')
       .select('id')
       .eq('owner_id', userId)
       .maybeSingle()
-      
+
     if (servicing) {
-      console.log("User has servicing with ID:", servicing.id)
+      console.log('User has servicing with ID:', servicing.id)
       canCreate = true
       userEstablishment = { ...servicing, type: 'servicing' }
       debugInfo.hasServicing = true
     }
   }
-  
-  console.log("Authorization summary:", { canCreate, debugInfo })
+
+  console.log('Authorization summary:', { canCreate, debugInfo })
 
   // If the user has an establishment, log its details
   if (userEstablishment) {
-    console.log("User establishment:", userEstablishment)
+    console.log('User establishment:', userEstablishment)
   }
 
   return (
@@ -169,7 +176,7 @@ export default async function BlogPage() {
           <p className="text-muted-foreground text-lg">No blog posts found.</p>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
+            {posts.map(post => (
               <BlogPostCard key={post.id} post={post} />
             ))}
           </div>

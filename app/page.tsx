@@ -1,9 +1,9 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import {
   Store,
   Calendar,
@@ -16,155 +16,155 @@ import {
   Phone,
   Mail,
   Globe,
-} from "lucide-react";
-import Link from "next/link";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { format } from "date-fns";
-import { useToast } from "@/hooks/use-toast";
-import { Database } from "@/lib/database.types";
-import { LoadingState } from "@/components/ui/loading-state";
-import Image from "next/image";
+} from 'lucide-react'
+import Link from 'next/link'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { format } from 'date-fns'
+import { useToast } from '@/hooks/use-toast'
+import { Database } from '@/lib/database.types'
+import { LoadingState } from '@/components/ui/loading-state'
+import Image from 'next/image'
 
 function slugify(text: string) {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .replace(/--+/g, "-");
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/--+/g, '-')
 }
 
 interface Event {
-  id: string;
-  title: string;
-  start_date: string;
-  location: string;
-  type: string;
-  poster_url: string | null;
+  id: string
+  title: string
+  start_date: string
+  location: string
+  type: string
+  poster_url: string | null
 }
 
 interface Listing {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  thumbnail: string;
-  created_at: string;
+  id: string
+  title: string
+  description: string
+  price: number
+  thumbnail: string
+  created_at: string
 }
 
 interface BlogPost {
-  id: string;
-  title: string;
-  content: string;
-  slug: string;
-  featured_image: string | null;
-  created_at: string;
+  id: string
+  title: string
+  content: string
+  slug: string
+  featured_image: string | null
+  created_at: string
   author: {
-    username: string;
-  };
+    username: string
+  }
 }
 
 interface Establishment {
-  id: string;
-  business_name: string;
-  logo_url: string | null;
-  location: string;
-  phone: string | null;
-  email: string | null;
-  description: string | null;
-  website: string | null;
-  slug: string;
-  type: "store" | "club" | "servicing" | "range";
+  id: string
+  business_name: string
+  logo_url: string | null
+  location: string
+  phone: string | null
+  email: string | null
+  description: string | null
+  website: string | null
+  slug: string
+  type: 'store' | 'club' | 'servicing' | 'range'
 }
 
 export default function Home() {
-  const supabase = createClientComponentClient<Database>();
-  const { toast } = useToast();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [latestEvents, setLatestEvents] = useState<Event[]>([]);
-  const [recentListings, setRecentListings] = useState<Listing[]>([]);
-  const [latestPosts, setLatestPosts] = useState<BlogPost[]>([]);
+  const supabase = createClientComponentClient<Database>()
+  const { toast } = useToast()
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [latestEvents, setLatestEvents] = useState<Event[]>([])
+  const [recentListings, setRecentListings] = useState<Listing[]>([])
+  const [latestPosts, setLatestPosts] = useState<BlogPost[]>([])
   const [featuredEstablishments, setFeaturedEstablishments] = useState<
     Establishment[]
-  >([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 3;
+  >([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [retryCount, setRetryCount] = useState(0)
+  const MAX_RETRIES = 3
 
   useEffect(() => {
-    let mounted = true;
-    let retryTimeout: NodeJS.Timeout;
+    let mounted = true
+    let retryTimeout: NodeJS.Timeout
 
     async function fetchData() {
       try {
-        setIsLoading(true);
+        setIsLoading(true)
 
         // Fetch recent listings
         const { data: listingsData, error: listingsError } = await supabase
-          .from("listings")
-          .select("*")
-          .eq("status", "active")
-          .order("created_at", { ascending: false })
-          .limit(3);
+          .from('listings')
+          .select('*')
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(3)
 
         if (listingsError) {
-          console.error("Listings fetch error:", listingsError);
+          console.error('Listings fetch error:', listingsError)
           toast({
-            variant: "destructive",
-            title: "Error loading listings",
+            variant: 'destructive',
+            title: 'Error loading listings',
             description:
-              "Failed to load recent listings. Please refresh the page.",
-          });
+              'Failed to load recent listings. Please refresh the page.',
+          })
         } else if (mounted) {
-          setRecentListings(listingsData || []);
+          setRecentListings(listingsData || [])
         }
 
         // Fetch latest blog posts
         const { data: postsData, error: postsError } = await supabase
-          .from("blog_posts")
+          .from('blog_posts')
           .select(
             `
             *,
             author:profiles(username)
           `
           )
-          .eq("published", true)
-          .order("created_at", { ascending: false })
-          .limit(3);
+          .eq('published', true)
+          .order('created_at', { ascending: false })
+          .limit(3)
 
         if (postsError) {
-          console.error("Blog posts fetch error:", postsError);
+          console.error('Blog posts fetch error:', postsError)
           toast({
-            variant: "destructive",
-            title: "Error loading articles",
+            variant: 'destructive',
+            title: 'Error loading articles',
             description:
-              "Failed to load latest articles. Please refresh the page.",
-          });
+              'Failed to load latest articles. Please refresh the page.',
+          })
         } else if (mounted) {
-          setLatestPosts(postsData || []);
+          setLatestPosts(postsData || [])
         }
 
         // Check authentication status
         const {
           data: { session },
-        } = await supabase.auth.getSession();
+        } = await supabase.auth.getSession()
         if (mounted) {
-          setIsAuthenticated(!!session);
+          setIsAuthenticated(!!session)
         }
 
         // Fetch featured establishments (3 most recent ones)
-        const establishments: Establishment[] = [];
+        const establishments: Establishment[] = []
 
         // Fetch from all establishment types
-        const types = ['stores', 'ranges', 'servicing', 'clubs'];
+        const types = ['stores', 'ranges', 'servicing', 'clubs']
         for (const type of types) {
           const { data, error } = await supabase
             .from(type)
             .select('*')
             .order('created_at', { ascending: false })
-            .limit(3);
+            .limit(3)
 
           if (error) {
-            console.error(`Error fetching ${type}:`, error);
+            console.error(`Error fetching ${type}:`, error)
           } else if (data && data.length > 0) {
             // Convert each item to an Establishment
             data.forEach((item: any) => {
@@ -178,62 +178,68 @@ export default function Home() {
                 description: item.description,
                 website: item.website,
                 slug: item.slug,
-                type: type === 'stores' ? 'store' 
-                  : type === 'ranges' ? 'range' 
-                  : type === 'clubs' ? 'club'
-                  : 'servicing'
-              });
-            });
+                type:
+                  type === 'stores'
+                    ? 'store'
+                    : type === 'ranges'
+                      ? 'range'
+                      : type === 'clubs'
+                        ? 'club'
+                        : 'servicing',
+              })
+            })
           }
         }
 
         // Sort all establishments by creation date and take the 3 most recent
         if (mounted && establishments.length > 0) {
-          const sorted = establishments.sort((a: any, b: any) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          );
-          setFeaturedEstablishments(sorted.slice(0, 3));
+          const sorted = establishments.sort(
+            (a: any, b: any) =>
+              new Date(b.created_at).getTime() -
+              new Date(a.created_at).getTime()
+          )
+          setFeaturedEstablishments(sorted.slice(0, 3))
         }
 
         if (mounted) {
-          setIsLoading(false);
-          setRetryCount(0); // Reset retry count on successful fetch
+          setIsLoading(false)
+          setRetryCount(0) // Reset retry count on successful fetch
         }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error('Error fetching data:', error)
         if (mounted) {
           // If we haven't exceeded max retries, try again with exponential backoff
           if (retryCount < MAX_RETRIES) {
-            const nextRetry = Math.min(1000 * Math.pow(2, retryCount), 10000);
+            const nextRetry = Math.min(1000 * Math.pow(2, retryCount), 10000)
             retryTimeout = setTimeout(() => {
-              setRetryCount((prev) => prev + 1);
-              fetchData();
-            }, nextRetry);
+              setRetryCount(prev => prev + 1)
+              fetchData()
+            }, nextRetry)
           } else {
-            setIsLoading(false);
+            setIsLoading(false)
             toast({
-              variant: "destructive",
-              title: "Error",
-              description: "Something went wrong. Please refresh the page.",
-            });
+              variant: 'destructive',
+              title: 'Error',
+              description: 'Something went wrong. Please refresh the page.',
+            })
           }
         }
       }
     }
 
-    fetchData();
+    fetchData()
 
     return () => {
-      mounted = false;
-      if (retryTimeout) clearTimeout(retryTimeout);
-    };
-  }, [supabase, toast, retryCount]);
+      mounted = false
+      if (retryTimeout) clearTimeout(retryTimeout)
+    }
+  }, [supabase, toast, retryCount])
 
   function formatPrice(price: number) {
-    return new Intl.NumberFormat("en-MT", {
-      style: "currency",
-      currency: "EUR",
-    }).format(price);
+    return new Intl.NumberFormat('en-MT', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(price)
   }
 
   if (isLoading) {
@@ -241,7 +247,7 @@ export default function Home() {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingState message="Loading content..." />
       </div>
-    );
+    )
   }
 
   return (
@@ -268,14 +274,14 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-x-6 w-full sm:w-auto">
               <Link
-                href={isAuthenticated ? "/marketplace/create" : "/register"}
+                href={isAuthenticated ? '/marketplace/create' : '/register'}
                 className="w-[80%] sm:w-auto"
               >
                 <Button
                   size="lg"
                   className="bg-white text-black border-white hover:bg-white/20 w-full"
                 >
-                  {isAuthenticated ? "Post Listing" : "Join the Community"}
+                  {isAuthenticated ? 'Post Listing' : 'Join the Community'}
                 </Button>
               </Link>
               <Link href="/marketplace" className="w-[80%] sm:w-auto">
@@ -303,7 +309,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {recentListings.map((listing) => (
+            {recentListings.map(listing => (
               <Link
                 key={listing.id}
                 href={`/marketplace/listing/${slugify(listing.title)}`}
@@ -318,7 +324,7 @@ export default function Home() {
                   </div>
                   <CardContent className="p-4">
                     <Badge variant="secondary" className="mb-2">
-                      {listing.title.split(" ")[0]}
+                      {listing.title.split(' ')[0]}
                     </Badge>
                     <h3 className="font-semibold text-lg mb-2 line-clamp-1">
                       {listing.title}
@@ -352,27 +358,27 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                id: "f1",
-                title: "Beretta 92FS 9mm",
+                id: 'f1',
+                title: 'Beretta 92FS 9mm',
                 price: 899,
-                thumbnail: "/images/sample/beretta.jpg",
-                badge: "Premium",
+                thumbnail: '/images/sample/beretta.jpg',
+                badge: 'Premium',
               },
               {
-                id: "f2",
-                title: "Remington 870 Tactical",
+                id: 'f2',
+                title: 'Remington 870 Tactical',
                 price: 1299,
-                thumbnail: "/images/sample/remington.jpg",
-                badge: "Featured",
+                thumbnail: '/images/sample/remington.jpg',
+                badge: 'Featured',
               },
               {
-                id: "f3",
-                title: "Sig Sauer P226 Legion",
+                id: 'f3',
+                title: 'Sig Sauer P226 Legion',
                 price: 1499,
-                thumbnail: "/images/sample/sig-sauer.jpg",
-                badge: "Premium",
+                thumbnail: '/images/sample/sig-sauer.jpg',
+                badge: 'Premium',
               },
-            ].map((listing) => (
+            ].map(listing => (
               <Link
                 key={listing.id}
                 href={`/marketplace/listing/${slugify(listing.title)}`}
@@ -410,7 +416,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {latestPosts.map((post) => (
+            {latestPosts.map(post => (
               <Link key={post.id} href={`/blog/${post.slug}`}>
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                   {post.featured_image ? (
@@ -433,7 +439,7 @@ export default function Home() {
                     <div className="flex items-center justify-between text-sm text-muted-foreground">
                       <span>By {post.author.username}</span>
                       <span>
-                        {format(new Date(post.created_at), "MMM d, yyyy")}
+                        {format(new Date(post.created_at), 'MMM d, yyyy')}
                       </span>
                     </div>
                   </CardContent>
@@ -460,7 +466,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {latestEvents.map((event) => (
+            {latestEvents.map(event => (
               <Link key={event.id} href={`/events/${event.id}`}>
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                   {event.poster_url ? (
@@ -483,7 +489,7 @@ export default function Home() {
                     </h3>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4" />
-                      <span>{format(new Date(event.start_date), "PPP")}</span>
+                      <span>{format(new Date(event.start_date), 'PPP')}</span>
                     </div>
                   </CardContent>
                 </Card>
@@ -581,7 +587,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featuredEstablishments.map((establishment) => (
+            {featuredEstablishments.map(establishment => (
               <Link
                 key={`${establishment.type}-${establishment.id}`}
                 href={`/establishments/${establishment.type === 'store' ? 'stores' : establishment.type}/${
@@ -599,9 +605,9 @@ export default function Home() {
                         />
                       ) : (
                         <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                          {establishment.type === "store" ? (
+                          {establishment.type === 'store' ? (
                             <Store className="h-8 w-8 text-muted-foreground" />
-                          ) : establishment.type === "range" ? (
+                          ) : establishment.type === 'range' ? (
                             <MapPin className="h-8 w-8 text-muted-foreground" />
                           ) : (
                             <Wrench className="h-8 w-8 text-muted-foreground" />
@@ -690,7 +696,7 @@ export default function Home() {
                       <svg
                         key={i}
                         className={`w-4 h-4 ${
-                          i < 4 ? "text-yellow-400" : "text-gray-300"
+                          i < 4 ? 'text-yellow-400' : 'text-gray-300'
                         }`}
                         fill="currentColor"
                         viewBox="0 0 20 20"
@@ -701,13 +707,13 @@ export default function Home() {
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">
                     {index === 0
-                      ? "Excellent service and fast delivery. The firearm was exactly as described."
+                      ? 'Excellent service and fast delivery. The firearm was exactly as described.'
                       : index === 1
-                      ? "Great experience at the shooting range. Professional instructors and well-maintained facilities."
-                      : "The gunsmith did an amazing job with my restoration project. Highly recommended!"}
+                        ? 'Great experience at the shooting range. Professional instructors and well-maintained facilities.'
+                        : 'The gunsmith did an amazing job with my restoration project. Highly recommended!'}
                   </p>
                   <div className="text-sm text-muted-foreground">
-                    {format(new Date(), "MMM d, yyyy")}
+                    {format(new Date(), 'MMM d, yyyy')}
                   </div>
                 </CardContent>
               </Card>
@@ -812,9 +818,9 @@ export default function Home() {
             firearms community in Malta.
           </p>
           <div className="flex items-center justify-center gap-4">
-            <Link href={isAuthenticated ? "/marketplace/create" : "/register"}>
+            <Link href={isAuthenticated ? '/marketplace/create' : '/register'}>
               <Button size="lg" variant="secondary">
-                {isAuthenticated ? "Post a Listing" : "Create Account"}
+                {isAuthenticated ? 'Post a Listing' : 'Create Account'}
               </Button>
             </Link>
             <Link href="/marketplace">
@@ -826,5 +832,5 @@ export default function Home() {
         </div>
       </section>
     </div>
-  );
+  )
 }

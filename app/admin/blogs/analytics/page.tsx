@@ -1,15 +1,30 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { useToast } from "@/hooks/use-toast"
-import { Eye, TrendingUp, Users, Store, MapPin, Wrench, Calendar, BarChart3 } from "lucide-react"
-import { format, subDays, startOfDay } from "date-fns"
-import Link from "next/link"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { useToast } from '@/hooks/use-toast'
+import {
+  Eye,
+  TrendingUp,
+  Users,
+  Store,
+  MapPin,
+  Wrench,
+  Calendar,
+  BarChart3,
+} from 'lucide-react'
+import { format, subDays, startOfDay } from 'date-fns'
+import Link from 'next/link'
 
 // Remove hardcoded admin list - use database is_admin field instead
 
@@ -48,7 +63,7 @@ export default function BlogAnalyticsPage() {
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClientComponentClient<Database>()
-  
+
   const [analytics, setAnalytics] = useState<BlogAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
@@ -57,8 +72,11 @@ export default function BlogAnalyticsPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+
         if (error || !session) {
           router.push('/login')
           return
@@ -73,8 +91,8 @@ export default function BlogAnalyticsPage() {
 
         if (profileError || !profile || !profile.is_admin) {
           toast({
-            variant: "destructive",
-            title: "Unauthorized",
+            variant: 'destructive',
+            title: 'Unauthorized',
             description: "You don't have permission to access this page.",
           })
           router.push('/admin')
@@ -98,11 +116,11 @@ export default function BlogAnalyticsPage() {
 
       try {
         setLoading(true)
-        
+
         // First, try to fetch posts with basic columns that should always exist
-        const { data: allPosts, error: postsError } = await supabase
-          .from('blog_posts')
-          .select(`
+        const { data: allPosts, error: postsError } = await supabase.from(
+          'blog_posts'
+        ).select(`
             id,
             title,
             slug,
@@ -126,15 +144,17 @@ export default function BlogAnalyticsPage() {
         try {
           const { data: testPost, error: testError } = await supabase
             .from('blog_posts')
-            .select('view_count, category, store_id, club_id, range_id, servicing_id')
+            .select(
+              'view_count, category, store_id, club_id, range_id, servicing_id'
+            )
             .limit(1)
             .maybeSingle()
 
           if (!testError) {
             // Extended columns exist, fetch full data
-            const { data: fullPosts, error: fullError } = await supabase
-              .from('blog_posts')
-              .select(`
+            const { data: fullPosts, error: fullError } = await supabase.from(
+              'blog_posts'
+            ).select(`
                 id,
                 title,
                 slug,
@@ -158,101 +178,125 @@ export default function BlogAnalyticsPage() {
         }
 
         // Use extended data if available, otherwise fall back to basic data
-        const postsToUse = extendedData || allPosts.map(post => ({
-          ...post,
-          category: 'news', // default
-          view_count: 0,    // default
-          store_id: null,
-          club_id: null,
-          range_id: null,
-          servicing_id: null
-        }))
+        const postsToUse =
+          extendedData ||
+          allPosts.map(post => ({
+            ...post,
+            category: 'news', // default
+            view_count: 0, // default
+            store_id: null,
+            club_id: null,
+            range_id: null,
+            servicing_id: null,
+          }))
 
         // Calculate analytics
         const totalPosts = postsToUse?.length || 0
-        const publishedPosts = postsToUse?.filter(post => post.published).length || 0
+        const publishedPosts =
+          postsToUse?.filter(post => post.published).length || 0
         const draftPosts = totalPosts - publishedPosts
-        const totalViews = postsToUse?.reduce((sum, post) => sum + (post.view_count || 0), 0) || 0
-        const avgViewsPerPost = totalPosts > 0 ? Math.round(totalViews / totalPosts) : 0
+        const totalViews =
+          postsToUse?.reduce((sum, post) => sum + (post.view_count || 0), 0) ||
+          0
+        const avgViewsPerPost =
+          totalPosts > 0 ? Math.round(totalViews / totalPosts) : 0
 
         // Top posts by views
-        const topPosts = postsToUse
-          ?.filter(post => post.published)
-          .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
-          .slice(0, 5)
-          .map(post => {
-            let authorUsername = 'Unknown'
-            const author = post.author as any
-            if (author) {
-              if (Array.isArray(author) && author.length > 0) {
-                authorUsername = author[0]?.username || 'Unknown'
-              } else if (author.username) {
-                authorUsername = author.username || 'Unknown'
+        const topPosts =
+          postsToUse
+            ?.filter(post => post.published)
+            .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))
+            .slice(0, 5)
+            .map(post => {
+              let authorUsername = 'Unknown'
+              const author = post.author as any
+              if (author) {
+                if (Array.isArray(author) && author.length > 0) {
+                  authorUsername = author[0]?.username || 'Unknown'
+                } else if (author.username) {
+                  authorUsername = author.username || 'Unknown'
+                }
               }
-            }
-            
-            return {
-              id: post.id,
-              title: post.title,
-              slug: post.slug,
-              category: post.category || 'news',
-              view_count: post.view_count || 0,
-              author: { username: authorUsername }
-            }
-          }) || []
+
+              return {
+                id: post.id,
+                title: post.title,
+                slug: post.slug,
+                category: post.category || 'news',
+                view_count: post.view_count || 0,
+                author: { username: authorUsername },
+              }
+            }) || []
 
         // Posts by category
-        const categoryCount = postsToUse?.reduce((acc, post) => {
-          const category = post.category || 'news'
-          acc[category] = (acc[category] || 0) + 1
-          return acc
-        }, {} as Record<string, number>) || {}
+        const categoryCount =
+          postsToUse?.reduce(
+            (acc, post) => {
+              const category = post.category || 'news'
+              acc[category] = (acc[category] || 0) + 1
+              return acc
+            },
+            {} as Record<string, number>
+          ) || {}
 
-        const postsByCategory = Object.entries(categoryCount).map(([category, count]) => ({
-          category,
-          count
-        }))
+        const postsByCategory = Object.entries(categoryCount).map(
+          ([category, count]) => ({
+            category,
+            count,
+          })
+        )
 
         // Posts by source
-        const sourceCount = postsToUse?.reduce((acc, post) => {
-          let source = 'Admin'
-          if (post.store_id) source = 'Store'
-          else if (post.club_id) source = 'Club'
-          else if (post.range_id) source = 'Range'
-          else if (post.servicing_id) source = 'Servicing'
-          
-          acc[source] = (acc[source] || 0) + 1
-          return acc
-        }, {} as Record<string, number>) || {}
+        const sourceCount =
+          postsToUse?.reduce(
+            (acc, post) => {
+              let source = 'Admin'
+              if (post.store_id) source = 'Store'
+              else if (post.club_id) source = 'Club'
+              else if (post.range_id) source = 'Range'
+              else if (post.servicing_id) source = 'Servicing'
 
-        const postsBySource = Object.entries(sourceCount).map(([source, count]) => ({
-          source,
-          count
-        }))
+              acc[source] = (acc[source] || 0) + 1
+              return acc
+            },
+            {} as Record<string, number>
+          ) || {}
+
+        const postsBySource = Object.entries(sourceCount).map(
+          ([source, count]) => ({
+            source,
+            count,
+          })
+        )
 
         // Recent activity (last 10 posts)
-        const recentActivity = postsToUse
-          ?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-          .slice(0, 10)
-          .map(post => {
-            let authorUsername = 'Unknown'
-            const author = post.author as any
-            if (author) {
-              if (Array.isArray(author) && author.length > 0) {
-                authorUsername = author[0]?.username || 'Unknown'
-              } else if (author.username) {
-                authorUsername = author.username || 'Unknown'
+        const recentActivity =
+          postsToUse
+            ?.sort(
+              (a, b) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime()
+            )
+            .slice(0, 10)
+            .map(post => {
+              let authorUsername = 'Unknown'
+              const author = post.author as any
+              if (author) {
+                if (Array.isArray(author) && author.length > 0) {
+                  authorUsername = author[0]?.username || 'Unknown'
+                } else if (author.username) {
+                  authorUsername = author.username || 'Unknown'
+                }
               }
-            }
-            
-            return {
-              id: post.id,
-              title: post.title,
-              created_at: post.created_at,
-              category: post.category || 'news',
-              author: { username: authorUsername }
-            }
-          }) || []
+
+              return {
+                id: post.id,
+                title: post.title,
+                created_at: post.created_at,
+                category: post.category || 'news',
+                author: { username: authorUsername },
+              }
+            }) || []
 
         setAnalytics({
           totalPosts,
@@ -263,23 +307,26 @@ export default function BlogAnalyticsPage() {
           topPosts,
           postsByCategory,
           postsBySource,
-          recentActivity
+          recentActivity,
         })
 
         // Show info message if using fallback data
         if (!extendedData) {
           toast({
-            title: "Limited Data Available",
-            description: "Some analytics features require running the database migration. View tracking and establishment data are not available yet.",
+            title: 'Limited Data Available',
+            description:
+              'Some analytics features require running the database migration. View tracking and establishment data are not available yet.',
           })
         }
-
       } catch (error) {
         console.error('Error fetching analytics:', error)
         toast({
-          variant: "destructive",
-          title: "Error Loading Analytics",
-          description: error instanceof Error ? error.message : "Failed to fetch analytics data. You may need to run the database migration first.",
+          variant: 'destructive',
+          title: 'Error Loading Analytics',
+          description:
+            error instanceof Error
+              ? error.message
+              : 'Failed to fetch analytics data. You may need to run the database migration first.',
         })
       } finally {
         setLoading(false)
@@ -294,17 +341,21 @@ export default function BlogAnalyticsPage() {
   }
 
   if (loading) {
-    return <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Blog Analytics</h1>
-      <div className="text-center py-8">Loading analytics...</div>
-    </div>
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Blog Analytics</h1>
+        <div className="text-center py-8">Loading analytics...</div>
+      </div>
+    )
   }
 
   if (!analytics) {
-    return <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Blog Analytics</h1>
-      <div className="text-center py-8">No data available</div>
-    </div>
+    return (
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Blog Analytics</h1>
+        <div className="text-center py-8">No data available</div>
+      </div>
+    )
   }
 
   return (
@@ -312,7 +363,9 @@ export default function BlogAnalyticsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Blog Analytics</h1>
-          <p className="text-muted-foreground">Track blog performance and engagement metrics</p>
+          <p className="text-muted-foreground">
+            Track blog performance and engagement metrics
+          </p>
         </div>
         <Link href="/admin/blogs">
           <Badge variant="outline" className="hover:bg-accent cursor-pointer">
@@ -339,7 +392,9 @@ export default function BlogAnalyticsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-            <div className="text-2xl font-bold">{analytics.totalViews.toLocaleString()}</div>
+            <div className="text-2xl font-bold">
+              {analytics.totalViews.toLocaleString()}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center text-xs text-muted-foreground">
@@ -351,8 +406,12 @@ export default function BlogAnalyticsPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Avg Views per Post</CardTitle>
-            <div className="text-2xl font-bold">{analytics.avgViewsPerPost}</div>
+            <CardTitle className="text-sm font-medium">
+              Avg Views per Post
+            </CardTitle>
+            <div className="text-2xl font-bold">
+              {analytics.avgViewsPerPost}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="flex items-center text-xs text-muted-foreground">
@@ -364,9 +423,15 @@ export default function BlogAnalyticsPage() {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Active Authors</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Active Authors
+            </CardTitle>
             <div className="text-2xl font-bold">
-              {new Set(analytics.recentActivity.map(post => post.author?.username)).size}
+              {
+                new Set(
+                  analytics.recentActivity.map(post => post.author?.username)
+                ).size
+              }
             </div>
           </CardHeader>
           <CardContent>
@@ -383,26 +448,35 @@ export default function BlogAnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Top Posts by Views</CardTitle>
-            <CardDescription>Most popular content on your platform</CardDescription>
+            <CardDescription>
+              Most popular content on your platform
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {analytics.topPosts.map((post, index) => (
-                <div key={post.id} className="flex items-center justify-between">
+                <div
+                  key={post.id}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        #{index + 1}
+                      </span>
                       <Badge variant="outline" className="text-xs">
                         {post.category}
                       </Badge>
                     </div>
-                    <Link 
+                    <Link
                       href={`/blog/${post.category}/${post.slug}`}
                       className="font-medium line-clamp-1 hover:text-primary"
                     >
                       {post.title}
                     </Link>
-                    <p className="text-xs text-muted-foreground">by {post.author?.username}</p>
+                    <p className="text-xs text-muted-foreground">
+                      by {post.author?.username}
+                    </p>
                   </div>
                   <div className="flex items-center gap-1 text-sm font-medium">
                     <Eye className="h-4 w-4" />
@@ -427,8 +501,11 @@ export default function BlogAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {analytics.recentActivity.map((post) => (
-                <div key={post.id} className="flex items-center justify-between">
+              {analytics.recentActivity.map(post => (
+                <div
+                  key={post.id}
+                  className="flex items-center justify-between"
+                >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline" className="text-xs">
@@ -437,7 +514,8 @@ export default function BlogAnalyticsPage() {
                     </div>
                     <p className="font-medium line-clamp-1">{post.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      by {post.author?.username} • {format(new Date(post.created_at), 'MMM d, yyyy')}
+                      by {post.author?.username} •{' '}
+                      {format(new Date(post.created_at), 'MMM d, yyyy')}
                     </p>
                   </div>
                 </div>
@@ -454,9 +532,14 @@ export default function BlogAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {analytics.postsByCategory.map((item) => (
-                <div key={item.category} className="flex items-center justify-between">
-                  <span className="font-medium capitalize">{item.category}</span>
+              {analytics.postsByCategory.map(item => (
+                <div
+                  key={item.category}
+                  className="flex items-center justify-between"
+                >
+                  <span className="font-medium capitalize">
+                    {item.category}
+                  </span>
                   <Badge variant="secondary">{item.count}</Badge>
                 </div>
               ))}
@@ -472,19 +555,27 @@ export default function BlogAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {analytics.postsBySource.map((item) => {
+              {analytics.postsBySource.map(item => {
                 const getIcon = (source: string) => {
                   switch (source) {
-                    case 'Store': return <Store className="h-4 w-4" />
-                    case 'Club': return <Users className="h-4 w-4" />
-                    case 'Range': return <MapPin className="h-4 w-4" />
-                    case 'Servicing': return <Wrench className="h-4 w-4" />
-                    default: return <Calendar className="h-4 w-4" />
+                    case 'Store':
+                      return <Store className="h-4 w-4" />
+                    case 'Club':
+                      return <Users className="h-4 w-4" />
+                    case 'Range':
+                      return <MapPin className="h-4 w-4" />
+                    case 'Servicing':
+                      return <Wrench className="h-4 w-4" />
+                    default:
+                      return <Calendar className="h-4 w-4" />
                   }
                 }
-                
+
                 return (
-                  <div key={item.source} className="flex items-center justify-between">
+                  <div
+                    key={item.source}
+                    className="flex items-center justify-between"
+                  >
                     <div className="flex items-center gap-2">
                       {getIcon(item.source)}
                       <span className="font-medium">{item.source}</span>
@@ -499,4 +590,4 @@ export default function BlogAnalyticsPage() {
       </div>
     </div>
   )
-} 
+}

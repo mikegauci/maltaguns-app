@@ -9,7 +9,10 @@ interface LoadingStateProps {
   message?: string
 }
 
-export function LoadingState({ timeout = 2000, message = "Loading..." }: LoadingStateProps) {
+export function LoadingState({
+  timeout = 2000,
+  message = 'Loading...',
+}: LoadingStateProps) {
   const router = useRouter()
   const [showRetryButton, setShowRetryButton] = useState(false)
 
@@ -32,7 +35,7 @@ export function LoadingState({ timeout = 2000, message = "Loading..." }: Loading
         <Loader2 className="h-4 w-4 animate-spin" />
         <p className="text-muted-foreground">{message}</p>
       </div>
-      
+
       {showRetryButton && (
         <button
           onClick={handleRetry}
@@ -43,4 +46,4 @@ export function LoadingState({ timeout = 2000, message = "Loading..." }: Loading
       )}
     </div>
   )
-} 
+}

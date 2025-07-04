@@ -37,15 +37,20 @@ export default function SupabaseProvider({
         setIsLoading(true)
         // Create a timeout promise
         const timeoutPromise = new Promise((_, reject) => {
-          sessionCheckTimeout = setTimeout(() => reject(new Error('Session operation timed out')), SESSION_TIMEOUT)
+          sessionCheckTimeout = setTimeout(
+            () => reject(new Error('Session operation timed out')),
+            SESSION_TIMEOUT
+          )
         })
 
         // Get initial session with timeout
         const sessionPromise = supabase.auth.getSession()
-        const { data: { session: initialSession }, error } = await Promise.race([
-          sessionPromise,
-          timeoutPromise
-        ]) as Awaited<typeof sessionPromise>
+        const {
+          data: { session: initialSession },
+          error,
+        } = (await Promise.race([sessionPromise, timeoutPromise])) as Awaited<
+          typeof sessionPromise
+        >
 
         if (error) {
           console.error('Error getting initial session:', error)
@@ -65,11 +70,14 @@ export default function SupabaseProvider({
           if (isNearExpiry) {
             try {
               const refreshPromise = supabase.auth.refreshSession()
-              const { data: { session: refreshedSession }, error: refreshError } = await Promise.race([
+              const {
+                data: { session: refreshedSession },
+                error: refreshError,
+              } = (await Promise.race([
                 refreshPromise,
-                timeoutPromise
-              ]) as Awaited<typeof refreshPromise>
-              
+                timeoutPromise,
+              ])) as Awaited<typeof refreshPromise>
+
               if (refreshError || !refreshedSession) {
                 console.error('Error refreshing session:', refreshError)
                 if (mounted) {
@@ -77,12 +85,12 @@ export default function SupabaseProvider({
                 }
                 return
               }
-              
+
               // Set the refreshed session
               if (mounted) {
                 await supabase.auth.setSession({
                   access_token: refreshedSession.access_token,
-                  refresh_token: refreshedSession.refresh_token
+                  refresh_token: refreshedSession.refresh_token,
                 })
                 setSession(refreshedSession)
               }
@@ -102,7 +110,6 @@ export default function SupabaseProvider({
             setSession(null)
           }
         }
-
       } catch (error) {
         console.error('Error in session initialization:', error)
         if (mounted) {
@@ -125,9 +132,11 @@ export default function SupabaseProvider({
     initializeSession()
 
     // Set up auth state listener
-    const { data: { subscription }} = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log('Auth state changed:', event, newSession?.user?.email)
-      
+
       if (event === 'SIGNED_OUT') {
         if (mounted) {
           setSession(null)
@@ -162,4 +171,4 @@ export const useSupabase = () => {
     throw new Error('useSupabase must be used inside SupabaseProvider')
   }
   return context
-} 
+}

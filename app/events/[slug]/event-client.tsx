@@ -1,14 +1,23 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Calendar as CalendarIcon, MapPin, Clock, Mail, Phone, Coins, ChevronLeft, Pencil } from "lucide-react"
-import { format } from "date-fns"
-import Link from "next/link"
-import { supabase } from "@/lib/supabase"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Calendar as CalendarIcon,
+  MapPin,
+  Clock,
+  Mail,
+  Phone,
+  Coins,
+  ChevronLeft,
+  Pencil,
+} from 'lucide-react'
+import { format } from 'date-fns'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 
 interface Event {
   id: string
@@ -40,54 +49,58 @@ export default function EventClient({ event }: EventClientProps) {
 
   useEffect(() => {
     // Function to update owner status based on session
-    const updateOwnerStatus = (session: import('@supabase/supabase-js').Session | null) => {
-      console.log('=== DEBUG UPDATE OWNER STATUS ===');
-      console.log('Session user ID:', session?.user?.id);
-      console.log('Event created_by:', event.created_by);
-      console.log('Event object:', event);
+    const updateOwnerStatus = (
+      session: import('@supabase/supabase-js').Session | null
+    ) => {
+      console.log('=== DEBUG UPDATE OWNER STATUS ===')
+      console.log('Session user ID:', session?.user?.id)
+      console.log('Event created_by:', event.created_by)
+      console.log('Event object:', event)
 
       if (session?.user?.id) {
-        setCurrentUserId(session.user.id);
-        const isUserOwner = session.user.id === event.created_by;
-        console.log('Is owner?', isUserOwner);
-        setIsOwner(isUserOwner);
+        setCurrentUserId(session.user.id)
+        const isUserOwner = session.user.id === event.created_by
+        console.log('Is owner?', isUserOwner)
+        setIsOwner(isUserOwner)
       } else {
-        setCurrentUserId(null);
-        setIsOwner(false);
-        console.log('Is owner? false (no session or user ID)');
+        setCurrentUserId(null)
+        setIsOwner(false)
+        console.log('Is owner? false (no session or user ID)')
       }
-    };
+    }
 
     // Attempt to get the session immediately
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial getSession() call result:', session);
-      updateOwnerStatus(session);
-    });
+      console.log('Initial getSession() call result:', session)
+      updateOwnerStatus(session)
+    })
 
     // Listen for auth state changes
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed. Event:', _event, 'New session:', session);
-      updateOwnerStatus(session);
-    });
+    const {
+      data: { subscription: authSubscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed. Event:', _event, 'New session:', session)
+      updateOwnerStatus(session)
+    })
 
     // Cleanup subscription on component unmount
     return () => {
-      authSubscription?.unsubscribe();
-    };
-  }, [event.created_by, supabase.auth]); // Add supabase.auth as a dependency
+      authSubscription?.unsubscribe()
+    }
+  }, [event.created_by, supabase.auth]) // Add supabase.auth as a dependency
 
   const formatTime = (time: string | null) => {
-    if (!time) return null;
-    return time.substring(0, 5); // Format HH:MM
-  };
+    if (!time) return null
+    return time.substring(0, 5) // Format HH:MM
+  }
 
   const formatPrice = (price: number | null) => {
-    if (price === null) return "Free";
-    return new Intl.NumberFormat("en-MT", {
-      style: "currency",
-      currency: "EUR",
-    }).format(price);
-  };
+    if (price === null) return 'Free'
+    return new Intl.NumberFormat('en-MT', {
+      style: 'currency',
+      currency: 'EUR',
+    }).format(price)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,7 +113,7 @@ export default function EventClient({ event }: EventClientProps) {
           <ChevronLeft className="mr-2 h-4 w-4" />
           Back to events
         </Button>
-        
+
         <div className="bg-card rounded-lg shadow-md overflow-hidden">
           {/* Event Header */}
           <div className="p-6 border-b flex justify-between items-start">
@@ -111,8 +124,9 @@ export default function EventClient({ event }: EventClientProps) {
                 <div className="flex items-center">
                   <CalendarIcon className="h-4 w-4 mr-2" />
                   <span>
-                    {format(new Date(event.start_date), "MMMM d, yyyy")}
-                    {event.end_date && ` - ${format(new Date(event.end_date), "MMMM d, yyyy")}`}
+                    {format(new Date(event.start_date), 'MMMM d, yyyy')}
+                    {event.end_date &&
+                      ` - ${format(new Date(event.end_date), 'MMMM d, yyyy')}`}
                   </span>
                 </div>
                 {event.start_time && (
@@ -130,11 +144,13 @@ export default function EventClient({ event }: EventClientProps) {
                 </div>
               </div>
             </div>
-            
+
             {/* Always show edit button if user matches, similar to profile page */}
             {currentUserId && currentUserId === event.created_by && (
-              <Button 
-                onClick={() => router.push(`/events/${event.slug || event.id}/edit`)}
+              <Button
+                onClick={() =>
+                  router.push(`/events/${event.slug || event.id}/edit`)
+                }
                 className="flex items-center"
                 variant="outline"
               >
@@ -143,7 +159,7 @@ export default function EventClient({ event }: EventClientProps) {
               </Button>
             )}
           </div>
-          
+
           {/* Event Content */}
           <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="md:col-span-2">
@@ -151,7 +167,7 @@ export default function EventClient({ event }: EventClientProps) {
                 <h2 className="text-xl font-semibold mb-4">Organizer</h2>
                 <p>{event.organizer}</p>
               </div>
-              
+
               <div>
                 <h2 className="text-xl font-semibold mb-4">About this event</h2>
                 <div className="prose max-w-none">
@@ -159,11 +175,11 @@ export default function EventClient({ event }: EventClientProps) {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <div className="bg-muted p-6 rounded-lg">
                 <h2 className="text-xl font-semibold mb-4">Event Details</h2>
-                
+
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-medium">Price</h3>
@@ -172,36 +188,42 @@ export default function EventClient({ event }: EventClientProps) {
                       <span>{formatPrice(event.price)}</span>
                     </div>
                   </div>
-                  
+
                   {event.phone && (
                     <div>
                       <h3 className="font-medium">Contact Phone</h3>
                       <div className="flex items-center mt-1">
                         <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <a href={`tel:${event.phone}`} className="text-primary hover:underline">
+                        <a
+                          href={`tel:${event.phone}`}
+                          className="text-primary hover:underline"
+                        >
                           {event.phone}
                         </a>
                       </div>
                     </div>
                   )}
-                  
+
                   {event.email && (
                     <div>
                       <h3 className="font-medium">Contact Email</h3>
                       <div className="flex items-center mt-1">
                         <Mail className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <a href={`mailto:${event.email}`} className="text-primary hover:underline">
+                        <a
+                          href={`mailto:${event.email}`}
+                          className="text-primary hover:underline"
+                        >
                           {event.email}
                         </a>
                       </div>
                     </div>
                   )}
-                  
+
                   {event.poster_url && (
                     <div className="mt-6">
                       <h3 className="font-medium mb-2">Event Poster</h3>
-                      <img 
-                        src={event.poster_url} 
+                      <img
+                        src={event.poster_url}
                         alt={`${event.title} poster`}
                         className="w-full rounded-md"
                       />

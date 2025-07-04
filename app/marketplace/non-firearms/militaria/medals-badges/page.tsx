@@ -1,8 +1,8 @@
-import CategoryListings from "@/components/CategoryListings"
+import CategoryListings from '@/components/CategoryListings'
 
 export default function MedalsBadgesPage() {
   return (
-    <CategoryListings 
+    <CategoryListings
       type="non_firearms"
       category="militaria"
       subcategory="medals_badges"

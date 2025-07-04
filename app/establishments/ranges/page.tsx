@@ -1,31 +1,31 @@
-"use client";
+'use client'
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { MapPin, Phone, Mail, Globe, Plus, ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { supabase } from "@/lib/supabase";
-import { LoadingState } from "@/components/ui/loading-state";
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { MapPin, Phone, Mail, Globe, Plus, ArrowLeft } from 'lucide-react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { LoadingState } from '@/components/ui/loading-state'
 
 interface Range {
-  id: string;
-  business_name: string;
-  logo_url: string | null;
-  location: string;
-  phone: string | null;
-  email: string | null;
-  description: string | null;
-  website: string | null;
-  slug: string;
+  id: string
+  business_name: string
+  logo_url: string | null
+  location: string
+  phone: string | null
+  email: string | null
+  description: string | null
+  website: string | null
+  slug: string
 }
 
 export default function RangesPage() {
-  const router = useRouter();
-  const [ranges, setRanges] = useState<Range[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter()
+  const [ranges, setRanges] = useState<Range[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     async function fetchRanges() {
@@ -33,32 +33,32 @@ export default function RangesPage() {
         // Check if user is authenticated
         const {
           data: { session },
-        } = await supabase.auth.getSession();
-        setIsAuthenticated(!!session);
+        } = await supabase.auth.getSession()
+        setIsAuthenticated(!!session)
 
         const { data, error } = await supabase
-          .from("ranges")
-          .select("*")
-          .order("business_name", { ascending: true });
+          .from('ranges')
+          .select('*')
+          .order('business_name', { ascending: true })
 
-        if (error) throw error;
-        setRanges(data || []);
+        if (error) throw error
+        setRanges(data || [])
       } catch (error) {
-        console.error("Error fetching ranges:", error);
+        console.error('Error fetching ranges:', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
 
-    fetchRanges();
-  }, []);
+    fetchRanges()
+  }, [])
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingState message="Loading shooting ranges..." />
       </div>
-    );
+    )
   }
 
   return (
@@ -67,7 +67,7 @@ export default function RangesPage() {
         {/* Back Button */}
         <Button
           variant="ghost"
-          onClick={() => router.push("/establishments")}
+          onClick={() => router.push('/establishments')}
           className="flex items-center text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
@@ -104,7 +104,7 @@ export default function RangesPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {ranges.map((range) => (
+            {ranges.map(range => (
               <Link
                 key={range.id}
                 href={`/establishments/ranges/${range.slug || range.id}`}
@@ -168,5 +168,5 @@ export default function RangesPage() {
         )}
       </div>
     </div>
-  );
+  )
 }

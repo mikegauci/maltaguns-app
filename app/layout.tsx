@@ -1,11 +1,11 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import SupabaseProvider from "@/components/providers/supabase-provider"
+import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from '@/components/ui/toaster'
+import { Header } from '@/components/header'
+import { Footer } from '@/components/footer'
+import SupabaseProvider from '@/components/providers/supabase-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -13,9 +13,7 @@ export const metadata: Metadata = {
   title: 'MaltaGuns - Firearms Community Hub',
   description: 'The premier destination for the firearms community in Malta',
   icons: {
-    icon: [
-      { url: '/favicon.png', type: 'image/png', sizes: '32x32' },
-    ],
+    icon: [{ url: '/favicon.png', type: 'image/png', sizes: '32x32' }],
   },
 }
 
@@ -30,9 +28,7 @@ export default function RootLayout({
         <SupabaseProvider>
           <ThemeProvider>
             <Header />
-            <main className="min-h-[calc(100vh-64px)]">
-              {children}
-            </main>
+            <main className="min-h-[calc(100vh-64px)]">{children}</main>
             <Footer />
             <Toaster />
           </ThemeProvider>

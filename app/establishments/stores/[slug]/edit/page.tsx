@@ -1,36 +1,58 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft } from "lucide-react"
-import { Database } from "@/lib/database.types"
+import { ArrowLeft } from 'lucide-react'
+import { Database } from '@/lib/database.types'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]
 
 const storeSchema = z.object({
-  businessName: z.string().min(2, "Business name is required"),
-  location: z.string().min(5, "Location is required"),
-  phone: z.string().min(8, "Phone number is required"),
-  email: z.string().email("Invalid email address"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  website: z.string().url("Invalid website URL").optional().or(z.literal("")),
-  logoUrl: z.string().optional()
+  businessName: z.string().min(2, 'Business name is required'),
+  location: z.string().min(5, 'Location is required'),
+  phone: z.string().min(8, 'Phone number is required'),
+  email: z.string().email('Invalid email address'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
+  logoUrl: z.string().optional(),
 })
 
 type StoreForm = z.infer<typeof storeSchema>
 
-export default function EditStorePage({ params }: { params: { slug: string } }) {
+export default function EditStorePage({
+  params,
+}: {
+  params: { slug: string }
+}) {
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClientComponentClient<Database>()
@@ -42,14 +64,14 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
   const form = useForm<StoreForm>({
     resolver: zodResolver(storeSchema),
     defaultValues: {
-      businessName: "",
-      location: "",
-      phone: "",
-      email: "",
-      description: "",
-      website: "",
-      logoUrl: ""
-    }
+      businessName: '',
+      location: '',
+      phone: '',
+      email: '',
+      description: '',
+      website: '',
+      logoUrl: '',
+    },
   })
 
   useEffect(() => {
@@ -58,8 +80,11 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
     async function initializeSession() {
       try {
         // Get session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         if (sessionError) {
           console.error('Session error:', sessionError)
           router.push('/login')
@@ -79,8 +104,11 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
         const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
 
         if (isNearExpiry) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession()
+
           if (refreshError || !refreshedSession) {
             console.error('Session refresh failed:', refreshError)
             router.push('/login')
@@ -90,28 +118,28 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
 
         // Fetch store by slug
         const { data: store, error: storeError } = await supabase
-          .from("stores")
-          .select("*")
-          .eq("slug", params.slug)
+          .from('stores')
+          .select('*')
+          .eq('slug', params.slug)
           .single()
 
         if (storeError || !store) {
           console.error('Error fetching store:', storeError)
           toast({
-            title: "Store not found",
+            title: 'Store not found',
             description: "The store you're trying to edit doesn't exist.",
-            variant: "destructive",
+            variant: 'destructive',
           })
-          router.push("/establishments/stores")
+          router.push('/establishments/stores')
           return
         }
 
         // Check if user is the owner
         if (store.owner_id !== session.user.id) {
           toast({
-            title: "Unauthorized",
+            title: 'Unauthorized',
             description: "You don't have permission to edit this store.",
-            variant: "destructive",
+            variant: 'destructive',
           })
           router.push(`/establishments/stores/${params.slug}`)
           return
@@ -125,11 +153,11 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
           form.reset({
             businessName: store.business_name,
             location: store.location,
-            phone: store.phone || "",
-            email: store.email || "",
-            description: store.description || "",
-            website: store.website || "",
-            logoUrl: store.logo_url || ""
+            phone: store.phone || '',
+            email: store.email || '',
+            description: store.description || '',
+            website: store.website || '',
+            logoUrl: store.logo_url || '',
           })
 
           setIsLoading(false)
@@ -137,9 +165,9 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
       } catch (error) {
         console.error('Error in session initialization:', error)
         toast({
-          title: "Error",
-          description: "Failed to initialize session. Please try again.",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Failed to initialize session. Please try again.',
+          variant: 'destructive',
         })
         if (mounted) {
           setIsLoading(false)
@@ -162,85 +190,88 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
 
     if (!storeId) {
       toast({
-        title: "Error",
-        description: "Store information is missing.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Store information is missing.',
+        variant: 'destructive',
       })
       return
     }
 
     const file = event.target.files[0]
-    
+
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       toast({
-        title: "File too large",
-        description: "Logo image must be less than 5MB.",
-        variant: "destructive",
+        title: 'File too large',
+        description: 'Logo image must be less than 5MB.',
+        variant: 'destructive',
       })
       return
     }
-    
+
     // Validate file type
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
       toast({
-        title: "Invalid file type",
-        description: "Only JPEG, PNG, and WebP images are allowed.",
-        variant: "destructive",
+        title: 'Invalid file type',
+        description: 'Only JPEG, PNG, and WebP images are allowed.',
+        variant: 'destructive',
       })
       return
     }
-    
+
     setUploadingLogo(true)
-    
+
     try {
       // Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       // Create a unique file name
       const fileExt = file.name.split('.').pop()
       const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
       const filePath = `stores/${fileName}`
-      
+
       // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('stores')
         .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false
+          cacheControl: '3600',
+          upsert: false,
         })
-        
+
       if (uploadError) {
         throw uploadError
       }
-      
+
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('stores')
-        .getPublicUrl(filePath)
-        
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('stores').getPublicUrl(filePath)
+
       // Update form
       form.setValue('logoUrl', publicUrl)
-      
+
       toast({
-        title: "Logo uploaded",
-        description: "Your logo has been uploaded successfully.",
+        title: 'Logo uploaded',
+        description: 'Your logo has been uploaded successfully.',
       })
     } catch (error) {
-      console.error("Logo upload error:", error)
+      console.error('Logo upload error:', error)
       toast({
-        title: "Upload failed",
-        description: "Failed to upload logo. Please try again.",
-        variant: "destructive",
+        title: 'Upload failed',
+        description: 'Failed to upload logo. Please try again.',
+        variant: 'destructive',
       })
     } finally {
       setUploadingLogo(false)
@@ -250,9 +281,9 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
   async function onSubmit(data: StoreForm) {
     try {
       setIsLoading(true)
-      
+
       if (!storeId) {
-        throw new Error("Store ID is missing")
+        throw new Error('Store ID is missing')
       }
 
       // Create slug from business name if name has changed
@@ -260,13 +291,13 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
       if (form.formState.dirtyFields.businessName) {
         slugToUse = data.businessName
           .toLowerCase()
-          .replace(/[^\w\s-]/g, "")
-          .replace(/\s+/g, "-")
-          .replace(/--+/g, "-")
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/--+/g, '-')
       }
-      
+
       const { error } = await supabase
-        .from("stores")
+        .from('stores')
         .update({
           business_name: data.businessName,
           location: data.location,
@@ -275,24 +306,25 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
           description: data.description,
           website: data.website || null,
           logo_url: data.logoUrl || null,
-          slug: slugToUse
+          slug: slugToUse,
         })
-        .eq("id", storeId)
-      
+        .eq('id', storeId)
+
       if (error) throw error
-      
+
       toast({
-        title: "Store updated",
-        description: "Your store profile has been updated successfully."
+        title: 'Store updated',
+        description: 'Your store profile has been updated successfully.',
       })
-      
+
       router.push(`/establishments/stores/${slugToUse}`)
     } catch (error) {
-      console.error("Edit error:", error)
+      console.error('Edit error:', error)
       toast({
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Something went wrong",
-        variant: "destructive",
+        title: 'Update failed',
+        description:
+          error instanceof Error ? error.message : 'Something went wrong',
+        variant: 'destructive',
       })
       setIsLoading(false)
     }
@@ -333,7 +365,10 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="businessName"
@@ -341,7 +376,10 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
                     <FormItem>
                       <FormLabel>Business Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your business name" {...field} />
+                        <Input
+                          placeholder="Enter your business name"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -389,7 +427,10 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
                     <FormItem>
                       <FormLabel>Location</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your business address" {...field} />
+                        <Input
+                          placeholder="Enter your business address"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -404,7 +445,11 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
                       <FormItem>
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
-                          <Input type="tel" placeholder="+356 1234 5678" {...field} />
+                          <Input
+                            type="tel"
+                            placeholder="+356 1234 5678"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -418,7 +463,11 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
                       <FormItem>
                         <FormLabel>Email Address</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="info@example.com" {...field} />
+                          <Input
+                            type="email"
+                            placeholder="info@example.com"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -433,7 +482,7 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
                     <FormItem>
                       <FormLabel>Business Description</FormLabel>
                       <FormControl>
-                        <Textarea 
+                        <Textarea
                           placeholder="Describe your business and services"
                           className="min-h-[100px]"
                           {...field}
@@ -451,15 +500,23 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
                     <FormItem>
                       <FormLabel>Website (Optional)</FormLabel>
                       <FormControl>
-                        <Input type="url" placeholder="https://example.com" {...field} />
+                        <Input
+                          type="url"
+                          placeholder="https://example.com"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isLoading || uploadingLogo}>
-                  {isLoading ? "Updating profile..." : "Update Profile"}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading || uploadingLogo}
+                >
+                  {isLoading ? 'Updating profile...' : 'Update Profile'}
                 </Button>
               </form>
             </Form>
@@ -468,4 +525,4 @@ export default function EditStorePage({ params }: { params: { slug: string } }) 
       </div>
     </div>
   )
-} 
+}

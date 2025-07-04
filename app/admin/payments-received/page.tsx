@@ -1,30 +1,30 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { ColumnDef } from "@tanstack/react-table";
-import { format } from "date-fns";
-import { DataTable } from "@/components/admin/data-table";
-import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ExternalLink, Copy } from "lucide-react";
-import dynamic from "next/dynamic";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react'
+import { ColumnDef } from '@tanstack/react-table'
+import { format } from 'date-fns'
+import { DataTable } from '@/components/admin/data-table'
+import { useToast } from '@/hooks/use-toast'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { ExternalLink, Copy } from 'lucide-react'
+import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
 
 interface Payment {
-  id: string;
-  user_id: string;
-  username: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  amount: number;
-  type: string;
-  credit_type: string | null;
-  stripe_payment_id: string | null;
-  status: string | null;
-  description: string | null;
-  created_at: string;
+  id: string
+  user_id: string
+  username: string
+  email: string
+  first_name: string | null
+  last_name: string | null
+  amount: number
+  type: string
+  credit_type: string | null
+  stripe_payment_id: string | null
+  status: string | null
+  description: string | null
+  created_at: string
 }
 
 // Use dynamic import with SSR disabled to prevent hydration issues
@@ -33,29 +33,29 @@ const PaymentsReceivedPageContent = dynamic(
   {
     ssr: false,
   }
-);
+)
 
 export default function PaymentsReceivedPage() {
-  return <PaymentsReceivedPageContent />;
+  return <PaymentsReceivedPageContent />
 }
 
 function PaymentsReceivedPageComponent() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter()
+  const { toast } = useToast()
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
   const columns: ColumnDef<Payment>[] = [
     {
-      accessorKey: "username",
-      header: "User",
+      accessorKey: 'username',
+      header: 'User',
       enableSorting: true,
       cell: ({ row }) => {
-        const payment = row.original;
+        const payment = row.original
         const fullName =
           payment.first_name && payment.last_name
             ? `${payment.first_name} ${payment.last_name}`
-            : payment.first_name || payment.last_name || "";
+            : payment.first_name || payment.last_name || ''
 
         return (
           <div className="flex flex-col">
@@ -65,67 +65,67 @@ function PaymentsReceivedPageComponent() {
             )}
             <div className="text-sm text-muted-foreground">{payment.email}</div>
           </div>
-        );
+        )
       },
     },
     {
-      accessorKey: "amount",
-      header: "Amount",
+      accessorKey: 'amount',
+      header: 'Amount',
       enableSorting: true,
       cell: ({ row }) => {
-        const amount = row.getValue("amount") as number;
-        return <div className="font-medium">€{amount}</div>;
+        const amount = row.getValue('amount') as number
+        return <div className="font-medium">€{amount}</div>
       },
     },
 
     {
-      accessorKey: "status",
-      header: "Status",
+      accessorKey: 'status',
+      header: 'Status',
       enableSorting: true,
       cell: ({ row }) => {
-        const status = row.getValue("status") as string | null;
+        const status = row.getValue('status') as string | null
         if (!status)
-          return <span className="text-muted-foreground">Completed</span>;
+          return <span className="text-muted-foreground">Completed</span>
 
         const getVariant = (status: string) => {
           switch (status) {
-            case "pending":
-              return "outline";
-            case "completed":
-              return "default";
-            case "failed":
-              return "destructive";
+            case 'pending':
+              return 'outline'
+            case 'completed':
+              return 'default'
+            case 'failed':
+              return 'destructive'
             default:
-              return "secondary";
+              return 'secondary'
           }
-        };
+        }
 
-        return <Badge variant={getVariant(status)}>{status}</Badge>;
+        return <Badge variant={getVariant(status)}>{status}</Badge>
       },
     },
     {
-      accessorKey: "stripe_payment_id",
-      header: "Payment ID",
+      accessorKey: 'stripe_payment_id',
+      header: 'Payment ID',
       enableSorting: false,
       cell: ({ row }) => {
-        const stripeId = row.getValue("stripe_payment_id") as string | null;
-        if (!stripeId) return <span className="text-muted-foreground">-</span>;
+        const stripeId = row.getValue('stripe_payment_id') as string | null
+        if (!stripeId) return <span className="text-muted-foreground">-</span>
 
         const copyToClipboard = () => {
-          navigator.clipboard.writeText(stripeId);
+          navigator.clipboard.writeText(stripeId)
           toast({
-            title: "Copied",
-            description: "Payment ID copied to clipboard",
-          });
-        };
+            title: 'Copied',
+            description: 'Payment ID copied to clipboard',
+          })
+        }
 
         const openInStripe = () => {
           // Note: This would need proper Stripe dashboard URL construction
           window.open(
             `https://dashboard.stripe.com/payments/${stripeId}`,
-            "_blank"
-          );
-        };
+            '_blank'
+          )
+        }
 
         return (
           <div className="flex items-center space-x-2">
@@ -149,85 +149,85 @@ function PaymentsReceivedPageComponent() {
               <ExternalLink className="h-3 w-3" />
             </Button>
           </div>
-        );
+        )
       },
     },
     {
-      accessorKey: "description",
-      header: "Description",
+      accessorKey: 'description',
+      header: 'Description',
       enableSorting: false,
       cell: ({ row }) => {
-        const description = row.getValue("description") as string | null;
+        const description = row.getValue('description') as string | null
         if (!description)
-          return <span className="text-muted-foreground">-</span>;
+          return <span className="text-muted-foreground">-</span>
 
         return (
           <div className="max-w-xs truncate" title={description}>
             {description}
           </div>
-        );
+        )
       },
     },
     {
-      accessorKey: "created_at",
-      header: "Date & Time",
+      accessorKey: 'created_at',
+      header: 'Date & Time',
       enableSorting: true,
       cell: ({ row }) => {
-        const date = row.getValue("created_at") as string;
-        if (!date) return "N/A";
+        const date = row.getValue('created_at') as string
+        if (!date) return 'N/A'
 
-        const dateObj = new Date(date);
+        const dateObj = new Date(date)
         return (
           <div className="flex flex-col">
-            <div className="font-medium">{format(dateObj, "PPP")}</div>
+            <div className="font-medium">{format(dateObj, 'PPP')}</div>
             <div className="text-sm text-muted-foreground">
-              {format(dateObj, "p")}
+              {format(dateObj, 'p')}
             </div>
           </div>
-        );
+        )
       },
     },
-  ];
+  ]
 
   useEffect(() => {
-    fetchPayments();
-  }, []);
+    fetchPayments()
+  }, [])
 
   async function fetchPayments() {
     try {
-      setIsLoading(true);
+      setIsLoading(true)
 
-      const response = await fetch("/api/admin/payments-received", {
-        method: "GET",
+      const response = await fetch('/api/admin/payments-received', {
+        method: 'GET',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
-      });
+      })
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to fetch payments");
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch payments')
       }
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!data || !data.payments) {
-        throw new Error("No data returned from payments API");
+        throw new Error('No data returned from payments API')
       }
 
-      setPayments(data.payments);
+      setPayments(data.payments)
     } catch (error) {
-      console.error("Error in fetchPayments:", error);
+      console.error('Error in fetchPayments:', error)
       toast({
-        variant: "destructive",
-        title: "Error fetching payments",
+        variant: 'destructive',
+        title: 'Error fetching payments',
         description:
           error instanceof Error
             ? error.message
-            : "Failed to fetch payments. Please check console for more details.",
-      });
+            : 'Failed to fetch payments. Please check console for more details.',
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
@@ -240,7 +240,7 @@ function PaymentsReceivedPageComponent() {
             View all payment transactions and their status
           </p>
           <button
-            onClick={() => router.push("/admin")}
+            onClick={() => router.push('/admin')}
             className="text-blue-500 hover:underline"
           >
             Back to Dashboard
@@ -267,5 +267,5 @@ function PaymentsReceivedPageComponent() {
         />
       )}
     </div>
-  );
+  )
 }

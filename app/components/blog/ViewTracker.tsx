@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
@@ -16,12 +16,14 @@ export default function ViewTracker({ postId }: ViewTrackerProps) {
     // Track the view when component mounts
     const trackView = async () => {
       if (tracked) return // Prevent double tracking
-      
+
       try {
         // Try using the RPC function (most reliable)
         try {
-          const { data: newCount, error: rpcError } = await supabase
-            .rpc('increment_blog_view_count', { post_id: postId })
+          const { data: newCount, error: rpcError } = await supabase.rpc(
+            'increment_blog_view_count',
+            { post_id: postId }
+          )
 
           if (rpcError) {
             throw rpcError // Fall through to direct update method
@@ -31,7 +33,6 @@ export default function ViewTracker({ postId }: ViewTrackerProps) {
             setTracked(true)
             return
           }
-          
         } catch (rpcError) {
           // Fallback: Direct database update method
           const { data: currentPost, error: fetchError } = await supabase
@@ -46,7 +47,7 @@ export default function ViewTracker({ postId }: ViewTrackerProps) {
 
           // Increment the view count
           const newViewCount = (currentPost.view_count || 0) + 1
-          
+
           const { error: updateError } = await supabase
             .from('blog_posts')
             .update({ view_count: newViewCount })
@@ -56,7 +57,6 @@ export default function ViewTracker({ postId }: ViewTrackerProps) {
             setTracked(true)
           }
         }
-        
       } catch (error) {
         // Silently handle errors to avoid breaking user experience
       }
@@ -70,4 +70,4 @@ export default function ViewTracker({ postId }: ViewTrackerProps) {
 
   // This component doesn't render anything visible
   return null
-} 
+}

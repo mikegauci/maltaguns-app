@@ -1,12 +1,12 @@
-import CategoryListings from "@/components/CategoryListings"
+import CategoryListings from '@/components/CategoryListings'
 
 export default function MilitariaPage() {
   return (
-    <CategoryListings 
+    <CategoryListings
       type="non_firearms"
       category="militaria"
       title="Militaria"
       description="Browse militaria items from licensed sellers"
     />
   )
-} 
+}

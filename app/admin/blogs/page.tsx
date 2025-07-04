@@ -1,20 +1,61 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-import { useToast } from "@/hooks/use-toast"
-import { Trash2, Edit, Eye, Search, Filter, Users, Store, MapPin, Wrench, ArrowUpDown, BarChart3 } from "lucide-react"
-import { format } from "date-fns"
-import Link from "next/link"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { useToast } from '@/hooks/use-toast'
+import {
+  Trash2,
+  Edit,
+  Eye,
+  Search,
+  Filter,
+  Users,
+  Store,
+  MapPin,
+  Wrench,
+  ArrowUpDown,
+  BarChart3,
+} from 'lucide-react'
+import { format } from 'date-fns'
+import Link from 'next/link'
 
 // Remove hardcoded admin list - use database is_admin field instead
 
@@ -37,34 +78,37 @@ interface BlogPost {
   author?: {
     username: string
   }
-  store?: { business_name: string, slug: string }[]
-  club?: { business_name: string, slug: string }[]
-  range?: { business_name: string, slug: string }[]
-  servicing?: { business_name: string, slug: string }[]
+  store?: { business_name: string; slug: string }[]
+  club?: { business_name: string; slug: string }[]
+  range?: { business_name: string; slug: string }[]
+  servicing?: { business_name: string; slug: string }[]
 }
 
 export default function AdminBlogsPage() {
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClientComponentClient<Database>()
-  
+
   const [posts, setPosts] = useState<BlogPost[]>([])
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [establishmentFilter, setEstablishmentFilter] = useState("all")
-  const [sortBy, setSortBy] = useState("created_at")
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [establishmentFilter, setEstablishmentFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('created_at')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   // Check authorization
   useEffect(() => {
     async function checkAuth() {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession()
+
         if (error || !session) {
           router.push('/login')
           return
@@ -79,8 +123,8 @@ export default function AdminBlogsPage() {
 
         if (profileError || !profile || !profile.is_admin) {
           toast({
-            variant: "destructive",
-            title: "Unauthorized",
+            variant: 'destructive',
+            title: 'Unauthorized',
             description: "You don't have permission to access this page.",
           })
           router.push('/admin')
@@ -104,11 +148,12 @@ export default function AdminBlogsPage() {
 
       try {
         setLoading(true)
-        
+
         // First try basic query that should always work
         const { data: basicPosts, error: basicError } = await supabase
           .from('blog_posts')
-          .select(`
+          .select(
+            `
             id,
             title,
             slug,
@@ -119,7 +164,8 @@ export default function AdminBlogsPage() {
             updated_at,
             author_id,
             author:profiles(username)
-          `)
+          `
+          )
           .order('created_at', { ascending: false })
 
         if (basicError) {
@@ -136,54 +182,64 @@ export default function AdminBlogsPage() {
         try {
           const { data: fullPosts, error: fullError } = await supabase
             .from('blog_posts')
-            .select(`
+            .select(
+              `
               *,
               author:profiles(username),
               store:stores(business_name, slug),
               club:clubs(business_name, slug),
               range:ranges(business_name, slug),
               servicing:servicing(business_name, slug)
-            `)
+            `
+            )
             .order('created_at', { ascending: false })
 
           if (!fullError && fullPosts) {
             extendedData = fullPosts
           }
         } catch (extendedError) {
-          console.warn('Extended columns not available, using basic data:', extendedError)
+          console.warn(
+            'Extended columns not available, using basic data:',
+            extendedError
+          )
         }
 
         // Use extended data if available, otherwise enhance basic data with defaults
-        const postsToUse = extendedData || basicPosts.map(post => ({
-          ...post,
-          category: 'news',
-          view_count: 0,
-          store_id: null,
-          club_id: null,
-          range_id: null,
-          servicing_id: null,
-          store: null,
-          club: null,
-          range: null,
-          servicing: null
-        }))
+        const postsToUse =
+          extendedData ||
+          basicPosts.map(post => ({
+            ...post,
+            category: 'news',
+            view_count: 0,
+            store_id: null,
+            club_id: null,
+            range_id: null,
+            servicing_id: null,
+            store: null,
+            club: null,
+            range: null,
+            servicing: null,
+          }))
 
         setPosts(postsToUse)
 
         // Show info message if using fallback data
         if (!extendedData) {
           toast({
-            title: "Limited Features Available",
-            description: "Some blog management features require running the database migration. View tracking and establishment filtering are not available yet.",
+            title: 'Limited Features Available',
+            description:
+              'Some blog management features require running the database migration. View tracking and establishment filtering are not available yet.',
           })
         }
-
       } catch (error) {
         console.error('Error fetching posts:', error)
         toast({
-          variant: "destructive",
-          title: "Error Loading Posts",
-          description: error instanceof Error ? error.message : "Failed to fetch blog posts. You may need to run the database migration first.",
+          variant: 'destructive',
+          title: 'Error Loading Posts',
+          description:
+            error instanceof Error
+              ? error.message
+              : 'Failed to fetch blog posts. You may need to run the database migration first.',
         })
       } finally {
         setLoading(false)
@@ -199,38 +255,46 @@ export default function AdminBlogsPage() {
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter(post => 
-        post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        post.author?.username?.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        post =>
+          post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          post.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          post.author?.username
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase())
       )
     }
 
     // Category filter
-    if (categoryFilter !== "all") {
+    if (categoryFilter !== 'all') {
       filtered = filtered.filter(post => post.category === categoryFilter)
     }
 
     // Status filter
-    if (statusFilter !== "all") {
-      const isPublished = statusFilter === "published"
+    if (statusFilter !== 'all') {
+      const isPublished = statusFilter === 'published'
       filtered = filtered.filter(post => post.published === isPublished)
     }
 
     // Establishment filter
-    if (establishmentFilter !== "all") {
+    if (establishmentFilter !== 'all') {
       filtered = filtered.filter(post => {
         switch (establishmentFilter) {
-          case "store":
+          case 'store':
             return post.store_id
-          case "club":
+          case 'club':
             return post.club_id
-          case "range":
+          case 'range':
             return post.range_id
-          case "servicing":
+          case 'servicing':
             return post.servicing_id
-          case "admin":
-            return !post.store_id && !post.club_id && !post.range_id && !post.servicing_id
+          case 'admin':
+            return (
+              !post.store_id &&
+              !post.club_id &&
+              !post.range_id &&
+              !post.servicing_id
+            )
           default:
             return true
         }
@@ -240,21 +304,21 @@ export default function AdminBlogsPage() {
     // Sort
     filtered.sort((a, b) => {
       let aValue, bValue
-      
+
       switch (sortBy) {
-        case "title":
+        case 'title':
           aValue = a.title.toLowerCase()
           bValue = b.title.toLowerCase()
           break
-        case "author":
-          aValue = a.author?.username?.toLowerCase() || ""
-          bValue = b.author?.username?.toLowerCase() || ""
+        case 'author':
+          aValue = a.author?.username?.toLowerCase() || ''
+          bValue = b.author?.username?.toLowerCase() || ''
           break
-        case "views":
+        case 'views':
           aValue = a.view_count || 0
           bValue = b.view_count || 0
           break
-        case "updated_at":
+        case 'updated_at':
           aValue = new Date(a.updated_at).getTime()
           bValue = new Date(b.updated_at).getTime()
           break
@@ -263,7 +327,7 @@ export default function AdminBlogsPage() {
           bValue = new Date(b.created_at).getTime()
       }
 
-      if (sortOrder === "asc") {
+      if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1
       } else {
         return aValue < bValue ? 1 : -1
@@ -271,7 +335,15 @@ export default function AdminBlogsPage() {
     })
 
     setFilteredPosts(filtered)
-  }, [posts, searchTerm, categoryFilter, statusFilter, establishmentFilter, sortBy, sortOrder])
+  }, [
+    posts,
+    searchTerm,
+    categoryFilter,
+    statusFilter,
+    establishmentFilter,
+    sortBy,
+    sortOrder,
+  ])
 
   // Delete post
   async function deleteBlogPost(postId: string) {
@@ -285,15 +357,15 @@ export default function AdminBlogsPage() {
 
       setPosts(posts.filter(post => post.id !== postId))
       toast({
-        title: "Success",
-        description: "Blog post deleted successfully.",
+        title: 'Success',
+        description: 'Blog post deleted successfully.',
       })
     } catch (error) {
       console.error('Error deleting post:', error)
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to delete blog post.",
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete blog post.',
       })
     }
   }
@@ -303,27 +375,36 @@ export default function AdminBlogsPage() {
     try {
       const { error } = await supabase
         .from('blog_posts')
-        .update({ published: !currentStatus, updated_at: new Date().toISOString() })
+        .update({
+          published: !currentStatus,
+          updated_at: new Date().toISOString(),
+        })
         .eq('id', postId)
 
       if (error) throw error
 
-      setPosts(posts.map(post => 
-        post.id === postId 
-          ? { ...post, published: !currentStatus, updated_at: new Date().toISOString() }
-          : post
-      ))
+      setPosts(
+        posts.map(post =>
+          post.id === postId
+            ? {
+                ...post,
+                published: !currentStatus,
+                updated_at: new Date().toISOString(),
+              }
+            : post
+        )
+      )
 
       toast({
-        title: "Success",
+        title: 'Success',
         description: `Post ${!currentStatus ? 'published' : 'unpublished'} successfully.`,
       })
     } catch (error) {
       console.error('Error updating post status:', error)
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update post status.",
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update post status.',
       })
     }
   }
@@ -340,7 +421,11 @@ export default function AdminBlogsPage() {
       return { type: 'Range', name: post.range[0].business_name, icon: MapPin }
     }
     if (post.servicing_id && post.servicing?.[0]) {
-      return { type: 'Servicing', name: post.servicing[0].business_name, icon: Wrench }
+      return {
+        type: 'Servicing',
+        name: post.servicing[0].business_name,
+        icon: Wrench,
+      }
     }
     return { type: 'Admin', name: 'Admin Post', icon: null }
   }
@@ -348,10 +433,10 @@ export default function AdminBlogsPage() {
   // Sort function
   function handleSort(field: string) {
     if (sortBy === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
       setSortBy(field)
-      setSortOrder("desc")
+      setSortOrder('desc')
     }
   }
 
@@ -364,7 +449,9 @@ export default function AdminBlogsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Blog Management</h1>
-          <p className="text-muted-foreground">Manage all blog posts across the platform</p>
+          <p className="text-muted-foreground">
+            Manage all blog posts across the platform
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/admin/blogs/analytics">
@@ -391,11 +478,11 @@ export default function AdminBlogsPage() {
               <Input
                 placeholder="Search posts..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            
+
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Category" />
@@ -418,7 +505,10 @@ export default function AdminBlogsPage() {
               </SelectContent>
             </Select>
 
-            <Select value={establishmentFilter} onValueChange={setEstablishmentFilter}>
+            <Select
+              value={establishmentFilter}
+              onValueChange={setEstablishmentFilter}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Source" />
               </SelectTrigger>
@@ -498,34 +588,44 @@ export default function AdminBlogsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredPosts.map((post) => {
+                  {filteredPosts.map(post => {
                     const establishment = getEstablishmentInfo(post)
                     const IconComponent = establishment.icon
-                    
+
                     return (
                       <TableRow key={post.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             {post.featured_image && (
-                              <img 
-                                src={post.featured_image} 
+                              <img
+                                src={post.featured_image}
                                 alt={post.title}
                                 className="w-12 h-8 object-cover rounded"
                               />
                             )}
                             <div>
-                              <div className="font-medium line-clamp-1">{post.title}</div>
-                              <div className="text-sm text-muted-foreground">/{post.slug}</div>
+                              <div className="font-medium line-clamp-1">
+                                {post.title}
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                /{post.slug}
+                              </div>
                             </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{post.author?.username || 'Unknown'}</div>
+                          <div className="font-medium">
+                            {post.author?.username || 'Unknown'}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            {IconComponent && <IconComponent className="h-4 w-4" />}
-                            <span className="text-sm">{establishment.name}</span>
+                            {IconComponent && (
+                              <IconComponent className="h-4 w-4" />
+                            )}
+                            <span className="text-sm">
+                              {establishment.name}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -537,10 +637,14 @@ export default function AdminBlogsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => togglePublished(post.id, post.published)}
+                            onClick={() =>
+                              togglePublished(post.id, post.published)
+                            }
                             className="p-0 h-auto"
                           >
-                            <Badge variant={post.published ? "default" : "secondary"}>
+                            <Badge
+                              variant={post.published ? 'default' : 'secondary'}
+                            >
                               {post.published ? 'Published' : 'Draft'}
                             </Badge>
                           </Button>
@@ -563,22 +667,31 @@ export default function AdminBlogsPage() {
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </Link>
-                            <Link href={`/blog/${post.category}/${post.slug}/edit`}>
+                            <Link
+                              href={`/blog/${post.category}/${post.slug}/edit`}
+                            >
                               <Button variant="ghost" size="sm">
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm" className="text-destructive">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive"
+                                >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Blog Post</AlertDialogTitle>
+                                  <AlertDialogTitle>
+                                    Delete Blog Post
+                                  </AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to delete "{post.title}"? This action cannot be undone.
+                                    Are you sure you want to delete "
+                                    {post.title}"? This action cannot be undone.
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -599,7 +712,7 @@ export default function AdminBlogsPage() {
                   })}
                 </TableBody>
               </Table>
-              
+
               {filteredPosts.length === 0 && (
                 <div className="text-center py-8 text-muted-foreground">
                   No blog posts found matching your filters.
@@ -611,4 +724,4 @@ export default function AdminBlogsPage() {
       </Card>
     </div>
   )
-} 
+}

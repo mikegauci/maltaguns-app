@@ -1,22 +1,28 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { ColumnDef } from "@tanstack/react-table"
-import { format } from "date-fns"
-import { Checkbox } from "@/components/ui/checkbox"
-import { DataTable } from "@/components/admin/data-table"
-import { FormDialog } from "@/components/admin/form-dialog"
-import { ConfirmDialog } from "@/components/admin/confirm-dialog"
-import { ActionCell } from "@/components/admin/action-cell"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import dynamic from "next/dynamic"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Eye, ExternalLink } from "lucide-react"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { ColumnDef } from '@tanstack/react-table'
+import { format } from 'date-fns'
+import { Checkbox } from '@/components/ui/checkbox'
+import { DataTable } from '@/components/admin/data-table'
+import { FormDialog } from '@/components/admin/form-dialog'
+import { ConfirmDialog } from '@/components/admin/confirm-dialog'
+import { ActionCell } from '@/components/admin/action-cell'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/hooks/use-toast'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import dynamic from 'next/dynamic'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Eye, ExternalLink } from 'lucide-react'
 
 interface ReportedListing {
   id: string
@@ -42,9 +48,12 @@ interface ReportedListing {
 }
 
 // Use dynamic import with SSR disabled to prevent hydration issues
-const ReportedListingsPageContent = dynamic(() => Promise.resolve(ReportedListingsPageComponent), { 
-  ssr: false 
-})
+const ReportedListingsPageContent = dynamic(
+  () => Promise.resolve(ReportedListingsPageComponent),
+  {
+    ssr: false,
+  }
+)
 
 export default function ReportedListingsPage() {
   return <ReportedListingsPageContent />
@@ -53,22 +62,26 @@ export default function ReportedListingsPage() {
 function ReportedListingsPageComponent() {
   const router = useRouter()
   const { toast } = useToast()
-  const [reportedListings, setReportedListings] = useState<ReportedListing[]>([])
+  const [reportedListings, setReportedListings] = useState<ReportedListing[]>(
+    []
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [selectedReport, setSelectedReport] = useState<ReportedListing | null>(null)
-  const [newStatus, setNewStatus] = useState("")
+  const [selectedReport, setSelectedReport] = useState<ReportedListing | null>(
+    null
+  )
+  const [newStatus, setNewStatus] = useState('')
   const supabase = createClientComponentClient()
 
   // Helper function to create URL-friendly slugs from titles
   function slugify(text: string): string {
     return text
       .toLowerCase()
-      .replace(/[^\w\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/--+/g, "-");
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/--+/g, '-')
   }
 
   // Helper function to format reason text
@@ -78,21 +91,21 @@ function ReportedListingsPageComponent() {
 
   const columns: ColumnDef<ReportedListing>[] = [
     {
-      id: "select",
+      id: 'select',
       header: ({ table }) => (
         <Checkbox
           checked={
             table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
+            (table.getIsSomePageRowsSelected() && 'indeterminate')
           }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
         />
       ),
       cell: ({ row }) => (
         <Checkbox
           checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          onCheckedChange={value => row.toggleSelected(!!value)}
           aria-label="Select row"
         />
       ),
@@ -100,60 +113,67 @@ function ReportedListingsPageComponent() {
       enableHiding: false,
     },
     {
-      accessorKey: "listing.title",
-      header: "Listing Title",
+      accessorKey: 'listing.title',
+      header: 'Listing Title',
       enableSorting: true,
       cell: ({ row }) => {
         const listing = row.original.listing
         return (
           <div className="flex items-center gap-2">
-            <span className="font-medium">{listing?.title || "Unknown Listing"}</span>
+            <span className="font-medium">
+              {listing?.title || 'Unknown Listing'}
+            </span>
             {listing?.title && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => window.open(`/marketplace/listing/${slugify(listing.title)}`, '_blank')}
+                onClick={() =>
+                  window.open(
+                    `/marketplace/listing/${slugify(listing.title)}`,
+                    '_blank'
+                  )
+                }
               >
                 <ExternalLink className="h-4 w-4" />
               </Button>
             )}
           </div>
         )
-      }
-         },
-     {
-       accessorKey: "listing.seller.username",
-       header: "Listing Owner",
-       enableSorting: true,
-       cell: ({ row }) => {
-         const seller = row.original.listing?.seller
-         return seller?.username || "Unknown User"
-       }
-     },
-     {
-       accessorKey: "reporter.username",
-       header: "Reporter",
-       enableSorting: true,
-       cell: ({ row }) => {
-         const reporter = row.original.reporter
-         return reporter?.username || "Unknown User"
-       }
-     },
-    {
-      accessorKey: "reason",
-      header: "Reason",
-      enableSorting: true,
-      cell: ({ row }) => {
-        const reason = row.getValue("reason") as string
-        return formatReason(reason)
-      }
+      },
     },
     {
-      accessorKey: "description",
-      header: "Description",
+      accessorKey: 'listing.seller.username',
+      header: 'Listing Owner',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const seller = row.original.listing?.seller
+        return seller?.username || 'Unknown User'
+      },
+    },
+    {
+      accessorKey: 'reporter.username',
+      header: 'Reporter',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const reporter = row.original.reporter
+        return reporter?.username || 'Unknown User'
+      },
+    },
+    {
+      accessorKey: 'reason',
+      header: 'Reason',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const reason = row.getValue('reason') as string
+        return formatReason(reason)
+      },
+    },
+    {
+      accessorKey: 'description',
+      header: 'Description',
       enableSorting: false,
       cell: ({ row }) => {
-        const description = row.getValue("description") as string | null
+        const description = row.getValue('description') as string | null
         return description ? (
           <div className="max-w-xs truncate" title={description}>
             {description}
@@ -161,36 +181,42 @@ function ReportedListingsPageComponent() {
         ) : (
           <span className="text-muted-foreground">No description</span>
         )
-      }
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      enableSorting: true,
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string
-        return (
-          <Badge variant={
-            status === 'pending' ? 'secondary' :
-            status === 'resolved' ? 'default' :
-            status === 'dismissed' ? 'outline' : 'destructive'
-          }>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </Badge>
-        )
-      }
-    },
-    {
-      accessorKey: "created_at",
-      header: "Reported",
-      enableSorting: true,
-      cell: ({ row }) => {
-        const date = row.getValue("created_at") as string
-        return date ? format(new Date(date), "dd MMM yyyy, HH:mm") : "N/A"
       },
     },
     {
-      id: "actions",
+      accessorKey: 'status',
+      header: 'Status',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const status = row.getValue('status') as string
+        return (
+          <Badge
+            variant={
+              status === 'pending'
+                ? 'secondary'
+                : status === 'resolved'
+                  ? 'default'
+                  : status === 'dismissed'
+                    ? 'outline'
+                    : 'destructive'
+            }
+          >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: 'created_at',
+      header: 'Reported',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const date = row.getValue('created_at') as string
+        return date ? format(new Date(date), 'dd MMM yyyy, HH:mm') : 'N/A'
+      },
+    },
+    {
+      id: 'actions',
       cell: ({ row }) => {
         const report = row.original
         return (
@@ -202,9 +228,7 @@ function ReportedListingsPageComponent() {
             >
               Update Status
             </Button>
-            <ActionCell
-              onDelete={() => handleDelete(report)}
-            />
+            <ActionCell onDelete={() => handleDelete(report)} />
           </div>
         )
       },
@@ -218,10 +242,13 @@ function ReportedListingsPageComponent() {
   async function fetchReportedListings() {
     try {
       setIsLoading(true)
-      
+
       // First check if we have a valid session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
         console.error('Session error:', sessionError)
         throw new Error('Failed to get session')
@@ -232,21 +259,23 @@ function ReportedListingsPageComponent() {
         throw new Error('No active session')
       }
 
-             // Fetch reported listings with related data
-       const { data, error } = await supabase
-         .from("reported_listings")
-         .select(`
+      // Fetch reported listings with related data
+      const { data, error } = await supabase
+        .from('reported_listings')
+        .select(
+          `
            *,
            listing:listing_id(title, seller_id, status, seller:seller_id(username, email)),
            reporter:reporter_id(username, email)
-         `)
-         .order("created_at", { ascending: false })
+         `
+        )
+        .order('created_at', { ascending: false })
 
       if (error) {
         console.error('Fetch reported listings error:', error)
         throw error
       }
-      
+
       if (!data) {
         console.error('No data returned from reported listings query')
         throw new Error('No data returned from reported listings query')
@@ -254,18 +283,19 @@ function ReportedListingsPageComponent() {
 
       console.log('Successfully fetched reported listings:', {
         count: data.length,
-        firstReport: data[0]
+        firstReport: data[0],
       })
-      
+
       setReportedListings(data)
     } catch (error) {
       console.error('Error in fetchReportedListings:', error)
       toast({
-        variant: "destructive",
-        title: "Error fetching reported listings",
-        description: error instanceof Error 
-          ? `${error.message}. Please check console for more details.` 
-          : "Failed to fetch reported listings. Please check console for more details.",
+        variant: 'destructive',
+        title: 'Error fetching reported listings',
+        description:
+          error instanceof Error
+            ? `${error.message}. Please check console for more details.`
+            : 'Failed to fetch reported listings. Please check console for more details.',
       })
     } finally {
       setIsLoading(false)
@@ -290,27 +320,28 @@ function ReportedListingsPageComponent() {
       setIsSubmitting(true)
 
       const { error } = await supabase
-        .from("reported_listings")
+        .from('reported_listings')
         .update({
           status: newStatus,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", selectedReport.id)
+        .eq('id', selectedReport.id)
 
       if (error) throw error
 
       toast({
-        title: "Success",
-        description: "Report status updated successfully",
+        title: 'Success',
+        description: 'Report status updated successfully',
       })
 
       setIsStatusDialogOpen(false)
       fetchReportedListings()
     } catch (error) {
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update status",
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to update status',
       })
     } finally {
       setIsSubmitting(false)
@@ -324,24 +355,25 @@ function ReportedListingsPageComponent() {
       setIsSubmitting(true)
 
       const { error } = await supabase
-        .from("reported_listings")
+        .from('reported_listings')
         .delete()
-        .eq("id", selectedReport.id)
+        .eq('id', selectedReport.id)
 
       if (error) throw error
 
       toast({
-        title: "Success",
-        description: "Report deleted successfully",
+        title: 'Success',
+        description: 'Report deleted successfully',
       })
 
       setIsDeleteDialogOpen(false)
       fetchReportedListings()
     } catch (error) {
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete report",
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to delete report',
       })
     } finally {
       setIsSubmitting(false)
@@ -353,7 +385,7 @@ function ReportedListingsPageComponent() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Reported Listings</h1>
         <button
-          onClick={() => router.push("/admin")}
+          onClick={() => router.push('/admin')}
           className="text-blue-500 hover:underline"
         >
           Back to Dashboard
@@ -366,7 +398,7 @@ function ReportedListingsPageComponent() {
         searchKey="listing.title"
         searchPlaceholder="Search by listing title..."
       />
-      
+
       {isLoading && (
         <div className="w-full flex justify-center my-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
@@ -412,4 +444,4 @@ function ReportedListingsPageComponent() {
       />
     </div>
   )
-} 
+}

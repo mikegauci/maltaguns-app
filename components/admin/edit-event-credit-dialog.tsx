@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
+import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -20,11 +20,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@supabase/supabase-js"
-import { Loader2 } from "lucide-react"
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/hooks/use-toast'
+import { createClient } from '@supabase/supabase-js'
+import { Loader2 } from 'lucide-react'
 
 // Create a direct Supabase client that bypasses RLS
 const supabaseAdmin = createClient(
@@ -34,7 +34,7 @@ const supabaseAdmin = createClient(
 
 // Define the form schema
 const formSchema = z.object({
-  amount: z.string().min(1, "Amount is required"),
+  amount: z.string().min(1, 'Amount is required'),
 })
 
 interface EditEventCreditDialogProps {
@@ -72,13 +72,15 @@ export function EditEventCreditDialog({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true)
-      
+
       // For credits_events, we need to use user_id and created_at to identify the record
       // since "id" is not available
       if (!credit.user_id || !credit.created_at) {
-        throw new Error("Missing required fields for identifying the event credit");
+        throw new Error(
+          'Missing required fields for identifying the event credit'
+        )
       }
-      
+
       // Use the admin API endpoint to update the event credit
       const response = await fetch(`/api/admin/event-credits/update`, {
         method: 'PATCH',
@@ -91,26 +93,29 @@ export function EditEventCreditDialog({
           amount: values.amount,
         }),
       })
-      
-      const responseData = await response.json();
-      
+
+      const responseData = await response.json()
+
       if (!response.ok) {
         throw new Error(responseData.message || 'Failed to update event credit')
       }
 
       toast({
-        title: "Event Credits Updated",
+        title: 'Event Credits Updated',
         description: `Successfully updated event credits for ${credit.username || 'user'}`,
       })
 
       onOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (error) {
-      console.error("Failed to update event credits:", error)
+      console.error('Failed to update event credits:', error)
       toast({
-        title: "Update Failed",
-        description: error instanceof Error ? error.message : "Failed to update event credits",
-        variant: "destructive",
+        title: 'Update Failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update event credits',
+        variant: 'destructive',
       })
     } finally {
       setIsLoading(false)
@@ -123,7 +128,8 @@ export function EditEventCreditDialog({
         <DialogHeader>
           <DialogTitle>Edit Event Credits</DialogTitle>
           <DialogDescription>
-            Update event credits for {credit.username || 'user'}{credit.email ? ` (${credit.email})` : ''}
+            Update event credits for {credit.username || 'user'}
+            {credit.email ? ` (${credit.email})` : ''}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -135,9 +141,9 @@ export function EditEventCreditDialog({
                 <FormItem>
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter event credit amount" 
-                      {...field} 
+                    <Input
+                      placeholder="Enter event credit amount"
+                      {...field}
                       type="number"
                     />
                   </FormControl>
@@ -147,9 +153,9 @@ export function EditEventCreditDialog({
             />
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading}
               >
@@ -162,7 +168,7 @@ export function EditEventCreditDialog({
                     Saving...
                   </>
                 ) : (
-                  "Save Changes"
+                  'Save Changes'
                 )}
               </Button>
             </DialogFooter>
@@ -171,4 +177,4 @@ export function EditEventCreditDialog({
       </DialogContent>
     </Dialog>
   )
-} 
+}

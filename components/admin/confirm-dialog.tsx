@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,7 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from '@/components/ui/alert-dialog'
 
 interface ConfirmDialogProps {
   title: string
@@ -21,7 +21,7 @@ interface ConfirmDialogProps {
   isLoading?: boolean
   confirmLabel?: string
   cancelLabel?: string
-  variant?: "default" | "destructive"
+  variant?: 'default' | 'destructive'
 }
 
 export function ConfirmDialog({
@@ -31,9 +31,9 @@ export function ConfirmDialog({
   onClose,
   onConfirm,
   isLoading = false,
-  confirmLabel = "Confirm",
-  cancelLabel = "Cancel",
-  variant = "destructive",
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
+  variant = 'destructive',
 }: ConfirmDialogProps) {
   const [isMounted, setIsMounted] = useState(false)
 
@@ -48,26 +48,32 @@ export function ConfirmDialog({
   }
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <AlertDialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isLoading}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogCancel disabled={isLoading}>
+            {cancelLabel}
+          </AlertDialogCancel>
           <AlertDialogAction
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault()
               onConfirm()
             }}
-            className={variant === "destructive" ? "bg-destructive hover:bg-destructive/90" : ""}
+            className={
+              variant === 'destructive'
+                ? 'bg-destructive hover:bg-destructive/90'
+                : ''
+            }
             disabled={isLoading}
           >
-            {isLoading ? "Processing..." : confirmLabel}
+            {isLoading ? 'Processing...' : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   )
-} 
+}

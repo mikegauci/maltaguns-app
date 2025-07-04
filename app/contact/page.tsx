@@ -1,29 +1,35 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
-import { Mail, Phone } from "lucide-react"
+import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-toast'
+import { Mail, Phone } from 'lucide-react'
 
 const contactFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  subject: z.string().min(5, "Subject must be at least 5 characters"),
-  message: z.string().min(10, "Message must be at least 10 characters")
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  subject: z.string().min(5, 'Subject must be at least 5 characters'),
+  message: z.string().min(10, 'Message must be at least 10 characters'),
 })
 
 type ContactFormValues = z.infer<typeof contactFormSchema>
@@ -35,11 +41,11 @@ export default function ContactPage() {
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      subject: "",
-      message: ""
-    }
+      name: '',
+      email: '',
+      subject: '',
+      message: '',
+    },
   })
 
   async function onSubmit(data: ContactFormValues) {
@@ -61,17 +67,21 @@ export default function ContactPage() {
       }
 
       toast({
-        title: "Message sent",
-        description: "Thank you for contacting us. We will get back to you soon.",
+        title: 'Message sent',
+        description:
+          'Thank you for contacting us. We will get back to you soon.',
       })
 
       form.reset()
     } catch (error) {
-      console.error("Error submitting contact form:", error)
+      console.error('Error submitting contact form:', error)
       toast({
-        variant: "destructive",
-        title: "Something went wrong",
-        description: error instanceof Error ? error.message : "Your message couldn't be sent. Please try again later.",
+        variant: 'destructive',
+        title: 'Something went wrong',
+        description:
+          error instanceof Error
+            ? error.message
+            : "Your message couldn't be sent. Please try again later.",
       })
     } finally {
       setIsSubmitting(false)
@@ -84,7 +94,9 @@ export default function ContactPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold tracking-tight">Contact Us</h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Have a question or feedback? We'd love to hear from you. Fill out the form below and our team will get back to you as soon as possible.
+            Have a question or feedback? We'd love to hear from you. Fill out
+            the form below and our team will get back to you as soon as
+            possible.
           </p>
         </div>
 
@@ -92,7 +104,9 @@ export default function ContactPage() {
           <div className="md:col-span-1 space-y-6">
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4">Contact Information</h3>
+                <h3 className="font-semibold text-lg mb-4">
+                  Contact Information
+                </h3>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <div className="bg-primary/10 p-2 rounded-full">
@@ -128,7 +142,10 @@ export default function ContactPage() {
               </CardHeader>
               <CardContent>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <form
+                    onSubmit={form.handleSubmit(onSubmit)}
+                    className="space-y-4"
+                  >
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
                         control={form.control}
@@ -151,7 +168,11 @@ export default function ContactPage() {
                           <FormItem>
                             <FormLabel>Email</FormLabel>
                             <FormControl>
-                              <Input type="email" placeholder="your@email.com" {...field} />
+                              <Input
+                                type="email"
+                                placeholder="your@email.com"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -166,7 +187,10 @@ export default function ContactPage() {
                         <FormItem>
                           <FormLabel>Subject</FormLabel>
                           <FormControl>
-                            <Input placeholder="What's this about?" {...field} />
+                            <Input
+                              placeholder="What's this about?"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -180,10 +204,10 @@ export default function ContactPage() {
                         <FormItem>
                           <FormLabel>Message</FormLabel>
                           <FormControl>
-                            <Textarea 
-                              placeholder="Your message..." 
-                              className="min-h-[150px]" 
-                              {...field} 
+                            <Textarea
+                              placeholder="Your message..."
+                              className="min-h-[150px]"
+                              {...field}
                             />
                           </FormControl>
                           <FormMessage />
@@ -191,8 +215,12 @@ export default function ContactPage() {
                       )}
                     />
 
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
-                      {isSubmitting ? "Sending..." : "Send Message"}
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Sending...' : 'Send Message'}
                     </Button>
                   </form>
                 </Form>
@@ -203,4 +231,4 @@ export default function ContactPage() {
       </div>
     </div>
   )
-} 
+}

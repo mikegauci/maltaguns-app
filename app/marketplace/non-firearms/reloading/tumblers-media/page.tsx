@@ -1,8 +1,8 @@
-import CategoryListings from "@/components/CategoryListings"
+import CategoryListings from '@/components/CategoryListings'
 
 export default function TumblersMediaPage() {
   return (
-    <CategoryListings 
+    <CategoryListings
       type="non_firearms"
       category="reloading"
       subcategory="tumblers_media"

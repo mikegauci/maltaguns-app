@@ -1,42 +1,60 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
+} from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft, Store, Users, Wrench, MapPin } from "lucide-react"
-import { Database } from "@/lib/database.types"
-import Link from "next/link"
+import { ArrowLeft, Store, Users, Wrench, MapPin } from 'lucide-react'
+import { Database } from '@/lib/database.types'
+import Link from 'next/link'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]
 
 const establishmentSchema = z.object({
-  establishmentType: z.enum(["store", "club", "servicing", "range"], {
-    required_error: "Please select an establishment type",
+  establishmentType: z.enum(['store', 'club', 'servicing', 'range'], {
+    required_error: 'Please select an establishment type',
   }),
-  businessName: z.string().min(2, "Business name is required"),
-  location: z.string().min(5, "Location is required"),
-  phone: z.string().min(8, "Phone number is required"),
-  email: z.string().email("Invalid email address"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  website: z.string().url("Invalid website URL").optional().or(z.literal("")),
-  logoUrl: z.string().optional()
+  businessName: z.string().min(2, 'Business name is required'),
+  location: z.string().min(5, 'Location is required'),
+  phone: z.string().min(8, 'Phone number is required'),
+  email: z.string().email('Invalid email address'),
+  description: z.string().min(10, 'Description must be at least 10 characters'),
+  website: z.string().url('Invalid website URL').optional().or(z.literal('')),
+  logoUrl: z.string().optional(),
 })
 
 type EstablishmentForm = z.infer<typeof establishmentSchema>
@@ -53,14 +71,14 @@ export default function CreateEstablishmentPage() {
     resolver: zodResolver(establishmentSchema),
     defaultValues: {
       establishmentType: undefined,
-      businessName: "",
-      location: "",
-      phone: "",
-      email: "",
-      description: "",
-      website: "",
-      logoUrl: ""
-    }
+      businessName: '',
+      location: '',
+      phone: '',
+      email: '',
+      description: '',
+      website: '',
+      logoUrl: '',
+    },
   })
 
   useEffect(() => {
@@ -69,8 +87,11 @@ export default function CreateEstablishmentPage() {
     async function initializeSession() {
       try {
         // Get session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         if (sessionError) {
           console.error('Session error:', sessionError)
           router.push('/login')
@@ -90,8 +111,11 @@ export default function CreateEstablishmentPage() {
         const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
 
         if (isNearExpiry) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession()
+
           if (refreshError || !refreshedSession) {
             console.error('Session refresh failed:', refreshError)
             router.push('/login')
@@ -108,9 +132,9 @@ export default function CreateEstablishmentPage() {
       } catch (error) {
         console.error('Error in session initialization:', error)
         toast({
-          title: "Error",
-          description: "Failed to initialize session. Please try again.",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Failed to initialize session. Please try again.',
+          variant: 'destructive',
         })
         if (mounted) {
           setIsLoading(false)
@@ -132,77 +156,80 @@ export default function CreateEstablishmentPage() {
     }
 
     const file = event.target.files[0]
-    
+
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       toast({
-        title: "File too large",
-        description: "Logo image must be less than 5MB.",
-        variant: "destructive",
+        title: 'File too large',
+        description: 'Logo image must be less than 5MB.',
+        variant: 'destructive',
       })
       return
     }
-    
+
     // Validate file type
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
       toast({
-        title: "Invalid file type",
-        description: "Only JPEG, PNG, and WebP images are allowed.",
-        variant: "destructive",
+        title: 'Invalid file type',
+        description: 'Only JPEG, PNG, and WebP images are allowed.',
+        variant: 'destructive',
       })
       return
     }
-    
+
     setUploadingLogo(true)
-    
+
     try {
       // Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       // Create a unique file name
       const fileExt = file.name.split('.').pop()
       const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
       const filePath = `establishments/${fileName}`
-      
+
       // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from('establishments')
         .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false
+          cacheControl: '3600',
+          upsert: false,
         })
-        
+
       if (uploadError) {
         throw uploadError
       }
-      
+
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('establishments')
-        .getPublicUrl(filePath)
-        
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('establishments').getPublicUrl(filePath)
+
       // Update form
       form.setValue('logoUrl', publicUrl)
-      
+
       toast({
-        title: "Logo uploaded",
-        description: "Your logo has been uploaded successfully.",
+        title: 'Logo uploaded',
+        description: 'Your logo has been uploaded successfully.',
       })
     } catch (error) {
-      console.error("Logo upload error:", error)
+      console.error('Logo upload error:', error)
       toast({
-        title: "Upload failed",
-        description: "Failed to upload logo. Please try again.",
-        variant: "destructive",
+        title: 'Upload failed',
+        description: 'Failed to upload logo. Please try again.',
+        variant: 'destructive',
       })
     } finally {
       setUploadingLogo(false)
@@ -212,29 +239,33 @@ export default function CreateEstablishmentPage() {
   async function onSubmit(data: EstablishmentForm) {
     try {
       setIsLoading(true)
-      
+
       // Get user session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError || !session) {
-        throw new Error("Authentication error. Please log in again.")
+        throw new Error('Authentication error. Please log in again.')
       }
 
       // Create slug from business name
       const slug = data.businessName
         .toLowerCase()
-        .replace(/[^\w\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/--+/g, "-")
-      
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/--+/g, '-')
+
       // Determine which table to insert into based on establishment type
-      const tableName = data.establishmentType === "store" 
-        ? "stores" 
-        : data.establishmentType === "club" 
-          ? "clubs" 
-          : data.establishmentType === "servicing" 
-            ? "servicing" 
-            : "ranges"
+      const tableName =
+        data.establishmentType === 'store'
+          ? 'stores'
+          : data.establishmentType === 'club'
+            ? 'clubs'
+            : data.establishmentType === 'servicing'
+              ? 'servicing'
+              : 'ranges'
 
       // Insert new establishment
       const { error, data: newEstablishment } = await supabase
@@ -248,26 +279,28 @@ export default function CreateEstablishmentPage() {
           website: data.website || null,
           logo_url: data.logoUrl || null,
           owner_id: session.user.id,
-          slug: slug
+          slug: slug,
         })
         .select()
         .single()
-      
+
       if (error) throw error
-      
+
       toast({
-        title: "Establishment created",
-        description: "Your establishment profile has been created successfully."
+        title: 'Establishment created',
+        description:
+          'Your establishment profile has been created successfully.',
       })
-      
+
       // Redirect to the appropriate establishment page
       router.push(`/establishments/${tableName}/${slug}`)
     } catch (error) {
-      console.error("Create error:", error)
+      console.error('Create error:', error)
       toast({
-        title: "Creation failed",
-        description: error instanceof Error ? error.message : "Something went wrong",
-        variant: "destructive",
+        title: 'Creation failed',
+        description:
+          error instanceof Error ? error.message : 'Something went wrong',
+        variant: 'destructive',
       })
     } finally {
       setIsLoading(false)
@@ -323,15 +356,18 @@ export default function CreateEstablishmentPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-6"
+              >
                 <FormField
                   control={form.control}
                   name="establishmentType"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Establishment Type</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <Select
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -340,22 +376,34 @@ export default function CreateEstablishmentPage() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="store" className="flex items-center gap-2">
+                          <SelectItem
+                            value="store"
+                            className="flex items-center gap-2"
+                          >
                             <div className="flex items-center gap-2">
                               <Store className="h-4 w-4" /> Store
                             </div>
                           </SelectItem>
-                          <SelectItem value="club" className="flex items-center gap-2">
+                          <SelectItem
+                            value="club"
+                            className="flex items-center gap-2"
+                          >
                             <div className="flex items-center gap-2">
                               <Users className="h-4 w-4" /> Club
                             </div>
                           </SelectItem>
-                          <SelectItem value="servicing" className="flex items-center gap-2">
+                          <SelectItem
+                            value="servicing"
+                            className="flex items-center gap-2"
+                          >
                             <div className="flex items-center gap-2">
                               <Wrench className="h-4 w-4" /> Servicing
                             </div>
                           </SelectItem>
-                          <SelectItem value="range" className="flex items-center gap-2">
+                          <SelectItem
+                            value="range"
+                            className="flex items-center gap-2"
+                          >
                             <div className="flex items-center gap-2">
                               <MapPin className="h-4 w-4" /> Range
                             </div>
@@ -374,7 +422,10 @@ export default function CreateEstablishmentPage() {
                     <FormItem>
                       <FormLabel>Business Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your business name" {...field} />
+                        <Input
+                          placeholder="Enter your business name"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -422,7 +473,10 @@ export default function CreateEstablishmentPage() {
                     <FormItem>
                       <FormLabel>Location</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter your business address" {...field} />
+                        <Input
+                          placeholder="Enter your business address"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -437,7 +491,11 @@ export default function CreateEstablishmentPage() {
                       <FormItem>
                         <FormLabel>Phone Number</FormLabel>
                         <FormControl>
-                          <Input type="tel" placeholder="+356 1234 5678" {...field} />
+                          <Input
+                            type="tel"
+                            placeholder="+356 1234 5678"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -451,7 +509,11 @@ export default function CreateEstablishmentPage() {
                       <FormItem>
                         <FormLabel>Email Address</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="info@example.com" {...field} />
+                          <Input
+                            type="email"
+                            placeholder="info@example.com"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -466,7 +528,7 @@ export default function CreateEstablishmentPage() {
                     <FormItem>
                       <FormLabel>Business Description</FormLabel>
                       <FormControl>
-                        <Textarea 
+                        <Textarea
                           placeholder="Describe your business and services"
                           className="min-h-[100px]"
                           {...field}
@@ -484,15 +546,25 @@ export default function CreateEstablishmentPage() {
                     <FormItem>
                       <FormLabel>Website (Optional)</FormLabel>
                       <FormControl>
-                        <Input type="url" placeholder="https://example.com" {...field} />
+                        <Input
+                          type="url"
+                          placeholder="https://example.com"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <Button type="submit" className="w-full" disabled={isLoading || uploadingLogo}>
-                  {isLoading ? "Creating establishment..." : "Create Establishment"}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading || uploadingLogo}
+                >
+                  {isLoading
+                    ? 'Creating establishment...'
+                    : 'Create Establishment'}
                 </Button>
               </form>
             </Form>
@@ -501,4 +573,4 @@ export default function CreateEstablishmentPage() {
       </div>
     </div>
   )
-} 
+}

@@ -1,15 +1,23 @@
-"use client"
+'use client'
 
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { MapPin, Phone, Mail, Globe, ArrowLeft, BookOpen, Pencil } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { format } from "date-fns"
-import BlogPostCard from "@/app/components/blog/BlogPostCard"
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  ArrowLeft,
+  BookOpen,
+  Pencil,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { format } from 'date-fns'
+import BlogPostCard from '@/app/components/blog/BlogPostCard'
 
 interface Range {
   id: string
@@ -55,7 +63,7 @@ function slugify(text: string) {
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-MT', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'EUR',
   }).format(price)
 }
 
@@ -74,7 +82,8 @@ export default function RangeClient({ range }: { range: Range }) {
   const [loading, setLoading] = useState(true)
 
   // Check if blog posts array is valid
-  const hasBlogPosts = Array.isArray(range.blogPosts) && range.blogPosts.length > 0;
+  const hasBlogPosts =
+    Array.isArray(range.blogPosts) && range.blogPosts.length > 0
 
   useEffect(() => {
     // Check if current user is the owner of this range
@@ -90,7 +99,7 @@ export default function RangeClient({ range }: { range: Range }) {
     } else {
       setBlogPosts([]) // Set to empty array if not valid
     }
-    
+
     setLoading(false)
   }, [range.owner_id, range.blogPosts])
 
@@ -101,26 +110,26 @@ export default function RangeClient({ range }: { range: Range }) {
         try {
           // Fetch blog posts from blog_posts table with range_id filter
           const { data, error } = await supabase
-            .from("blog_posts")
-            .select("*, author:profiles(username)")
-            .eq("range_id", range.id)
-            .eq("published", true)
-            .order("created_at", { ascending: false });
-            
+            .from('blog_posts')
+            .select('*, author:profiles(username)')
+            .eq('range_id', range.id)
+            .eq('published', true)
+            .order('created_at', { ascending: false })
+
           if (error) {
-            console.error("Error fetching blog posts from client:", error);
+            console.error('Error fetching blog posts from client:', error)
           } else if (data && data.length > 0) {
             // Set the blog posts
-            setBlogPosts(data);
+            setBlogPosts(data)
           }
         } catch (error) {
-          console.error("Error in client-side fetch:", error);
+          console.error('Error in client-side fetch:', error)
         }
-      };
-      
-      fetchBlogPosts();
+      }
+
+      fetchBlogPosts()
     }
-  }, [hasBlogPosts, loading, range.id]);
+  }, [hasBlogPosts, loading, range.id])
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -128,13 +137,13 @@ export default function RangeClient({ range }: { range: Range }) {
         <div className="mb-6 flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => router.push("/establishments/ranges")}
+            onClick={() => router.push('/establishments/ranges')}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Ranges
           </Button>
-          
+
           {isOwner && (
             <div className="flex items-center gap-2">
               <Link href={`/blog/create?range_id=${range.id}`}>
@@ -164,8 +173,10 @@ export default function RangeClient({ range }: { range: Range }) {
               )}
 
               <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-4">{range.business_name}</h1>
-                
+                <h1 className="text-3xl font-bold mb-4">
+                  {range.business_name}
+                </h1>
+
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-muted-foreground" />
@@ -174,7 +185,10 @@ export default function RangeClient({ range }: { range: Range }) {
                   {range.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-5 w-5 text-muted-foreground" />
-                      <a href={`tel:${range.phone}`} className="hover:underline">
+                      <a
+                        href={`tel:${range.phone}`}
+                        className="hover:underline"
+                      >
                         {range.phone}
                       </a>
                     </div>
@@ -182,7 +196,10 @@ export default function RangeClient({ range }: { range: Range }) {
                   {range.email && (
                     <div className="flex items-center gap-2">
                       <Mail className="h-5 w-5 text-muted-foreground" />
-                      <a href={`mailto:${range.email}`} className="hover:underline">
+                      <a
+                        href={`mailto:${range.email}`}
+                        className="hover:underline"
+                      >
                         {range.email}
                       </a>
                     </div>
@@ -190,9 +207,9 @@ export default function RangeClient({ range }: { range: Range }) {
                   {range.website && (
                     <div className="flex items-center gap-2">
                       <Globe className="h-5 w-5 text-muted-foreground" />
-                      <a 
-                        href={range.website} 
-                        target="_blank" 
+                      <a
+                        href={range.website}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="hover:underline"
                       >
@@ -221,7 +238,7 @@ export default function RangeClient({ range }: { range: Range }) {
               <h2 className="text-2xl font-bold">Blog Posts</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {blogPosts.map((post) => (
+              {blogPosts.map(post => (
                 <BlogPostCard key={post.id} post={post} />
               ))}
             </div>
@@ -230,4 +247,4 @@ export default function RangeClient({ range }: { range: Range }) {
       </div>
     </div>
   )
-} 
+}

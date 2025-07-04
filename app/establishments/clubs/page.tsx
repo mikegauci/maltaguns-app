@@ -1,13 +1,21 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Users, MapPin, Phone, Mail, Globe, Plus, ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-import { LoadingState } from "@/components/ui/loading-state"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Users,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Plus,
+  ArrowLeft,
+} from 'lucide-react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { LoadingState } from '@/components/ui/loading-state'
 
 interface Club {
   id: string
@@ -31,7 +39,9 @@ export default function ClubsPage() {
     async function fetchClubs() {
       try {
         // Check if user is authenticated
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
         setIsAuthenticated(!!session)
 
         const { data, error } = await supabase
@@ -65,13 +75,13 @@ export default function ClubsPage() {
         {/* Back Button */}
         <Button
           variant="ghost"
-          onClick={() => router.push("/establishments")}
+          onClick={() => router.push('/establishments')}
           className="flex items-center text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Establishments
         </Button>
-        
+
         {/* Hero Section */}
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">Shooting Clubs</h1>
@@ -100,8 +110,11 @@ export default function ClubsPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {clubs.map((club) => (
-              <Link key={club.id} href={`/establishments/clubs/${club.slug || club.id}`}>
+            {clubs.map(club => (
+              <Link
+                key={club.id}
+                href={`/establishments/clubs/${club.slug || club.id}`}
+              >
                 <Card className="h-full hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-4">
@@ -117,7 +130,9 @@ export default function ClubsPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="font-semibold text-lg">{club.business_name}</h3>
+                        <h3 className="font-semibold text-lg">
+                          {club.business_name}
+                        </h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />
                           <span>{club.location}</span>
@@ -160,4 +175,4 @@ export default function ClubsPage() {
       </div>
     </div>
   )
-} 
+}

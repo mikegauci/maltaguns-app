@@ -11,7 +11,7 @@ const PROTECTED_ROUTES = [
   '/events/create',
   '/events/edit',
   '/retailers/create',
-  '/blog/create'
+  '/blog/create',
 ]
 
 // Add timeout for session operations
@@ -21,24 +21,28 @@ export async function middleware(req: NextRequest) {
   try {
     // Special handling for Stripe webhook endpoints
     if (req.nextUrl.pathname.startsWith('/api/webhooks/stripe')) {
-      console.log('[MIDDLEWARE] Detected Stripe webhook request, skipping auth check');
+      console.log(
+        '[MIDDLEWARE] Detected Stripe webhook request, skipping auth check'
+      )
       return NextResponse.next({
         request: {
           headers: new Headers({
             'x-middleware-next': '1',
           }),
         },
-      });
+      })
     }
-    
+
     // Create a response early
     const res = NextResponse.next()
-    
+
     // Create the Supabase client
     const supabase = createMiddlewareClient({ req, res })
 
     // Check if the path is protected
-    const isProtectedRoute = PROTECTED_ROUTES.some(route => req.nextUrl.pathname.startsWith(route))
+    const isProtectedRoute = PROTECTED_ROUTES.some(route =>
+      req.nextUrl.pathname.startsWith(route)
+    )
     const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
 
     if (!isProtectedRoute && !isAdminRoute) {
@@ -47,15 +51,21 @@ export async function middleware(req: NextRequest) {
 
     // Create a timeout promise
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Session operation timed out')), SESSION_TIMEOUT)
+      setTimeout(
+        () => reject(new Error('Session operation timed out')),
+        SESSION_TIMEOUT
+      )
     })
 
     // Try to get the session with timeout
     const sessionPromise = supabase.auth.getSession()
     let session
-    
+
     try {
-      const result = await Promise.race([sessionPromise, timeoutPromise]) as Awaited<typeof sessionPromise>
+      const result = (await Promise.race([
+        sessionPromise,
+        timeoutPromise,
+      ])) as Awaited<typeof sessionPromise>
       session = result.data.session
     } catch (error) {
       console.error('Session operation timed out or failed:', error)
@@ -79,9 +89,15 @@ export async function middleware(req: NextRequest) {
     if (isNearExpiry) {
       try {
         const refreshPromise = supabase.auth.refreshSession()
-        const result = await Promise.race([refreshPromise, timeoutPromise]) as AuthResponse
-        const { data: { session: refreshedSession }, error: refreshError } = result
-        
+        const result = (await Promise.race([
+          refreshPromise,
+          timeoutPromise,
+        ])) as AuthResponse
+        const {
+          data: { session: refreshedSession },
+          error: refreshError,
+        } = result
+
         if (refreshError || !refreshedSession) {
           console.error('Session refresh failed:', refreshError)
           // Clear any stale session data
@@ -92,7 +108,7 @@ export async function middleware(req: NextRequest) {
         // Set the refreshed session
         await supabase.auth.setSession({
           access_token: refreshedSession.access_token,
-          refresh_token: refreshedSession.refresh_token
+          refresh_token: refreshedSession.refresh_token,
         })
       } catch (error) {
         console.error('Error refreshing session:', error)
@@ -137,15 +153,21 @@ export async function middleware(req: NextRequest) {
         if (profile?.is_disabled) {
           // Sign out the user
           await supabase.auth.signOut()
-          
+
           // Redirect to login page with error message, using rewrite instead of redirect
           // to avoid session checks that could cause auth errors
-          return NextResponse.rewrite(new URL('/login?error=Your+account+has+been+disabled.+Please+contact+support.', req.url), { 
-            headers: {
-              'Cache-Control': 'no-store, must-revalidate',
-              'Pragma': 'no-cache'
+          return NextResponse.rewrite(
+            new URL(
+              '/login?error=Your+account+has+been+disabled.+Please+contact+support.',
+              req.url
+            ),
+            {
+              headers: {
+                'Cache-Control': 'no-store, must-revalidate',
+                Pragma: 'no-cache',
+              },
             }
-          })
+          )
         }
       } catch (error) {
         console.error('Error checking disabled status:', error)
@@ -157,10 +179,9 @@ export async function middleware(req: NextRequest) {
     // Add cache control headers to prevent stale session states
     res.headers.set('Cache-Control', 'no-store, must-revalidate')
     res.headers.set('Pragma', 'no-cache')
-    
+
     // Set session cookie and return response
     return res
-
   } catch (error) {
     console.error('Middleware error:', error)
     return redirectToLogin(req)
@@ -188,6 +209,6 @@ export const config = {
      * - public (public files)
      */
     '/((?!_next/static|_next/image|favicon.ico|public).*)',
-    '/api/webhooks/stripe'
+    '/api/webhooks/stripe',
   ],
-} 
+}

@@ -1,136 +1,138 @@
-"use client";
+'use client'
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search as SearchIcon, X } from "lucide-react";
+import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Search as SearchIcon, X } from 'lucide-react'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { 
+} from '@/components/ui/select'
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from '@/components/ui/popover'
 
 // Define the categories
 const categories = {
-  all: "All Categories",
+  all: 'All Categories',
   firearms: {
-    airguns: "Airguns",
-    ammunition: "Ammunition",
-    black_powder: "Black powder",
-    carbines: "Carbines",
-    crossbow: "Crossbow",
-    pistols: "Pistols",
-    replica_deactivated: "Replica or Deactivated",
-    revolvers: "Revolvers",
-    rifles: "Rifles",
-    schedule_1: "Schedule 1 (automatic)",
-    shotguns: "Shotguns"
+    airguns: 'Airguns',
+    ammunition: 'Ammunition',
+    black_powder: 'Black powder',
+    carbines: 'Carbines',
+    crossbow: 'Crossbow',
+    pistols: 'Pistols',
+    replica_deactivated: 'Replica or Deactivated',
+    revolvers: 'Revolvers',
+    rifles: 'Rifles',
+    schedule_1: 'Schedule 1 (automatic)',
+    shotguns: 'Shotguns',
   },
   non_firearms: {
-    airsoft: "Airsoft",
-    reloading: "Reloading",
-    militaria: "Militaria",
-    accessories: "Accessories"
-  }
-};
+    airsoft: 'Airsoft',
+    reloading: 'Reloading',
+    militaria: 'Militaria',
+    accessories: 'Accessories',
+  },
+}
 
 interface SearchBarProps {
-  disableShortcut?: boolean;
+  disableShortcut?: boolean
 }
 
 export function SearchBar({ disableShortcut = false }: SearchBarProps) {
-  const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [category, setCategory] = useState("all");
-  const [isOpen, setIsOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [category, setCategory] = useState('all')
+  const [isOpen, setIsOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   // Function to handle search submission
   const handleSearch = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    
+    if (e) e.preventDefault()
+
     // If search term is empty and a category is selected, redirect to category page
-    if (!searchTerm.trim() && category !== "all") {
+    if (!searchTerm.trim() && category !== 'all') {
       // Parse the category parameter to determine the URL
-      if (category === "firearms") {
-        router.push(`/marketplace/firearms`);
-      } else if (category === "non_firearms") {
-        router.push(`/marketplace/non-firearms`);
-      } else if (category.startsWith("firearms-")) {
-        const subcategory = category.replace("firearms-", "").replace(/_/g, '-');
-        router.push(`/marketplace/firearms/${subcategory}`);
-      } else if (category.startsWith("non_firearms-")) {
-        const subcategory = category.replace("non_firearms-", "").replace(/_/g, '-');
-        router.push(`/marketplace/non-firearms/${subcategory}`);
+      if (category === 'firearms') {
+        router.push(`/marketplace/firearms`)
+      } else if (category === 'non_firearms') {
+        router.push(`/marketplace/non-firearms`)
+      } else if (category.startsWith('firearms-')) {
+        const subcategory = category.replace('firearms-', '').replace(/_/g, '-')
+        router.push(`/marketplace/firearms/${subcategory}`)
+      } else if (category.startsWith('non_firearms-')) {
+        const subcategory = category
+          .replace('non_firearms-', '')
+          .replace(/_/g, '-')
+        router.push(`/marketplace/non-firearms/${subcategory}`)
       }
-      setIsOpen(false);
-      return;
+      setIsOpen(false)
+      return
     }
-    
+
     // If search term is empty and All Categories is selected, redirect to search page
-    if (!searchTerm.trim() && category === "all") {
-      router.push(`/marketplace/search`);
-      setIsOpen(false);
-      return;
+    if (!searchTerm.trim() && category === 'all') {
+      router.push(`/marketplace/search`)
+      setIsOpen(false)
+      return
     }
-    
+
     // Only proceed with search URL if there's a search term
     if (searchTerm.trim()) {
       // Build the search query
-      const params = new URLSearchParams();
-      params.append("q", searchTerm.trim());
-      
-      if (category !== "all") {
-        params.append("category", category);
+      const params = new URLSearchParams()
+      params.append('q', searchTerm.trim())
+
+      if (category !== 'all') {
+        params.append('category', category)
       }
-      
+
       // Navigate to search results page
-      router.push(`/marketplace/search?${params.toString()}`);
-      setIsOpen(false);
+      router.push(`/marketplace/search?${params.toString()}`)
+      setIsOpen(false)
     }
-  };
+  }
 
   // Function to clear search term
   const clearSearch = () => {
-    setSearchTerm("");
+    setSearchTerm('')
     if (searchInputRef.current) {
-      searchInputRef.current.focus();
+      searchInputRef.current.focus()
     }
-  };
+  }
 
   // Handle keyboard shortcuts
   useEffect(() => {
     // Skip setting up the keyboard shortcut if disabled
-    if (disableShortcut) return;
+    if (disableShortcut) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Open search on Ctrl+K or Cmd+K
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
-        e.preventDefault();
-        setIsOpen(true);
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        setIsOpen(true)
         setTimeout(() => {
-          searchInputRef.current?.focus();
-        }, 100);
+          searchInputRef.current?.focus()
+        }, 100)
       }
-    };
+    }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [disableShortcut]);
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [disableShortcut])
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="w-full flex items-center gap-2"
           onClick={() => setIsOpen(true)}
         >
@@ -154,20 +156,36 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="font-medium pl-6">All Categories</SelectItem>
-                <SelectItem value="firearms" className="font-medium pl-8">Firearms</SelectItem>
+                <SelectItem value="all" className="font-medium pl-6">
+                  All Categories
+                </SelectItem>
+                <SelectItem value="firearms" className="font-medium pl-8">
+                  Firearms
+                </SelectItem>
                 {Object.entries(categories.firearms).map(([value, label]) => (
-                  <SelectItem key={value} value={`firearms-${value}`} className="pl-12">
+                  <SelectItem
+                    key={value}
+                    value={`firearms-${value}`}
+                    className="pl-12"
+                  >
                     {label}
                   </SelectItem>
                 ))}
 
-                <SelectItem value="non_firearms" className="font-medium pl-8">Non-Firearms</SelectItem>
-                {Object.entries(categories.non_firearms).map(([value, label]) => (
-                  <SelectItem key={value} value={`non_firearms-${value}`} className="pl-12">
-                    {label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="non_firearms" className="font-medium pl-8">
+                  Non-Firearms
+                </SelectItem>
+                {Object.entries(categories.non_firearms).map(
+                  ([value, label]) => (
+                    <SelectItem
+                      key={value}
+                      value={`non_firearms-${value}`}
+                      className="pl-12"
+                    >
+                      {label}
+                    </SelectItem>
+                  )
+                )}
               </SelectContent>
             </Select>
             <div className="flex gap-2">
@@ -176,7 +194,7 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
                   ref={searchInputRef}
                   placeholder="Search listings..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="pr-8 w-full"
                 />
                 {searchTerm && (
@@ -195,10 +213,11 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
-            Search for items by title or description. Use plural forms to find singular matches too.
+            Search for items by title or description. Use plural forms to find
+            singular matches too.
           </div>
         </form>
       </PopoverContent>
     </Popover>
-  );
-} 
+  )
+}

@@ -1,8 +1,8 @@
-import CategoryListings from "@/components/CategoryListings"
+import CategoryListings from '@/components/CategoryListings'
 
 export default function AirsoftGunsPage() {
   return (
-    <CategoryListings 
+    <CategoryListings
       type="non_firearms"
       category="airsoft"
       subcategory="airsoft_guns"

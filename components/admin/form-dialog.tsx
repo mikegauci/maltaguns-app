@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import { ReactNode, useState, useEffect } from "react"
-import { X } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { ReactNode, useState, useEffect } from 'react'
+import { X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 
 interface FormDialogProps {
   title: string
@@ -31,8 +31,8 @@ export function FormDialog({
   onClose,
   onSubmit,
   isSubmitting,
-  submitLabel = "Save",
-  cancelLabel = "Cancel",
+  submitLabel = 'Save',
+  cancelLabel = 'Cancel',
   children,
 }: FormDialogProps) {
   const [isMounted, setIsMounted] = useState(false)
@@ -48,7 +48,7 @@ export function FormDialog({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -64,13 +64,13 @@ export function FormDialog({
           </div>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => {
-          e.preventDefault()
-          onSubmit()
-        }}>
-          <div className="space-y-4 py-4">
-            {children}
-          </div>
+        <form
+          onSubmit={e => {
+            e.preventDefault()
+            onSubmit()
+          }}
+        >
+          <div className="space-y-4 py-4">{children}</div>
           <DialogFooter>
             <Button
               type="button"
@@ -81,11 +81,11 @@ export function FormDialog({
               {cancelLabel}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : submitLabel}
+              {isSubmitting ? 'Saving...' : submitLabel}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   )
-} 
+}

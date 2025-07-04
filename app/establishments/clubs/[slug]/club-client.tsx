@@ -1,15 +1,24 @@
-"use client"
+'use client'
 
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Users, MapPin, Phone, Mail, Globe, ArrowLeft, BookOpen, Pencil } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { format } from "date-fns"
-import BlogPostCard from "@/app/components/blog/BlogPostCard"
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Users,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  ArrowLeft,
+  BookOpen,
+  Pencil,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { format } from 'date-fns'
+import BlogPostCard from '@/app/components/blog/BlogPostCard'
 
 interface Club {
   id: string
@@ -55,7 +64,7 @@ function slugify(text: string) {
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-MT', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'EUR',
   }).format(price)
 }
 
@@ -74,7 +83,8 @@ export default function ClubClient({ club }: { club: Club }) {
   const [loading, setLoading] = useState(true)
 
   // Check if blog posts array is valid
-  const hasBlogPosts = Array.isArray(club.blogPosts) && club.blogPosts.length > 0;
+  const hasBlogPosts =
+    Array.isArray(club.blogPosts) && club.blogPosts.length > 0
 
   useEffect(() => {
     // Check if current user is the owner of this club
@@ -90,7 +100,7 @@ export default function ClubClient({ club }: { club: Club }) {
     } else {
       setBlogPosts([]) // Set to empty array if not valid
     }
-    
+
     setLoading(false)
   }, [club.owner_id, club.blogPosts])
 
@@ -101,26 +111,26 @@ export default function ClubClient({ club }: { club: Club }) {
         try {
           // Fetch blog posts from blog_posts table with club_id filter
           const { data, error } = await supabase
-            .from("blog_posts")
-            .select("*, author:profiles(username)")
-            .eq("club_id", club.id)
-            .eq("published", true)
-            .order("created_at", { ascending: false });
-            
+            .from('blog_posts')
+            .select('*, author:profiles(username)')
+            .eq('club_id', club.id)
+            .eq('published', true)
+            .order('created_at', { ascending: false })
+
           if (error) {
-            console.error("Error fetching blog posts from client:", error);
+            console.error('Error fetching blog posts from client:', error)
           } else if (data && data.length > 0) {
             // Set the blog posts
-            setBlogPosts(data);
+            setBlogPosts(data)
           }
         } catch (error) {
-          console.error("Error in client-side fetch:", error);
+          console.error('Error in client-side fetch:', error)
         }
-      };
-      
-      fetchBlogPosts();
+      }
+
+      fetchBlogPosts()
     }
-  }, [hasBlogPosts, loading, club.id]);
+  }, [hasBlogPosts, loading, club.id])
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -128,13 +138,13 @@ export default function ClubClient({ club }: { club: Club }) {
         <div className="mb-6 flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => router.push("/establishments/clubs")}
+            onClick={() => router.push('/establishments/clubs')}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Clubs
           </Button>
-          
+
           {isOwner && (
             <div className="flex items-center gap-2">
               <Link href={`/blog/create?club_id=${club.id}`}>
@@ -164,8 +174,10 @@ export default function ClubClient({ club }: { club: Club }) {
               )}
 
               <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-4">{club.business_name}</h1>
-                
+                <h1 className="text-3xl font-bold mb-4">
+                  {club.business_name}
+                </h1>
+
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-muted-foreground" />
@@ -182,7 +194,10 @@ export default function ClubClient({ club }: { club: Club }) {
                   {club.email && (
                     <div className="flex items-center gap-2">
                       <Mail className="h-5 w-5 text-muted-foreground" />
-                      <a href={`mailto:${club.email}`} className="hover:underline">
+                      <a
+                        href={`mailto:${club.email}`}
+                        className="hover:underline"
+                      >
                         {club.email}
                       </a>
                     </div>
@@ -190,9 +205,9 @@ export default function ClubClient({ club }: { club: Club }) {
                   {club.website && (
                     <div className="flex items-center gap-2">
                       <Globe className="h-5 w-5 text-muted-foreground" />
-                      <a 
-                        href={club.website} 
-                        target="_blank" 
+                      <a
+                        href={club.website}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="hover:underline"
                       >
@@ -221,7 +236,7 @@ export default function ClubClient({ club }: { club: Club }) {
               <h2 className="text-2xl font-bold">Blog Posts</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {blogPosts.map((post) => (
+              {blogPosts.map(post => (
                 <BlogPostCard key={post.id} post={post} />
               ))}
             </div>
@@ -230,4 +245,4 @@ export default function ClubClient({ club }: { club: Club }) {
       </div>
     </div>
   )
-} 
+}

@@ -1,19 +1,37 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { useToast } from "@/hooks/use-toast"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft, Trash2, Calendar as CalendarIcon, Clock } from "lucide-react"
-import { Database } from "@/lib/database.types"
+import {
+  ArrowLeft,
+  Trash2,
+  Calendar as CalendarIcon,
+  Clock,
+} from 'lucide-react'
+import { Database } from '@/lib/database.types'
 import {
   Dialog,
   DialogContent,
@@ -21,30 +39,35 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { format } from "date-fns"
+} from '@/components/ui/dialog'
+import { format } from 'date-fns'
 
 interface Event {
-  id: string;
-  title: string;
-  description: string;
-  organizer: string;
-  type: string;
-  start_date: string;
-  end_date: string | null;
-  start_time: string | null;
-  end_time: string | null;
-  location: string;
-  phone: string | null;
-  email: string | null;
-  price: number | null;
-  poster_url: string | null;
-  created_by: string;
-  slug: string | null;
+  id: string
+  title: string
+  description: string
+  organizer: string
+  type: string
+  start_date: string
+  end_date: string | null
+  start_time: string | null
+  end_time: string | null
+  location: string
+  phone: string | null
+  email: string | null
+  price: number | null
+  poster_url: string | null
+  created_by: string
+  slug: string | null
 }
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]
 
 function slugify(text: string) {
   return text
@@ -55,19 +78,25 @@ function slugify(text: string) {
 }
 
 const eventSchema = z.object({
-  title: z.string().min(3, { message: "Title must be at least 3 characters" }),
-  description: z.string().min(10, { message: "Description must be at least 10 characters" }),
-  organizer: z.string().min(1, { message: "Organizer is required" }),
-  type: z.string().min(1, { message: "Event type is required" }),
-  start_date: z.string().min(1, { message: "Start date is required" }),
+  title: z.string().min(3, { message: 'Title must be at least 3 characters' }),
+  description: z
+    .string()
+    .min(10, { message: 'Description must be at least 10 characters' }),
+  organizer: z.string().min(1, { message: 'Organizer is required' }),
+  type: z.string().min(1, { message: 'Event type is required' }),
+  start_date: z.string().min(1, { message: 'Start date is required' }),
   end_date: z.string().nullable(),
   start_time: z.string().nullable(),
   end_time: z.string().nullable(),
-  location: z.string().min(1, { message: "Location is required" }),
+  location: z.string().min(1, { message: 'Location is required' }),
   phone: z.string().nullable(),
-  email: z.string().email({ message: "Invalid email address" }).nullable().or(z.literal('')),
+  email: z
+    .string()
+    .email({ message: 'Invalid email address' })
+    .nullable()
+    .or(z.literal('')),
   price: z.coerce.number().nullable(),
-});
+})
 
 type EventForm = z.infer<typeof eventSchema>
 
@@ -88,15 +117,15 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
   const form = useForm<EventForm>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      organizer: "",
-      type: "",
-      start_date: "",
+      title: '',
+      description: '',
+      organizer: '',
+      type: '',
+      start_date: '',
       end_date: null,
       start_time: null,
       end_time: null,
-      location: "",
+      location: '',
       phone: null,
       email: null,
       price: null,
@@ -109,8 +138,11 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
     async function initializeSession() {
       try {
         // Get session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         if (sessionError) {
           console.error('Session error:', sessionError)
           router.push('/login')
@@ -130,8 +162,11 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
         const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
 
         if (isNearExpiry) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession()
+
           if (refreshError || !refreshedSession) {
             console.error('Session refresh failed:', refreshError)
             router.push('/login')
@@ -141,39 +176,39 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
 
         // First try to find by slug
         let { data: event, error } = await supabase
-          .from("events")
-          .select("*")
-          .eq("slug", params.slug)
+          .from('events')
+          .select('*')
+          .eq('slug', params.slug)
           .single()
-        
+
         // If not found by slug, try by ID for backward compatibility
         if (error || !event) {
           const { data: eventById, error: errorById } = await supabase
-            .from("events")
-            .select("*")
-            .eq("id", params.slug)
+            .from('events')
+            .select('*')
+            .eq('id', params.slug)
             .single()
-          
+
           if (errorById || !eventById) {
             console.error('Error fetching event:', errorById)
             toast({
-              title: "Event not found",
+              title: 'Event not found',
               description: "The event you're trying to edit doesn't exist.",
-              variant: "destructive",
+              variant: 'destructive',
             })
-            router.push("/events")
+            router.push('/events')
             return
           }
-          
+
           event = eventById
         }
 
         // Check if user is the owner
         if (event.created_by !== session.user.id) {
           toast({
-            title: "Unauthorized",
+            title: 'Unauthorized',
             description: "You don't have permission to edit this event.",
-            variant: "destructive",
+            variant: 'destructive',
           })
           router.push(`/events/${event.slug || event.id}`)
           return
@@ -183,19 +218,21 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
           setEventId(event.id)
           setPosterUrl(event.poster_url)
           setIsAuthorized(true)
-          
+
           if (event.poster_url) {
             setPosterPreview(event.poster_url)
           }
-          
+
           // Format dates for the form
           form.reset({
             title: event.title,
             description: event.description,
             organizer: event.organizer,
             type: event.type,
-            start_date: format(new Date(event.start_date), "yyyy-MM-dd"),
-            end_date: event.end_date ? format(new Date(event.end_date), "yyyy-MM-dd") : null,
+            start_date: format(new Date(event.start_date), 'yyyy-MM-dd'),
+            end_date: event.end_date
+              ? format(new Date(event.end_date), 'yyyy-MM-dd')
+              : null,
             start_time: event.start_time,
             end_time: event.end_time,
             location: event.location,
@@ -209,9 +246,9 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
       } catch (error) {
         console.error('Error in session initialization:', error)
         toast({
-          title: "Error",
-          description: "Failed to initialize session. Please try again.",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Failed to initialize session. Please try again.',
+          variant: 'destructive',
         })
         if (mounted) {
           setIsLoading(false)
@@ -227,28 +264,30 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
     }
   }, [params.slug, router, form, supabase, toast])
 
-  async function handlePosterUpload(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePosterUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
     const file = event.target.files?.[0]
     if (!file) return
-    
+
     if (file.size > MAX_FILE_SIZE) {
       toast({
-        title: "File too large",
+        title: 'File too large',
         description: `${file.name} exceeds 5MB limit`,
-        variant: "destructive",
+        variant: 'destructive',
       })
       return
     }
-    
+
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
       toast({
-        title: "Invalid file type",
+        title: 'Invalid file type',
         description: `${file.name} is not a supported image format`,
-        variant: "destructive",
+        variant: 'destructive',
       })
       return
     }
-    
+
     setNewPoster(file)
     setPosterPreview(URL.createObjectURL(file))
   }
@@ -262,50 +301,53 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
   async function onSubmit(data: EventForm) {
     if (!eventId) {
       toast({
-        title: "Error",
-        description: "Event information is missing.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Event information is missing.',
+        variant: 'destructive',
       })
       return
     }
-    
+
     setIsUploading(true)
     setUploadProgress(0)
-    
+
     try {
       // Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       let finalPosterUrl = posterUrl
-      
+
       // 1. Upload new poster if provided
       if (newPoster) {
         setUploadProgress(10)
         const fileExt = newPoster.name.split('.').pop()
         const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `events/${eventId}/${fileName}`
-        
+
         const { error: uploadError } = await supabase.storage
           .from('events')
           .upload(filePath, newPoster, {
-            cacheControl: "3600",
-            upsert: false
+            cacheControl: '3600',
+            upsert: false,
           })
-          
+
         if (uploadError) {
-          console.error("Upload error:", uploadError)
+          console.error('Upload error:', uploadError)
           throw uploadError
         }
-        
+
         const { data: urlData } = supabase.storage
           .from('events')
           .getPublicUrl(filePath)
@@ -314,7 +356,7 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
       } else {
         setUploadProgress(50)
       }
-      
+
       // 2. Delete old poster if it was replaced or removed
       if (posterUrl && (newPoster || !posterPreview)) {
         // Extract the path from the URL
@@ -325,14 +367,14 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
           const { error: deleteError } = await supabase.storage
             .from('events')
             .remove([path])
-          
+
           if (deleteError) {
-            console.error("Delete error:", deleteError)
+            console.error('Delete error:', deleteError)
             // Continue with update even if delete fails
           }
         }
       }
-      
+
       // 3. Update the event in the database
       setUploadProgress(75)
       const { error: updateError } = await supabase
@@ -355,17 +397,17 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
           slug: slugify(data.title),
         })
         .eq('id', eventId)
-      
+
       if (updateError) {
-        console.error("Update error:", updateError)
+        console.error('Update error:', updateError)
         throw updateError
       }
-      
+
       setUploadProgress(100)
-      
+
       toast({
-        title: "Event updated",
-        description: "Your event has been updated successfully."
+        title: 'Event updated',
+        description: 'Your event has been updated successfully.',
       })
 
       // Generate a new slug from the title if different
@@ -373,11 +415,14 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
       router.push(`/events/${newSlug}`)
       router.refresh()
     } catch (error) {
-      console.error("Submit error:", error)
+      console.error('Submit error:', error)
       toast({
-        variant: "destructive",
-        title: "Update failed",
-        description: error instanceof Error ? error.message : "Failed to update event. Please try again."
+        variant: 'destructive',
+        title: 'Update failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update event. Please try again.',
       })
     } finally {
       setIsUploading(false)
@@ -388,24 +433,27 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
   async function handleDeleteEvent() {
     if (!eventId) {
       toast({
-        title: "Error",
-        description: "Event information is missing.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Event information is missing.',
+        variant: 'destructive',
       })
       return
     }
 
     try {
       // Get session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       // 1. Delete poster if exists
@@ -417,40 +465,38 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
           const { error: deleteError } = await supabase.storage
             .from('events')
             .remove([path])
-          
+
           if (deleteError) {
-            console.error("Delete error:", deleteError)
+            console.error('Delete error:', deleteError)
             // Continue with deletion even if poster delete fails
           }
         }
       }
-      
+
       // 2. Delete event from database
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', eventId)
-      
+      const { error } = await supabase.from('events').delete().eq('id', eventId)
+
       if (error) {
-        console.error("Delete error:", error)
+        console.error('Delete error:', error)
         throw error
       }
-      
+
       toast({
-        title: "Event deleted",
-        description: "Your event has been deleted successfully."
+        title: 'Event deleted',
+        description: 'Your event has been deleted successfully.',
       })
-      
+
       router.push('/events')
       router.refresh()
     } catch (error) {
-      console.error("Delete error:", error)
+      console.error('Delete error:', error)
       toast({
-        variant: "destructive",
-        title: "Delete failed",
-        description: error instanceof Error 
-          ? error.message 
-          : "Failed to delete event. Please try again or contact support if the issue persists."
+        variant: 'destructive',
+        title: 'Delete failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete event. Please try again or contact support if the issue persists.',
       })
     } finally {
       setDeleteDialogOpen(false)
@@ -471,23 +517,21 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="mb-6 hover:bg-muted"
         onClick={() => router.back()}
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
-      
+
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50">
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="text-2xl">Edit Event</CardTitle>
-              <CardDescription>
-                Update your event information
-              </CardDescription>
+              <CardDescription>Update your event information</CardDescription>
             </div>
             <Button
               variant="destructive"
@@ -508,19 +552,24 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
             </div>
           ) : (
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-8"
+              >
                 <div className="grid gap-6 sm:grid-cols-1">
                   <FormField
                     control={form.control}
                     name="title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Event Title</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Event Title
+                        </FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Enter event title" 
-                            className="h-10" 
-                            {...field} 
+                          <Input
+                            placeholder="Enter event title"
+                            className="h-10"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -528,37 +577,41 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Event Type</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Event Type
+                        </FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="e.g. Competition, Training, International Trip" 
-                            className="h-10" 
-                            {...field} 
+                          <Input
+                            placeholder="e.g. Competition, Training, International Trip"
+                            className="h-10"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="organizer"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Organizer</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Organizer
+                        </FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Enter organizer name" 
-                            className="h-10" 
-                            {...field} 
+                          <Input
+                            placeholder="Enter organizer name"
+                            className="h-10"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -566,19 +619,21 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-1">
                   <FormField
                     control={form.control}
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Description</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Description
+                        </FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Describe your event in detail" 
+                          <Textarea
+                            placeholder="Describe your event in detail"
                             className="min-h-32 resize-y"
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -586,7 +641,7 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div>
                     <FormField
@@ -599,18 +654,14 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                             Start Date
                           </FormLabel>
                           <FormControl>
-                            <Input 
-                              type="date" 
-                              className="h-10" 
-                              {...field} 
-                            />
+                            <Input type="date" className="h-10" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                  
+
                   <div>
                     <FormField
                       control={form.control}
@@ -622,12 +673,14 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                             End Date (optional)
                           </FormLabel>
                           <FormControl>
-                            <Input 
-                              type="date" 
-                              className="h-10" 
-                              {...field} 
-                              value={field.value || ""} 
-                              onChange={(e) => field.onChange(e.target.value || null)} 
+                            <Input
+                              type="date"
+                              className="h-10"
+                              {...field}
+                              value={field.value || ''}
+                              onChange={e =>
+                                field.onChange(e.target.value || null)
+                              }
                             />
                           </FormControl>
                           <FormMessage />
@@ -636,7 +689,7 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-2">
                   <div>
                     <FormField
@@ -649,12 +702,14 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                             Start Time (optional)
                           </FormLabel>
                           <FormControl>
-                            <Input 
-                              type="time" 
-                              className="h-10" 
-                              {...field} 
-                              value={field.value || ""} 
-                              onChange={(e) => field.onChange(e.target.value || null)} 
+                            <Input
+                              type="time"
+                              className="h-10"
+                              {...field}
+                              value={field.value || ''}
+                              onChange={e =>
+                                field.onChange(e.target.value || null)
+                              }
                             />
                           </FormControl>
                           <FormMessage />
@@ -662,7 +717,7 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                       )}
                     />
                   </div>
-                  
+
                   <div>
                     <FormField
                       control={form.control}
@@ -674,12 +729,14 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                             End Time (optional)
                           </FormLabel>
                           <FormControl>
-                            <Input 
-                              type="time" 
-                              className="h-10" 
-                              {...field} 
-                              value={field.value || ""} 
-                              onChange={(e) => field.onChange(e.target.value || null)} 
+                            <Input
+                              type="time"
+                              className="h-10"
+                              {...field}
+                              value={field.value || ''}
+                              onChange={e =>
+                                field.onChange(e.target.value || null)
+                              }
                             />
                           </FormControl>
                           <FormMessage />
@@ -688,19 +745,21 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                     />
                   </div>
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-1">
                   <FormField
                     control={form.control}
                     name="location"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Location</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Location
+                        </FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Enter event location" 
-                            className="h-10" 
-                            {...field} 
+                          <Input
+                            placeholder="Enter event location"
+                            className="h-10"
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -708,42 +767,50 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Contact Phone (optional)</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Contact Phone (optional)
+                        </FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="Contact phone number" 
-                            className="h-10" 
-                            {...field} 
-                            value={field.value || ""} 
-                            onChange={(e) => field.onChange(e.target.value || null)} 
+                          <Input
+                            placeholder="Contact phone number"
+                            className="h-10"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={e =>
+                              field.onChange(e.target.value || null)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Contact Email (optional)</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Contact Email (optional)
+                        </FormLabel>
                         <FormControl>
-                          <Input 
-                            type="email" 
-                            placeholder="Contact email address" 
-                            className="h-10" 
-                            {...field} 
-                            value={field.value || ""} 
-                            onChange={(e) => field.onChange(e.target.value || null)} 
+                          <Input
+                            type="email"
+                            placeholder="Contact email address"
+                            className="h-10"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={e =>
+                              field.onChange(e.target.value || null)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -751,40 +818,50 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid gap-6 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">Price (€) (optional)</FormLabel>
+                        <FormLabel className="text-base font-medium">
+                          Price (€) (optional)
+                        </FormLabel>
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            min="0" 
+                          <Input
+                            type="number"
+                            min="0"
                             step="0.01"
-                            placeholder="0.00" 
+                            placeholder="0.00"
                             className="h-10"
-                            {...field} 
-                            value={field.value === null ? "" : field.value} 
-                            onChange={(e) => field.onChange(e.target.value === "" ? null : parseFloat(e.target.value))} 
+                            {...field}
+                            value={field.value === null ? '' : field.value}
+                            onChange={e =>
+                              field.onChange(
+                                e.target.value === ''
+                                  ? null
+                                  : parseFloat(e.target.value)
+                              )
+                            }
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <div>
-                    <FormLabel className="text-base font-medium">Event Poster (optional)</FormLabel>
-                    
+                    <FormLabel className="text-base font-medium">
+                      Event Poster (optional)
+                    </FormLabel>
+
                     <div className="mt-2">
                       {posterPreview ? (
                         <div className="relative rounded-md overflow-hidden border shadow-sm w-full aspect-[3/2]">
-                          <img 
-                            src={posterPreview} 
-                            alt="Event poster preview" 
+                          <img
+                            src={posterPreview}
+                            alt="Event poster preview"
                             className="w-full h-full object-cover"
                           />
                           <Button
@@ -801,7 +878,9 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                       ) : (
                         <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-[3/2] hover:bg-muted/50 transition-colors">
                           <span className="text-3xl mb-1">+</span>
-                          <span className="text-sm text-center text-muted-foreground px-2">Add Poster</span>
+                          <span className="text-sm text-center text-muted-foreground px-2">
+                            Add Poster
+                          </span>
                           <input
                             type="file"
                             accept="image/*"
@@ -814,23 +893,23 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                     </div>
                   </div>
                 </div>
-                
+
                 {isUploading && (
                   <div className="w-full bg-muted rounded-full h-3 mb-6">
-                    <div 
-                      className="bg-primary h-3 rounded-full transition-all duration-300" 
+                    <div
+                      className="bg-primary h-3 rounded-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     ></div>
                   </div>
                 )}
-                
+
                 <div className="pt-4">
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full h-12 text-base font-medium"
                     disabled={isUploading}
                   >
-                    {isUploading ? "Updating..." : "Update Event"}
+                    {isUploading ? 'Updating...' : 'Update Event'}
                   </Button>
                 </div>
               </form>
@@ -838,27 +917,25 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
           )}
         </CardContent>
       </Card>
-      
+
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Event</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this event? This action cannot be undone.
+              Are you sure you want to delete this event? This action cannot be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="mt-4 flex gap-2">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleDeleteEvent}
-            >
+            <Button variant="destructive" onClick={handleDeleteEvent}>
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Event
             </Button>
@@ -867,4 +944,4 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
       </Dialog>
     </div>
   )
-} 
+}

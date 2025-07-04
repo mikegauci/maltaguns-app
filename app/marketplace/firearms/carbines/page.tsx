@@ -1,12 +1,12 @@
-import CategoryListings from "@/components/CategoryListings"
+import CategoryListings from '@/components/CategoryListings'
 
 export default function CarbinesPage() {
   return (
-    <CategoryListings 
+    <CategoryListings
       type="firearms"
       category="carbines"
       title="Carbines"
       description="Browse carbine listings from licensed sellers"
     />
   )
-} 
+}

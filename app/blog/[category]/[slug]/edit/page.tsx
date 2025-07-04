@@ -1,24 +1,49 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote, Loader2, Image as ImageIcon, Link as LinkIcon } from "lucide-react"
+import {
+  ArrowLeft,
+  Bold,
+  Italic,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Quote,
+  Loader2,
+  Image as ImageIcon,
+  Link as LinkIcon,
+} from 'lucide-react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import slug from 'slug'
-import { Database } from "@/lib/database.types"
+import { Database } from '@/lib/database.types'
 import {
   Dialog,
   DialogContent,
@@ -26,20 +51,33 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose
-} from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+  DialogClose,
+} from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]
 
 const formSchema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
-  content: z.string().min(1, { message: "Content is required" }),
+  title: z.string().min(1, { message: 'Title is required' }),
+  content: z.string().min(1, { message: 'Content is required' }),
   featuredImage: z.string().optional(),
   published: z.boolean().default(false),
-  category: z.enum(["news", "guides"], { required_error: "Please select a category" }),
+  category: z.enum(['news', 'guides'], {
+    required_error: 'Please select a category',
+  }),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -52,22 +90,26 @@ async function uploadContentImage(file: File, supabase: any, userId: string) {
   const { error: uploadError } = await supabase.storage
     .from('blog')
     .upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false
+      cacheControl: '3600',
+      upsert: false,
     })
 
   if (uploadError) {
     throw uploadError
   }
 
-  const { data: { publicUrl } } = supabase.storage
-    .from('blog')
-    .getPublicUrl(filePath)
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from('blog').getPublicUrl(filePath)
 
   return publicUrl
 }
 
-export default function EditBlogPost({ params }: { params: { category: string; slug: string } }) {
+export default function EditBlogPost({
+  params,
+}: {
+  params: { category: string; slug: string }
+}) {
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClientComponentClient<Database>()
@@ -76,12 +118,15 @@ export default function EditBlogPost({ params }: { params: { category: string; s
   const [postId, setPostId] = useState<string | null>(null)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
-  const [linkUrl, setLinkUrl] = useState("")
+  const [linkUrl, setLinkUrl] = useState('')
   const [openInNewTab, setOpenInNewTab] = useState(true)
   const [imageAltDialogOpen, setImageAltDialogOpen] = useState(false)
-  const [imageAltText, setImageAltText] = useState("")
+  const [imageAltText, setImageAltText] = useState('')
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null)
-  const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null)
+  const [selectedImage, setSelectedImage] = useState<{
+    src: string
+    alt: string
+  } | null>(null)
   const [isEditingExistingImage, setIsEditingExistingImage] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -103,18 +148,19 @@ export default function EditBlogPost({ params }: { params: { category: string; s
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-neutral dark:prose-invert focus:outline-none min-h-[200px]',
+        class:
+          'prose prose-neutral dark:prose-invert focus:outline-none min-h-[200px]',
       },
       handleClick: (view, pos, event) => {
         // Check if the clicked element is an image
         const domEvent = event as MouseEvent
         const element = domEvent.target as HTMLElement
-        
+
         if (element.tagName === 'IMG') {
           const img = element as HTMLImageElement
           setSelectedImage({
             src: img.src,
-            alt: img.alt || ''
+            alt: img.alt || '',
           })
           setImageAltText(img.alt || '')
           setIsEditingExistingImage(true)
@@ -129,12 +175,12 @@ export default function EditBlogPost({ params }: { params: { category: string; s
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      content: "",
-      featuredImage: "",
+      title: '',
+      content: '',
+      featuredImage: '',
       published: false,
-      category: "news",
-    }
+      category: 'news',
+    },
   })
 
   useEffect(() => {
@@ -142,8 +188,11 @@ export default function EditBlogPost({ params }: { params: { category: string; s
 
     async function loadPost() {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         if (sessionError) {
           console.error('Session error:', sessionError)
           router.push('/login')
@@ -163,8 +212,11 @@ export default function EditBlogPost({ params }: { params: { category: string; s
         const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
 
         if (isNearExpiry) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession()
+
           if (refreshError || !refreshedSession) {
             console.error('Session refresh failed:', refreshError)
             router.push('/login')
@@ -173,17 +225,17 @@ export default function EditBlogPost({ params }: { params: { category: string; s
         }
 
         const { data: post, error: postError } = await supabase
-          .from("blog_posts")
-          .select("*")
-          .eq("slug", params.slug)
+          .from('blog_posts')
+          .select('*')
+          .eq('slug', params.slug)
           .single()
 
         if (postError) {
           console.error('Error fetching post:', postError)
           toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Failed to load blog post."
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to load blog post.',
           })
           return
         }
@@ -191,9 +243,9 @@ export default function EditBlogPost({ params }: { params: { category: string; s
         if (!post) {
           console.log('Post not found:', params.slug)
           toast({
-            variant: "destructive",
-            title: "Not found",
-            description: "The blog post you're trying to edit doesn't exist."
+            variant: 'destructive',
+            title: 'Not found',
+            description: "The blog post you're trying to edit doesn't exist.",
           })
           router.push('/blog')
           return
@@ -201,9 +253,9 @@ export default function EditBlogPost({ params }: { params: { category: string; s
 
         if (post.author_id !== session.user.id) {
           toast({
-            variant: "destructive",
-            title: "Unauthorized",
-            description: "You can only edit your own blog posts."
+            variant: 'destructive',
+            title: 'Unauthorized',
+            description: 'You can only edit your own blog posts.',
           })
           router.push('/blog')
           return
@@ -214,9 +266,9 @@ export default function EditBlogPost({ params }: { params: { category: string; s
           form.reset({
             title: post.title,
             content: post.content,
-            featuredImage: post.featured_image || "",
+            featuredImage: post.featured_image || '',
             published: post.published,
-            category: post.category || "news",
+            category: post.category || 'news',
           })
 
           if (editor) {
@@ -225,11 +277,11 @@ export default function EditBlogPost({ params }: { params: { category: string; s
           setIsLoading(false)
         }
       } catch (error) {
-        console.error("Error loading post:", error)
+        console.error('Error loading post:', error)
         toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load blog post."
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to load blog post.',
         })
         if (mounted) {
           setIsLoading(false)
@@ -253,32 +305,35 @@ export default function EditBlogPost({ params }: { params: { category: string; s
 
       if (file.size > MAX_FILE_SIZE) {
         toast({
-          variant: "destructive",
-          title: "File too large",
-          description: "Featured image must be less than 5MB"
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Featured image must be less than 5MB',
         })
         return
       }
 
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         toast({
-          variant: "destructive",
-          title: "Invalid file type",
-          description: "Please upload a valid image file (JPEG, PNG, or WebP)"
+          variant: 'destructive',
+          title: 'Invalid file type',
+          description: 'Please upload a valid image file (JPEG, PNG, or WebP)',
         })
         return
       }
 
       setUploadingImage(true)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       const fileExt = file.name.split('.').pop()
@@ -288,30 +343,31 @@ export default function EditBlogPost({ params }: { params: { category: string; s
       const { error: uploadError } = await supabase.storage
         .from('blog')
         .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false
+          cacheControl: '3600',
+          upsert: false,
         })
 
       if (uploadError) {
         throw uploadError
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('blog')
-        .getPublicUrl(filePath)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('blog').getPublicUrl(filePath)
 
       form.setValue('featuredImage', publicUrl)
 
       toast({
-        title: "Image uploaded",
-        description: "Your featured image has been uploaded successfully"
+        title: 'Image uploaded',
+        description: 'Your featured image has been uploaded successfully',
       })
     } catch (error) {
-      console.error("Image upload error:", error)
+      console.error('Image upload error:', error)
       toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload image"
+        variant: 'destructive',
+        title: 'Upload failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload image',
       })
     } finally {
       setUploadingImage(false)
@@ -323,102 +379,119 @@ export default function EditBlogPost({ params }: { params: { category: string; s
       const input = document.createElement('input')
       input.type = 'file'
       input.accept = 'image/*'
-      
-      input.onchange = async (event) => {
+
+      input.onchange = async event => {
         const file = (event.target as HTMLInputElement).files?.[0]
         if (!file) return
-        
+
         if (file.size > MAX_FILE_SIZE) {
           toast({
-            variant: "destructive",
-            title: "File too large",
-            description: "Image must be less than 5MB",
+            variant: 'destructive',
+            title: 'File too large',
+            description: 'Image must be less than 5MB',
           })
           return
         }
 
         if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
           toast({
-            variant: "destructive",
-            title: "Invalid file type",
-            description: "Please upload a valid image file (JPEG, PNG, or WebP)",
+            variant: 'destructive',
+            title: 'Invalid file type',
+            description:
+              'Please upload a valid image file (JPEG, PNG, or WebP)',
           })
           return
         }
 
         setPendingImageFile(file)
         // Remove file extension from filename for alt text
-        const altTextWithoutExtension = file.name.replace(/\.[^/.]+$/, "")
+        const altTextWithoutExtension = file.name.replace(/\.[^/.]+$/, '')
         setImageAltText(altTextWithoutExtension)
         setImageAltDialogOpen(true)
       }
-      
+
       input.click()
     } catch (error) {
-      console.error("Error adding image:", error)
+      console.error('Error adding image:', error)
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to add image to post"
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to add image to post',
       })
     }
   }
 
   const handleImageInsert = async () => {
     if (!imageAltText) return
-    
+
     if (isEditingExistingImage && selectedImage) {
       // Update existing image alt text
-      editor?.chain().focus().setImage({ 
-        src: selectedImage.src, 
-        alt: imageAltText 
-      }).run()
-      
+      editor
+        ?.chain()
+        .focus()
+        .setImage({
+          src: selectedImage.src,
+          alt: imageAltText,
+        })
+        .run()
+
       toast({
-        title: "Alt text updated",
-        description: "Image alt text has been updated successfully"
+        title: 'Alt text updated',
+        description: 'Image alt text has been updated successfully',
       })
 
       // Reset state
       setImageAltDialogOpen(false)
-      setImageAltText("")
+      setImageAltText('')
       setSelectedImage(null)
       setIsEditingExistingImage(false)
       return
     }
 
     if (!pendingImageFile) return
-    
+
     setUploadingContentImage(true)
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError || !session?.user.id) {
-        throw new Error("Authentication error")
+        throw new Error('Authentication error')
       }
-      
-      const imageUrl = await uploadContentImage(pendingImageFile, supabase, session.user.id)
-      
+
+      const imageUrl = await uploadContentImage(
+        pendingImageFile,
+        supabase,
+        session.user.id
+      )
+
       if (editor) {
-        editor.chain().focus().setImage({ src: imageUrl, alt: imageAltText }).run()
+        editor
+          .chain()
+          .focus()
+          .setImage({ src: imageUrl, alt: imageAltText })
+          .run()
       }
-      
+
       toast({
-        title: "Image inserted",
-        description: "Your image has been added to the post"
+        title: 'Image inserted',
+        description: 'Your image has been added to the post',
       })
 
       // Reset state
       setImageAltDialogOpen(false)
-      setImageAltText("")
+      setImageAltText('')
       setPendingImageFile(null)
       setIsEditingExistingImage(false)
     } catch (error) {
-      console.error("Content image upload error:", error)
+      console.error('Content image upload error:', error)
       toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload image"
+        variant: 'destructive',
+        title: 'Upload failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload image',
       })
     } finally {
       setUploadingContentImage(false)
@@ -433,9 +506,9 @@ export default function EditBlogPost({ params }: { params: { category: string; s
       setLinkDialogOpen(true)
     } else {
       toast({
-        variant: "destructive",
-        title: "No text selected",
-        description: "Please select some text to add a link."
+        variant: 'destructive',
+        title: 'No text selected',
+        description: 'Please select some text to add a link.',
       })
     }
   }
@@ -448,35 +521,33 @@ export default function EditBlogPost({ params }: { params: { category: string; s
       .chain()
       .focus()
       .extendMarkRange('link')
-      .setLink({ 
-        href: linkUrl, 
-        target: openInNewTab ? '_blank' : null
+      .setLink({
+        href: linkUrl,
+        target: openInNewTab ? '_blank' : null,
       })
       .run()
 
     // Reset state
-    setLinkUrl("")
+    setLinkUrl('')
     setLinkDialogOpen(false)
   }
 
   const removeLink = () => {
     if (!editor) return
-    
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange('link')
-      .unsetLink()
-      .run()
+
+    editor.chain().focus().extendMarkRange('link').unsetLink().run()
   }
 
   async function onSubmit(data: FormData) {
     if (!postId) return
-    
+
     setIsSubmitting(true)
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError || !session) {
         throw new Error('Not authenticated')
       }
@@ -487,28 +558,25 @@ export default function EditBlogPost({ params }: { params: { category: string; s
         .select('store_id, servicing_id, club_id, range_id')
         .eq('id', postId)
         .single()
-        
+
       if (getError) {
         console.error('Error fetching current post data:', getError)
         throw getError
       }
-      
+
       // Log which establishment IDs are being preserved
       console.log('Preserving establishment IDs:', {
         store_id: currentPost.store_id,
         servicing_id: currentPost.servicing_id,
         club_id: currentPost.club_id,
-        range_id: currentPost.range_id
+        range_id: currentPost.range_id,
       })
 
       // Upload featured image if selected
       let featured_image = data.featuredImage
       if (pendingImageFile) {
-        const { data: uploadData, error: uploadError } = await uploadContentImage(
-          pendingImageFile,
-          supabase,
-          session.user.id
-        )
+        const { data: uploadData, error: uploadError } =
+          await uploadContentImage(pendingImageFile, supabase, session.user.id)
         if (uploadError) throw uploadError
         featured_image = uploadData.path
       }
@@ -527,15 +595,15 @@ export default function EditBlogPost({ params }: { params: { category: string; s
           store_id: currentPost.store_id,
           servicing_id: currentPost.servicing_id,
           club_id: currentPost.club_id,
-          range_id: currentPost.range_id
+          range_id: currentPost.range_id,
         })
         .eq('id', postId)
 
       if (updateError) throw updateError
 
       toast({
-        title: "Success",
-        description: "Blog post updated successfully.",
+        title: 'Success',
+        description: 'Blog post updated successfully.',
       })
 
       // Redirect to the updated post with category in the URL
@@ -543,9 +611,9 @@ export default function EditBlogPost({ params }: { params: { category: string; s
     } catch (error) {
       console.error('Error updating post:', error)
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update blog post. Please try again."
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update blog post. Please try again.',
       })
     } finally {
       setIsSubmitting(false)
@@ -579,8 +647,12 @@ export default function EditBlogPost({ params }: { params: { category: string; s
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={editor.isActive('heading', { level: 2 }) ? 'bg-accent' : ''}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+          className={
+            editor.isActive('heading', { level: 2 }) ? 'bg-accent' : ''
+          }
         >
           <Heading2 className="h-4 w-4" />
         </Button>
@@ -588,8 +660,12 @@ export default function EditBlogPost({ params }: { params: { category: string; s
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={editor.isActive('heading', { level: 3 }) ? 'bg-accent' : ''}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
+          className={
+            editor.isActive('heading', { level: 3 }) ? 'bg-accent' : ''
+          }
         >
           <Heading3 className="h-4 w-4" />
         </Button>
@@ -672,7 +748,9 @@ export default function EditBlogPost({ params }: { params: { category: string; s
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => router.push(`/blog/${params.category}/${params.slug}`)}
+            onClick={() =>
+              router.push(`/blog/${params.category}/${params.slug}`)
+            }
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -689,7 +767,10 @@ export default function EditBlogPost({ params }: { params: { category: string; s
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="title"
@@ -744,7 +825,10 @@ export default function EditBlogPost({ params }: { params: { category: string; s
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select a category" />
@@ -779,19 +863,24 @@ export default function EditBlogPost({ params }: { params: { category: string; s
                   )}
                 />
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full"
-                  disabled={isSubmitting || uploadingImage || uploadingContentImage}
+                  disabled={
+                    isSubmitting || uploadingImage || uploadingContentImage
+                  }
                 >
                   {isSubmitting || uploadingImage || uploadingContentImage ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {uploadingImage ? "Uploading Image..." : 
-                       uploadingContentImage ? "Adding Image..." : "Saving Changes..."}
+                      {uploadingImage
+                        ? 'Uploading Image...'
+                        : uploadingContentImage
+                          ? 'Adding Image...'
+                          : 'Saving Changes...'}
                     </>
                   ) : (
-                    "Save Changes"
+                    'Save Changes'
                   )}
                 </Button>
               </form>
@@ -814,7 +903,7 @@ export default function EditBlogPost({ params }: { params: { category: string; s
                 <Input
                   id="url"
                   value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
+                  onChange={e => setLinkUrl(e.target.value)}
                   placeholder="https://example.com"
                 />
               </div>
@@ -822,7 +911,9 @@ export default function EditBlogPost({ params }: { params: { category: string; s
                 <Checkbox
                   id="new-tab"
                   checked={openInNewTab}
-                  onCheckedChange={(checked) => setOpenInNewTab(checked as boolean)}
+                  onCheckedChange={checked =>
+                    setOpenInNewTab(checked as boolean)
+                  }
                 />
                 <Label htmlFor="new-tab">Open in new tab</Label>
               </div>
@@ -839,18 +930,25 @@ export default function EditBlogPost({ params }: { params: { category: string; s
         </Dialog>
 
         {/* Add Image Alt Text Dialog */}
-        <Dialog open={imageAltDialogOpen} onOpenChange={(open) => {
-          if (!open) {
-            setImageAltDialogOpen(false)
-            setImageAltText("")
-            setPendingImageFile(null)
-            setSelectedImage(null)
-            setIsEditingExistingImage(false)
-          }
-        }}>
+        <Dialog
+          open={imageAltDialogOpen}
+          onOpenChange={open => {
+            if (!open) {
+              setImageAltDialogOpen(false)
+              setImageAltText('')
+              setPendingImageFile(null)
+              setSelectedImage(null)
+              setIsEditingExistingImage(false)
+            }
+          }}
+        >
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{isEditingExistingImage ? 'Edit Image Alt Text' : 'Add Image Alt Text'}</DialogTitle>
+              <DialogTitle>
+                {isEditingExistingImage
+                  ? 'Edit Image Alt Text'
+                  : 'Add Image Alt Text'}
+              </DialogTitle>
               <DialogDescription>
                 Enter alternative text to describe the image for accessibility
               </DialogDescription>
@@ -861,7 +959,7 @@ export default function EditBlogPost({ params }: { params: { category: string; s
                 <Input
                   id="alt-text"
                   value={imageAltText}
-                  onChange={(e) => setImageAltText(e.target.value)}
+                  onChange={e => setImageAltText(e.target.value)}
                   placeholder="Describe the image"
                 />
               </div>
@@ -877,23 +975,34 @@ export default function EditBlogPost({ params }: { params: { category: string; s
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button variant="secondary" onClick={() => {
-                  setPendingImageFile(null)
-                  setImageAltText("")
-                  setSelectedImage(null)
-                  setIsEditingExistingImage(false)
-                }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setPendingImageFile(null)
+                    setImageAltText('')
+                    setSelectedImage(null)
+                    setIsEditingExistingImage(false)
+                  }}
+                >
                   Cancel
                 </Button>
               </DialogClose>
-              <Button onClick={handleImageInsert} disabled={!imageAltText || (!isEditingExistingImage && uploadingContentImage)}>
+              <Button
+                onClick={handleImageInsert}
+                disabled={
+                  !imageAltText ||
+                  (!isEditingExistingImage && uploadingContentImage)
+                }
+              >
                 {!isEditingExistingImage && uploadingContentImage ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Uploading...
                   </>
+                ) : isEditingExistingImage ? (
+                  'Update Alt Text'
                 ) : (
-                  isEditingExistingImage ? "Update Alt Text" : "Insert Image"
+                  'Insert Image'
                 )}
               </Button>
             </DialogFooter>

@@ -1,10 +1,16 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Sun as Gun, Package } from "lucide-react"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Sun as Gun, Package } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import {
   AlertDialog,
@@ -15,8 +21,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import Image from "next/image"
+} from '@/components/ui/alert-dialog'
+import Image from 'next/image'
 
 export default function CreateListing() {
   const router = useRouter()
@@ -30,8 +36,11 @@ export default function CreateListing() {
 
     async function checkSellerStatus() {
       try {
-        const { data: { session }, error: authError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: authError,
+        } = await supabase.auth.getSession()
+
         if (authError) {
           console.error('Auth error:', authError)
           router.push('/login')
@@ -51,8 +60,11 @@ export default function CreateListing() {
         const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
 
         if (isNearExpiry) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession()
+
           if (refreshError || !refreshedSession) {
             console.error('Session refresh failed:', refreshError)
             router.push('/login')
@@ -110,10 +122,12 @@ export default function CreateListing() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Create Listing</h1>
-        <p className="text-muted-foreground mb-8">Choose the type of listing you want to create</p>
+        <p className="text-muted-foreground mb-8">
+          Choose the type of listing you want to create
+        </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card 
+          <Card
             className="hover:border-primary/50 cursor-pointer transition-colors"
             onClick={handleFirearmsClick}
           >
@@ -128,7 +142,8 @@ export default function CreateListing() {
                 Firearms Listing
               </CardTitle>
               <CardDescription>
-                Create a listing for firearms, including airguns, pistols, rifles, and more
+                Create a listing for firearms, including airguns, pistols,
+                rifles, and more
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -138,7 +153,7 @@ export default function CreateListing() {
             </CardContent>
           </Card>
 
-          <Card 
+          <Card
             className="hover:border-primary/50 cursor-pointer transition-colors"
             onClick={() => router.push('/marketplace/create/non-firearms')}
           >
@@ -153,18 +168,25 @@ export default function CreateListing() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Open to all verified sellers. Includes airsoft, reloading equipment, and accessories.
+                Open to all verified sellers. Includes airsoft, reloading
+                equipment, and accessories.
               </p>
             </CardContent>
           </Card>
         </div>
 
-        <AlertDialog open={showLicenseDialog} onOpenChange={setShowLicenseDialog}>
+        <AlertDialog
+          open={showLicenseDialog}
+          onOpenChange={setShowLicenseDialog}
+        >
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>License upload required</AlertDialogTitle>
               <AlertDialogDescription>
-                To sell firearms on Maltaguns, we must first verify that you are infact licensed. please upload a picture of your latest license on your profile. This is only required once and your account will then be certified for future firearm sales
+                To sell firearms on Maltaguns, we must first verify that you are
+                infact licensed. please upload a picture of your latest license
+                on your profile. This is only required once and your account
+                will then be certified for future firearm sales
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

@@ -1,11 +1,20 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Store, Users, Wrench, MapPin, Phone, Mail, Globe, Boxes } from "lucide-react"
-import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-import { LoadingState } from "@/components/ui/loading-state"
+import { useEffect, useState } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Store,
+  Users,
+  Wrench,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Boxes,
+} from 'lucide-react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { LoadingState } from '@/components/ui/loading-state'
 
 interface Establishment {
   id: string
@@ -17,7 +26,7 @@ interface Establishment {
   description: string | null
   website: string | null
   slug: string
-  type: "stores" | "club" | "servicing" | "range"
+  type: 'stores' | 'club' | 'servicing' | 'range'
 }
 
 export default function EstablishmentsPage() {
@@ -28,48 +37,57 @@ export default function EstablishmentsPage() {
     async function fetchAllEstablishments() {
       try {
         setIsLoading(true)
-        
+
         // Fetch stores
         const { data: stores, error: storesError } = await supabase
           .from('stores')
           .select('*')
 
         if (storesError) throw storesError
-        
+
         // Fetch clubs
         const { data: clubs, error: clubsError } = await supabase
           .from('clubs')
           .select('*')
-          
+
         if (clubsError) throw clubsError
-        
+
         // Fetch servicing
         const { data: servicing, error: servicingError } = await supabase
           .from('servicing')
           .select('*')
-          
+
         if (servicingError) throw servicingError
-        
+
         // Fetch ranges
         const { data: ranges, error: rangesError } = await supabase
           .from('ranges')
           .select('*')
-          
+
         if (rangesError) throw rangesError
-        
+
         // Combine all results and add type field
         const allEstablishments = [
-          ...(stores || []).map(store => ({ ...store, type: 'stores' as const })),
+          ...(stores || []).map(store => ({
+            ...store,
+            type: 'stores' as const,
+          })),
           ...(clubs || []).map(club => ({ ...club, type: 'clubs' as const })),
-          ...(servicing || []).map(service => ({ ...service, type: 'servicing' as const })),
-          ...(ranges || []).map(range => ({ ...range, type: 'range' as const }))
+          ...(servicing || []).map(service => ({
+            ...service,
+            type: 'servicing' as const,
+          })),
+          ...(ranges || []).map(range => ({
+            ...range,
+            type: 'range' as const,
+          })),
         ]
-        
+
         // Sort by business name
-        allEstablishments.sort((a, b) => 
+        allEstablishments.sort((a, b) =>
           a.business_name.localeCompare(b.business_name)
         )
-        
+
         setEstablishments(allEstablishments)
       } catch (error) {
         console.error('Error fetching establishments:', error)
@@ -174,7 +192,8 @@ export default function EstablishmentsPage() {
                   <div>
                     <h3 className="font-semibold text-lg">Ranges</h3>
                     <p className="text-muted-foreground">
-                      Discover shooting ranges and practice facilities across Malta
+                      Discover shooting ranges and practice facilities across
+                      Malta
                     </p>
                   </div>
                 </div>
@@ -186,7 +205,7 @@ export default function EstablishmentsPage() {
         {/* All Establishments Section */}
         <div className="mt-12">
           <h2 className="text-2xl font-bold mb-6">All Establishments</h2>
-          
+
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <LoadingState message="Loading establishments..." />
@@ -194,13 +213,15 @@ export default function EstablishmentsPage() {
           ) : establishments.length === 0 ? (
             <Card className="p-6 text-center">
               <Boxes className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No establishments listed yet.</p>
+              <p className="text-muted-foreground">
+                No establishments listed yet.
+              </p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {establishments.map((establishment) => (
-                <Link 
-                  key={`${establishment.type}-${establishment.id}`} 
+              {establishments.map(establishment => (
+                <Link
+                  key={`${establishment.type}-${establishment.id}`}
                   href={`/establishments/${establishment.type === 'stores' ? 'stores' : establishment.type}/${establishment.slug || establishment.id}`}
                 >
                   <Card className="h-full hover:shadow-lg transition-shadow">
@@ -218,7 +239,9 @@ export default function EstablishmentsPage() {
                           </div>
                         )}
                         <div>
-                          <h3 className="font-semibold text-lg">{establishment.business_name}</h3>
+                          <h3 className="font-semibold text-lg">
+                            {establishment.business_name}
+                          </h3>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <MapPin className="h-4 w-4" />
                             <span>{establishment.location}</span>
@@ -262,4 +285,4 @@ export default function EstablishmentsPage() {
       </div>
     </div>
   )
-} 
+}

@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
+import { useState } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -20,11 +20,11 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
-import { createClient } from "@supabase/supabase-js"
-import { Loader2 } from "lucide-react"
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/hooks/use-toast'
+import { createClient } from '@supabase/supabase-js'
+import { Loader2 } from 'lucide-react'
 
 // Create a direct Supabase client that bypasses RLS
 const supabaseAdmin = createClient(
@@ -34,7 +34,7 @@ const supabaseAdmin = createClient(
 
 // Define the form schema
 const formSchema = z.object({
-  amount: z.string().min(1, "Amount is required"),
+  amount: z.string().min(1, 'Amount is required'),
 })
 
 interface EditCreditDialogProps {
@@ -70,9 +70,14 @@ export function EditCreditDialog({
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true)
-      
-      console.log("Submitting update with ID:", credit.id, "and amount:", values.amount);
-      
+
+      console.log(
+        'Submitting update with ID:',
+        credit.id,
+        'and amount:',
+        values.amount
+      )
+
       // Use the admin API endpoint to update the credit
       const response = await fetch(`/api/admin/credits/update`, {
         method: 'PATCH',
@@ -84,27 +89,28 @@ export function EditCreditDialog({
           amount: values.amount,
         }),
       })
-      
-      const responseData = await response.json();
-      console.log("API Response:", responseData);
-      
+
+      const responseData = await response.json()
+      console.log('API Response:', responseData)
+
       if (!response.ok) {
         throw new Error(responseData.message || 'Failed to update credit')
       }
 
       toast({
-        title: "Credits Updated",
+        title: 'Credits Updated',
         description: `Successfully updated credits for ${credit.username || 'user'}`,
       })
 
       onOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (error) {
-      console.error("Failed to update credits:", error)
+      console.error('Failed to update credits:', error)
       toast({
-        title: "Update Failed",
-        description: error instanceof Error ? error.message : "Failed to update credits",
-        variant: "destructive",
+        title: 'Update Failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to update credits',
+        variant: 'destructive',
       })
     } finally {
       setIsLoading(false)
@@ -117,7 +123,8 @@ export function EditCreditDialog({
         <DialogHeader>
           <DialogTitle>Edit Credits</DialogTitle>
           <DialogDescription>
-            Update credits for {credit.username || 'user'}{credit.email ? ` (${credit.email})` : ''}
+            Update credits for {credit.username || 'user'}
+            {credit.email ? ` (${credit.email})` : ''}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -129,9 +136,9 @@ export function EditCreditDialog({
                 <FormItem>
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter credit amount" 
-                      {...field} 
+                    <Input
+                      placeholder="Enter credit amount"
+                      {...field}
                       type="number"
                     />
                   </FormControl>
@@ -141,9 +148,9 @@ export function EditCreditDialog({
             />
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading}
               >
@@ -156,7 +163,7 @@ export function EditCreditDialog({
                     Saving...
                   </>
                 ) : (
-                  "Save Changes"
+                  'Save Changes'
                 )}
               </Button>
             </DialogFooter>
@@ -165,4 +172,4 @@ export function EditCreditDialog({
       </DialogContent>
     </Dialog>
   )
-} 
+}

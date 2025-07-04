@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from 'react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 import {
   Form,
   FormControl,
@@ -20,22 +20,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
-import { Loader2 } from "lucide-react"
+} from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
+import { Loader2 } from 'lucide-react'
 
 // Define the form schema
 const formSchema = z.object({
-  user_id: z.string().min(1, "User is required"),
-  amount: z.string().min(1, "Amount is required"),
+  user_id: z.string().min(1, 'User is required'),
+  amount: z.string().min(1, 'Amount is required'),
 })
 
 interface Profile {
@@ -65,8 +65,8 @@ export function AddCreditDialog({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      user_id: "",
-      amount: "",
+      user_id: '',
+      amount: '',
     },
   })
 
@@ -74,8 +74,8 @@ export function AddCreditDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        user_id: "",
-        amount: "",
+        user_id: '',
+        amount: '',
       })
     }
   }, [open, form])
@@ -102,21 +102,23 @@ export function AddCreditDialog({
       }
 
       const selectedProfile = profiles.find(p => p.id === values.user_id)
-      const profileName = selectedProfile?.username || selectedProfile?.email || 'user'
+      const profileName =
+        selectedProfile?.username || selectedProfile?.email || 'user'
 
       toast({
-        title: "Credits Added",
+        title: 'Credits Added',
         description: `Successfully added credits for ${profileName}`,
       })
 
       onOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (error) {
-      console.error("Failed to add credits:", error)
+      console.error('Failed to add credits:', error)
       toast({
-        title: "Adding Credits Failed",
-        description: error instanceof Error ? error.message : "Failed to add credits",
-        variant: "destructive",
+        title: 'Adding Credits Failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to add credits',
+        variant: 'destructive',
       })
     } finally {
       setIsLoading(false)
@@ -128,9 +130,7 @@ export function AddCreditDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Credits</DialogTitle>
-          <DialogDescription>
-            Add credits for a user
-          </DialogDescription>
+          <DialogDescription>Add credits for a user</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -140,8 +140,8 @@ export function AddCreditDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>User</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
+                  <Select
+                    onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
@@ -150,10 +150,12 @@ export function AddCreditDialog({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {profiles.map((profile) => (
+                      {profiles.map(profile => (
                         <SelectItem key={profile.id} value={profile.id}>
                           {profile.username || profile.email || profile.id}
-                          {profile.email && profile.username ? ` (${profile.email})` : ''}
+                          {profile.email && profile.username
+                            ? ` (${profile.email})`
+                            : ''}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -170,9 +172,9 @@ export function AddCreditDialog({
                 <FormItem>
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter credit amount" 
-                      {...field} 
+                    <Input
+                      placeholder="Enter credit amount"
+                      {...field}
                       type="number"
                     />
                   </FormControl>
@@ -182,9 +184,9 @@ export function AddCreditDialog({
             />
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isLoading}
               >
@@ -197,7 +199,7 @@ export function AddCreditDialog({
                     Adding...
                   </>
                 ) : (
-                  "Add Credits"
+                  'Add Credits'
                 )}
               </Button>
             </DialogFooter>
@@ -206,4 +208,4 @@ export function AddCreditDialog({
       </DialogContent>
     </Dialog>
   )
-} 
+}

@@ -1,13 +1,21 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Wrench, MapPin, Phone, Mail, Globe, Plus, ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-import { LoadingState } from "@/components/ui/loading-state"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Wrench,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  Plus,
+  ArrowLeft,
+} from 'lucide-react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { LoadingState } from '@/components/ui/loading-state'
 
 interface Servicing {
   id: string
@@ -31,7 +39,9 @@ export default function ServicingPage() {
     async function fetchServicingProviders() {
       try {
         // Check if user is authenticated
-        const { data: { session } } = await supabase.auth.getSession()
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
         setIsAuthenticated(!!session)
 
         const { data, error } = await supabase
@@ -65,18 +75,19 @@ export default function ServicingPage() {
         {/* Back Button */}
         <Button
           variant="ghost"
-          onClick={() => router.push("/establishments")}
+          onClick={() => router.push('/establishments')}
           className="flex items-center text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Establishments
         </Button>
-        
+
         {/* Hero Section */}
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4">Firearms Servicing</h1>
           <p className="text-muted-foreground">
-            Find firearms repair, servicing and maintenance providers across Malta
+            Find firearms repair, servicing and maintenance providers across
+            Malta
           </p>
         </div>
 
@@ -96,12 +107,17 @@ export default function ServicingPage() {
         {servicingProviders.length === 0 ? (
           <Card className="p-6 text-center">
             <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No servicing providers listed yet.</p>
+            <p className="text-muted-foreground">
+              No servicing providers listed yet.
+            </p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {servicingProviders.map((provider) => (
-              <Link key={provider.id} href={`/establishments/servicing/${provider.slug || provider.id}`}>
+            {servicingProviders.map(provider => (
+              <Link
+                key={provider.id}
+                href={`/establishments/servicing/${provider.slug || provider.id}`}
+              >
                 <Card className="h-full hover:shadow-lg transition-shadow">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-4">
@@ -117,7 +133,9 @@ export default function ServicingPage() {
                         </div>
                       )}
                       <div>
-                        <h3 className="font-semibold text-lg">{provider.business_name}</h3>
+                        <h3 className="font-semibold text-lg">
+                          {provider.business_name}
+                        </h3>
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <MapPin className="h-4 w-4" />
                           <span>{provider.location}</span>
@@ -160,4 +178,4 @@ export default function ServicingPage() {
       </div>
     </div>
   )
-} 
+}

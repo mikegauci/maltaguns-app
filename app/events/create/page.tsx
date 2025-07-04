@@ -1,36 +1,60 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { EventCreditDialog } from "@/components/event-credit-dialog"
-import { ArrowLeft, Loader2 } from "lucide-react"
-import { Database } from "@/lib/database.types"
+import { EventCreditDialog } from '@/components/event-credit-dialog'
+import { ArrowLeft, Loader2 } from 'lucide-react'
+import { Database } from '@/lib/database.types'
 
 // Force dynamic rendering to avoid hydration issues
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic'
 
 const eventTypes = [
-  "Course or Training",
-  "Local Shooting Event",
-  "International Trip",
-  "Exhibition or Reenactment",
-  "Airsoft Game",
-  "Other"
+  'Course or Training',
+  'Local Shooting Event',
+  'International Trip',
+  'Exhibition or Reenactment',
+  'Airsoft Game',
+  'Other',
 ] as const
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]
 
 // Helper function to check if a date is in the past
 function isPastDate(date: string) {
@@ -62,19 +86,19 @@ function getMaxDateString() {
 }
 
 type EventFormType = {
-  title: string;
-  description: string;
-  organizer: string;
-  type: typeof eventTypes[number];
-  startDate: string;
-  endDate?: string;
-  startTime?: string;
-  endTime?: string;
-  location: string;
-  phone?: string;
-  email?: string;
-  price?: number;
-  posterUrl?: string;
+  title: string
+  description: string
+  organizer: string
+  type: (typeof eventTypes)[number]
+  startDate: string
+  endDate?: string
+  startTime?: string
+  endTime?: string
+  location: string
+  phone?: string
+  email?: string
+  price?: number
+  posterUrl?: string
 }
 
 // Add slugify function
@@ -86,63 +110,75 @@ function slugify(text: string) {
     .replace(/--+/g, '-')
 }
 
-const eventSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
-  organizer: z.string().min(2, "Organizer name is required"),
-  type: z.enum(eventTypes),
-  startDate: z.string()
-    .min(1, "Start date is required")
-    .refine((date) => !isPastDate(date), {
-      message: "Start date cannot be in the past"
-    })
-    .refine((date) => !isTooFarInFuture(date), {
-      message: "Start date cannot be more than 5 years in the future"
-    }),
-  endDate: z.string()
-    .optional()
-    .refine((date) => {
-      if (!date) return true // Allow empty/undefined
-      return !isPastDate(date)
-    }, {
-      message: "End date cannot be in the past"
-    })
-    .refine((date) => {
-      if (!date) return true // Allow empty/undefined
-      return !isTooFarInFuture(date)
-    }, {
-      message: "End date cannot be more than 5 years in the future"
-    }),
-  startTime: z.string().optional(),
-  endTime: z.string().optional(),
-  location: z.string().min(3, "Location is required"),
-  phone: z.string().optional(),
-  email: z.string().email("Invalid email address").optional(),
-  price: z.number().min(0, "Price must be a positive number").optional(),
-  posterUrl: z.string().optional()
-}).superRefine((data, ctx) => {
-  // Validate end date is after start date
-  if (data.endDate && data.startDate) {
-    if (new Date(data.endDate) < new Date(data.startDate)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "End date must be after or equal to start date",
-        path: ["endDate"]
+const eventSchema = z
+  .object({
+    title: z.string().min(3, 'Title must be at least 3 characters'),
+    description: z
+      .string()
+      .min(10, 'Description must be at least 10 characters'),
+    organizer: z.string().min(2, 'Organizer name is required'),
+    type: z.enum(eventTypes),
+    startDate: z
+      .string()
+      .min(1, 'Start date is required')
+      .refine(date => !isPastDate(date), {
+        message: 'Start date cannot be in the past',
       })
+      .refine(date => !isTooFarInFuture(date), {
+        message: 'Start date cannot be more than 5 years in the future',
+      }),
+    endDate: z
+      .string()
+      .optional()
+      .refine(
+        date => {
+          if (!date) return true // Allow empty/undefined
+          return !isPastDate(date)
+        },
+        {
+          message: 'End date cannot be in the past',
+        }
+      )
+      .refine(
+        date => {
+          if (!date) return true // Allow empty/undefined
+          return !isTooFarInFuture(date)
+        },
+        {
+          message: 'End date cannot be more than 5 years in the future',
+        }
+      ),
+    startTime: z.string().optional(),
+    endTime: z.string().optional(),
+    location: z.string().min(3, 'Location is required'),
+    phone: z.string().optional(),
+    email: z.string().email('Invalid email address').optional(),
+    price: z.number().min(0, 'Price must be a positive number').optional(),
+    posterUrl: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    // Validate end date is after start date
+    if (data.endDate && data.startDate) {
+      if (new Date(data.endDate) < new Date(data.startDate)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'End date must be after or equal to start date',
+          path: ['endDate'],
+        })
+      }
     }
-  }
 
-  // Validate end time is after start time on the same day
-  if (data.endTime && data.startTime && data.startDate === data.endDate) {
-    if (data.endTime < data.startTime) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "End time must be after start time when on the same day",
-        path: ["endTime"]
-      })
+    // Validate end time is after start time on the same day
+    if (data.endTime && data.startTime && data.startDate === data.endDate) {
+      if (data.endTime < data.startTime) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'End time must be after start time when on the same day',
+          path: ['endTime'],
+        })
+      }
     }
-  }
-})
+  })
 
 type EventForm = z.infer<typeof eventSchema>
 
@@ -164,8 +200,11 @@ export default function CreateEventPage() {
 
     async function initializeSession() {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         if (sessionError) {
           console.error('Session error:', sessionError)
           router.push('/login')
@@ -185,8 +224,11 @@ export default function CreateEventPage() {
         const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
 
         if (isNearExpiry) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession()
+
           if (refreshError || !refreshedSession) {
             console.error('Session refresh failed:', refreshError)
             router.push('/login')
@@ -199,9 +241,9 @@ export default function CreateEventPage() {
 
           // Check user credits
           const { data: creditsData, error: creditsError } = await supabase
-            .from("credits_events")
-            .select("amount")
-            .eq("user_id", session.user.id)
+            .from('credits_events')
+            .select('amount')
+            .eq('user_id', session.user.id)
             .single()
 
           if (creditsError && creditsError.code !== 'PGRST116') {
@@ -211,7 +253,7 @@ export default function CreateEventPage() {
           const currentCredits = creditsData?.amount || 0
           setCredits(currentCredits)
           setHasCredits(currentCredits > 0)
-          
+
           // Show credit dialog if credits are 0
           if (currentCredits === 0) {
             setShowCreditDialog(true)
@@ -222,13 +264,14 @@ export default function CreateEventPage() {
             const url = new URL(window.location.href)
             const success = url.searchParams.get('success')
             const sessionId = url.searchParams.get('session_id')
-            
+
             if (success === 'true' && sessionId) {
               toast({
-                title: "Payment successful!",
-                description: "Your event credit has been added to your account.",
+                title: 'Payment successful!',
+                description:
+                  'Your event credit has been added to your account.',
               })
-              
+
               url.searchParams.delete('success')
               url.searchParams.delete('session_id')
               window.history.replaceState({}, '', url.toString())
@@ -255,82 +298,88 @@ export default function CreateEventPage() {
   const form = useForm<EventForm>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      organizer: "",
-      type: "Other",
-      startDate: "",
-      location: "",
-    }
+      title: '',
+      description: '',
+      organizer: '',
+      type: 'Other',
+      startDate: '',
+      location: '',
+    },
   })
 
-  async function handlePosterUpload(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePosterUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
     try {
       const file = event.target.files?.[0]
       if (!file) return
 
       if (file.size > MAX_FILE_SIZE) {
         toast({
-          variant: "destructive",
-          title: "File too large",
-          description: "Image must be less than 5MB"
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Image must be less than 5MB',
         })
         return
       }
 
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         toast({
-          variant: "destructive",
-          title: "Invalid file type",
-          description: "Please upload a valid image file (JPEG, PNG, or WebP)"
+          variant: 'destructive',
+          title: 'Invalid file type',
+          description: 'Please upload a valid image file (JPEG, PNG, or WebP)',
         })
         return
       }
 
       setUploadingPoster(true)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
-      }
-      
-      if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
 
-      const fileExt = file.name.split(".").pop()
+      if (!session?.user.id) {
+        throw new Error('Not authenticated')
+      }
+
+      const fileExt = file.name.split('.').pop()
       const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
       const filePath = `events/${fileName}`
 
       const { error: uploadError } = await supabase.storage
-        .from("events")
+        .from('events')
         .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false
+          cacheControl: '3600',
+          upsert: false,
         })
 
       if (uploadError) {
         throw uploadError
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from("events")
-        .getPublicUrl(filePath)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('events').getPublicUrl(filePath)
 
       setPosterUrl(publicUrl)
-      form.setValue("posterUrl", publicUrl)
+      form.setValue('posterUrl', publicUrl)
 
       toast({
-        title: "Poster uploaded",
-        description: "Your event poster has been uploaded successfully"
+        title: 'Poster uploaded',
+        description: 'Your event poster has been uploaded successfully',
       })
     } catch (error) {
-      console.error("Poster upload error:", error)
+      console.error('Poster upload error:', error)
       toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload poster"
+        variant: 'destructive',
+        title: 'Upload failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload poster',
       })
     } finally {
       setUploadingPoster(false)
@@ -340,15 +389,18 @@ export default function CreateEventPage() {
   async function onSubmit(data: EventForm) {
     try {
       setIsSubmitting(true)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       // Generate slug from title
@@ -356,7 +408,7 @@ export default function CreateEventPage() {
 
       // Create the event with correct column names
       const { data: event, error: eventError } = await supabase
-        .from("events")
+        .from('events')
         .insert({
           title: data.title,
           description: data.description,
@@ -372,7 +424,7 @@ export default function CreateEventPage() {
           price: data.price || null,
           poster_url: posterUrl || null,
           created_by: session.user.id,
-          slug: slug
+          slug: slug,
         })
         .select()
         .single()
@@ -381,48 +433,49 @@ export default function CreateEventPage() {
 
       // Deduct one credit
       const { error: creditError } = await supabase
-        .from("credits_events")
-        .update({ 
+        .from('credits_events')
+        .update({
           amount: credits - 1,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
-        .eq("user_id", session.user.id)
+        .eq('user_id', session.user.id)
 
       if (creditError) {
-        console.error("Error updating credits:", creditError)
+        console.error('Error updating credits:', creditError)
         throw creditError
       }
 
       // Record the transaction
       const { error: transactionError } = await supabase
-        .from("event_credit_transactions")
+        .from('event_credit_transactions')
         .insert({
           user_id: session.user.id,
           amount: -1,
-          type: "event_creation"
+          type: 'event_creation',
         })
 
       if (transactionError) {
-        console.error("Error recording transaction:", transactionError)
+        console.error('Error recording transaction:', transactionError)
       }
 
       setCredits(credits - 1)
       setHasCredits(credits - 1 > 0)
 
       toast({
-        title: "Event created",
-        description: "Your event has been created successfully"
+        title: 'Event created',
+        description: 'Your event has been created successfully',
       })
 
       // Keep isSubmitting true during redirection
       // Redirect to the slug instead of ID
       router.push(`/events/${slug}`)
     } catch (error) {
-      console.error("Submit error:", error)
+      console.error('Submit error:', error)
       toast({
-        variant: "destructive",
-        title: "Failed to create event",
-        description: error instanceof Error ? error.message : "Something went wrong"
+        variant: 'destructive',
+        title: 'Failed to create event',
+        description:
+          error instanceof Error ? error.message : 'Something went wrong',
       })
       // Only reset isSubmitting on error
       setIsSubmitting(false)
@@ -462,7 +515,7 @@ export default function CreateEventPage() {
         <div className="mb-6 flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => router.push("/events")}
+            onClick={() => router.push('/events')}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -470,7 +523,9 @@ export default function CreateEventPage() {
           </Button>
           <div className="flex items-center gap-2">
             <div className="bg-muted px-4 py-2 rounded-md">
-              <span className="text-sm text-muted-foreground">Event Credits remaining:</span>
+              <span className="text-sm text-muted-foreground">
+                Event Credits remaining:
+              </span>
               <span className="font-semibold ml-1">{credits}</span>
             </div>
           </div>
@@ -485,7 +540,10 @@ export default function CreateEventPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="title"
@@ -507,7 +565,7 @@ export default function CreateEventPage() {
                     <FormItem>
                       <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Textarea 
+                        <Textarea
                           placeholder="Provide event details"
                           className="min-h-[100px]"
                           {...field}
@@ -538,14 +596,17 @@ export default function CreateEventPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Event Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select event type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {eventTypes.map((type) => (
+                          {eventTypes.map(type => (
                             <SelectItem key={type} value={type}>
                               {type}
                             </SelectItem>
@@ -565,11 +626,11 @@ export default function CreateEventPage() {
                       <FormItem>
                         <FormLabel>Start Date</FormLabel>
                         <FormControl>
-                          <Input 
-                            type="date" 
+                          <Input
+                            type="date"
                             min={getTodayString()}
                             max={getMaxDateString()}
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -584,11 +645,11 @@ export default function CreateEventPage() {
                       <FormItem>
                         <FormLabel>End Date (Optional)</FormLabel>
                         <FormControl>
-                          <Input 
+                          <Input
                             type="date"
-                            min={form.watch("startDate") || getTodayString()}
+                            min={form.watch('startDate') || getTodayString()}
                             max={getMaxDateString()}
-                            {...field} 
+                            {...field}
                           />
                         </FormControl>
                         <FormMessage />
@@ -647,7 +708,11 @@ export default function CreateEventPage() {
                       <FormItem>
                         <FormLabel>Phone Number (Optional)</FormLabel>
                         <FormControl>
-                          <Input type="tel" placeholder="+356 1234 5678" {...field} />
+                          <Input
+                            type="tel"
+                            placeholder="+356 1234 5678"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -661,7 +726,11 @@ export default function CreateEventPage() {
                       <FormItem>
                         <FormLabel>Email Address (Optional)</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="info@maltaguns.com" {...field} />
+                          <Input
+                            type="email"
+                            placeholder="info@maltaguns.com"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -676,12 +745,18 @@ export default function CreateEventPage() {
                     <FormItem>
                       <FormLabel>Price (€)</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0" 
+                        <Input
+                          type="number"
+                          min="0"
                           step="0.01"
                           placeholder="0.00"
-                          onChange={(e) => onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                          onChange={e =>
+                            onChange(
+                              e.target.value
+                                ? parseFloat(e.target.value)
+                                : undefined
+                            )
+                          }
                           {...field}
                         />
                       </FormControl>
@@ -711,7 +786,9 @@ export default function CreateEventPage() {
                               htmlFor="poster-upload"
                               className="cursor-pointer bg-secondary hover:bg-secondary/80 text-secondary-foreground px-4 py-2 rounded-md text-sm font-medium"
                             >
-                              {uploadingPoster ? "Uploading..." : "Upload Poster"}
+                              {uploadingPoster
+                                ? 'Uploading...'
+                                : 'Upload Poster'}
                             </label>
                             {field.value && (
                               <span className="text-sm text-muted-foreground">
@@ -735,20 +812,20 @@ export default function CreateEventPage() {
                   )}
                 />
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white" 
+                <Button
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                   disabled={isSubmitting || uploadingPoster || !hasCredits}
                 >
-                  {(isSubmitting || uploadingPoster) ? (
+                  {isSubmitting || uploadingPoster ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {uploadingPoster ? "Uploading Poster..." : "Creating..."}
+                      {uploadingPoster ? 'Uploading Poster...' : 'Creating...'}
                     </>
                   ) : !hasCredits ? (
-                    "Insufficient Credits"
+                    'Insufficient Credits'
                   ) : (
-                    "Create Event"
+                    'Create Event'
                   )}
                 </Button>
               </form>

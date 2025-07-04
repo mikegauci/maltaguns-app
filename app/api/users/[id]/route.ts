@@ -1,7 +1,7 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { createClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
-import { NextResponse } from "next/server"
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 export async function PATCH(
   request: Request,
@@ -14,11 +14,14 @@ export async function PATCH(
     const { notes } = await request.json()
 
     // First check if the current user is an admin
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
     if (sessionError || !session) {
       return NextResponse.json(
-        { error: "Unauthorized - No valid session" },
+        { error: 'Unauthorized - No valid session' },
         { status: 401 }
       )
     }
@@ -32,14 +35,14 @@ export async function PATCH(
 
     if (profileError || !currentUserProfile) {
       return NextResponse.json(
-        { error: "Failed to verify admin status" },
+        { error: 'Failed to verify admin status' },
         { status: 401 }
       )
     }
 
     if (!currentUserProfile.is_admin) {
       return NextResponse.json(
-        { error: "Unauthorized - Admin privileges required" },
+        { error: 'Unauthorized - Admin privileges required' },
         { status: 403 }
       )
     }
@@ -56,7 +59,7 @@ export async function PATCH(
       .select('id')
       .eq('id', params.id)
       .single()
-    
+
     if (userProfileError) {
       console.error('Error fetching user profile:', userProfileError)
       return NextResponse.json(
@@ -67,7 +70,7 @@ export async function PATCH(
 
     if (!userProfile) {
       return NextResponse.json(
-        { error: "User profile not found" },
+        { error: 'User profile not found' },
         { status: 404 }
       )
     }
@@ -86,14 +89,19 @@ export async function PATCH(
       )
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: "Notes updated successfully" 
+      message: 'Notes updated successfully',
     })
   } catch (error) {
     console.error('Error in notes update operation:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'An unexpected error occurred' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+      },
       { status: 500 }
     )
   }
@@ -107,11 +115,14 @@ export async function DELETE(
 
   try {
     // First check if the current user is an admin
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
+    const {
+      data: { session },
+      error: sessionError,
+    } = await supabase.auth.getSession()
+
     if (sessionError || !session) {
       return NextResponse.json(
-        { error: "Unauthorized - No valid session" },
+        { error: 'Unauthorized - No valid session' },
         { status: 401 }
       )
     }
@@ -125,14 +136,14 @@ export async function DELETE(
 
     if (profileError || !currentUserProfile) {
       return NextResponse.json(
-        { error: "Failed to verify admin status" },
+        { error: 'Failed to verify admin status' },
         { status: 401 }
       )
     }
 
     if (!currentUserProfile.is_admin) {
       return NextResponse.json(
-        { error: "Unauthorized - Admin privileges required" },
+        { error: 'Unauthorized - Admin privileges required' },
         { status: 403 }
       )
     }
@@ -143,7 +154,7 @@ export async function DELETE(
       .select('id')
       .eq('id', params.id)
       .single()
-    
+
     if (userProfileError) {
       console.error('Error fetching user profile:', userProfileError)
       return NextResponse.json(
@@ -154,7 +165,7 @@ export async function DELETE(
 
     if (!userProfile) {
       return NextResponse.json(
-        { error: "User profile not found" },
+        { error: 'User profile not found' },
         { status: 404 }
       )
     }
@@ -167,7 +178,7 @@ export async function DELETE(
 
     if (deleteError) {
       console.error('Error deleting user:', deleteError)
-      
+
       // Handle specific error cases
       if (deleteError.message.includes('User not found')) {
         return NextResponse.json(
@@ -175,7 +186,7 @@ export async function DELETE(
           { status: 404 }
         )
       }
-      
+
       return NextResponse.json(
         { error: `Failed to delete user: ${deleteError.message}` },
         { status: 400 }
@@ -186,8 +197,13 @@ export async function DELETE(
   } catch (error) {
     console.error('Error in delete operation:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'An unexpected error occurred' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+      },
       { status: 500 }
     )
   }
-} 
+}

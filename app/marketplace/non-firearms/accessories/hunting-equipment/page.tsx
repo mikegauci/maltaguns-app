@@ -1,8 +1,8 @@
-import CategoryListings from "@/components/CategoryListings"
+import CategoryListings from '@/components/CategoryListings'
 
 export default function HuntingEquipmentPage() {
   return (
-    <CategoryListings 
+    <CategoryListings
       type="non_firearms"
       category="accessories"
       subcategory="hunting_equipment"

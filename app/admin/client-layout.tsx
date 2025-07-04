@@ -1,6 +1,6 @@
-"use client"
+'use client'
 
-import { ReactNode, useEffect, useState } from "react"
+import { ReactNode, useEffect, useState } from 'react'
 
 interface ClientAdminLayoutProps {
   children: ReactNode
@@ -19,9 +19,7 @@ export function ClientAdminLayout({ children }: ClientAdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-6">
-        {children}
-      </div>
+      <div className="container mx-auto py-6">{children}</div>
     </div>
   )
-} 
+}

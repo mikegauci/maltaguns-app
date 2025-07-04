@@ -1,27 +1,28 @@
-import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Database } from '@/lib/database.types';
+import { NextResponse } from 'next/server'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
+import { Database } from '@/lib/database.types'
 
 export async function GET() {
   try {
     // Create a Supabase client with the cookies for auth
-    const supabase = createRouteHandlerClient<Database>({ cookies });
-    
+    const supabase = createRouteHandlerClient<Database>({ cookies })
+
     // Get the current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
     // Fetch wishlist items with listing details
     const { data: wishlistItems, error: wishlistError } = await supabase
       .from('wishlist')
-      .select(`
+      .select(
+        `
         id,
         created_at,
         listing_id,
@@ -43,31 +44,32 @@ export async function GET() {
             is_seller
           )
         )
-      `)
+      `
+      )
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
 
     if (wishlistError) {
-      console.error('Error fetching wishlist:', wishlistError);
+      console.error('Error fetching wishlist:', wishlistError)
       return NextResponse.json(
         { error: 'Failed to fetch wishlist' },
         { status: 500 }
-      );
+      )
     }
 
     // Filter out items where listing might have been deleted
-    const validWishlistItems = wishlistItems?.filter(item => item.listings) || [];
+    const validWishlistItems =
+      wishlistItems?.filter(item => item.listings) || []
 
     return NextResponse.json({
       success: true,
-      wishlistItems: validWishlistItems
-    });
-
+      wishlistItems: validWishlistItems,
+    })
   } catch (error) {
-    console.error('Error in wishlist GET API:', error);
+    console.error('Error in wishlist GET API:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
-    );
+    )
   }
-} 
+}

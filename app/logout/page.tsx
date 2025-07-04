@@ -25,4 +25,4 @@ export default function LogoutPage() {
   }, [supabase])
 
   return <div>Logging out...</div>
-} 
+}

@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 const validCategories = ['news', 'guides']
 
 export default async function CategoryArchive({
-  params
+  params,
 }: {
   params: { category: string }
 }) {
@@ -25,14 +25,16 @@ export default async function CategoryArchive({
 
   const { data: posts, error } = await supabase
     .from('blog_posts')
-    .select(`
+    .select(
+      `
       *,
       author:profiles!blog_posts_author_id_fkey (*),
       stores:store_id (*),
       clubs:club_id (*),
       ranges:range_id (*),
       servicing:servicing_id (*)
-    `)
+    `
+    )
     .eq('category', category)
     .eq('published', true)
     .order('created_at', { ascending: false })
@@ -51,25 +53,23 @@ export default async function CategoryArchive({
             <Link href="/blog">
               <Button variant="outline">All Posts</Button>
             </Link>
-            {validCategories.map((cat) => (
+            {validCategories.map(cat => (
               <Link key={cat} href={`/blog/${cat}`}>
-                <Button 
-                  variant={cat === category ? "default" : "outline"}
-                >
+                <Button variant={cat === category ? 'default' : 'outline'}>
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
                 </Button>
               </Link>
             ))}
           </div>
         </div>
-        
+
         {!posts || posts.length === 0 ? (
           <p className="text-muted-foreground text-lg">
             No {category} articles found.
           </p>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map((post) => (
+            {posts.map(post => (
               <BlogPostCard key={post.id} post={post} />
             ))}
           </div>
@@ -77,4 +77,4 @@ export default async function CategoryArchive({
       </div>
     </div>
   )
-} 
+}

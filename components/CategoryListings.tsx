@@ -1,13 +1,20 @@
-"use client"
+'use client'
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Sun as Gun, Package, Star, ArrowLeft, Plus } from "lucide-react"
-import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-import Image from "next/image"
+import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Sun as Gun, Package, Star, ArrowLeft, Plus } from 'lucide-react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import Image from 'next/image'
 
 interface Listing {
   id: string
@@ -44,33 +51,33 @@ function slugify(text: string) {
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-MT', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'EUR',
   }).format(price)
 }
 
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
   const firearmsCategories: Record<string, string> = {
-    airguns: "Airguns",
-    ammunition: "Ammunition",
-    revolvers: "Revolvers",
-    pistols: "Pistols",
-    rifles: "Rifles",
-    carbines: "Carbines",
-    shotguns: "Shotguns",
-    black_powder: "Black powder",
-    replica_deactivated: "Replica or Deactivated",
-    crossbow: "Crossbow",
-    schedule_1: "Schedule 1 (automatic)"
+    airguns: 'Airguns',
+    ammunition: 'Ammunition',
+    revolvers: 'Revolvers',
+    pistols: 'Pistols',
+    rifles: 'Rifles',
+    carbines: 'Carbines',
+    shotguns: 'Shotguns',
+    black_powder: 'Black powder',
+    replica_deactivated: 'Replica or Deactivated',
+    crossbow: 'Crossbow',
+    schedule_1: 'Schedule 1 (automatic)',
   }
 
   const nonFirearmsCategories: Record<string, string> = {
-    airsoft: "Airsoft",
-    reloading: "Reloading",
-    militaria: "Militaria",
-    accessories: "Accessories"
+    airsoft: 'Airsoft',
+    reloading: 'Reloading',
+    militaria: 'Militaria',
+    accessories: 'Accessories',
   }
 
-  return type === 'firearms' 
+  return type === 'firearms'
     ? firearmsCategories[category] || category
     : nonFirearmsCategories[category] || category
 }
@@ -78,54 +85,64 @@ function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
 function getSubcategoryLabel(category: string, subcategory: string): string {
   const subcategories = {
     airsoft: {
-      airsoft_guns: "Airsoft Guns",
-      bbs_co2: "BBs & CO2",
-      batteries_electronics: "Batteries & Electronics",
-      clothing: "Clothing",
-      other: "Other",
+      airsoft_guns: 'Airsoft Guns',
+      bbs_co2: 'BBs & CO2',
+      batteries_electronics: 'Batteries & Electronics',
+      clothing: 'Clothing',
+      other: 'Other',
     },
     reloading: {
-      presses: "Presses",
-      dies: "Dies",
-      tools: "Tools",
-      tumblers_media: "Tumblers & Media",
-      primers_heads: "Primers & Heads",
-      other: "Other",
+      presses: 'Presses',
+      dies: 'Dies',
+      tools: 'Tools',
+      tumblers_media: 'Tumblers & Media',
+      primers_heads: 'Primers & Heads',
+      other: 'Other',
     },
     militaria: {
-      uniforms: "Uniforms",
-      helmets: "Helmets",
-      swords_bayonets_knives: "Swords, Bayonets & Knives",
-      medals_badges: "Medals & Badges",
-      other: "Other",
+      uniforms: 'Uniforms',
+      helmets: 'Helmets',
+      swords_bayonets_knives: 'Swords, Bayonets & Knives',
+      medals_badges: 'Medals & Badges',
+      other: 'Other',
     },
     accessories: {
-      cleaning_maintenance: "Cleaning & Maintenance",
-      bipods_stands: "Bipods & Stands",
-      slings_holsters: "Slings & Holsters",
-      scopes_sights_optics: "Scopes, Sights & Optics",
-      magazines: "Magazines",
-      books_manuals: "Books & Manuals",
-      hunting_equipment: "Hunting Equipment",
-      safes_cabinets: "Safes & Cabinets",
-      ammo_boxes: "Ammo Boxes",
-      gun_cases: "Gun Cases",
-      safety_equipment: "Safety Equipment",
-      grips: "Grips",
-      other: "Other",
+      cleaning_maintenance: 'Cleaning & Maintenance',
+      bipods_stands: 'Bipods & Stands',
+      slings_holsters: 'Slings & Holsters',
+      scopes_sights_optics: 'Scopes, Sights & Optics',
+      magazines: 'Magazines',
+      books_manuals: 'Books & Manuals',
+      hunting_equipment: 'Hunting Equipment',
+      safes_cabinets: 'Safes & Cabinets',
+      ammo_boxes: 'Ammo Boxes',
+      gun_cases: 'Gun Cases',
+      safety_equipment: 'Safety Equipment',
+      grips: 'Grips',
+      other: 'Other',
     },
-  } as const;
+  } as const
 
   if (!(category in subcategories)) {
-    return subcategory; // Return original if category doesn't exist
+    return subcategory // Return original if category doesn't exist
   }
 
-  const categorySubcategories = subcategories[category as keyof typeof subcategories];
+  const categorySubcategories =
+    subcategories[category as keyof typeof subcategories]
 
-  return categorySubcategories[subcategory as keyof typeof categorySubcategories] || subcategory;
+  return (
+    categorySubcategories[subcategory as keyof typeof categorySubcategories] ||
+    subcategory
+  )
 }
 
-export default function CategoryListings({ type, category, subcategory, title, description }: CategoryListingsProps) {
+export default function CategoryListings({
+  type,
+  category,
+  subcategory,
+  title,
+  description,
+}: CategoryListingsProps) {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
   const [regularListings, setRegularListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -135,74 +152,80 @@ export default function CategoryListings({ type, category, subcategory, title, d
       try {
         // Get current date
         const now = new Date()
-        
+
         // Calculate date 7 days ago
         const sevenDaysAgo = new Date()
         sevenDaysAgo.setDate(now.getDate() - 7)
-        
+
         // Format for Supabase query
         const sevenDaysAgoStr = sevenDaysAgo.toISOString()
-        
+
         // Start building the query
         let query = supabase
           .from('listings')
           .select('*')
-          .or(`status.eq.active,and(status.eq.sold,updated_at.gt.${sevenDaysAgoStr})`)
-        
+          .or(
+            `status.eq.active,and(status.eq.sold,updated_at.gt.${sevenDaysAgoStr})`
+          )
+
         // Add type filter if provided
         if (type) {
           query = query.eq('type', type)
         }
-        
+
         // Add category filter if provided
         if (category) {
           query = query.eq('category', category)
         }
-        
+
         // Add subcategory filter if provided
         if (subcategory) {
           query = query.eq('subcategory', subcategory)
         }
-        
+
         // Order by created_at
         query = query.order('created_at', { ascending: false })
-        
+
         // Execute the query
         const { data, error } = await query
-        
+
         if (error) throw error
-        
+
         // Filter out inactive listings
-        const filteredListings = data ? data.filter(listing => listing.status !== 'inactive') : []
-        
+        const filteredListings = data
+          ? data.filter(listing => listing.status !== 'inactive')
+          : []
+
         // Fetch featured listings
         const { data: featuredData, error: featuredError } = await supabase
           .from('featured_listings')
           .select('listing_id')
           .gt('end_date', new Date().toISOString())
-        
+
         if (featuredError) throw featuredError
-        
+
         // Create a set of featured listing IDs for quick lookup
-        const featuredIds = new Set(featuredData?.map(item => item.listing_id) || [])
-        
+        const featuredIds = new Set(
+          featuredData?.map(item => item.listing_id) || []
+        )
+
         // Separate featured and regular listings
         const featured: Listing[] = []
         const regular: Listing[] = []
-        
+
         filteredListings.forEach(listing => {
           // Add to featured if it's in the featured IDs set
           if (featuredIds.has(listing.id)) {
             featured.push({
               ...listing,
-              is_featured: true
+              is_featured: true,
             })
-          } 
-          
+          }
+
           // Always add to regular listings - this ensures a listing appears in both sections if featured
           regular.push(listing)
         })
-        
+
         setFeaturedListings(featured)
         setRegularListings(regular)
       } catch (error) {
@@ -217,11 +240,13 @@ export default function CategoryListings({ type, category, subcategory, title, d
 
   // Function to render a listing card
   const renderListingCard = (listing: Listing) => (
-    <Link 
-      key={listing.id} 
+    <Link
+      key={listing.id}
       href={`/marketplace/listing/${slugify(listing.title)}`}
     >
-      <Card className={`overflow-hidden hover:shadow-lg transition-shadow ${listing.is_featured ? 'border-2 border-red-500' : ''}`}>
+      <Card
+        className={`overflow-hidden hover:shadow-lg transition-shadow ${listing.is_featured ? 'border-2 border-red-500' : ''}`}
+      >
         <div className="aspect-video relative overflow-hidden">
           <img
             src={listing.thumbnail}
@@ -229,7 +254,9 @@ export default function CategoryListings({ type, category, subcategory, title, d
             className="object-cover w-full h-full"
           />
           {listing.status === 'sold' && (
-            <Badge variant="destructive" className="absolute top-2 right-2">Sold</Badge>
+            <Badge variant="destructive" className="absolute top-2 right-2">
+              Sold
+            </Badge>
           )}
           {listing.is_featured && (
             <Badge className="absolute top-2 left-2 bg-red-500 text-white hover:bg-red-600">
@@ -239,7 +266,7 @@ export default function CategoryListings({ type, category, subcategory, title, d
         </div>
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-3">
-            {listing.type === "firearms" ? (
+            {listing.type === 'firearms' ? (
               <div className="inline-flex">
                 <Image
                   src="/images/pistol-gun-icon.svg"
@@ -265,13 +292,9 @@ export default function CategoryListings({ type, category, subcategory, title, d
             {listing.description}
           </p>
           <div className="flex items-center justify-between">
-            <p className="text-lg font-bold">
-              {formatPrice(listing.price)}
-            </p>
+            <p className="text-lg font-bold">{formatPrice(listing.price)}</p>
             {listing.type === 'firearms' && listing.calibre && (
-              <Badge variant="secondary">
-                {listing.calibre}
-              </Badge>
+              <Badge variant="secondary">{listing.calibre}</Badge>
             )}
           </div>
         </CardContent>
@@ -294,7 +317,9 @@ export default function CategoryListings({ type, category, subcategory, title, d
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2">{title}</h1>
-              {description && <p className="text-muted-foreground">{description}</p>}
+              {description && (
+                <p className="text-muted-foreground">{description}</p>
+              )}
             </div>
             <Link href="/marketplace/create">
               <Button>
@@ -304,7 +329,7 @@ export default function CategoryListings({ type, category, subcategory, title, d
             </Link>
           </div>
         </div>
-        
+
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
@@ -348,11 +373,11 @@ export default function CategoryListings({ type, category, subcategory, title, d
                 </div>
               </div>
             )}
-            
+
             {regularListings.length > 0 && (
               <div>
                 <h2 className="text-2xl font-bold mb-4">
-                  {featuredListings.length > 0 ? "All Listings" : "Listings"}
+                  {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                   {regularListings.map(renderListingCard)}
@@ -364,4 +389,4 @@ export default function CategoryListings({ type, category, subcategory, title, d
       </div>
     </div>
   )
-} 
+}

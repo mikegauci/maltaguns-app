@@ -1,24 +1,49 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft, Bold, Italic, Heading2, Heading3, List, ListOrdered, Quote, Loader2, Image as ImageIcon, Link as LinkIcon } from "lucide-react"
+import {
+  ArrowLeft,
+  Bold,
+  Italic,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Quote,
+  Loader2,
+  Image as ImageIcon,
+  Link as LinkIcon,
+} from 'lucide-react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import slug from 'slug'
-import { Database } from "@/lib/database.types"
+import { Database } from '@/lib/database.types'
 import {
   Dialog,
   DialogContent,
@@ -26,10 +51,16 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose
-} from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+  DialogClose,
+} from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 // List of admin user IDs
 const ADMIN_IDS = [
@@ -38,13 +69,20 @@ const ADMIN_IDS = [
 ]
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"]
+const ACCEPTED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+]
 
 const blogPostSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  content: z.string().min(10, "Content must be at least 10 characters"),
+  title: z.string().min(3, 'Title must be at least 3 characters'),
+  content: z.string().min(10, 'Content must be at least 10 characters'),
   featuredImage: z.string().optional(),
-  category: z.enum(["news", "guides"], { required_error: "Please select a category" })
+  category: z.enum(['news', 'guides'], {
+    required_error: 'Please select a category',
+  }),
 })
 
 type BlogPostForm = z.infer<typeof blogPostSchema>
@@ -58,17 +96,17 @@ async function uploadContentImage(file: File, supabase: any, userId: string) {
   const { error: uploadError } = await supabase.storage
     .from('blog')
     .upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false
+      cacheControl: '3600',
+      upsert: false,
     })
 
   if (uploadError) {
     throw uploadError
   }
 
-  const { data: { publicUrl } } = supabase.storage
-    .from('blog')
-    .getPublicUrl(filePath)
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from('blog').getPublicUrl(filePath)
 
   return publicUrl
 }
@@ -79,11 +117,11 @@ export default function CreateBlogPost() {
   const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
-  const [featuredImageUrl, setFeaturedImageUrl] = useState("")
+  const [featuredImageUrl, setFeaturedImageUrl] = useState('')
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
-  const [linkUrl, setLinkUrl] = useState("")
+  const [linkUrl, setLinkUrl] = useState('')
   const [openInNewTab, setOpenInNewTab] = useState(true)
   const [storeId, setStoreId] = useState<string | null>(null)
   const [servicingId, setServicingId] = useState<string | null>(null)
@@ -91,9 +129,12 @@ export default function CreateBlogPost() {
   const [rangeId, setRangeId] = useState<string | null>(null)
   const [userStore, setUserStore] = useState<any>(null)
   const [imageAltDialogOpen, setImageAltDialogOpen] = useState(false)
-  const [imageAltText, setImageAltText] = useState("")
+  const [imageAltText, setImageAltText] = useState('')
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null)
-  const [selectedImage, setSelectedImage] = useState<{ src: string, alt: string } | null>(null)
+  const [selectedImage, setSelectedImage] = useState<{
+    src: string
+    alt: string
+  } | null>(null)
   const [isEditingExistingImage, setIsEditingExistingImage] = useState(false)
 
   useEffect(() => {
@@ -101,8 +142,11 @@ export default function CreateBlogPost() {
 
     async function checkUserStore() {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         if (sessionError || !session) {
           console.log('No session found')
           return
@@ -114,21 +158,21 @@ export default function CreateBlogPost() {
         const urlServicingId = searchParams.get('servicing_id')
         const urlClubId = searchParams.get('club_id')
         const urlRangeId = searchParams.get('range_id')
-        
+
         if (urlStoreId) {
-          console.log("Store ID from URL:", urlStoreId)
+          console.log('Store ID from URL:', urlStoreId)
           setStoreId(urlStoreId)
           return
         } else if (urlServicingId) {
-          console.log("Servicing ID from URL:", urlServicingId)
+          console.log('Servicing ID from URL:', urlServicingId)
           setServicingId(urlServicingId)
           return
         } else if (urlClubId) {
-          console.log("Club ID from URL:", urlClubId)
+          console.log('Club ID from URL:', urlClubId)
           setClubId(urlClubId)
           return
         } else if (urlRangeId) {
-          console.log("Range ID from URL:", urlRangeId)
+          console.log('Range ID from URL:', urlRangeId)
           setRangeId(urlRangeId)
           return
         }
@@ -140,9 +184,9 @@ export default function CreateBlogPost() {
           .eq('owner_id', session.user.id)
           .limit(1)
           .single()
-        
+
         if (!storesError && stores) {
-          console.log("User store found:", stores)
+          console.log('User store found:', stores)
           setStoreId(stores.id)
           setUserStore(stores)
           return
@@ -155,9 +199,9 @@ export default function CreateBlogPost() {
           .eq('owner_id', session.user.id)
           .limit(1)
           .single()
-        
+
         if (!servicingError && servicing) {
-          console.log("User servicing business found:", servicing)
+          console.log('User servicing business found:', servicing)
           setServicingId(servicing.id)
           setUserStore(servicing) // Reuse userStore for UI consistency
           return
@@ -170,9 +214,9 @@ export default function CreateBlogPost() {
           .eq('owner_id', session.user.id)
           .limit(1)
           .single()
-        
+
         if (!clubError && club) {
-          console.log("User club found:", club)
+          console.log('User club found:', club)
           setClubId(club.id)
           setUserStore(club) // Reuse userStore for UI consistency
           return
@@ -185,15 +229,15 @@ export default function CreateBlogPost() {
           .eq('owner_id', session.user.id)
           .limit(1)
           .single()
-        
+
         if (!rangeError && range) {
-          console.log("User range found:", range)
+          console.log('User range found:', range)
           setRangeId(range.id)
           setUserStore(range) // Reuse userStore for UI consistency
           return
         }
 
-        console.log("User does not own any establishment")
+        console.log('User does not own any establishment')
       } catch (error) {
         console.error('Error checking user establishments:', error)
       }
@@ -211,8 +255,11 @@ export default function CreateBlogPost() {
 
     async function initializeSession() {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
+
         if (sessionError) {
           console.error('Session error:', sessionError)
           router.push('/login')
@@ -232,8 +279,11 @@ export default function CreateBlogPost() {
         const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
 
         if (isNearExpiry) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-          
+          const {
+            data: { session: refreshedSession },
+            error: refreshError,
+          } = await supabase.auth.refreshSession()
+
           if (refreshError || !refreshedSession) {
             console.error('Session refresh failed:', refreshError)
             router.push('/login')
@@ -244,25 +294,25 @@ export default function CreateBlogPost() {
         // Check if user is an admin
         let isAdmin = ADMIN_IDS.includes(session.user.id)
         let hasEstablishment = false
-        
+
         if (!isAdmin) {
           // Check if user has any establishment
-          console.log("Checking if user has establishments...")
-          
+          console.log('Checking if user has establishments...')
+
           // Check if user has a store
           const { data: store, error: storeError } = await supabase
             .from('stores')
             .select('id')
             .eq('owner_id', session.user.id)
             .maybeSingle()
-            
+
           if (storeError) {
-            console.error("Error checking store ownership:", storeError)
+            console.error('Error checking store ownership:', storeError)
           } else if (store) {
-            console.log("User has a store")
+            console.log('User has a store')
             hasEstablishment = true
           }
-          
+
           // Check if user has a club
           if (!hasEstablishment) {
             const { data: club, error: clubError } = await supabase
@@ -270,15 +320,15 @@ export default function CreateBlogPost() {
               .select('id')
               .eq('owner_id', session.user.id)
               .maybeSingle()
-              
+
             if (clubError) {
-              console.error("Error checking club ownership:", clubError)
+              console.error('Error checking club ownership:', clubError)
             } else if (club) {
-              console.log("User has a club")
+              console.log('User has a club')
               hasEstablishment = true
             }
           }
-          
+
           // Check if user has a range
           if (!hasEstablishment) {
             const { data: range, error: rangeError } = await supabase
@@ -286,15 +336,15 @@ export default function CreateBlogPost() {
               .select('id')
               .eq('owner_id', session.user.id)
               .maybeSingle()
-              
+
             if (rangeError) {
-              console.error("Error checking range ownership:", rangeError)
+              console.error('Error checking range ownership:', rangeError)
             } else if (range) {
-              console.log("User has a range")
+              console.log('User has a range')
               hasEstablishment = true
             }
           }
-          
+
           // Check if user has a servicing business
           if (!hasEstablishment) {
             const { data: servicing, error: servicingError } = await supabase
@@ -302,28 +352,33 @@ export default function CreateBlogPost() {
               .select('id')
               .eq('owner_id', session.user.id)
               .maybeSingle()
-              
+
             if (servicingError) {
-              console.error("Error checking servicing ownership:", servicingError)
+              console.error(
+                'Error checking servicing ownership:',
+                servicingError
+              )
             } else if (servicing) {
-              console.log("User has a servicing business")
+              console.log('User has a servicing business')
               hasEstablishment = true
             }
           }
         }
 
         if (isAdmin || hasEstablishment) {
-          console.log(`User authorized: ${isAdmin ? 'Admin' : 'Establishment owner'}`)
+          console.log(
+            `User authorized: ${isAdmin ? 'Admin' : 'Establishment owner'}`
+          )
           if (mounted) {
             setIsAuthorized(true)
             setIsLoading(false)
           }
         } else {
-          console.log("User not authorized")
+          console.log('User not authorized')
           toast({
-            variant: "destructive",
-            title: "Unauthorized",
-            description: "You are not authorized to create blog posts.",
+            variant: 'destructive',
+            title: 'Unauthorized',
+            description: 'You are not authorized to create blog posts.',
           })
           router.push('/blog')
         }
@@ -350,21 +405,21 @@ export default function CreateBlogPost() {
     const servicingIdParam = searchParams.get('servicing_id')
     const clubIdParam = searchParams.get('club_id')
     const rangeIdParam = searchParams.get('range_id')
-    
+
     if (storeIdParam) {
-      console.log("Store ID from URL:", storeIdParam)
+      console.log('Store ID from URL:', storeIdParam)
       setStoreId(storeIdParam)
     } else if (servicingIdParam) {
-      console.log("Servicing ID from URL:", servicingIdParam)
+      console.log('Servicing ID from URL:', servicingIdParam)
       setServicingId(servicingIdParam)
     } else if (clubIdParam) {
-      console.log("Club ID from URL:", clubIdParam)
+      console.log('Club ID from URL:', clubIdParam)
       setClubId(clubIdParam)
     } else if (rangeIdParam) {
-      console.log("Range ID from URL:", rangeIdParam)
+      console.log('Range ID from URL:', rangeIdParam)
       setRangeId(rangeIdParam)
     } else {
-      console.log("No establishment ID found in URL")
+      console.log('No establishment ID found in URL')
     }
   }, [])
 
@@ -386,18 +441,19 @@ export default function CreateBlogPost() {
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-neutral dark:prose-invert focus:outline-none min-h-[200px]',
+        class:
+          'prose prose-neutral dark:prose-invert focus:outline-none min-h-[200px]',
       },
       handleClick: (view, pos, event) => {
         // Check if the clicked element is an image
         const domEvent = event as MouseEvent
         const element = domEvent.target as HTMLElement
-        
+
         if (element.tagName === 'IMG') {
           const img = element as HTMLImageElement
           setSelectedImage({
             src: img.src,
-            alt: img.alt || ''
+            alt: img.alt || '',
           })
           setImageAltText(img.alt || '')
           setIsEditingExistingImage(true)
@@ -420,11 +476,11 @@ export default function CreateBlogPost() {
   const form = useForm<BlogPostForm>({
     resolver: zodResolver(blogPostSchema),
     defaultValues: {
-      title: "",
-      content: "",
-      featuredImage: "",
+      title: '',
+      content: '',
+      featuredImage: '',
       category: undefined,
-    }
+    },
   })
 
   async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
@@ -434,32 +490,35 @@ export default function CreateBlogPost() {
 
       if (file.size > MAX_FILE_SIZE) {
         toast({
-          variant: "destructive",
-          title: "File too large",
-          description: "Featured image must be less than 5MB",
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Featured image must be less than 5MB',
         })
         return
       }
 
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         toast({
-          variant: "destructive",
-          title: "Invalid file type",
-          description: "Please upload a valid image file (JPEG, PNG, or WebP)",
+          variant: 'destructive',
+          title: 'Invalid file type',
+          description: 'Please upload a valid image file (JPEG, PNG, or WebP)',
         })
         return
       }
 
       setUploadingImage(true)
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError) {
-        console.error("Session error:", sessionError)
-        throw new Error("Authentication error: " + sessionError.message)
+        console.error('Session error:', sessionError)
+        throw new Error('Authentication error: ' + sessionError.message)
       }
-      
+
       if (!session?.user.id) {
-        throw new Error("Not authenticated")
+        throw new Error('Not authenticated')
       }
 
       const fileExt = file.name.split('.').pop()
@@ -469,30 +528,31 @@ export default function CreateBlogPost() {
       const { error: uploadError } = await supabase.storage
         .from('blog')
         .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false
+          cacheControl: '3600',
+          upsert: false,
         })
 
       if (uploadError) {
         throw uploadError
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('blog')
-        .getPublicUrl(filePath)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('blog').getPublicUrl(filePath)
 
       form.setValue('featuredImage', publicUrl)
 
       toast({
-        title: "Image uploaded",
-        description: "Your featured image has been uploaded successfully"
+        title: 'Image uploaded',
+        description: 'Your featured image has been uploaded successfully',
       })
     } catch (error) {
-      console.error("Image upload error:", error)
+      console.error('Image upload error:', error)
       toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload image"
+        variant: 'destructive',
+        title: 'Upload failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload image',
       })
     } finally {
       setUploadingImage(false)
@@ -505,102 +565,119 @@ export default function CreateBlogPost() {
       const input = document.createElement('input')
       input.type = 'file'
       input.accept = 'image/*'
-      
-      input.onchange = async (event) => {
+
+      input.onchange = async event => {
         const file = (event.target as HTMLInputElement).files?.[0]
         if (!file) return
-        
+
         if (file.size > MAX_FILE_SIZE) {
           toast({
-            variant: "destructive",
-            title: "File too large",
-            description: "Image must be less than 5MB",
+            variant: 'destructive',
+            title: 'File too large',
+            description: 'Image must be less than 5MB',
           })
           return
         }
 
         if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
           toast({
-            variant: "destructive",
-            title: "Invalid file type",
-            description: "Please upload a valid image file (JPEG, PNG, or WebP)",
+            variant: 'destructive',
+            title: 'Invalid file type',
+            description:
+              'Please upload a valid image file (JPEG, PNG, or WebP)',
           })
           return
         }
 
         setPendingImageFile(file)
         // Remove file extension from filename for alt text
-        const altTextWithoutExtension = file.name.replace(/\.[^/.]+$/, "")
+        const altTextWithoutExtension = file.name.replace(/\.[^/.]+$/, '')
         setImageAltText(altTextWithoutExtension)
         setImageAltDialogOpen(true)
       }
-      
+
       input.click()
     } catch (error) {
-      console.error("Error adding image:", error)
+      console.error('Error adding image:', error)
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to add image to post"
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to add image to post',
       })
     }
   }
 
   const handleImageInsert = async () => {
     if (!imageAltText) return
-    
+
     if (isEditingExistingImage && selectedImage) {
       // Update existing image alt text
-      editor?.chain().focus().setImage({ 
-        src: selectedImage.src, 
-        alt: imageAltText 
-      }).run()
-      
+      editor
+        ?.chain()
+        .focus()
+        .setImage({
+          src: selectedImage.src,
+          alt: imageAltText,
+        })
+        .run()
+
       toast({
-        title: "Alt text updated",
-        description: "Image alt text has been updated successfully"
+        title: 'Alt text updated',
+        description: 'Image alt text has been updated successfully',
       })
 
       // Reset state
       setImageAltDialogOpen(false)
-      setImageAltText("")
+      setImageAltText('')
       setSelectedImage(null)
       setIsEditingExistingImage(false)
       return
     }
 
     if (!pendingImageFile) return
-    
+
     setUploadingContentImage(true)
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError || !session?.user.id) {
-        throw new Error("Authentication error")
+        throw new Error('Authentication error')
       }
-      
-      const imageUrl = await uploadContentImage(pendingImageFile, supabase, session.user.id)
-      
+
+      const imageUrl = await uploadContentImage(
+        pendingImageFile,
+        supabase,
+        session.user.id
+      )
+
       if (editor) {
-        editor.chain().focus().setImage({ src: imageUrl, alt: imageAltText }).run()
+        editor
+          .chain()
+          .focus()
+          .setImage({ src: imageUrl, alt: imageAltText })
+          .run()
       }
-      
+
       toast({
-        title: "Image inserted",
-        description: "Your image has been added to the post"
+        title: 'Image inserted',
+        description: 'Your image has been added to the post',
       })
 
       // Reset state
       setImageAltDialogOpen(false)
-      setImageAltText("")
+      setImageAltText('')
       setPendingImageFile(null)
       setIsEditingExistingImage(false)
     } catch (error) {
-      console.error("Content image upload error:", error)
+      console.error('Content image upload error:', error)
       toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: error instanceof Error ? error.message : "Failed to upload image"
+        variant: 'destructive',
+        title: 'Upload failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload image',
       })
     } finally {
       setUploadingContentImage(false)
@@ -616,9 +693,9 @@ export default function CreateBlogPost() {
       setLinkDialogOpen(true)
     } else {
       toast({
-        variant: "destructive",
-        title: "No text selected",
-        description: "Please select some text to add a link."
+        variant: 'destructive',
+        title: 'No text selected',
+        description: 'Please select some text to add a link.',
       })
     }
   }
@@ -632,43 +709,41 @@ export default function CreateBlogPost() {
       .chain()
       .focus()
       .extendMarkRange('link')
-      .setLink({ 
-        href: linkUrl, 
-        target: openInNewTab ? '_blank' : null
+      .setLink({
+        href: linkUrl,
+        target: openInNewTab ? '_blank' : null,
       })
       .run()
 
     // Reset state
-    setLinkUrl("")
+    setLinkUrl('')
     setLinkDialogOpen(false)
   }
 
   // Add this function to remove links
   const removeLink = () => {
     if (!editor) return
-    
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange('link')
-      .unsetLink()
-      .run()
+
+    editor.chain().focus().extendMarkRange('link').unsetLink().run()
   }
 
   async function onSubmit(data: BlogPostForm) {
     setIsLoading(true)
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
       if (sessionError || !session) {
         throw new Error('Not authenticated')
       }
 
-      console.log("Creating blog post with establishments:", {
+      console.log('Creating blog post with establishments:', {
         store_id: storeId,
         servicing_id: servicingId,
-        club_id: clubId, 
-        range_id: rangeId
+        club_id: clubId,
+        range_id: rangeId,
       })
 
       // Create the blog post
@@ -684,10 +759,10 @@ export default function CreateBlogPost() {
         club_id: clubId,
         range_id: rangeId,
         slug: slug(data.title),
-        view_count: 0
+        view_count: 0,
       }
 
-      console.log("Post data being sent:", postData)
+      console.log('Post data being sent:', postData)
 
       const { data: post, error: createError } = await supabase
         .from('blog_posts')
@@ -696,15 +771,15 @@ export default function CreateBlogPost() {
         .single()
 
       if (createError) {
-        console.error("Error creating blog post:", createError)
+        console.error('Error creating blog post:', createError)
         throw createError
       }
 
-      console.log("Created blog post:", post)
+      console.log('Created blog post:', post)
 
       toast({
-        title: "Success",
-        description: "Blog post created successfully.",
+        title: 'Success',
+        description: 'Blog post created successfully.',
       })
 
       // Redirect to the new post with category in the URL
@@ -712,9 +787,9 @@ export default function CreateBlogPost() {
     } catch (error) {
       console.error('Error creating post:', error)
       toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to create blog post. Please try again."
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to create blog post. Please try again.',
       })
     } finally {
       setIsLoading(false)
@@ -748,8 +823,12 @@ export default function CreateBlogPost() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={editor.isActive('heading', { level: 2 }) ? 'bg-accent' : ''}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+          className={
+            editor.isActive('heading', { level: 2 }) ? 'bg-accent' : ''
+          }
         >
           <Heading2 className="h-4 w-4" />
         </Button>
@@ -757,8 +836,12 @@ export default function CreateBlogPost() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={editor.isActive('heading', { level: 3 }) ? 'bg-accent' : ''}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
+          className={
+            editor.isActive('heading', { level: 3 }) ? 'bg-accent' : ''
+          }
         >
           <Heading3 className="h-4 w-4" />
         </Button>
@@ -845,7 +928,7 @@ export default function CreateBlogPost() {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => router.push("/blog")}
+            onClick={() => router.push('/blog')}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -862,7 +945,10 @@ export default function CreateBlogPost() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="title"
@@ -955,19 +1041,24 @@ export default function CreateBlogPost() {
                   )}
                 />
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-green-600 hover:bg-green-700 text-white" 
-                  disabled={isLoading || uploadingImage || uploadingContentImage}
+                <Button
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  disabled={
+                    isLoading || uploadingImage || uploadingContentImage
+                  }
                 >
-                  {(isLoading || uploadingImage || uploadingContentImage) ? (
+                  {isLoading || uploadingImage || uploadingContentImage ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {uploadingImage ? "Uploading Image..." : 
-                       uploadingContentImage ? "Adding Image..." : "Publishing..."}
+                      {uploadingImage
+                        ? 'Uploading Image...'
+                        : uploadingContentImage
+                          ? 'Adding Image...'
+                          : 'Publishing...'}
                     </>
                   ) : (
-                    "Publish Post"
+                    'Publish Post'
                   )}
                 </Button>
               </form>
@@ -991,7 +1082,7 @@ export default function CreateBlogPost() {
               <Input
                 id="url"
                 value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
+                onChange={e => setLinkUrl(e.target.value)}
                 placeholder="https://example.com"
               />
             </div>
@@ -999,7 +1090,7 @@ export default function CreateBlogPost() {
               <Checkbox
                 id="new-tab"
                 checked={openInNewTab}
-                onCheckedChange={(checked) => setOpenInNewTab(checked as boolean)}
+                onCheckedChange={checked => setOpenInNewTab(checked as boolean)}
               />
               <Label htmlFor="new-tab">Open in new tab</Label>
             </div>
@@ -1016,18 +1107,25 @@ export default function CreateBlogPost() {
       </Dialog>
 
       {/* Add Image Alt Text Dialog */}
-      <Dialog open={imageAltDialogOpen} onOpenChange={(open) => {
-        if (!open) {
-          setImageAltDialogOpen(false)
-          setImageAltText("")
-          setPendingImageFile(null)
-          setSelectedImage(null)
-          setIsEditingExistingImage(false)
-        }
-      }}>
+      <Dialog
+        open={imageAltDialogOpen}
+        onOpenChange={open => {
+          if (!open) {
+            setImageAltDialogOpen(false)
+            setImageAltText('')
+            setPendingImageFile(null)
+            setSelectedImage(null)
+            setIsEditingExistingImage(false)
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{isEditingExistingImage ? 'Edit Image Alt Text' : 'Add Image Alt Text'}</DialogTitle>
+            <DialogTitle>
+              {isEditingExistingImage
+                ? 'Edit Image Alt Text'
+                : 'Add Image Alt Text'}
+            </DialogTitle>
             <DialogDescription>
               Enter alternative text to describe the image for accessibility
             </DialogDescription>
@@ -1038,7 +1136,7 @@ export default function CreateBlogPost() {
               <Input
                 id="alt-text"
                 value={imageAltText}
-                onChange={(e) => setImageAltText(e.target.value)}
+                onChange={e => setImageAltText(e.target.value)}
                 placeholder="Describe the image"
               />
             </div>
@@ -1054,23 +1152,34 @@ export default function CreateBlogPost() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="secondary" onClick={() => {
-                setPendingImageFile(null)
-                setImageAltText("")
-                setSelectedImage(null)
-                setIsEditingExistingImage(false)
-              }}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setPendingImageFile(null)
+                  setImageAltText('')
+                  setSelectedImage(null)
+                  setIsEditingExistingImage(false)
+                }}
+              >
                 Cancel
               </Button>
             </DialogClose>
-            <Button onClick={handleImageInsert} disabled={!imageAltText || (!isEditingExistingImage && uploadingContentImage)}>
+            <Button
+              onClick={handleImageInsert}
+              disabled={
+                !imageAltText ||
+                (!isEditingExistingImage && uploadingContentImage)
+              }
+            >
               {!isEditingExistingImage && uploadingContentImage ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Uploading...
                 </>
+              ) : isEditingExistingImage ? (
+                'Update Alt Text'
               ) : (
-                isEditingExistingImage ? "Update Alt Text" : "Insert Image"
+                'Insert Image'
               )}
             </Button>
           </DialogFooter>

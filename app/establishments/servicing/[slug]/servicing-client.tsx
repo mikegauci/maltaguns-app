@@ -1,15 +1,24 @@
-"use client"
+'use client'
 
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Store as StoreIcon, MapPin, Phone, Mail, Globe, ArrowLeft, BookOpen, Pencil } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase"
-import { format } from "date-fns"
-import BlogPostCard from "@/app/components/blog/BlogPostCard"
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import {
+  Store as StoreIcon,
+  MapPin,
+  Phone,
+  Mail,
+  Globe,
+  ArrowLeft,
+  BookOpen,
+  Pencil,
+} from 'lucide-react'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
+import { format } from 'date-fns'
+import BlogPostCard from '@/app/components/blog/BlogPostCard'
 
 interface Servicing {
   id: string
@@ -56,7 +65,7 @@ function slugify(text: string) {
 function formatPrice(price: number) {
   return new Intl.NumberFormat('en-MT', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'EUR',
   }).format(price)
 }
 
@@ -68,7 +77,11 @@ function truncateText(text: string, words: number) {
   return wordArray.slice(0, words).join(' ') + '...'
 }
 
-export default function ServicingClient({ servicing }: { servicing: Servicing }) {
+export default function ServicingClient({
+  servicing,
+}: {
+  servicing: Servicing
+}) {
   const router = useRouter()
   const [isOwner, setIsOwner] = useState(false)
   const [blogPosts, setBlogPosts] = useState<any[]>([])
@@ -76,7 +89,8 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
   // Check if blog posts array is valid
-  const hasBlogPosts = Array.isArray(servicing.blogPosts) && servicing.blogPosts.length > 0;
+  const hasBlogPosts =
+    Array.isArray(servicing.blogPosts) && servicing.blogPosts.length > 0
 
   useEffect(() => {
     // Check if current user is the owner of this servicing
@@ -92,7 +106,7 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
     } else {
       setBlogPosts([]) // Set to empty array if not valid
     }
-    
+
     setLoading(false)
   }, [servicing.owner_id, servicing.blogPosts])
 
@@ -102,11 +116,12 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
       try {
         console.log(`Fetching blog posts for servicing ID: ${servicing.id}`)
         setLoading(true)
-        
+
         // Fetch blog posts from blog_posts table with servicing_id filter
         const { data, error } = await supabase
-          .from("blog_posts")
-          .select(`
+          .from('blog_posts')
+          .select(
+            `
             id,
             title,
             slug,
@@ -115,29 +130,30 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
             created_at,
             category,
             author:profiles(username)
-          `)
-          .eq("servicing_id", servicing.id)
-          .eq("published", true)
-          .order("created_at", { ascending: false });
-            
+          `
+          )
+          .eq('servicing_id', servicing.id)
+          .eq('published', true)
+          .order('created_at', { ascending: false })
+
         if (error) {
-          console.error("Error fetching blog posts from client:", error);
+          console.error('Error fetching blog posts from client:', error)
         } else if (data && data.length > 0) {
-          console.log(`Found ${data.length} blog posts for servicing:`, data);
+          console.log(`Found ${data.length} blog posts for servicing:`, data)
           // Set the blog posts
-          setBlogPosts(data);
+          setBlogPosts(data)
         } else {
-          console.log("No blog posts found for this servicing");
+          console.log('No blog posts found for this servicing')
         }
       } catch (error) {
-        console.error("Error in client-side fetch:", error);
+        console.error('Error in client-side fetch:', error)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-      
-    fetchBlogPosts();
-  }, [servicing.id, refreshTrigger]);
+    }
+
+    fetchBlogPosts()
+  }, [servicing.id, refreshTrigger])
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -145,13 +161,13 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
         <div className="mb-6 flex items-center justify-between">
           <Button
             variant="ghost"
-            onClick={() => router.push("/establishments/servicing")}
+            onClick={() => router.push('/establishments/servicing')}
             className="flex items-center text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Servicing
           </Button>
-          
+
           {isOwner && (
             <div className="flex items-center gap-2">
               <Link href={`/blog/create?servicing_id=${servicing.id}`}>
@@ -181,8 +197,10 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
               )}
 
               <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-4">{servicing.business_name}</h1>
-                
+                <h1 className="text-3xl font-bold mb-4">
+                  {servicing.business_name}
+                </h1>
+
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-5 w-5 text-muted-foreground" />
@@ -191,7 +209,10 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
                   {servicing.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-5 w-5 text-muted-foreground" />
-                      <a href={`tel:${servicing.phone}`} className="hover:underline">
+                      <a
+                        href={`tel:${servicing.phone}`}
+                        className="hover:underline"
+                      >
                         {servicing.phone}
                       </a>
                     </div>
@@ -199,7 +220,10 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
                   {servicing.email && (
                     <div className="flex items-center gap-2">
                       <Mail className="h-5 w-5 text-muted-foreground" />
-                      <a href={`mailto:${servicing.email}`} className="hover:underline">
+                      <a
+                        href={`mailto:${servicing.email}`}
+                        className="hover:underline"
+                      >
                         {servicing.email}
                       </a>
                     </div>
@@ -207,9 +231,9 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
                   {servicing.website && (
                     <div className="flex items-center gap-2">
                       <Globe className="h-5 w-5 text-muted-foreground" />
-                      <a 
-                        href={servicing.website} 
-                        target="_blank" 
+                      <a
+                        href={servicing.website}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="hover:underline"
                       >
@@ -232,16 +256,18 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
         {/* Listings Section */}
         <div>
           <h2 className="text-2xl font-bold mb-6">Available Listings</h2>
-          
+
           {servicing.listings.length === 0 ? (
             <Card className="p-6 text-center">
-              <p className="text-muted-foreground">No active listings available.</p>
+              <p className="text-muted-foreground">
+                No active listings available.
+              </p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {servicing.listings.map((listing) => (
-                <Link 
-                  key={listing.id} 
+              {servicing.listings.map(listing => (
+                <Link
+                  key={listing.id}
                   href={`/marketplace/listing/${slugify(listing.title)}`}
                 >
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -254,7 +280,9 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
                     </div>
                     <CardContent className="p-4">
                       <Badge className="mb-2">
-                        {listing.type === 'firearms' ? 'Firearms' : 'Non-Firearms'}
+                        {listing.type === 'firearms'
+                          ? 'Firearms'
+                          : 'Non-Firearms'}
                       </Badge>
                       <h3 className="font-semibold text-lg mb-2 line-clamp-1">
                         {listing.title}
@@ -274,7 +302,7 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold">Latest Posts</h2>
-            
+
             {isOwner && (
               <Link href={`/blog/create?servicing_id=${servicing.id}`}>
                 <Button>
@@ -284,16 +312,16 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
               </Link>
             )}
           </div>
-          
+
           {blogPosts.length === 0 ? (
             <Card className="p-6 text-center">
               <p className="text-muted-foreground">
-                {loading ? "Loading posts..." : "No blog posts available."}
+                {loading ? 'Loading posts...' : 'No blog posts available.'}
               </p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {blogPosts.map((post) => (
+              {blogPosts.map(post => (
                 <BlogPostCard key={post.id} post={post} />
               ))}
             </div>
@@ -302,4 +330,4 @@ export default function ServicingClient({ servicing }: { servicing: Servicing })
       </div>
     </div>
   )
-} 
+}
