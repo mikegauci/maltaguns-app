@@ -69,45 +69,7 @@ function PaymentsReceivedPageComponent() {
         return <div className="font-medium">€{amount}</div>
       },
     },
-    {
-      accessorKey: "type",
-      header: "Type",
-      enableSorting: true,
-      cell: ({ row }) => {
-        const type = row.getValue("type") as string
-        return (
-          <Badge variant={type === "credit" ? "default" : "secondary"}>
-            {type}
-          </Badge>
-        )
-      },
-    },
-    {
-      accessorKey: "credit_type",
-      header: "Credit Type",
-      enableSorting: true,
-      cell: ({ row }) => {
-        const creditType = row.getValue("credit_type") as string | null
-        if (!creditType) return <span className="text-muted-foreground">-</span>
-        
-        const getVariant = (type: string) => {
-          switch (type) {
-            case "featured":
-              return "default"
-            case "event":
-              return "secondary"
-            default:
-              return "outline"
-          }
-        }
-        
-        return (
-          <Badge variant={getVariant(creditType)}>
-            {creditType}
-          </Badge>
-        )
-      },
-    },
+
     {
       accessorKey: "status",
       header: "Status",
@@ -199,11 +161,19 @@ function PaymentsReceivedPageComponent() {
     },
     {
       accessorKey: "created_at",
-      header: "Date",
+      header: "Date & Time",
       enableSorting: true,
       cell: ({ row }) => {
         const date = row.getValue("created_at") as string
-        return date ? format(new Date(date), "PPP") : "N/A"
+        if (!date) return "N/A"
+        
+        const dateObj = new Date(date)
+        return (
+          <div className="flex flex-col">
+            <div className="font-medium">{format(dateObj, "PPP")}</div>
+            <div className="text-sm text-muted-foreground">{format(dateObj, "p")}</div>
+          </div>
+        )
       },
     },
   ]
