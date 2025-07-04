@@ -1,44 +1,49 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { ColumnDef } from "@tanstack/react-table"
-import { format } from "date-fns"
-import { DataTable } from "@/components/admin/data-table"
-import { useToast } from "@/hooks/use-toast"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ExternalLink, Copy } from "lucide-react"
-import dynamic from "next/dynamic"
+import { useState, useEffect } from "react";
+import { ColumnDef } from "@tanstack/react-table";
+import { format } from "date-fns";
+import { DataTable } from "@/components/admin/data-table";
+import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, Copy } from "lucide-react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 
 interface Payment {
-  id: string
-  user_id: string
-  username: string
-  email: string
-  first_name: string | null
-  last_name: string | null
-  amount: number
-  type: string
-  credit_type: string | null
-  stripe_payment_id: string | null
-  status: string | null
-  description: string | null
-  created_at: string
+  id: string;
+  user_id: string;
+  username: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  amount: number;
+  type: string;
+  credit_type: string | null;
+  stripe_payment_id: string | null;
+  status: string | null;
+  description: string | null;
+  created_at: string;
 }
 
 // Use dynamic import with SSR disabled to prevent hydration issues
-const PaymentsReceivedPageContent = dynamic(() => Promise.resolve(PaymentsReceivedPageComponent), { 
-  ssr: false 
-})
+const PaymentsReceivedPageContent = dynamic(
+  () => Promise.resolve(PaymentsReceivedPageComponent),
+  {
+    ssr: false,
+  }
+);
 
 export default function PaymentsReceivedPage() {
-  return <PaymentsReceivedPageContent />
+  return <PaymentsReceivedPageContent />;
 }
 
 function PaymentsReceivedPageComponent() {
-  const { toast } = useToast()
-  const [payments, setPayments] = useState<Payment[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter();
+  const { toast } = useToast();
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const columns: ColumnDef<Payment>[] = [
     {
@@ -46,18 +51,21 @@ function PaymentsReceivedPageComponent() {
       header: "User",
       enableSorting: true,
       cell: ({ row }) => {
-        const payment = row.original
-        const fullName = payment.first_name && payment.last_name 
-          ? `${payment.first_name} ${payment.last_name}`
-          : payment.first_name || payment.last_name || ''
-        
+        const payment = row.original;
+        const fullName =
+          payment.first_name && payment.last_name
+            ? `${payment.first_name} ${payment.last_name}`
+            : payment.first_name || payment.last_name || "";
+
         return (
           <div className="flex flex-col">
             <div className="font-medium">{payment.username}</div>
-            {fullName && <div className="text-sm text-muted-foreground">{fullName}</div>}
+            {fullName && (
+              <div className="text-sm text-muted-foreground">{fullName}</div>
+            )}
             <div className="text-sm text-muted-foreground">{payment.email}</div>
           </div>
-        )
+        );
       },
     },
     {
@@ -65,8 +73,8 @@ function PaymentsReceivedPageComponent() {
       header: "Amount",
       enableSorting: true,
       cell: ({ row }) => {
-        const amount = row.getValue("amount") as number
-        return <div className="font-medium">€{amount}</div>
+        const amount = row.getValue("amount") as number;
+        return <div className="font-medium">€{amount}</div>;
       },
     },
 
@@ -75,27 +83,24 @@ function PaymentsReceivedPageComponent() {
       header: "Status",
       enableSorting: true,
       cell: ({ row }) => {
-        const status = row.getValue("status") as string | null
-        if (!status) return <span className="text-muted-foreground">Completed</span>
-        
+        const status = row.getValue("status") as string | null;
+        if (!status)
+          return <span className="text-muted-foreground">Completed</span>;
+
         const getVariant = (status: string) => {
           switch (status) {
             case "pending":
-              return "outline"
+              return "outline";
             case "completed":
-              return "default"
+              return "default";
             case "failed":
-              return "destructive"
+              return "destructive";
             default:
-              return "secondary"
+              return "secondary";
           }
-        }
-        
-        return (
-          <Badge variant={getVariant(status)}>
-            {status}
-          </Badge>
-        )
+        };
+
+        return <Badge variant={getVariant(status)}>{status}</Badge>;
       },
     },
     {
@@ -103,22 +108,25 @@ function PaymentsReceivedPageComponent() {
       header: "Payment ID",
       enableSorting: false,
       cell: ({ row }) => {
-        const stripeId = row.getValue("stripe_payment_id") as string | null
-        if (!stripeId) return <span className="text-muted-foreground">-</span>
-        
+        const stripeId = row.getValue("stripe_payment_id") as string | null;
+        if (!stripeId) return <span className="text-muted-foreground">-</span>;
+
         const copyToClipboard = () => {
-          navigator.clipboard.writeText(stripeId)
+          navigator.clipboard.writeText(stripeId);
           toast({
             title: "Copied",
             description: "Payment ID copied to clipboard",
-          })
-        }
-        
+          });
+        };
+
         const openInStripe = () => {
           // Note: This would need proper Stripe dashboard URL construction
-          window.open(`https://dashboard.stripe.com/payments/${stripeId}`, '_blank')
-        }
-        
+          window.open(
+            `https://dashboard.stripe.com/payments/${stripeId}`,
+            "_blank"
+          );
+        };
+
         return (
           <div className="flex items-center space-x-2">
             <code className="text-xs bg-muted px-2 py-1 rounded">
@@ -141,7 +149,7 @@ function PaymentsReceivedPageComponent() {
               <ExternalLink className="h-3 w-3" />
             </Button>
           </div>
-        )
+        );
       },
     },
     {
@@ -149,14 +157,15 @@ function PaymentsReceivedPageComponent() {
       header: "Description",
       enableSorting: false,
       cell: ({ row }) => {
-        const description = row.getValue("description") as string | null
-        if (!description) return <span className="text-muted-foreground">-</span>
-        
+        const description = row.getValue("description") as string | null;
+        if (!description)
+          return <span className="text-muted-foreground">-</span>;
+
         return (
           <div className="max-w-xs truncate" title={description}>
             {description}
           </div>
-        )
+        );
       },
     },
     {
@@ -164,58 +173,61 @@ function PaymentsReceivedPageComponent() {
       header: "Date & Time",
       enableSorting: true,
       cell: ({ row }) => {
-        const date = row.getValue("created_at") as string
-        if (!date) return "N/A"
-        
-        const dateObj = new Date(date)
+        const date = row.getValue("created_at") as string;
+        if (!date) return "N/A";
+
+        const dateObj = new Date(date);
         return (
           <div className="flex flex-col">
             <div className="font-medium">{format(dateObj, "PPP")}</div>
-            <div className="text-sm text-muted-foreground">{format(dateObj, "p")}</div>
+            <div className="text-sm text-muted-foreground">
+              {format(dateObj, "p")}
+            </div>
           </div>
-        )
+        );
       },
     },
-  ]
+  ];
 
   useEffect(() => {
-    fetchPayments()
-  }, [])
+    fetchPayments();
+  }, []);
 
   async function fetchPayments() {
     try {
-      setIsLoading(true)
-      
-      const response = await fetch('/api/admin/payments-received', {
-        method: 'GET',
+      setIsLoading(true);
+
+      const response = await fetch("/api/admin/payments-received", {
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      })
-      
+      });
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to fetch payments')
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch payments");
       }
-      
-      const data = await response.json()
-      
+
+      const data = await response.json();
+
       if (!data || !data.payments) {
-        throw new Error('No data returned from payments API')
+        throw new Error("No data returned from payments API");
       }
-      
-      setPayments(data.payments)
+
+      setPayments(data.payments);
     } catch (error) {
-      console.error('Error in fetchPayments:', error)
+      console.error("Error in fetchPayments:", error);
       toast({
         variant: "destructive",
         title: "Error fetching payments",
-        description: error instanceof Error 
-          ? error.message 
-          : "Failed to fetch payments. Please check console for more details.",
-      })
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch payments. Please check console for more details.",
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
@@ -227,6 +239,12 @@ function PaymentsReceivedPageComponent() {
           <p className="text-muted-foreground">
             View all payment transactions and their status
           </p>
+          <button
+            onClick={() => router.push("/admin")}
+            className="text-blue-500 hover:underline"
+          >
+            Back to Dashboard
+          </button>
         </div>
       </div>
 
@@ -234,7 +252,9 @@ function PaymentsReceivedPageComponent() {
         <div className="rounded-md border">
           <div className="h-24 flex items-center justify-center">
             <div className="text-center">
-              <div className="text-sm text-muted-foreground">Loading payments...</div>
+              <div className="text-sm text-muted-foreground">
+                Loading payments...
+              </div>
             </div>
           </div>
         </div>
@@ -247,5 +267,5 @@ function PaymentsReceivedPageComponent() {
         />
       )}
     </div>
-  )
-} 
+  );
+}

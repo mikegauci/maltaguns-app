@@ -43,7 +43,7 @@ export async function GET() {
     // Fetch all users with admin client
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, username, email, created_at, is_admin, is_seller, is_verified, license_image, is_disabled, first_name, last_name")
+      .select("id, username, email, created_at, is_admin, is_seller, is_verified, license_image, is_disabled, first_name, last_name, notes")
       .order("created_at", { ascending: false })
     
     if (error) {

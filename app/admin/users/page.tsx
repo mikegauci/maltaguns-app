@@ -12,6 +12,7 @@ import { ActionCell } from "@/components/admin/action-cell"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import dynamic from "next/dynamic"
@@ -34,6 +35,7 @@ interface User {
   is_disabled: boolean
   first_name: string | null
   last_name: string | null
+  notes: string | null
   establishments: Establishment[]
   purchasedBefore: boolean
   creditAmount: number
@@ -90,8 +92,10 @@ function UsersPageComponent() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [notesFormData, setNotesFormData] = useState("")
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     is_admin: false,  // Hide is_admin column by default
   })
@@ -106,6 +110,7 @@ function UsersPageComponent() {
     is_disabled: false,
     first_name: "" as string | null,
     last_name: "" as string | null,
+    notes: "" as string | null,
   })
   const supabase = createClientComponentClient()
 
@@ -161,13 +166,45 @@ function UsersPageComponent() {
     },
     {
       accessorKey: "first_name",
-      header: "First Name",
+      header: "Full Name",
       enableSorting: true,
+      cell: ({ row }) => {
+        const user = row.original;
+        const firstName = user.first_name || "";
+        const lastName = user.last_name || "";
+        
+        if (!firstName && !lastName) {
+          return <div className="text-muted-foreground">No name provided</div>;
+        }
+        
+        return (
+          <div className="flex flex-col">
+            {firstName && <div>{firstName}</div>}
+            {lastName && <div className="text-sm text-muted-foreground">{lastName}</div>}
+          </div>
+        );
+      },
     },
     {
-      accessorKey: "last_name",
-      header: "Last Name",
+      accessorKey: "notes",
+      header: "Notes",
       enableSorting: true,
+      cell: ({ row }) => {
+        const user = row.original;
+        const notes = user.notes || "";
+        
+        if (!notes) {
+          return <div className="text-muted-foreground">No notes</div>;
+        }
+        
+        return (
+          <div className="max-w-[200px]">
+            <div className="truncate" title={notes}>
+              {notes}
+            </div>
+          </div>
+        );
+      },
     },
     {
       accessorKey: "created_at",
@@ -290,6 +327,11 @@ function UsersPageComponent() {
             onDelete={() => handleDelete(user)}
             extraActions={[
               {
+                label: "Add/Edit Note",
+                onClick: () => handleEditNotes(user),
+                variant: "outline"
+              },
+              {
                 label: user.is_disabled ? "Enable User" : "Disable User",
                 onClick: () => handleToggleDisabled(user),
                 variant: user.is_disabled ? "default" : "destructive"
@@ -400,6 +442,7 @@ function UsersPageComponent() {
       is_disabled: false,
       first_name: "",
       last_name: "",
+      notes: "",
     })
     setIsCreateDialogOpen(true)
   }
@@ -417,6 +460,7 @@ function UsersPageComponent() {
       is_disabled: user.is_disabled,
       first_name: user.first_name,
       last_name: user.last_name,
+      notes: user.notes,
     })
     setIsEditDialogOpen(true)
   }
@@ -424,6 +468,12 @@ function UsersPageComponent() {
   function handleDelete(user: User) {
     setSelectedUser(user)
     setIsDeleteDialogOpen(true)
+  }
+
+  function handleEditNotes(user: User) {
+    setSelectedUser(user)
+    setNotesFormData(user.notes || "")
+    setIsNotesDialogOpen(true)
   }
 
   async function handleCreateSubmit() {
@@ -458,6 +508,7 @@ function UsersPageComponent() {
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
           is_disabled: formData.is_disabled,
+          notes: formData.notes,
         })
 
       if (profileError) throw profileError
@@ -542,6 +593,7 @@ function UsersPageComponent() {
           is_verified: formData.is_verified,
           license_image: formData.license_image,
           is_disabled: formData.is_disabled,
+          notes: formData.notes,
         })
         .eq("id", selectedUser.id)
 
@@ -685,6 +737,47 @@ function UsersPageComponent() {
     }
   }
 
+  async function handleNotesSubmit() {
+    if (!selectedUser) return
+
+    try {
+      setIsSubmitting(true)
+
+      // Update notes via API
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notes: notesFormData
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update notes')
+      }
+
+      toast({
+        title: "Success",
+        description: "Notes updated successfully",
+      })
+
+      setIsNotesDialogOpen(false)
+      fetchUsers()
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update notes",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -764,6 +857,16 @@ function UsersPageComponent() {
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="create-notes">Notes</Label>
+            <Textarea
+              id="create-notes"
+              placeholder="Add notes about this user..."
+              value={formData.notes || ""}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={3}
             />
           </div>
           <div className="flex items-center space-x-4">
@@ -879,6 +982,16 @@ function UsersPageComponent() {
               </div>
             </div>
           )}
+          <div className="space-y-2">
+            <Label htmlFor="edit-notes">Notes</Label>
+            <Textarea
+              id="edit-notes"
+              placeholder="Add notes about this user..."
+              value={formData.notes || ""}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={3}
+            />
+          </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Switch
@@ -927,6 +1040,30 @@ function UsersPageComponent() {
         confirmLabel="Delete"
         variant="destructive"
       />
+
+      {/* Edit Notes Dialog */}
+      <FormDialog
+        title="Notes"
+        description={`Edit notes for ${selectedUser?.username} user`}
+        isOpen={isNotesDialogOpen}
+        onClose={() => setIsNotesDialogOpen(false)}
+        onSubmit={handleNotesSubmit}
+        isSubmitting={isSubmitting}
+        submitLabel="Save Notes"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              placeholder="Add notes about this user..."
+              value={notesFormData}
+              onChange={(e) => setNotesFormData(e.target.value)}
+              rows={4}
+            />
+          </div>
+        </div>
+      </FormDialog>
     </div>
   )
 } 
