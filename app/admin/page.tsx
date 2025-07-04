@@ -73,6 +73,12 @@ function AdminDashboardComponent() {
               href="/admin/event-credits"
               icon="🎫"
             />
+            <AdminCard 
+              title="Payments Received" 
+              description="View payment transactions" 
+              href="/admin/payments-received"
+              icon="💰"
+            />
           </div>
         </TabsContent>
         

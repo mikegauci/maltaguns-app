@@ -1,0 +1,281 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { ColumnDef } from "@tanstack/react-table"
+import { format } from "date-fns"
+import { DataTable } from "@/components/admin/data-table"
+import { useToast } from "@/hooks/use-toast"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { ExternalLink, Copy } from "lucide-react"
+import dynamic from "next/dynamic"
+
+interface Payment {
+  id: string
+  user_id: string
+  username: string
+  email: string
+  first_name: string | null
+  last_name: string | null
+  amount: number
+  type: string
+  credit_type: string | null
+  stripe_payment_id: string | null
+  status: string | null
+  description: string | null
+  created_at: string
+}
+
+// Use dynamic import with SSR disabled to prevent hydration issues
+const PaymentsReceivedPageContent = dynamic(() => Promise.resolve(PaymentsReceivedPageComponent), { 
+  ssr: false 
+})
+
+export default function PaymentsReceivedPage() {
+  return <PaymentsReceivedPageContent />
+}
+
+function PaymentsReceivedPageComponent() {
+  const { toast } = useToast()
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const columns: ColumnDef<Payment>[] = [
+    {
+      accessorKey: "username",
+      header: "User",
+      enableSorting: true,
+      cell: ({ row }) => {
+        const payment = row.original
+        const fullName = payment.first_name && payment.last_name 
+          ? `${payment.first_name} ${payment.last_name}`
+          : payment.first_name || payment.last_name || ''
+        
+        return (
+          <div className="flex flex-col">
+            <div className="font-medium">{payment.username}</div>
+            {fullName && <div className="text-sm text-muted-foreground">{fullName}</div>}
+            <div className="text-sm text-muted-foreground">{payment.email}</div>
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "amount",
+      header: "Amount",
+      enableSorting: true,
+      cell: ({ row }) => {
+        const amount = row.getValue("amount") as number
+        return <div className="font-medium">€{amount}</div>
+      },
+    },
+    {
+      accessorKey: "type",
+      header: "Type",
+      enableSorting: true,
+      cell: ({ row }) => {
+        const type = row.getValue("type") as string
+        return (
+          <Badge variant={type === "credit" ? "default" : "secondary"}>
+            {type}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "credit_type",
+      header: "Credit Type",
+      enableSorting: true,
+      cell: ({ row }) => {
+        const creditType = row.getValue("credit_type") as string | null
+        if (!creditType) return <span className="text-muted-foreground">-</span>
+        
+        const getVariant = (type: string) => {
+          switch (type) {
+            case "featured":
+              return "default"
+            case "event":
+              return "secondary"
+            default:
+              return "outline"
+          }
+        }
+        
+        return (
+          <Badge variant={getVariant(creditType)}>
+            {creditType}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      enableSorting: true,
+      cell: ({ row }) => {
+        const status = row.getValue("status") as string | null
+        if (!status) return <span className="text-muted-foreground">Completed</span>
+        
+        const getVariant = (status: string) => {
+          switch (status) {
+            case "pending":
+              return "outline"
+            case "completed":
+              return "default"
+            case "failed":
+              return "destructive"
+            default:
+              return "secondary"
+          }
+        }
+        
+        return (
+          <Badge variant={getVariant(status)}>
+            {status}
+          </Badge>
+        )
+      },
+    },
+    {
+      accessorKey: "stripe_payment_id",
+      header: "Payment ID",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const stripeId = row.getValue("stripe_payment_id") as string | null
+        if (!stripeId) return <span className="text-muted-foreground">-</span>
+        
+        const copyToClipboard = () => {
+          navigator.clipboard.writeText(stripeId)
+          toast({
+            title: "Copied",
+            description: "Payment ID copied to clipboard",
+          })
+        }
+        
+        const openInStripe = () => {
+          // Note: This would need proper Stripe dashboard URL construction
+          window.open(`https://dashboard.stripe.com/payments/${stripeId}`, '_blank')
+        }
+        
+        return (
+          <div className="flex items-center space-x-2">
+            <code className="text-xs bg-muted px-2 py-1 rounded">
+              {stripeId.substring(0, 15)}...
+            </code>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={copyToClipboard}
+              className="h-6 w-6 p-0"
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={openInStripe}
+              className="h-6 w-6 p-0"
+            >
+              <ExternalLink className="h-3 w-3" />
+            </Button>
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "description",
+      header: "Description",
+      enableSorting: false,
+      cell: ({ row }) => {
+        const description = row.getValue("description") as string | null
+        if (!description) return <span className="text-muted-foreground">-</span>
+        
+        return (
+          <div className="max-w-xs truncate" title={description}>
+            {description}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: "created_at",
+      header: "Date",
+      enableSorting: true,
+      cell: ({ row }) => {
+        const date = row.getValue("created_at") as string
+        return date ? format(new Date(date), "PPP") : "N/A"
+      },
+    },
+  ]
+
+  useEffect(() => {
+    fetchPayments()
+  }, [])
+
+  async function fetchPayments() {
+    try {
+      setIsLoading(true)
+      
+      const response = await fetch('/api/admin/payments-received', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch payments')
+      }
+      
+      const data = await response.json()
+      
+      if (!data || !data.payments) {
+        throw new Error('No data returned from payments API')
+      }
+      
+      setPayments(data.payments)
+    } catch (error) {
+      console.error('Error in fetchPayments:', error)
+      toast({
+        variant: "destructive",
+        title: "Error fetching payments",
+        description: error instanceof Error 
+          ? error.message 
+          : "Failed to fetch payments. Please check console for more details.",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Payments Received</h1>
+          <p className="text-muted-foreground">
+            View all payment transactions and their status
+          </p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="rounded-md border">
+          <div className="h-24 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-sm text-muted-foreground">Loading payments...</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={payments}
+          searchKey="username"
+          searchPlaceholder="Search by username..."
+        />
+      )}
+    </div>
+  )
+} 
