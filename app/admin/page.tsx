@@ -79,6 +79,12 @@ function AdminDashboardComponent() {
               href="/admin/payments-received"
               icon="💰"
             />
+            <AdminCard 
+              title="Reported Listings" 
+              description="Manage reported listings" 
+              href="/admin/reported-listings"
+              icon="🚨"
+            />
           </div>
         </TabsContent>
         
