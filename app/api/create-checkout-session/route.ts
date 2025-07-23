@@ -36,7 +36,7 @@ export async function POST(request: Request) {
       { stripePriceId: string; credits: number }
     > = {
       price_1credit: {
-        stripePriceId: 'price_1Ro4u7H1BEPEAa2SeqVHY0s1',
+        stripePriceId: 'price_1Ro5asH1BEPEAa2S09UD5Qp1',
         credits: 1,
       }, // €10
       price_5credits: {
