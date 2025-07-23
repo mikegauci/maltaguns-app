@@ -36,15 +36,15 @@ export async function POST(request: Request) {
       { stripePriceId: string; credits: number }
     > = {
       price_1credit: {
-        stripePriceId: 'price_1REOVJPnR92CMKYG6C8vfrGx',
+        stripePriceId: 'price_1Ro4u7H1BEPEAa2SeqVHY0s1',
         credits: 1,
       }, // €10
       price_5credits: {
-        stripePriceId: 'price_1REOVsPnR92CMKYGewbJKt8I',
+        stripePriceId: 'price_1Ro4tZH1BEPEAa2SQ9xBrWZo',
         credits: 5,
       }, // €30
       price_10credits: {
-        stripePriceId: 'price_1REOWRPnR92CMKYGqwPeb0Sa',
+        stripePriceId: 'price_1Ro4tMH1BEPEAa2SNFgzJYw6',
         credits: 10,
       }, // €50
     }
