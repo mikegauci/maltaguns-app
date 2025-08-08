@@ -67,12 +67,13 @@ export default async function StorePage({
 
   console.log(`Found store: ${store.business_name} (ID: ${store.id})`)
 
-  // Fetch store's listings
+  // Fetch store's listings - only show active and non-expired listings
   const { data: listings, error: listingsError } = await supabase
     .from('listings')
     .select('*')
     .eq('seller_id', store.owner_id)
     .eq('status', 'active')
+    .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
 
   if (listingsError) {

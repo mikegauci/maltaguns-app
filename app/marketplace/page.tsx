@@ -143,11 +143,12 @@ export default function Marketplace() {
         setIsLoading(true)
         setError(null)
 
-        // Fetch listings from Supabase
+        // Fetch listings from Supabase - only show active and non-expired listings
         const { data: listingsData, error: listingsError } = await supabase
           .from('listings')
           .select('*')
           .eq('status', 'active')
+          .gt('expires_at', new Date().toISOString())
           .order('created_at', { ascending: false })
           .limit(50)
 

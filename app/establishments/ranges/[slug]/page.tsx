@@ -63,12 +63,13 @@ export default async function RangePage({
     notFound()
   }
 
-  // Fetch range's listings
+  // Fetch range's listings - only show active and non-expired listings
   const { data: listings, error: listingsError } = await supabase
     .from('listings')
     .select('*')
     .eq('seller_id', range.owner_id)
     .eq('status', 'active')
+    .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
 
   if (listingsError) {

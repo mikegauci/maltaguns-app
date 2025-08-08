@@ -160,12 +160,12 @@ export default function CategoryListings({
         // Format for Supabase query
         const sevenDaysAgoStr = sevenDaysAgo.toISOString()
 
-        // Start building the query
+        // Start building the query - include active non-expired listings and recent sold listings
         let query = supabase
           .from('listings')
           .select('*')
           .or(
-            `status.eq.active,and(status.eq.sold,updated_at.gt.${sevenDaysAgoStr})`
+            `and(status.eq.active,expires_at.gt.${new Date().toISOString()}),and(status.eq.sold,updated_at.gt.${sevenDaysAgoStr})`
           )
 
         // Add type filter if provided

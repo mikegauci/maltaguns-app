@@ -69,12 +69,13 @@ export default async function ServicingPage({
     `Found servicing: ${servicing.business_name} (ID: ${servicing.id})`
   )
 
-  // Fetch servicing's listings
+  // Fetch servicing's listings - only show active and non-expired listings
   const { data: listings, error: listingsError } = await supabase
     .from('listings')
     .select('*')
     .eq('seller_id', servicing.owner_id)
     .eq('status', 'active')
+    .gt('expires_at', new Date().toISOString())
     .order('created_at', { ascending: false })
 
   if (listingsError) {

@@ -161,11 +161,12 @@ export default function SearchResults() {
         setType(typeValue)
         setCategory(categoryValue)
 
-        // Build the query
+        // Build the query - only show active and non-expired listings
         let supabaseQuery = supabase
           .from('listings')
           .select('*')
           .eq('status', 'active')
+          .gt('expires_at', new Date().toISOString())
 
         // Add type filter if specified
         if (typeValue) {

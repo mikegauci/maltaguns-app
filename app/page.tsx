@@ -98,11 +98,12 @@ export default function Home() {
       try {
         setIsLoading(true)
 
-        // Fetch recent listings
+        // Fetch recent listings - only show active and non-expired listings
         const { data: listingsData, error: listingsError } = await supabase
           .from('listings')
           .select('*')
           .eq('status', 'active')
+          .gt('expires_at', new Date().toISOString())
           .order('created_at', { ascending: false })
           .limit(3)
 
