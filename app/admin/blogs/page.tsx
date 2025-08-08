@@ -348,12 +348,19 @@ export default function AdminBlogsPage() {
   // Delete post
   async function deleteBlogPost(postId: string) {
     try {
-      const { error } = await supabase
-        .from('blog_posts')
-        .delete()
-        .eq('id', postId)
+      const response = await fetch('/api/admin/blogs/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ postId }),
+      })
 
-      if (error) throw error
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete blog post')
+      }
 
       setPosts(posts.filter(post => post.id !== postId))
       toast({
@@ -365,7 +372,10 @@ export default function AdminBlogsPage() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to delete blog post.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete blog post.',
       })
     }
   }
