@@ -62,11 +62,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-// List of admin user IDs
-const ADMIN_IDS = [
-  'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
-  '1a95bbf9-3bca-414d-a99f-1f9c72c15588',
-]
+// Note: Admin check now uses database is_admin field instead of hardcoded IDs
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -291,9 +287,21 @@ export default function CreateBlogPost() {
           }
         }
 
-        // Check if user is an admin
-        let isAdmin = ADMIN_IDS.includes(session.user.id)
+        // Check if user is an admin using database field
+        let isAdmin = false
         let hasEstablishment = false
+
+        // Check admin status from database
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single()
+
+        if (!profileError && profile && profile.is_admin) {
+          isAdmin = true
+          console.log('User is admin (from database)')
+        }
 
         if (!isAdmin) {
           // Check if user has any establishment
