@@ -295,7 +295,7 @@ export default function Home() {
       <div className="relative isolate">
         <div className="absolute inset-0 overflow-hidden">
           <img
-            src="/maltaguns-hero.jpg"
+            src="/maltaguns-hero-2.jpg"
             alt="MaltaGuns Hero"
             className="w-full h-full object-cover"
           />
