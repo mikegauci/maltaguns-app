@@ -49,6 +49,7 @@ interface Listing {
   price: number
   thumbnail: string
   created_at: string
+  is_featured?: boolean
 }
 
 interface BlogPost {
@@ -82,6 +83,7 @@ export default function Home() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [latestEvents, setLatestEvents] = useState<Event[]>([])
   const [recentListings, setRecentListings] = useState<Listing[]>([])
+  const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
   const [latestPosts, setLatestPosts] = useState<BlogPost[]>([])
   const [featuredEstablishments, setFeaturedEstablishments] = useState<
     Establishment[]
@@ -117,6 +119,42 @@ export default function Home() {
           })
         } else if (mounted) {
           setRecentListings(listingsData || [])
+        }
+
+        // Fetch featured listings - only show active, non-expired listings that are currently featured
+        const now = new Date().toISOString()
+        const { data: featuredListingsData, error: featuredListingsError } =
+          await supabase
+            .from('featured_listings')
+            .select(
+              `
+            listing_id,
+            listings!inner(*)
+          `
+            )
+            .gt('end_date', now)
+            .eq('listings.status', 'active')
+            .gt('listings.expires_at', now)
+            .order('end_date', { ascending: false })
+            .limit(3)
+
+        if (featuredListingsError) {
+          console.error('Featured listings fetch error:', featuredListingsError)
+          toast({
+            variant: 'destructive',
+            title: 'Error loading featured listings',
+            description:
+              'Failed to load featured listings. Please refresh the page.',
+          })
+        } else if (mounted) {
+          // Extract the listing data from the joined response
+          const processedFeaturedListings = (featuredListingsData || []).map(
+            (item: any) => ({
+              ...(item.listings as any),
+              is_featured: true,
+            })
+          )
+          setFeaturedListings(processedFeaturedListings)
         }
 
         // Fetch latest blog posts
@@ -263,15 +301,15 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-black/75"></div>
         </div>
-        <div className="relative mx-auto max-w-2xl py-32 sm:py-48 lg:py-56 px-6 lg:px-8">
+        <div className="relative mx-auto max-w-5xl py-32 sm:py-48 lg:py-56 px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-5xl sm:text-6xl font-bold mb-6 text-white">
               Welcome to MaltaGuns
             </h1>
             <p className="text-lg leading-8 text-white/80 mb-8">
-              Your premier destination for the firearms community in Malta.
-              Browse listings, read expert articles, and connect with fellow
-              enthusiasts.
+              The leading destination for firearm enthusiasts in Malta, for both
+              experienced shooters and beginners. MaltaGuns connects you with a
+              trusted marketplace, expert insights, and a dedicated community.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-x-6 w-full sm:w-auto">
               <Link
@@ -305,7 +343,8 @@ export default function Home() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-2">Recent Listings</h2>
             <p className="text-lg text-muted-foreground">
-              Latest additions to our marketplace
+              Explore the latest listings and find verified firearms and
+              accessories.
             </p>
           </div>
 
@@ -352,56 +391,47 @@ export default function Home() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-2">Featured Listings</h2>
             <p className="text-lg text-muted-foreground">
-              Premium items from verified sellers
+              Discover premium, verified firearms and accessories in our curated
+              listings.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                id: 'f1',
-                title: 'Beretta 92FS 9mm',
-                price: 899,
-                thumbnail: '/images/sample/beretta.jpg',
-                badge: 'Premium',
-              },
-              {
-                id: 'f2',
-                title: 'Remington 870 Tactical',
-                price: 1299,
-                thumbnail: '/images/sample/remington.jpg',
-                badge: 'Featured',
-              },
-              {
-                id: 'f3',
-                title: 'Sig Sauer P226 Legion',
-                price: 1499,
-                thumbnail: '/images/sample/sig-sauer.jpg',
-                badge: 'Premium',
-              },
-            ].map(listing => (
-              <Link
-                key={listing.id}
-                href={`/marketplace/listing/${slugify(listing.title)}`}
-              >
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="aspect-video relative overflow-hidden bg-muted">
-                    <Store className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 h-12 w-12 text-muted-foreground" />
-                  </div>
-                  <CardContent className="p-4">
-                    <Badge variant="default" className="mb-2 bg-primary">
-                      {listing.badge}
-                    </Badge>
-                    <h3 className="font-semibold text-lg mb-2 line-clamp-1">
-                      {listing.title}
-                    </h3>
-                    <p className="text-lg font-bold text-primary">
-                      {formatPrice(listing.price)}
-                    </p>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            {featuredListings.length > 0 ? (
+              featuredListings.map(listing => (
+                <Link
+                  key={listing.id}
+                  href={`/marketplace/listing/${slugify(listing.title)}`}
+                >
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                    <div className="aspect-video relative overflow-hidden">
+                      <img
+                        src={listing.thumbnail}
+                        alt={listing.title}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                    <CardContent className="p-4">
+                      <Badge variant="default" className="mb-2 bg-primary">
+                        Featured
+                      </Badge>
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-1">
+                        {listing.title}
+                      </h3>
+                      <p className="text-lg font-bold text-primary">
+                        {formatPrice(listing.price)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-8">
+                <p className="text-muted-foreground">
+                  No featured listings available at the moment.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -412,7 +442,8 @@ export default function Home() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-2">Latest Articles</h2>
             <p className="text-lg text-muted-foreground">
-              Expert insights and community news
+              Stay informed and get expert advice on firearm maintenance,
+              safety, and more.
             </p>
           </div>
 
@@ -462,7 +493,7 @@ export default function Home() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
             <p className="text-lg text-muted-foreground">
-              Join the latest community events
+              Join upcoming community events and competitions - don't miss out!
             </p>
           </div>
 
@@ -509,9 +540,12 @@ export default function Home() {
       <section className="py-24">
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Everything You Need</h2>
+            <h2 className="text-3xl font-bold mb-4">
+              Go-To Platform for Firearms Enthusiasts
+            </h2>
             <p className="text-lg text-muted-foreground">
-              A complete platform designed for the firearms community
+              MaltaGuns is your <strong>one-stop platform</strong> for
+              everything related to firearms.
             </p>
           </div>
 
@@ -527,10 +561,12 @@ export default function Home() {
                     className="text-white"
                   />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">Marketplace</h3>
+                <h3 className="font-semibold text-lg mb-2">
+                  Firearms Marketplace
+                </h3>
                 <p className="text-muted-foreground">
-                  Buy and sell firearms and accessories in a secure, verified
-                  environment.
+                  Buy and sell firearms and accessories securely with verified
+                  licensed sellers on a trusted platform.
                 </p>
               </CardContent>
             </Card>
@@ -542,8 +578,8 @@ export default function Home() {
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Verified Sellers</h3>
                 <p className="text-muted-foreground">
-                  All sellers are verified with proper licensing and
-                  documentation.
+                  Only trusted and licensed sellers can list items, ensuring
+                  safe and reliable buyer transactions.
                 </p>
               </CardContent>
             </Card>
@@ -555,8 +591,9 @@ export default function Home() {
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Events</h3>
                 <p className="text-muted-foreground">
-                  Discover and participate in local shooting events and
-                  competitions.
+                  Join local shooting, training, and exhibition events and
+                  competitions to improve your skills and connect with fellow
+                  enthusiasts.
                 </p>
               </CardContent>
             </Card>
@@ -568,8 +605,8 @@ export default function Home() {
                 </div>
                 <h3 className="font-semibold text-lg mb-2">Community</h3>
                 <p className="text-muted-foreground">
-                  Connect with fellow enthusiasts and share your passion for
-                  firearms.
+                  Engage with other firearm enthusiasts, share knowledge, and
+                  learn from each other in a supportive environment.
                 </p>
               </CardContent>
             </Card>
@@ -583,7 +620,9 @@ export default function Home() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-2">Featured Establishments</h2>
             <p className="text-lg text-muted-foreground">
-              Trusted dealers and shooting ranges in Malta
+              Looking for trusted dealers or shooting ranges in Malta? <br />
+              Check out these featured establishments that provide reliable and
+              top-quality services.
             </p>
           </div>
 
@@ -666,12 +705,13 @@ export default function Home() {
       </section>
 
       {/* Latest Reviews Section */}
-      <section className="py-16 bg-accent/50">
+      {/* <section className="py-16 bg-accent/50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-2">Latest Reviews</h2>
             <p className="text-lg text-muted-foreground">
-              Recent feedback from our community
+              Our members love MaltaGuns! Here's what some of our{' '}
+              <strong>verified buyers</strong> have said.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -721,7 +761,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Resources Section */}
       <section className="py-16 bg-accent/50">
@@ -729,7 +769,10 @@ export default function Home() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-2">Need Help?</h2>
             <p className="text-lg text-muted-foreground">
-              Find guides and latest news about firearms in Malta
+              Need help? Check out our comprehensive <strong>guides</strong> and
+              <br />
+              stay updated with the latest <strong>news</strong> and regulations
+              for firearm owners in Malta.
             </p>
           </div>
 
@@ -815,8 +858,9 @@ export default function Home() {
             Join the MaltaGuns Community Today
           </h2>
           <p className="text-lg text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-            Create an account to start buying, selling, and connecting with the
-            firearms community in Malta.
+            Ready to get started? <strong>Join MaltaGuns</strong> today! Create
+            an account to buy, sell, and connect with other firearm enthusiasts.
+            Be part of our <strong>community</strong>!
           </p>
           <div className="flex items-center justify-center gap-4">
             <Link href={isAuthenticated ? '/marketplace/create' : '/register'}>
