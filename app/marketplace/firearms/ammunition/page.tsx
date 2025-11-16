@@ -3,10 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import CategoryListings from '@/components/CategoryListings'
-import { supabase } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useToast } from '@/hooks/use-toast'
 
 export default function AmmunitionPage() {
   const router = useRouter()
+  const { toast } = useToast()
+  const supabase = createClientComponentClient()
   const [isLoading, setIsLoading] = useState(true)
   const [isRetailer, setIsRetailer] = useState(false)
 
@@ -23,29 +26,42 @@ export default function AmmunitionPage() {
           return
         }
 
-        // Check if user is a retailer
-        const { data: retailerData, error: retailerError } = await supabase
-          .from('retailers')
+        // Check if user is a retailer (has a store)
+        const { data: storeData, error: storeError } = await supabase
+          .from('stores')
           .select('id')
           .eq('owner_id', session.user.id)
-          .single()
+          .limit(1)
 
-        if (!retailerError && retailerData) {
+        if (storeError) {
+          console.error('Error checking store status:', storeError)
+        }
+
+        if (storeData && storeData.length > 0) {
           setIsRetailer(true)
+          setIsLoading(false)
         } else {
-          // If not a retailer, redirect to the main firearms page
+          // If not a retailer, show toast and redirect to the main firearms page
+          toast({
+            variant: 'destructive',
+            title: 'Access Denied',
+            description: 'Ammunition listings are only available to registered retailers.',
+          })
           router.push('/marketplace/firearms')
         }
       } catch (error) {
         console.error('Error checking retailer status:', error)
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to verify retailer status. Please try again.',
+        })
         router.push('/marketplace/firearms')
-      } finally {
-        setIsLoading(false)
       }
     }
 
     checkRetailerStatus()
-  }, [router])
+  }, [router, toast])
 
   if (isLoading) {
     return (
