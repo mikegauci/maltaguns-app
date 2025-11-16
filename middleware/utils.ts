@@ -121,4 +121,3 @@ export function isProtectedRoute(
 ): boolean {
   return routes.some(route => pathname.startsWith(route))
 }
-

@@ -84,4 +84,3 @@ export function useLoginAuth(supabase: SupabaseClient) {
     setIsDisabled,
   }
 }
-

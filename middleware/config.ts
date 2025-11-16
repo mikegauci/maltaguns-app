@@ -19,4 +19,3 @@ export const SESSION_TIMEOUT = 5000 // 5 seconds
  * Session refresh threshold (in minutes)
  */
 export const SESSION_REFRESH_THRESHOLD = 5 // minutes
-

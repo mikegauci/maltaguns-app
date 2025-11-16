@@ -71,7 +71,10 @@ export async function resolveUsernameToEmail(
 /**
  * Handle redirect after login
  */
-export function handleLoginRedirect(router: any, searchParams: URLSearchParams) {
+export function handleLoginRedirect(
+  router: any,
+  searchParams: URLSearchParams
+) {
   // Check for saved redirect location first
   const savedRedirect = localStorage.getItem('redirectAfterLogin')
   if (savedRedirect) {
@@ -91,4 +94,3 @@ export function handleLoginRedirect(router: any, searchParams: URLSearchParams) 
   // Default redirect to profile
   router.push('/profile')
 }
-

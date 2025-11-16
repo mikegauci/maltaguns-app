@@ -53,10 +53,16 @@ export default function Login() {
   const router = useRouter()
   const { toast } = useToast()
   const supabase = createClientComponentClient()
-  
+
   // Custom hook for auth state management
-  const { isAuthenticated, userEmail, isDisabled, error, setError, setIsDisabled } =
-    useLoginAuth(supabase)
+  const {
+    isAuthenticated,
+    userEmail,
+    isDisabled,
+    error,
+    setError,
+    setIsDisabled,
+  } = useLoginAuth(supabase)
 
   // Local state
   const [isLoading, setIsLoading] = useState(false)
