@@ -3,8 +3,6 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import type { AuthResponse } from '@supabase/supabase-js'
 
-const AUTHORIZED_ADMIN_EMAILS: string[] = []
-
 const PROTECTED_ROUTES = [
   '/profile',
   '/marketplace/create',

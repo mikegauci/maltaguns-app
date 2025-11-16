@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -35,6 +34,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { forceLogout } from '@/lib/auth-utils'
+import { useLoginAuth } from './hooks/useLoginAuth'
+import { handleLogin, handlePasswordReset } from './handlers/loginHandlers'
 
 const loginSchema = z.object({
   identifier: z.string().min(1, 'Username or email is required'),
@@ -48,123 +49,21 @@ const resetPasswordSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 
-interface DebugInfo {
-  sessionAfterLogin?: any
-}
-
 export default function Login() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { toast } = useToast()
+  const supabase = createClientComponentClient()
+  
+  // Custom hook for auth state management
+  const { isAuthenticated, userEmail, isDisabled, error, setError, setIsDisabled } =
+    useLoginAuth(supabase)
+
+  // Local state
   const [isLoading, setIsLoading] = useState(false)
   const [isResetLoading, setIsResetLoading] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const [resetError, setResetError] = useState<string | null>(null)
-  const [debugInfo, setDebugInfo] = useState<DebugInfo>({})
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
-  const [isDisabled, setIsDisabled] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
-  const supabase = createClientComponentClient()
-
-  const resetForm = useForm<ResetPasswordForm>({
-    resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      email: '',
-    },
-  })
-
-  useEffect(() => {
-    // Check for error message in URL params
-    const errorMsg = searchParams.get('error')
-    if (errorMsg) {
-      setError(errorMsg)
-
-      // If the error is about a disabled account, set the disabled flag
-      if (errorMsg.includes('disabled')) {
-        setIsDisabled(true)
-
-        // Clear any existing session to avoid auth errors
-        if (typeof window !== 'undefined') {
-          // Clear session from localStorage to prevent auth errors
-          localStorage.removeItem('supabase.auth.token')
-          // Force immediate logout if account is disabled
-          forceLogout()
-        }
-      }
-    }
-  }, [searchParams])
-
-  useEffect(() => {
-    let mounted = true
-
-    async function checkSession() {
-      try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession()
-
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-          return
-        }
-
-        if (session) {
-          // Check if this user's account is disabled by querying the profiles table
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('is_disabled')
-            .eq('id', session.user.id)
-            .single()
-
-          if (profileError) {
-            console.error('Error fetching profile:', profileError)
-          }
-
-          // If profile exists and is disabled, set disabled flag
-          if (profileData && profileData.is_disabled === true) {
-            setIsDisabled(true)
-            setError('Your account has been disabled by an administrator')
-            return
-          }
-
-          // Not disabled, proceed with normal authenticated flow
-          if (mounted) {
-            setIsAuthenticated(true)
-            setUserEmail(session.user.email || null)
-
-            // Check for saved redirect location first
-            const savedRedirect = localStorage.getItem('redirectAfterLogin')
-            if (savedRedirect) {
-              console.log(
-                `Auto-redirecting to saved location: ${savedRedirect}`
-              )
-              localStorage.removeItem('redirectAfterLogin')
-              // Use replace instead of push to avoid adding to history
-              router.replace(savedRedirect)
-            } else {
-              // Only redirect to home if explicitly requested or no redirect is specified
-              const redirectTo = searchParams.get('redirectTo')
-              if (redirectTo) {
-                router.replace(redirectTo)
-              }
-              // Don't auto-redirect if there's no explicit direction
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error checking session:', error)
-      }
-    }
-
-    checkSession()
-
-    return () => {
-      mounted = false
-    }
-  }, [supabase.auth, router, searchParams, isDisabled])
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -174,77 +73,25 @@ export default function Login() {
     },
   })
 
-  // Direct logout that doesn't get stuck in a loading state
-  function handleLogout() {
-    // Directly call forceLogout without waiting - prevents getting stuck
-    forceLogout()
-  }
+  const resetForm = useForm<ResetPasswordForm>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: {
+      email: '',
+    },
+  })
 
   async function onSubmit(data: LoginForm) {
     try {
       setIsLoading(true)
       setError(null)
 
-      // Check if the identifier is an email
-      const isEmail = data.identifier.includes('@')
-      let email = data.identifier
-
-      if (!isEmail) {
-        // Get the email associated with the username
-        const { data: userData, error: userError } = await supabase
-          .from('profiles')
-          .select('email')
-          .eq('username', data.identifier)
-          .single()
-
-        if (userError || !userData) {
-          throw new Error('Username not found')
-        }
-        email = userData.email
-      }
-
-      // Check if the user's account is disabled before sign in
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_disabled')
-        .eq('email', email)
-        .single()
-
-      if (!profileError && profileData && profileData.is_disabled === true) {
-        setIsDisabled(true)
-        throw new Error('Your account has been disabled by an administrator')
-      }
-
-      // Sign in with email
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email,
+      await handleLogin({
+        identifier: data.identifier,
         password: data.password,
+        supabase,
+        router,
+        setIsDisabled,
       })
-
-      if (error) {
-        // Check if error message contains "disabled" and set the flag
-        if (error.message.includes('disabled')) {
-          setIsDisabled(true)
-          // Just throw the error to display the message
-          throw error
-        }
-        throw error
-      }
-
-      // Check if there's a redirect URL in localStorage (set by profile page)
-      const redirectUrl = localStorage.getItem('redirectAfterLogin')
-
-      // If there is a redirect URL, use it and clear the localStorage
-      if (redirectUrl) {
-        console.log(`Redirecting to saved location: ${redirectUrl}`)
-        localStorage.removeItem('redirectAfterLogin')
-        router.push(redirectUrl)
-      } else {
-        // Otherwise, redirect to profile page
-        router.push('/profile')
-      }
-
-      router.refresh()
     } catch (error) {
       console.error('Login error:', error)
       setError(error instanceof Error ? error.message : 'Invalid credentials')
@@ -252,28 +99,20 @@ export default function Login() {
     }
   }
 
-  async function handleResetPassword(data: ResetPasswordForm) {
+  async function onResetPassword(data: ResetPasswordForm) {
     try {
       setIsResetLoading(true)
       setResetError(null)
 
-      // Define the redirect URL for password reset
-      const redirectTo = `${window.location.origin}/reset-password`
-      console.log(`Setting password reset redirect to: ${redirectTo}`)
-
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: redirectTo,
+      await handlePasswordReset({
+        email: data.email,
+        supabase,
+        toast,
+        onSuccess: () => {
+          setResetDialogOpen(false)
+          resetForm.reset()
+        },
       })
-
-      if (error) throw error
-
-      toast({
-        title: 'Password reset email sent',
-        description: 'Check your email for a link to reset your password.',
-      })
-
-      setResetDialogOpen(false)
-      resetForm.reset()
     } catch (error) {
       console.error('Reset password error:', error)
       setResetError(
@@ -307,7 +146,7 @@ export default function Login() {
 
               <Button
                 variant="destructive"
-                onClick={handleLogout}
+                onClick={forceLogout}
                 className="w-full"
               >
                 <LogOut className="mr-2 h-4 w-4" />
@@ -470,7 +309,7 @@ export default function Login() {
           </DialogHeader>
           <Form {...resetForm}>
             <form
-              onSubmit={resetForm.handleSubmit(handleResetPassword)}
+              onSubmit={resetForm.handleSubmit(onResetPassword)}
               className="space-y-4"
             >
               <FormField
