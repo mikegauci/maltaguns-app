@@ -8,16 +8,30 @@ interface ContentHandlerDependencies {
   setEvents: (events: Event[] | ((prev: Event[]) => Event[])) => void
   setStores: (stores: Store[] | ((prev: Store[]) => Store[])) => void
   setClubs: (clubs: Club[] | ((prev: Club[]) => Club[])) => void
-  setServicing: (servicing: Servicing[] | ((prev: Servicing[]) => Servicing[])) => void
+  setServicing: (
+    servicing: Servicing[] | ((prev: Servicing[]) => Servicing[])
+  ) => void
   setRanges: (ranges: Range[] | ((prev: Range[]) => Range[])) => void
 }
 
 export function createContentHandlers(deps: ContentHandlerDependencies) {
-  const { supabase, toast, setBlogPosts, setEvents, setStores, setClubs, setServicing, setRanges } = deps
+  const {
+    supabase,
+    toast,
+    setBlogPosts,
+    setEvents,
+    setStores,
+    setClubs,
+    setServicing,
+    setRanges,
+  } = deps
 
   async function handleDeletePost(postId: string) {
     try {
-      const { error } = await supabase.from('blog_posts').delete().eq('id', postId)
+      const { error } = await supabase
+        .from('blog_posts')
+        .delete()
+        .eq('id', postId)
       if (error) throw error
 
       setBlogPosts(prevPosts => prevPosts.filter(post => post.id !== postId))
@@ -30,7 +44,8 @@ export function createContentHandlers(deps: ContentHandlerDependencies) {
       toast({
         variant: 'destructive',
         title: 'Delete failed',
-        description: error instanceof Error ? error.message : 'Failed to delete post',
+        description:
+          error instanceof Error ? error.message : 'Failed to delete post',
       })
     }
   }
@@ -50,17 +65,15 @@ export function createContentHandlers(deps: ContentHandlerDependencies) {
       toast({
         variant: 'destructive',
         title: 'Delete failed',
-        description: error instanceof Error ? error.message : 'Failed to delete event',
+        description:
+          error instanceof Error ? error.message : 'Failed to delete event',
       })
     }
   }
 
   async function handleDeleteStore(storeId: string) {
     try {
-      const { error } = await supabase
-        .from('stores')
-        .delete()
-        .eq('id', storeId)
+      const { error } = await supabase.from('stores').delete().eq('id', storeId)
 
       if (error) throw error
 
@@ -77,7 +90,10 @@ export function createContentHandlers(deps: ContentHandlerDependencies) {
       toast({
         variant: 'destructive',
         title: 'Delete failed',
-        description: error instanceof Error ? error.message : 'Failed to delete establishment',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete establishment',
       })
     }
   }
@@ -88,4 +104,3 @@ export function createContentHandlers(deps: ContentHandlerDependencies) {
     handleDeleteStore,
   }
 }
-

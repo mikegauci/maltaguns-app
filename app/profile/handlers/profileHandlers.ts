@@ -5,13 +5,19 @@ import { Profile, Listing, ProfileForm } from '../types'
 interface HandlerDependencies {
   supabase: SupabaseClient
   toast: any
-  setProfile: (profile: Profile | null | ((prev: Profile | null) => Profile | null)) => void
+  setProfile: (
+    profile: Profile | null | ((prev: Profile | null) => Profile | null)
+  ) => void
   setListings: (listings: Listing[] | ((prev: Listing[]) => Listing[])) => void
   profile: Profile | null
 }
 
 // Helper: Convert data URL to File
-export async function urlToFile(url: string, filename: string, mimeType: string): Promise<File> {
+export async function urlToFile(
+  url: string,
+  filename: string,
+  mimeType: string
+): Promise<File> {
   const res = await fetch(url)
   const buf = await res.arrayBuffer()
   return new File([buf], filename, { type: mimeType })
@@ -49,7 +55,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         return
       }
 
-      const { isVerified, isExpired, expiryDate, correctedImageUrl } = await verifyLicenseImage(file)
+      const { isVerified, isExpired, expiryDate, correctedImageUrl } =
+        await verifyLicenseImage(file)
 
       if (isExpired) {
         toast({
@@ -77,7 +84,9 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
       if (uploadError) throw uploadError
 
-      const { data: { publicUrl } } = supabase.storage.from('licenses').getPublicUrl(filePath)
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('licenses').getPublicUrl(filePath)
 
       const { error: updateError } = await supabase
         .from('profiles')
@@ -102,17 +111,22 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       )
 
       toast({
-        title: isVerified ? 'License uploaded and verified' : 'License uploaded',
+        title: isVerified
+          ? 'License uploaded and verified'
+          : 'License uploaded',
         description: isVerified
           ? 'Your license has been verified successfully.'
           : 'Your license will be reviewed by an administrator.',
-        className: isVerified ? 'bg-green-600 text-white border-green-600' : 'bg-amber-100 text-amber-800 border-amber-200',
+        className: isVerified
+          ? 'bg-green-600 text-white border-green-600'
+          : 'bg-amber-100 text-amber-800 border-amber-200',
       })
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Upload failed',
-        description: error instanceof Error ? error.message : 'Failed to upload license.',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload license.',
       })
     } finally {
       setUploadingLicense(false)
@@ -153,12 +167,16 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       toast({
         variant: 'destructive',
         title: 'Remove failed',
-        description: error instanceof Error ? error.message : 'Failed to remove license.',
+        description:
+          error instanceof Error ? error.message : 'Failed to remove license.',
       })
     }
   }
 
-  async function onSubmit(data: ProfileForm, setIsEditing: (value: boolean) => void) {
+  async function onSubmit(
+    data: ProfileForm,
+    setIsEditing: (value: boolean) => void
+  ) {
     try {
       if (!profile?.id) return
 
@@ -195,12 +213,16 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       toast({
         variant: 'destructive',
         title: 'Update failed',
-        description: error instanceof Error ? error.message : 'Failed to update profile.',
+        description:
+          error instanceof Error ? error.message : 'Failed to update profile.',
       })
     }
   }
 
-  async function handleListingStatusChange(id: string, value: string): Promise<void> {
+  async function handleListingStatusChange(
+    id: string,
+    value: string
+  ): Promise<void> {
     try {
       const { data: userData, error: authError } = await supabase.auth.getUser()
       if (authError) throw authError
@@ -221,13 +243,17 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
       toast({
         title: 'Listing updated',
-        description: 'The status of your listing has been updated successfully.',
+        description:
+          'The status of your listing has been updated successfully.',
       })
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Update failed',
-        description: error instanceof Error ? error.message : 'Failed to update listing status.',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update listing status.',
       })
     }
   }
@@ -259,7 +285,9 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         throw new Error(errorData.error || 'Failed to delete listing')
       }
 
-      setListings(prevListings => prevListings.filter(listing => listing.id !== listingId))
+      setListings(prevListings =>
+        prevListings.filter(listing => listing.id !== listingId)
+      )
 
       toast({
         title: 'Listing deleted',
@@ -272,7 +300,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       toast({
         variant: 'destructive',
         title: 'Delete failed',
-        description: error instanceof Error ? error.message : 'Failed to delete listing',
+        description:
+          error instanceof Error ? error.message : 'Failed to delete listing',
       })
       setDeleteDialogOpen(false)
       setListingToDelete(null)
@@ -288,7 +317,9 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       })
 
       if (!response.ok) {
-        const { error } = await supabase.rpc('relist_listing', { listing_id: listingId })
+        const { error } = await supabase.rpc('relist_listing', {
+          listing_id: listingId,
+        })
         if (error) throw new Error('Failed to renew listing')
       }
 
@@ -297,7 +328,9 @@ export function createProfileHandlers(deps: HandlerDependencies) {
           listing.id === listingId
             ? {
                 ...listing,
-                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                expires_at: new Date(
+                  Date.now() + 30 * 24 * 60 * 60 * 1000
+                ).toISOString(),
                 days_until_expiration: 30,
                 is_near_expiration: false,
               }
@@ -313,7 +346,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       toast({
         variant: 'destructive',
         title: 'Renewal failed',
-        description: error instanceof Error ? error.message : 'Failed to renew listing.',
+        description:
+          error instanceof Error ? error.message : 'Failed to renew listing.',
       })
     }
   }
@@ -340,7 +374,10 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       const featureResponse = await fetch('/api/listings/renew-feature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: userData.user.id, listingId: listingToFeature }),
+        body: JSON.stringify({
+          userId: userData.user.id,
+          listingId: listingToFeature,
+        }),
       })
 
       if (!featureResponse.ok) throw new Error('Failed to renew feature')
@@ -350,7 +387,9 @@ export function createProfileHandlers(deps: HandlerDependencies) {
           listing.id === listingToFeature
             ? {
                 ...listing,
-                expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                expires_at: new Date(
+                  Date.now() + 30 * 24 * 60 * 60 * 1000
+                ).toISOString(),
                 days_until_expiration: 30,
                 is_near_expiration: false,
                 is_featured: true,
@@ -364,7 +403,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
       toast({
         title: 'Listing featured and renewed',
-        description: 'Your listing has been featured for 15 days and renewed for 30 days.',
+        description:
+          'Your listing has been featured for 15 days and renewed for 30 days.',
       })
 
       setListingToFeature(null)
@@ -372,7 +412,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       toast({
         variant: 'destructive',
         title: 'Featuring failed',
-        description: error instanceof Error ? error.message : 'Failed to feature listing.',
+        description:
+          error instanceof Error ? error.message : 'Failed to feature listing.',
       })
     }
   }
@@ -402,7 +443,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to remove feature.',
+        description:
+          error instanceof Error ? error.message : 'Failed to remove feature.',
       })
     }
   }
@@ -418,4 +460,3 @@ export function createProfileHandlers(deps: HandlerDependencies) {
     handleRemoveFeature,
   }
 }
-

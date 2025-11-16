@@ -22,7 +22,11 @@ interface UseProfileDataProps {
   form: UseFormReturn<ProfileForm>
 }
 
-export function useProfileData({ supabase, session, form }: UseProfileDataProps) {
+export function useProfileData({
+  supabase,
+  session,
+  form,
+}: UseProfileDataProps) {
   const router = useRouter()
   const { toast } = useToast()
 
@@ -35,8 +39,12 @@ export function useProfileData({ supabase, session, form }: UseProfileDataProps)
   const [ranges, setRanges] = useState<Range[]>([])
   const [blogPosts, setBlogPosts] = useState<BlogPost[]>([])
   const [events, setEvents] = useState<Event[]>([])
-  const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([])
-  const [listingIdToTitleMap, setListingIdToTitleMap] = useState<Record<string, string>>({})
+  const [creditTransactions, setCreditTransactions] = useState<
+    CreditTransaction[]
+  >([])
+  const [listingIdToTitleMap, setListingIdToTitleMap] = useState<
+    Record<string, string>
+  >({})
   const [loading, setLoading] = useState(true)
   const [listingCredits, setListingCredits] = useState(0)
   const [eventCredits, setEventCredits] = useState(0)
@@ -86,31 +94,42 @@ export function useProfileData({ supabase, session, form }: UseProfileDataProps)
               ])
             )
 
-            const listingsWithFeatures = (listingsData || []).map((listing: any) => {
-              const now = new Date()
-              const expirationDate = new Date(listing.expires_at)
-              const featuredEndDate = featuredEndDates.get(listing.id)
+            const listingsWithFeatures = (listingsData || []).map(
+              (listing: any) => {
+                const now = new Date()
+                const expirationDate = new Date(listing.expires_at)
+                const featuredEndDate = featuredEndDates.get(listing.id)
 
-              const diffTime = expirationDate.getTime() - now.getTime()
-              const daysUntilExpiration = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                const diffTime = expirationDate.getTime() - now.getTime()
+                const daysUntilExpiration = Math.ceil(
+                  diffTime / (1000 * 60 * 60 * 24)
+                )
 
-              let featuredDaysRemaining = 0
-              if (featuredEndDate && featuredEndDate > now) {
-                const featuredDiffTime = featuredEndDate.getTime() - now.getTime()
-                featuredDaysRemaining = Math.max(0, Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24)))
+                let featuredDaysRemaining = 0
+                if (featuredEndDate && featuredEndDate > now) {
+                  const featuredDiffTime =
+                    featuredEndDate.getTime() - now.getTime()
+                  featuredDaysRemaining = Math.max(
+                    0,
+                    Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24))
+                  )
+                }
+
+                return {
+                  ...listing,
+                  is_featured: featuredEndDate ? featuredEndDate > now : false,
+                  days_until_expiration: daysUntilExpiration,
+                  featured_days_remaining: featuredDaysRemaining,
+                  is_near_expiration:
+                    daysUntilExpiration <= 3 && daysUntilExpiration > 0,
+                  is_expired: daysUntilExpiration <= 0,
+                }
               }
+            )
 
-              return {
-                ...listing,
-                is_featured: featuredEndDate ? featuredEndDate > now : false,
-                days_until_expiration: daysUntilExpiration,
-                featured_days_remaining: featuredDaysRemaining,
-                is_near_expiration: daysUntilExpiration <= 3 && daysUntilExpiration > 0,
-                is_expired: daysUntilExpiration <= 0,
-              }
-            })
-
-            const activeListings = listingsWithFeatures.filter(l => !l.is_expired)
+            const activeListings = listingsWithFeatures.filter(
+              l => !l.is_expired
+            )
             setListings(activeListings)
 
             const titleMap: Record<string, string> = {}
@@ -121,16 +140,28 @@ export function useProfileData({ supabase, session, form }: UseProfileDataProps)
           }
 
           // Fetch stores and establishments
-          const { data: storesData } = await supabase.from('stores').select('*').eq('owner_id', userId)
+          const { data: storesData } = await supabase
+            .from('stores')
+            .select('*')
+            .eq('owner_id', userId)
           if (storesData) setStores(storesData)
 
-          const { data: clubsData } = await supabase.from('clubs').select('*').eq('owner_id', userId)
+          const { data: clubsData } = await supabase
+            .from('clubs')
+            .select('*')
+            .eq('owner_id', userId)
           if (clubsData) setClubs(clubsData)
 
-          const { data: servicingData } = await supabase.from('servicing').select('*').eq('owner_id', userId)
+          const { data: servicingData } = await supabase
+            .from('servicing')
+            .select('*')
+            .eq('owner_id', userId)
           if (servicingData) setServicing(servicingData)
 
-          const { data: rangesData } = await supabase.from('ranges').select('*').eq('owner_id', userId)
+          const { data: rangesData } = await supabase
+            .from('ranges')
+            .select('*')
+            .eq('owner_id', userId)
           if (rangesData) setRanges(rangesData)
 
           // Fetch blog posts
@@ -155,7 +186,8 @@ export function useProfileData({ supabase, session, form }: UseProfileDataProps)
             .select('amount')
             .eq('user_id', userId)
             .single()
-          if (listingCreditsData) setListingCredits(listingCreditsData.amount || 0)
+          if (listingCreditsData)
+            setListingCredits(listingCreditsData.amount || 0)
 
           const { data: eventCreditsData } = await supabase
             .from('credits_events')
@@ -251,4 +283,3 @@ export function useProfileData({ supabase, session, form }: UseProfileDataProps)
     refreshCredits,
   }
 }
-

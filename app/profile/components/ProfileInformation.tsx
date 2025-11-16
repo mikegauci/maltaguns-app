@@ -60,10 +60,7 @@ export const ProfileInformation = ({
       <CardContent>
         {isEditing ? (
           <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-4">
                 <FormField
                   control={form.control}
@@ -114,10 +111,7 @@ export const ProfileInformation = ({
                     <FormItem>
                       <FormLabel>Address</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="123 Main St, Valletta"
-                          {...field}
-                        />
+                        <Input placeholder="123 Main St, Valletta" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -136,31 +130,23 @@ export const ProfileInformation = ({
               <p className="text-lg">{profile.username}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Email
-              </p>
+              <p className="text-sm font-medium text-muted-foreground">Email</p>
               <p className="text-lg">{profile.email || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
                 First Name
               </p>
-              <p className="text-lg">
-                {profile.first_name || 'Not provided'}
-              </p>
+              <p className="text-lg">{profile.first_name || 'Not provided'}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
                 Last Name
               </p>
-              <p className="text-lg">
-                {profile.last_name || 'Not provided'}
-              </p>
+              <p className="text-lg">{profile.last_name || 'Not provided'}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Phone
-              </p>
+              <p className="text-sm font-medium text-muted-foreground">Phone</p>
               <p className="text-lg">{profile.phone || 'Not provided'}</p>
             </div>
             <div>
@@ -173,9 +159,7 @@ export const ProfileInformation = ({
               <p className="text-sm font-medium text-muted-foreground">
                 Birthday
               </p>
-              <p className="text-lg">
-                {profile.birthday || 'Not provided'}
-              </p>
+              <p className="text-lg">{profile.birthday || 'Not provided'}</p>
             </div>
           </div>
         )}
@@ -183,4 +167,3 @@ export const ProfileInformation = ({
     </Card>
   )
 }
-

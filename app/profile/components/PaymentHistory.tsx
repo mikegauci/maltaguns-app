@@ -68,18 +68,12 @@ export const PaymentHistory = ({
 
                 // Replace listing IDs with titles if available
                 if (
-                  description.includes(
-                    'Feature listing purchase for listing'
-                  )
+                  description.includes('Feature listing purchase for listing')
                 ) {
                   const match = description.match(
                     /Feature listing purchase for listing ([0-9a-f-]+)/
                   )
-                  if (
-                    match &&
-                    match[1] &&
-                    listingIdToTitleMap[match[1]]
-                  ) {
+                  if (match && match[1] && listingIdToTitleMap[match[1]]) {
                     description = description.replace(
                       `Feature listing purchase for listing ${match[1]}`,
                       `Feature listing purchase for "${listingIdToTitleMap[match[1]]}"`
@@ -104,9 +98,7 @@ export const PaymentHistory = ({
                               : 'secondary'
                           }
                         >
-                          {transaction.type === 'credit'
-                            ? 'Purchase'
-                            : 'Usage'}
+                          {transaction.type === 'credit' ? 'Purchase' : 'Usage'}
                         </Badge>
                         {transaction.credit_type && (
                           <Badge variant="outline">
@@ -157,4 +149,3 @@ export const PaymentHistory = ({
     </Card>
   )
 }
-

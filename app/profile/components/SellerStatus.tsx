@@ -29,7 +29,9 @@ import { Profile } from '../types'
 interface SellerStatusProps {
   profile: Profile
   uploadingLicense: boolean
-  handleLicenseUpload: (event: React.ChangeEvent<HTMLInputElement>) => Promise<void>
+  handleLicenseUpload: (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => Promise<void>
   handleRemoveLicense: () => Promise<void>
 }
 
@@ -175,16 +177,15 @@ export const SellerStatus = ({
             <span className="font-medium">Information:</span>
           </div>
           <p className="mb-3">
-            Maltaguns ensures that all firearms added to the site are owned
-            by licensed individuals. For this reason, we require all sellers
-            wishing to sell a firearm to upload a picture of their license
-            only once and before they list their first firearm. The picture
-            must include only the front page of the Malta police license
-            issued to you, clearly displaying your name and address which
-            must match those on your pofile. Uploaded images will not be
-            shared with anyone and are strictly used for verification
-            purposes only. Should you have any questions please email us on
-            Info@maltaguns.com.
+            Maltaguns ensures that all firearms added to the site are owned by
+            licensed individuals. For this reason, we require all sellers
+            wishing to sell a firearm to upload a picture of their license only
+            once and before they list their first firearm. The picture must
+            include only the front page of the Malta police license issued to
+            you, clearly displaying your name and address which must match those
+            on your pofile. Uploaded images will not be shared with anyone and
+            are strictly used for verification purposes only. Should you have
+            any questions please email us on Info@maltaguns.com.
           </p>
           <div
             className="w-full max-w-md h-72 rounded-md bg-cover bg-center bg-no-repeat"
@@ -196,4 +197,3 @@ export const SellerStatus = ({
     </Card>
   )
 }
-

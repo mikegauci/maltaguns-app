@@ -33,10 +33,7 @@ export const MyBlogPosts = ({
             <CardTitle>My Blog Posts</CardTitle>
             <CardDescription>Manage your blog posts</CardDescription>
           </div>
-          <Link
-            href="/blog/create"
-            className="mt-4 sm:mt-0 w-full sm:w-auto"
-          >
+          <Link href="/blog/create" className="mt-4 sm:mt-0 w-full sm:w-auto">
             <Button className="w-full">
               <BookOpen className="h-4 w-4 mr-2" />
               Write Post
@@ -56,9 +53,7 @@ export const MyBlogPosts = ({
                       <p className="text-sm text-muted-foreground">
                         {format(new Date(post.created_at), 'PPP')}
                       </p>
-                      <Badge
-                        variant={post.published ? 'default' : 'secondary'}
-                      >
+                      <Badge variant={post.published ? 'default' : 'secondary'}>
                         {post.published ? 'Published' : 'Draft'}
                       </Badge>
                     </div>
@@ -68,11 +63,7 @@ export const MyBlogPosts = ({
                       href={`/blog/${post.slug}`}
                       className="w-full sm:w-auto"
                     >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                      >
+                      <Button variant="outline" size="sm" className="w-full">
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
@@ -81,11 +72,7 @@ export const MyBlogPosts = ({
                       href={`/blog/${post.slug}/edit`}
                       className="w-full sm:w-auto"
                     >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                      >
+                      <Button variant="outline" size="sm" className="w-full">
                         <Pencil className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
@@ -109,4 +96,3 @@ export const MyBlogPosts = ({
     </Card>
   )
 }
-

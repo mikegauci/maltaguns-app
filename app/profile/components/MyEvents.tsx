@@ -80,9 +80,7 @@ export const MyEvents = ({
                       </div>
                     )}
                     <div>
-                      <h3 className="font-semibold text-lg">
-                        {event.title}
-                      </h3>
+                      <h3 className="font-semibold text-lg">{event.title}</h3>
                       <div className="text-sm text-muted-foreground">
                         <p>{format(new Date(event.start_date), 'PPP')}</p>
                         <p>{event.location}</p>
@@ -94,11 +92,7 @@ export const MyEvents = ({
                       href={`/events/${event.slug || event.id}`}
                       className="w-full sm:w-auto"
                     >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                      >
+                      <Button variant="outline" size="sm" className="w-full">
                         <Eye className="h-4 w-4 mr-2" />
                         View
                       </Button>
@@ -107,11 +101,7 @@ export const MyEvents = ({
                       href={`/events/${event.slug || event.id}/edit`}
                       className="w-full sm:w-auto"
                     >
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                      >
+                      <Button variant="outline" size="sm" className="w-full">
                         <Pencil className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
@@ -135,4 +125,3 @@ export const MyEvents = ({
     </Card>
   )
 }
-

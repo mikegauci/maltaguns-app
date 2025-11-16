@@ -244,11 +244,7 @@ export const MyListings = ({
                         href={`/marketplace/listing/${slugify(listing.title)}`}
                         className="w-full sm:w-auto"
                       >
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full"
-                        >
+                        <Button variant="outline" size="sm" className="w-full">
                           <Eye className="h-4 w-4 mr-2" />
                           View
                         </Button>
@@ -300,4 +296,3 @@ export const MyListings = ({
     </Card>
   )
 }
-

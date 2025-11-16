@@ -17,14 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Store,
-  Users,
-  Wrench,
-  MapPin,
-  Plus,
-  Info,
-} from 'lucide-react'
+import { Store, Users, Wrench, MapPin, Plus, Info } from 'lucide-react'
 import { Store as StoreType, Club, Servicing, Range } from '../types'
 
 interface MyEstablishmentsProps {
@@ -92,10 +85,10 @@ export const MyEstablishments = ({
             <div className="space-y-4 py-4 text-sm">
               <p>
                 Maltaguns provides businesses in Malta with a unique opportunity
-                to showcase their services and reach a large community of firearm
-                enthusiasts. Our platform is tailored to cater to professionals
-                in the firearms industry, including stores, shooting clubs,
-                ranges, and servicing businesses.
+                to showcase their services and reach a large community of
+                firearm enthusiasts. Our platform is tailored to cater to
+                professionals in the firearms industry, including stores,
+                shooting clubs, ranges, and servicing businesses.
               </p>
               <p>
                 By creating your business profile, you&apos;ll benefit from
@@ -105,8 +98,8 @@ export const MyEstablishments = ({
               </p>
               <p>
                 Join Malta&apos;s premier firearms marketplace today and connect
-                with potential customers who are passionate about shooting sports
-                and firearms safety!
+                with potential customers who are passionate about shooting
+                sports and firearms safety!
               </p>
             </div>
           </DialogContent>
@@ -129,10 +122,7 @@ export const MyEstablishments = ({
           <>
             <h3 className="text-lg font-semibold mb-3">Stores</h3>
             {stores.map(storeItem => (
-              <div
-                key={storeItem.id}
-                className="border rounded-lg p-4 mb-4"
-              >
+              <div key={storeItem.id} className="border rounded-lg p-4 mb-4">
                 <div className="flex items-center gap-4 mb-4">
                   {storeItem.logo_url ? (
                     <img
@@ -181,10 +171,7 @@ export const MyEstablishments = ({
                       Edit Profile
                     </Button>
                   </Link>
-                  <Link
-                    href={`/blog/create?store_id=${storeItem.id}`}
-                    passHref
-                  >
+                  <Link href={`/blog/create?store_id=${storeItem.id}`} passHref>
                     <Button size="sm" variant="outline">
                       Add Blog Post
                     </Button>
@@ -245,9 +232,7 @@ export const MyEstablishments = ({
                     </Button>
                   </Link>
                   <Link
-                    href={`/establishments/clubs/${
-                      club.slug || club.id
-                    }/edit`}
+                    href={`/establishments/clubs/${club.slug || club.id}/edit`}
                     passHref
                   >
                     <Button size="sm" variant="outline">
@@ -270,14 +255,9 @@ export const MyEstablishments = ({
         {/* Servicing */}
         {servicing.length > 0 && (
           <>
-            <h3 className="text-lg font-semibold mb-3">
-              Servicing & Repair
-            </h3>
+            <h3 className="text-lg font-semibold mb-3">Servicing & Repair</h3>
             {servicing.map(service => (
-              <div
-                key={service.id}
-                className="border rounded-lg p-4 mb-4"
-              >
+              <div key={service.id} className="border rounded-lg p-4 mb-4">
                 <div className="flex items-center gap-4 mb-4">
                   {service.logo_url ? (
                     <img
@@ -342,9 +322,7 @@ export const MyEstablishments = ({
         {/* Ranges */}
         {ranges.length > 0 && (
           <>
-            <h3 className="text-lg font-semibold mb-3">
-              Shooting Ranges
-            </h3>
+            <h3 className="text-lg font-semibold mb-3">Shooting Ranges</h3>
             {ranges.map(range => (
               <div key={range.id} className="border rounded-lg p-4 mb-4">
                 <div className="flex items-center gap-4 mb-4">
@@ -376,9 +354,7 @@ export const MyEstablishments = ({
 
                 <div className="flex flex-wrap gap-2 mt-4">
                   <Link
-                    href={`/establishments/ranges/${
-                      range.slug || range.id
-                    }`}
+                    href={`/establishments/ranges/${range.slug || range.id}`}
                     passHref
                   >
                     <Button size="sm" variant="outline">
@@ -418,8 +394,8 @@ export const MyEstablishments = ({
               e => !e.slug
             ) && (
               <AlertDescription className="mb-2">
-                Some of your establishments do not have a properly
-                formatted URL slug. This will be fixed automatically.
+                Some of your establishments do not have a properly formatted URL
+                slug. This will be fixed automatically.
               </AlertDescription>
             )}
           </Alert>
@@ -428,4 +404,3 @@ export const MyEstablishments = ({
     </Card>
   )
 }
-

@@ -82,4 +82,3 @@ export interface CreditTransaction {
   description: string | null
   status: string | null
 }
-

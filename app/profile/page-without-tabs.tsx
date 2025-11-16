@@ -4,10 +4,23 @@ import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Trash2, X } from 'lucide-react'
 import { FeatureCreditDialog } from '@/components/feature-credit-dialog'
 import { CreditDialog } from '@/components/credit-dialog'
@@ -46,7 +59,9 @@ export default function ProfilePage() {
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
   const [listingToFeature, setListingToFeature] = useState<string | null>(null)
   const [removeFeatureDialogOpen, setRemoveFeatureDialogOpen] = useState(false)
-  const [listingToRemoveFeature, setListingToRemoveFeature] = useState<string | null>(null)
+  const [listingToRemoveFeature, setListingToRemoveFeature] = useState<
+    string | null
+  >(null)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [showEventCreditDialog, setShowEventCreditDialog] = useState(false)
   const [establishmentInfoOpen, setEstablishmentInfoOpen] = useState(false)
@@ -110,15 +125,28 @@ export default function ProfilePage() {
 
   // Wrapper functions for handlers that need additional state
   const handleLicenseUpload = (event: React.ChangeEvent<HTMLInputElement>) =>
-    profileHandlers.handleLicenseUpload(event, uploadingLicense, setUploadingLicense)
+    profileHandlers.handleLicenseUpload(
+      event,
+      uploadingLicense,
+      setUploadingLicense
+    )
 
   const handleDeleteListing = (listingId: string) =>
-    profileHandlers.handleDeleteListing(listingId, setDeleteDialogOpen, setListingToDelete)
+    profileHandlers.handleDeleteListing(
+      listingId,
+      setDeleteDialogOpen,
+      setListingToDelete
+    )
 
   const handleRenewalSuccess = () =>
-    profileHandlers.handleRenewalSuccess(listingToFeature, setListingToFeature, refreshCredits)
+    profileHandlers.handleRenewalSuccess(
+      listingToFeature,
+      setListingToFeature,
+      refreshCredits
+    )
 
-  const onSubmit = (data: ProfileForm) => profileHandlers.onSubmit(data, setIsEditing)
+  const onSubmit = (data: ProfileForm) =>
+    profileHandlers.onSubmit(data, setIsEditing)
 
   const confirmDeleteListing = (listingId: string) => {
     setListingToDelete(listingId)
@@ -139,7 +167,9 @@ export default function ProfilePage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Profile Access</CardTitle>
-            <CardDescription>You need to log in to view your profile</CardDescription>
+            <CardDescription>
+              You need to log in to view your profile
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
@@ -197,9 +227,9 @@ export default function ProfilePage() {
           setShowCreditDialog={setShowCreditDialog}
         />
 
-        <MyBlogPosts 
-          blogPosts={blogPosts} 
-          handleDeletePost={contentHandlers.handleDeletePost} 
+        <MyBlogPosts
+          blogPosts={blogPosts}
+          handleDeletePost={contentHandlers.handleDeletePost}
         />
 
         <PaymentHistory
@@ -230,16 +260,22 @@ export default function ProfilePage() {
             <DialogHeader>
               <DialogTitle>Delete Listing</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete this listing? This action cannot be undone.
+                Are you sure you want to delete this listing? This action cannot
+                be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 flex gap-2">
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => listingToDelete && handleDeleteListing(listingToDelete)}
+                onClick={() =>
+                  listingToDelete && handleDeleteListing(listingToDelete)
+                }
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Listing
@@ -258,16 +294,23 @@ export default function ProfilePage() {
           />
         )}
 
-        <Dialog open={removeFeatureDialogOpen} onOpenChange={setRemoveFeatureDialogOpen}>
+        <Dialog
+          open={removeFeatureDialogOpen}
+          onOpenChange={setRemoveFeatureDialogOpen}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Remove Feature Status</DialogTitle>
               <DialogDescription>
-                Are you sure you want to remove the featured status from this listing? This will not refund your feature credit.
+                Are you sure you want to remove the featured status from this
+                listing? This will not refund your feature credit.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 flex gap-2">
-              <Button variant="outline" onClick={() => setRemoveFeatureDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setRemoveFeatureDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -309,7 +352,8 @@ export default function ProfilePage() {
             refreshCredits()
             toast({
               title: 'Event credits purchased',
-              description: 'Your event credits have been added to your account.',
+              description:
+                'Your event credits have been added to your account.',
             })
           }}
         />
@@ -317,4 +361,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-

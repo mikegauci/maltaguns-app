@@ -10,7 +10,11 @@ interface StatusSelectProps {
   className?: string
 }
 
-export const StatusSelect = ({ value, onChange, className }: StatusSelectProps) => {
+export const StatusSelect = ({
+  value,
+  onChange,
+  className,
+}: StatusSelectProps) => {
   const [open, setOpen] = useState(false)
 
   const options = [
@@ -74,4 +78,3 @@ export const StatusSelect = ({ value, onChange, className }: StatusSelectProps) 
     </div>
   )
 }
-

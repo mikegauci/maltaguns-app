@@ -4,12 +4,35 @@ import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Trash2, X, User, Package, BookOpen, Calendar, Store, CreditCard, Shield } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Trash2,
+  X,
+  User,
+  Package,
+  BookOpen,
+  Calendar,
+  Store,
+  CreditCard,
+  Shield,
+} from 'lucide-react'
 import { FeatureCreditDialog } from '@/components/feature-credit-dialog'
 import { CreditDialog } from '@/components/credit-dialog'
 import { EventCreditDialog } from '@/components/event-credit-dialog'
@@ -47,7 +70,9 @@ export default function ProfilePage() {
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
   const [listingToFeature, setListingToFeature] = useState<string | null>(null)
   const [removeFeatureDialogOpen, setRemoveFeatureDialogOpen] = useState(false)
-  const [listingToRemoveFeature, setListingToRemoveFeature] = useState<string | null>(null)
+  const [listingToRemoveFeature, setListingToRemoveFeature] = useState<
+    string | null
+  >(null)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [showEventCreditDialog, setShowEventCreditDialog] = useState(false)
   const [establishmentInfoOpen, setEstablishmentInfoOpen] = useState(false)
@@ -111,15 +136,28 @@ export default function ProfilePage() {
 
   // Wrapper functions for handlers that need additional state
   const handleLicenseUpload = (event: React.ChangeEvent<HTMLInputElement>) =>
-    profileHandlers.handleLicenseUpload(event, uploadingLicense, setUploadingLicense)
+    profileHandlers.handleLicenseUpload(
+      event,
+      uploadingLicense,
+      setUploadingLicense
+    )
 
   const handleDeleteListing = (listingId: string) =>
-    profileHandlers.handleDeleteListing(listingId, setDeleteDialogOpen, setListingToDelete)
+    profileHandlers.handleDeleteListing(
+      listingId,
+      setDeleteDialogOpen,
+      setListingToDelete
+    )
 
   const handleRenewalSuccess = () =>
-    profileHandlers.handleRenewalSuccess(listingToFeature, setListingToFeature, refreshCredits)
+    profileHandlers.handleRenewalSuccess(
+      listingToFeature,
+      setListingToFeature,
+      refreshCredits
+    )
 
-  const onSubmit = (data: ProfileForm) => profileHandlers.onSubmit(data, setIsEditing)
+  const onSubmit = (data: ProfileForm) =>
+    profileHandlers.onSubmit(data, setIsEditing)
 
   const confirmDeleteListing = (listingId: string) => {
     setListingToDelete(listingId)
@@ -127,7 +165,8 @@ export default function ProfilePage() {
   }
 
   // Calculate total establishments
-  const totalEstablishments = stores.length + clubs.length + servicing.length + ranges.length
+  const totalEstablishments =
+    stores.length + clubs.length + servicing.length + ranges.length
 
   if (loading) {
     return (
@@ -143,7 +182,9 @@ export default function ProfilePage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Profile Access</CardTitle>
-            <CardDescription>You need to log in to view your profile</CardDescription>
+            <CardDescription>
+              You need to log in to view your profile
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
@@ -175,16 +216,24 @@ export default function ProfilePage() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-          <p className="text-muted-foreground">Manage your account and content</p>
+          <p className="text-muted-foreground">
+            Manage your account and content
+          </p>
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
-            <TabsTrigger value="profile" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="profile"
+              className="flex items-center gap-2 py-3"
+            >
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
             </TabsTrigger>
-            <TabsTrigger value="listings" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="listings"
+              className="flex items-center gap-2 py-3"
+            >
               <Package className="h-4 w-4" />
               <span className="hidden sm:inline">Listings</span>
               {listings.length > 0 && (
@@ -202,7 +251,10 @@ export default function ProfilePage() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="events" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="events"
+              className="flex items-center gap-2 py-3"
+            >
               <Calendar className="h-4 w-4" />
               <span className="hidden sm:inline">Events</span>
               {events.length > 0 && (
@@ -211,7 +263,10 @@ export default function ProfilePage() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="establishments" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="establishments"
+              className="flex items-center gap-2 py-3"
+            >
               <Store className="h-4 w-4" />
               <span className="hidden sm:inline">Business</span>
               {totalEstablishments > 0 && (
@@ -220,7 +275,10 @@ export default function ProfilePage() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="billing" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="billing"
+              className="flex items-center gap-2 py-3"
+            >
               <CreditCard className="h-4 w-4" />
               <span className="hidden sm:inline">Billing</span>
             </TabsTrigger>
@@ -249,7 +307,9 @@ export default function ProfilePage() {
             <MyListings
               listings={listings}
               listingCredits={listingCredits}
-              handleListingStatusChange={profileHandlers.handleListingStatusChange}
+              handleListingStatusChange={
+                profileHandlers.handleListingStatusChange
+              }
               handleRenewListing={profileHandlers.handleRenewListing}
               confirmDeleteListing={confirmDeleteListing}
               setListingToFeature={setListingToFeature}
@@ -263,17 +323,20 @@ export default function ProfilePage() {
           {/* Blog Tab */}
           <TabsContent value="blog">
             {blogPosts.length > 0 ? (
-              <MyBlogPosts 
-                blogPosts={blogPosts} 
-                handleDeletePost={contentHandlers.handleDeletePost} 
+              <MyBlogPosts
+                blogPosts={blogPosts}
+                handleDeletePost={contentHandlers.handleDeletePost}
               />
             ) : (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No blog posts yet</h3>
+                  <h3 className="text-lg font-semibold mb-2">
+                    No blog posts yet
+                  </h3>
                   <p className="text-muted-foreground text-center mb-4">
-                    Start sharing your knowledge and experiences with the community
+                    Start sharing your knowledge and experiences with the
+                    community
                   </p>
                   <Link href="/blog/create">
                     <Button>
@@ -334,7 +397,9 @@ export default function ProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Listing Credits</CardTitle>
-                  <CardDescription>Available credits for marketplace listings</CardDescription>
+                  <CardDescription>
+                    Available credits for marketplace listings
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
@@ -352,7 +417,9 @@ export default function ProfilePage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">Event Credits</CardTitle>
-                  <CardDescription>Available credits for event listings</CardDescription>
+                  <CardDescription>
+                    Available credits for event listings
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
@@ -382,16 +449,22 @@ export default function ProfilePage() {
             <DialogHeader>
               <DialogTitle>Delete Listing</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete this listing? This action cannot be undone.
+                Are you sure you want to delete this listing? This action cannot
+                be undone.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 flex gap-2">
-              <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setDeleteDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => listingToDelete && handleDeleteListing(listingToDelete)}
+                onClick={() =>
+                  listingToDelete && handleDeleteListing(listingToDelete)
+                }
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Listing
@@ -410,16 +483,23 @@ export default function ProfilePage() {
           />
         )}
 
-        <Dialog open={removeFeatureDialogOpen} onOpenChange={setRemoveFeatureDialogOpen}>
+        <Dialog
+          open={removeFeatureDialogOpen}
+          onOpenChange={setRemoveFeatureDialogOpen}
+        >
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Remove Feature Status</DialogTitle>
               <DialogDescription>
-                Are you sure you want to remove the featured status from this listing? This will not refund your feature credit.
+                Are you sure you want to remove the featured status from this
+                listing? This will not refund your feature credit.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 flex gap-2">
-              <Button variant="outline" onClick={() => setRemoveFeatureDialogOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setRemoveFeatureDialogOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -461,7 +541,8 @@ export default function ProfilePage() {
             refreshCredits()
             toast({
               title: 'Event credits purchased',
-              description: 'Your event credits have been added to your account.',
+              description:
+                'Your event credits have been added to your account.',
             })
           }}
         />
@@ -469,4 +550,3 @@ export default function ProfilePage() {
     </div>
   )
 }
-
