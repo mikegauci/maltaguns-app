@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
 import {
@@ -22,17 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Trash2,
-  X,
-  User,
-  Package,
-  BookOpen,
-  Calendar,
-  Store,
-  CreditCard,
-  Shield,
-} from 'lucide-react'
+import { Trash2, X } from 'lucide-react'
 import { FeatureCreditDialog } from '@/components/feature-credit-dialog'
 import { CreditDialog } from '@/components/credit-dialog'
 import { EventCreditDialog } from '@/components/event-credit-dialog'
@@ -50,13 +39,7 @@ import { createProfileHandlers } from './handlers/profileHandlers'
 import { createContentHandlers } from './handlers/contentHandlers'
 
 // Import components
-import { ProfileInformation } from './components/ProfileInformation'
-import { SellerStatus } from './components/SellerStatus'
-import { MyListings } from './components/MyListings'
-import { MyBlogPosts } from './components/MyBlogPosts'
-import { PaymentHistory } from './components/PaymentHistory'
-import { MyEvents } from './components/MyEvents'
-import { MyEstablishments } from './components/MyEstablishments'
+import { ProfileTabs } from './components/ProfileTabs'
 
 export default function ProfilePage() {
   const { toast } = useToast()
@@ -164,10 +147,6 @@ export default function ProfilePage() {
     setDeleteDialogOpen(true)
   }
 
-  // Calculate total establishments
-  const totalEstablishments =
-    stores.length + clubs.length + servicing.length + ranges.length
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -221,227 +200,41 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
-            <TabsTrigger
-              value="profile"
-              className="flex items-center gap-2 py-3"
-            >
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Profile</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="listings"
-              className="flex items-center gap-2 py-3"
-            >
-              <Package className="h-4 w-4" />
-              <span className="hidden sm:inline">Listings</span>
-              {listings.length > 0 && (
-                <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                  {listings.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="blog" className="flex items-center gap-2 py-3">
-              <BookOpen className="h-4 w-4" />
-              <span className="hidden sm:inline">Blog</span>
-              {blogPosts.length > 0 && (
-                <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                  {blogPosts.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="events"
-              className="flex items-center gap-2 py-3"
-            >
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Events</span>
-              {events.length > 0 && (
-                <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                  {events.length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="establishments"
-              className="flex items-center gap-2 py-3"
-            >
-              <Store className="h-4 w-4" />
-              <span className="hidden sm:inline">Business</span>
-              {totalEstablishments > 0 && (
-                <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                  {totalEstablishments}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger
-              value="billing"
-              className="flex items-center gap-2 py-3"
-            >
-              <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Billing</span>
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-6">
-            <ProfileInformation
-              profile={profile}
-              isEditing={isEditing}
-              setIsEditing={setIsEditing}
-              form={form}
-              onSubmit={onSubmit}
-            />
-
-            <SellerStatus
-              profile={profile}
-              uploadingLicense={uploadingLicense}
-              handleLicenseUpload={handleLicenseUpload}
-              handleRemoveLicense={profileHandlers.handleRemoveLicense}
-            />
-          </TabsContent>
-
-          {/* Listings Tab */}
-          <TabsContent value="listings">
-            <MyListings
-              listings={listings}
-              listingCredits={listingCredits}
-              handleListingStatusChange={
-                profileHandlers.handleListingStatusChange
-              }
-              handleRenewListing={profileHandlers.handleRenewListing}
-              confirmDeleteListing={confirmDeleteListing}
-              setListingToFeature={setListingToFeature}
-              setFeatureDialogOpen={setFeatureDialogOpen}
-              setListingToRemoveFeature={setListingToRemoveFeature}
-              setRemoveFeatureDialogOpen={setRemoveFeatureDialogOpen}
-              setShowCreditDialog={setShowCreditDialog}
-            />
-          </TabsContent>
-
-          {/* Blog Tab */}
-          <TabsContent value="blog">
-            {blogPosts.length > 0 ? (
-              <MyBlogPosts
-                blogPosts={blogPosts}
-                handleDeletePost={contentHandlers.handleDeletePost}
-              />
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">
-                    No blog posts yet
-                  </h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    Start sharing your knowledge and experiences with the
-                    community
-                  </p>
-                  <Link href="/blog/create">
-                    <Button>
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Write Your First Post
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Events Tab */}
-          <TabsContent value="events">
-            {events.length > 0 ? (
-              <MyEvents
-                events={events}
-                eventCredits={eventCredits}
-                handleDeleteEvent={contentHandlers.handleDeleteEvent}
-                setShowEventCreditDialog={setShowEventCreditDialog}
-              />
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No events yet</h3>
-                  <p className="text-muted-foreground text-center mb-4">
-                    Create and manage shooting events for the community
-                  </p>
-                  <Link href="/events/create">
-                    <Button>
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Create Your First Event
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          {/* Establishments Tab */}
-          <TabsContent value="establishments">
-            <MyEstablishments
-              stores={stores}
-              clubs={clubs}
-              servicing={servicing}
-              ranges={ranges}
-              handleDeleteStore={contentHandlers.handleDeleteStore}
-              establishmentInfoOpen={establishmentInfoOpen}
-              setEstablishmentInfoOpen={setEstablishmentInfoOpen}
-            />
-          </TabsContent>
-
-          {/* Billing Tab */}
-          <TabsContent value="billing" className="space-y-6">
-            {/* Credits Overview */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Listing Credits</CardTitle>
-                  <CardDescription>
-                    Available credits for marketplace listings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="text-3xl font-bold">{listingCredits}</div>
-                    <Button
-                      onClick={() => setShowCreditDialog(true)}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      Add Credits
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Event Credits</CardTitle>
-                  <CardDescription>
-                    Available credits for event listings
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between">
-                    <div className="text-3xl font-bold">{eventCredits}</div>
-                    <Button
-                      onClick={() => setShowEventCreditDialog(true)}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      Add Credits
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Payment History */}
-            <PaymentHistory
-              creditTransactions={creditTransactions}
-              listingIdToTitleMap={listingIdToTitleMap}
-            />
-          </TabsContent>
-        </Tabs>
+        <ProfileTabs
+          profile={profile}
+          listings={listings}
+          listingCredits={listingCredits}
+          blogPosts={blogPosts}
+          events={events}
+          eventCredits={eventCredits}
+          stores={stores}
+          clubs={clubs}
+          servicing={servicing}
+          ranges={ranges}
+          creditTransactions={creditTransactions}
+          listingIdToTitleMap={listingIdToTitleMap}
+          form={form}
+          isEditing={isEditing}
+          setIsEditing={setIsEditing}
+          uploadingLicense={uploadingLicense}
+          establishmentInfoOpen={establishmentInfoOpen}
+          setEstablishmentInfoOpen={setEstablishmentInfoOpen}
+          onSubmit={onSubmit}
+          handleLicenseUpload={handleLicenseUpload}
+          handleRemoveLicense={profileHandlers.handleRemoveLicense}
+          handleListingStatusChange={profileHandlers.handleListingStatusChange}
+          handleRenewListing={profileHandlers.handleRenewListing}
+          confirmDeleteListing={confirmDeleteListing}
+          handleDeletePost={contentHandlers.handleDeletePost}
+          handleDeleteEvent={contentHandlers.handleDeleteEvent}
+          handleDeleteStore={contentHandlers.handleDeleteStore}
+          setListingToFeature={setListingToFeature}
+          setFeatureDialogOpen={setFeatureDialogOpen}
+          setListingToRemoveFeature={setListingToRemoveFeature}
+          setRemoveFeatureDialogOpen={setRemoveFeatureDialogOpen}
+          setShowCreditDialog={setShowCreditDialog}
+          setShowEventCreditDialog={setShowEventCreditDialog}
+        />
 
         {/* Dialogs */}
         <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
