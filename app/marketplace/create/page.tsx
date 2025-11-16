@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -10,8 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Sun as Gun, Package } from 'lucide-react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { Package } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,91 +22,24 @@ import {
 } from '@/components/ui/alert-dialog'
 import Image from 'next/image'
 
+// Import custom hooks and handlers
+import { useSellerStatus } from './hooks/useSellerStatus'
+import { createNavigationHandlers } from './handlers/navigationHandlers'
+
 export default function CreateListing() {
   const router = useRouter()
   const [showLicenseDialog, setShowLicenseDialog] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSeller, setIsSeller] = useState(false)
-  const supabase = createClientComponentClient()
 
-  useEffect(() => {
-    let mounted = true
+  // Use custom hook for seller status checking
+  const { isLoading, isSeller } = useSellerStatus()
 
-    async function checkSellerStatus() {
-      try {
-        const {
-          data: { session },
-          error: authError,
-        } = await supabase.auth.getSession()
-
-        if (authError) {
-          console.error('Auth error:', authError)
-          router.push('/login')
-          return
-        }
-
-        if (!session) {
-          console.log('No session found')
-          router.push('/login')
-          return
-        }
-
-        // Validate session expiry
-        const sessionExpiry = new Date(session.expires_at! * 1000)
-        const now = new Date()
-        const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
-        const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
-
-        if (isNearExpiry) {
-          const {
-            data: { session: refreshedSession },
-            error: refreshError,
-          } = await supabase.auth.refreshSession()
-
-          if (refreshError || !refreshedSession) {
-            console.error('Session refresh failed:', refreshError)
-            router.push('/login')
-            return
-          }
-        }
-
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_seller')
-          .eq('id', session.user.id)
-          .single()
-
-        if (profileError) {
-          console.error('Error fetching profile:', profileError)
-          throw profileError
-        }
-
-        if (mounted) {
-          setIsSeller(profile?.is_seller || false)
-          setIsLoading(false)
-        }
-      } catch (error) {
-        console.error('Error checking seller status:', error)
-        if (mounted) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    checkSellerStatus()
-
-    return () => {
-      mounted = false
-    }
-  }, [router, supabase])
-
-  const handleFirearmsClick = () => {
-    if (!isSeller) {
-      setShowLicenseDialog(true)
-    } else {
-      router.push('/marketplace/create/firearms')
-    }
-  }
+  // Create navigation handlers
+  const { handleFirearmsClick, handleNonFirearmsClick, handleGoToProfile } =
+    createNavigationHandlers({
+      router,
+      isSeller,
+      setShowLicenseDialog,
+    })
 
   if (isLoading) {
     return (
@@ -155,7 +86,7 @@ export default function CreateListing() {
 
           <Card
             className="hover:border-primary/50 cursor-pointer transition-colors"
-            onClick={() => router.push('/marketplace/create/non-firearms')}
+            onClick={handleNonFirearmsClick}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -191,7 +122,7 @@ export default function CreateListing() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => router.push('/profile')}>
+              <AlertDialogAction onClick={handleGoToProfile}>
                 Modify Profile
               </AlertDialogAction>
             </AlertDialogFooter>
