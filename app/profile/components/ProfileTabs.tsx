@@ -60,7 +60,7 @@ interface ProfileTabsProps {
   setEstablishmentInfoOpen: (value: boolean) => void
 
   // Handlers
-  onSubmit: (data: ProfileForm) => void
+  onSubmit: (data: ProfileForm) => Promise<void>
   handleLicenseUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
   handleRemoveLicense: () => void
   handleListingStatusChange: (

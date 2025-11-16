@@ -139,8 +139,9 @@ export default function ProfilePage() {
       refreshCredits
     )
 
-  const onSubmit = (data: ProfileForm) =>
-    profileHandlers.onSubmit(data, setIsEditing)
+  const onSubmit = async (data: ProfileForm) => {
+    await profileHandlers.onSubmit(data, setIsEditing)
+  }
 
   const confirmDeleteListing = (listingId: string) => {
     setListingToDelete(listingId)
