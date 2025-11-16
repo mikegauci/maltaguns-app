@@ -44,7 +44,7 @@ const plans: Plan[] = [
     id: 'price_10credits',
     credits: 10,
     price: 100,
-    description: 'Perfect for power sellers',
+    description: 'Perfect for collection liquidation',
   },
 ]
 
