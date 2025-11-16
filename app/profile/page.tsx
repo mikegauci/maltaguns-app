@@ -118,12 +118,15 @@ export default function ProfilePage() {
   })
 
   // Wrapper functions for handlers that need additional state
-  const handleLicenseUpload = (event: React.ChangeEvent<HTMLInputElement>) =>
-    profileHandlers.handleLicenseUpload(
+  const handleLicenseUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    await profileHandlers.handleLicenseUpload(
       event,
       uploadingLicense,
       setUploadingLicense
     )
+  }
 
   const handleDeleteListing = (listingId: string) =>
     profileHandlers.handleDeleteListing(

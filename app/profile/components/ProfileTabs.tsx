@@ -61,7 +61,9 @@ interface ProfileTabsProps {
 
   // Handlers
   onSubmit: (data: ProfileForm) => Promise<void>
-  handleLicenseUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
+  handleLicenseUpload: (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => Promise<void>
   handleRemoveLicense: () => void
   handleListingStatusChange: (
     listingId: string,
