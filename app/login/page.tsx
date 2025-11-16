@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, LogOut, User } from 'lucide-react'
+import { Loader2, LogOut, User, Eye, EyeOff } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -65,6 +65,7 @@ export default function Login() {
   const [debugInfo, setDebugInfo] = useState<DebugInfo>({})
   const [resetDialogOpen, setResetDialogOpen] = useState(false)
   const [isDisabled, setIsDisabled] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const supabase = createClientComponentClient()
 
   const resetForm = useForm<ResetPasswordForm>({
@@ -407,11 +408,26 @@ export default function Login() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Enter your password"
-                        {...field}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter your password"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

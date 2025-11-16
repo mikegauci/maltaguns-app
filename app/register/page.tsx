@@ -40,7 +40,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Info } from 'lucide-react'
+import { Info, Eye, EyeOff } from 'lucide-react'
 import React from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { verifyLicenseImage } from '@/utils/license-verification'
@@ -110,6 +110,8 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
   const [tooltipOpen, setTooltipOpen] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const tooltipTriggerRef = React.useRef<HTMLButtonElement>(null)
 
   const form = useForm<RegisterForm>({
@@ -470,17 +472,32 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        {...field}
-                        onChange={e => {
-                          field.onChange(e)
-                          form.trigger('password')
-                          if (form.getValues('confirmPassword')) {
-                            form.trigger('confirmPassword')
-                          }
-                        }}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          {...field}
+                          onChange={e => {
+                            field.onChange(e)
+                            form.trigger('password')
+                            if (form.getValues('confirmPassword')) {
+                              form.trigger('confirmPassword')
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -494,14 +511,31 @@ export default function Register() {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        {...field}
-                        onChange={e => {
-                          field.onChange(e)
-                          form.trigger('confirmPassword')
-                        }}
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          {...field}
+                          onChange={e => {
+                            field.onChange(e)
+                            form.trigger('confirmPassword')
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                          }
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
