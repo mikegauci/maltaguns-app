@@ -24,6 +24,16 @@ export const firearmsCategories = {
   shotguns: 'Shotguns',
 } as const
 
+// Helper function to convert URL slug to category key
+export function slugToCategoryKey(slug: string): string {
+  return slug.replace(/-/g, '_')
+}
+
+// Helper function to convert category key to URL slug
+export function categoryKeyToSlug(key: string): string {
+  return key.replace(/_/g, '-')
+}
+
 // Non-firearms categories
 export const nonFirearmsCategories = {
   accessories: 'Accessories',
