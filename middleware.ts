@@ -1,19 +1,14 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import type { AuthResponse } from '@supabase/supabase-js'
-
-const PROTECTED_ROUTES = [
-  '/profile',
-  '/marketplace/create',
-  '/events/create',
-  '/events/edit',
-  '/retailers/create',
-  '/blog/create',
-]
-
-// Add timeout for session operations
-const SESSION_TIMEOUT = 5000 // 5 seconds
+import { PROTECTED_ROUTES } from './middleware/config'
+import {
+  redirectToLogin,
+  addSecurityHeaders,
+  isProtectedRoute,
+  getUserProfile,
+} from './middleware/utils'
+import { getValidSession, refreshSessionIfNeeded } from './middleware/auth'
 
 export async function middleware(req: NextRequest) {
   try {
@@ -37,40 +32,17 @@ export async function middleware(req: NextRequest) {
     // Create the Supabase client
     const supabase = createMiddlewareClient({ req, res })
 
-    // Check if the path is protected
-    const isProtectedRoute = PROTECTED_ROUTES.some(route =>
-      req.nextUrl.pathname.startsWith(route)
-    )
+    // Check if the path requires protection
+    const needsAuth = isProtectedRoute(req.nextUrl.pathname, PROTECTED_ROUTES)
     const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
 
-    if (!isProtectedRoute && !isAdminRoute) {
+    // If route doesn't need auth, return early
+    if (!needsAuth && !isAdminRoute) {
       return res
     }
 
-    // Create a timeout promise
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(
-        () => reject(new Error('Session operation timed out')),
-        SESSION_TIMEOUT
-      )
-    })
-
-    // Try to get the session with timeout
-    const sessionPromise = supabase.auth.getSession()
-    let session
-
-    try {
-      const result = (await Promise.race([
-        sessionPromise,
-        timeoutPromise,
-      ])) as Awaited<typeof sessionPromise>
-      session = result.data.session
-    } catch (error) {
-      console.error('Session operation timed out or failed:', error)
-      // Clear any stale session data
-      await supabase.auth.signOut()
-      return redirectToLogin(req)
-    }
+    // Get and validate session with timeout
+    const session = await getValidSession(supabase)
 
     // If no session exists, redirect to login
     if (!session) {
@@ -78,123 +50,46 @@ export async function middleware(req: NextRequest) {
       return redirectToLogin(req)
     }
 
-    // Validate session expiry
-    const sessionExpiry = new Date(session.expires_at! * 1000)
-    const now = new Date()
-    const timeUntilExpiry = sessionExpiry.getTime() - now.getTime()
-    const isNearExpiry = timeUntilExpiry < 5 * 60 * 1000 // 5 minutes
+    // Refresh session if near expiry
+    const refreshSuccess = await refreshSessionIfNeeded(
+      supabase,
+      session.expires_at
+    )
 
-    if (isNearExpiry) {
-      try {
-        const refreshPromise = supabase.auth.refreshSession()
-        const result = (await Promise.race([
-          refreshPromise,
-          timeoutPromise,
-        ])) as AuthResponse
-        const {
-          data: { session: refreshedSession },
-          error: refreshError,
-        } = result
+    if (!refreshSuccess) {
+      console.log('Session refresh failed, redirecting to login')
+      return redirectToLogin(req)
+    }
 
-        if (refreshError || !refreshedSession) {
-          console.error('Session refresh failed:', refreshError)
-          // Clear any stale session data
-          await supabase.auth.signOut()
-          return redirectToLogin(req)
-        }
+    // Fetch user profile once for both admin and disabled checks
+    const profile = await getUserProfile(supabase, session.user.id)
 
-        // Set the refreshed session
-        await supabase.auth.setSession({
-          access_token: refreshedSession.access_token,
-          refresh_token: refreshedSession.refresh_token,
-        })
-      } catch (error) {
-        console.error('Error refreshing session:', error)
-        // Clear any stale session data
-        await supabase.auth.signOut()
-        return redirectToLogin(req)
-      }
+    // Check if user is disabled first (before admin check)
+    if (profile?.is_disabled) {
+      console.log('User account is disabled:', session.user.email)
+      await supabase.auth.signOut()
+
+      return redirectToLogin(
+        req,
+        'Your account has been disabled. Please contact support.'
+      )
     }
 
     // For admin routes, check authorization
     if (isAdminRoute) {
-      try {
-        // Get user profile to check admin status
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single()
-
-        // Redirect if not an admin
-        if (!profile?.is_admin) {
-          console.log('User not authorized for admin', session.user.email)
-          return NextResponse.redirect(new URL('/', req.url))
-        }
-      } catch (error) {
-        console.error('Error checking admin status:', error)
-        return NextResponse.redirect(new URL('/', req.url))
+      if (!profile?.is_admin) {
+        console.log('User not authorized for admin:', session.user.email)
+        const response = NextResponse.redirect(new URL('/', req.url))
+        return addSecurityHeaders(response)
       }
     }
 
-    // If user is logged in, check if they are disabled
-    if (session) {
-      try {
-        // Get user profile to check disabled status
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_disabled')
-          .eq('id', session.user.id)
-          .single()
-
-        // If user is disabled, sign them out and redirect to login page with message
-        if (profile?.is_disabled) {
-          // Sign out the user
-          await supabase.auth.signOut()
-
-          // Redirect to login page with error message, using rewrite instead of redirect
-          // to avoid session checks that could cause auth errors
-          return NextResponse.rewrite(
-            new URL(
-              '/login?error=Your+account+has+been+disabled.+Please+contact+support.',
-              req.url
-            ),
-            {
-              headers: {
-                'Cache-Control': 'no-store, must-revalidate',
-                Pragma: 'no-cache',
-              },
-            }
-          )
-        }
-      } catch (error) {
-        console.error('Error checking disabled status:', error)
-        // Continue without blocking access since this is just a secondary check
-        // The main enforcement is through RLS policies
-      }
-    }
-
-    // Add cache control headers to prevent stale session states
-    res.headers.set('Cache-Control', 'no-store, must-revalidate')
-    res.headers.set('Pragma', 'no-cache')
-
-    // Set session cookie and return response
-    return res
+    // Add security headers and return
+    return addSecurityHeaders(res)
   } catch (error) {
     console.error('Middleware error:', error)
     return redirectToLogin(req)
   }
-}
-
-// Helper function to handle login redirects
-function redirectToLogin(req: NextRequest) {
-  const redirectUrl = new URL('/login', req.url)
-  redirectUrl.searchParams.set('redirectTo', req.url)
-  // Add cache control headers to prevent redirect loops
-  const response = NextResponse.redirect(redirectUrl)
-  response.headers.set('Cache-Control', 'no-store, must-revalidate')
-  response.headers.set('Pragma', 'no-cache')
-  return response
 }
 
 export const config = {
