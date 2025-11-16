@@ -64,19 +64,16 @@ interface ProfileTabsProps {
   handleLicenseUpload: (
     event: React.ChangeEvent<HTMLInputElement>
   ) => Promise<void>
-  handleRemoveLicense: () => void
+  handleRemoveLicense: () => Promise<void>
   handleListingStatusChange: (
     listingId: string,
     newStatus: string
   ) => Promise<void>
   handleRenewListing: (listingId: string) => Promise<void>
   confirmDeleteListing: (listingId: string) => void
-  handleDeletePost: (postId: string) => void
-  handleDeleteEvent: (eventId: string) => void
-  handleDeleteStore: (
-    storeId: string,
-    type: 'stores' | 'clubs' | 'servicing' | 'ranges'
-  ) => void
+  handleDeletePost: (postId: string) => Promise<void>
+  handleDeleteEvent: (eventId: string) => Promise<void>
+  handleDeleteStore: (storeId: string) => Promise<void>
 
   // Dialog setters
   setListingToFeature: (id: string | null) => void
