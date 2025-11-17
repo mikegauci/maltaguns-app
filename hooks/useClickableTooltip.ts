@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react'
 /**
  * Custom hook for creating mobile-friendly, clickable tooltips
  * Works on both desktop (click/hover) and mobile (tap)
- * 
+ *
  * @example
  * ```tsx
  * const { isOpen, toggle, triggerProps, contentProps } = useClickableTooltip()
- * 
+ *
  * return (
  *   <Tooltip open={isOpen}>
  *     <TooltipTrigger {...triggerProps}>
@@ -76,4 +76,3 @@ export function useClickableTooltip() {
     contentProps,
   }
 }
-
