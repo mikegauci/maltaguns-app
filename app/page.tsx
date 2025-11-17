@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,7 +7,6 @@ import {
   Store,
   Calendar,
   BookOpen,
-  Package,
   Shield,
   Users,
   MapPin,
@@ -18,12 +16,10 @@ import {
   Globe,
 } from 'lucide-react'
 import Link from 'next/link'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { format } from 'date-fns'
-import { useToast } from '@/hooks/use-toast'
-import { Database } from '@/lib/database.types'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
+import { useHomePageData } from '@/app/hooks/useHomePageData'
 
 function slugify(text: string) {
   return text
@@ -33,246 +29,16 @@ function slugify(text: string) {
     .replace(/--+/g, '-')
 }
 
-interface Event {
-  id: string
-  title: string
-  start_date: string
-  location: string
-  type: string
-  poster_url: string | null
-}
-
-interface Listing {
-  id: string
-  title: string
-  description: string
-  price: number
-  thumbnail: string
-  created_at: string
-  is_featured?: boolean
-}
-
-interface BlogPost {
-  id: string
-  title: string
-  content: string
-  slug: string
-  featured_image: string | null
-  created_at: string
-  author: {
-    username: string
-  }
-}
-
-interface Establishment {
-  id: string
-  business_name: string
-  logo_url: string | null
-  location: string
-  phone: string | null
-  email: string | null
-  description: string | null
-  website: string | null
-  slug: string
-  type: 'store' | 'club' | 'servicing' | 'range'
-}
-
 export default function Home() {
-  const supabase = createClientComponentClient<Database>()
-  const { toast } = useToast()
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [latestEvents, setLatestEvents] = useState<Event[]>([])
-  const [recentListings, setRecentListings] = useState<Listing[]>([])
-  const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
-  const [latestPosts, setLatestPosts] = useState<BlogPost[]>([])
-  const [featuredEstablishments, setFeaturedEstablishments] = useState<
-    Establishment[]
-  >([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [retryCount, setRetryCount] = useState(0)
-  const MAX_RETRIES = 3
-
-  useEffect(() => {
-    let mounted = true
-    let retryTimeout: NodeJS.Timeout
-
-    async function fetchData() {
-      try {
-        setIsLoading(true)
-
-        // Fetch recent listings - only show active and non-expired listings
-        const { data: listingsData, error: listingsError } = await supabase
-          .from('listings')
-          .select('*')
-          .eq('status', 'active')
-          .gt('expires_at', new Date().toISOString())
-          .order('created_at', { ascending: false })
-          .limit(3)
-
-        if (listingsError) {
-          console.error('Listings fetch error:', listingsError)
-          toast({
-            variant: 'destructive',
-            title: 'Error loading listings',
-            description:
-              'Failed to load recent listings. Please refresh the page.',
-          })
-        } else if (mounted) {
-          setRecentListings(listingsData || [])
-        }
-
-        // Fetch featured listings - only show active, non-expired listings that are currently featured
-        const now = new Date().toISOString()
-        const { data: featuredListingsData, error: featuredListingsError } =
-          await supabase
-            .from('featured_listings')
-            .select(
-              `
-            listing_id,
-            listings!inner(*)
-          `
-            )
-            .gt('end_date', now)
-            .eq('listings.status', 'active')
-            .gt('listings.expires_at', now)
-            .order('end_date', { ascending: false })
-            .limit(3)
-
-        if (featuredListingsError) {
-          console.error('Featured listings fetch error:', featuredListingsError)
-          toast({
-            variant: 'destructive',
-            title: 'Error loading featured listings',
-            description:
-              'Failed to load featured listings. Please refresh the page.',
-          })
-        } else if (mounted) {
-          // Extract the listing data from the joined response
-          const processedFeaturedListings = (featuredListingsData || []).map(
-            (item: any) => ({
-              ...(item.listings as any),
-              is_featured: true,
-            })
-          )
-          setFeaturedListings(processedFeaturedListings)
-        }
-
-        // Fetch latest blog posts
-        const { data: postsData, error: postsError } = await supabase
-          .from('blog_posts')
-          .select(
-            `
-            *,
-            author:profiles(username)
-          `
-          )
-          .eq('published', true)
-          .order('created_at', { ascending: false })
-          .limit(3)
-
-        if (postsError) {
-          console.error('Blog posts fetch error:', postsError)
-          toast({
-            variant: 'destructive',
-            title: 'Error loading articles',
-            description:
-              'Failed to load latest articles. Please refresh the page.',
-          })
-        } else if (mounted) {
-          setLatestPosts(postsData || [])
-        }
-
-        // Check authentication status
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        if (mounted) {
-          setIsAuthenticated(!!session)
-        }
-
-        // Fetch featured establishments (3 most recent ones)
-        const establishments: Establishment[] = []
-
-        // Fetch from all establishment types
-        const types = ['stores', 'ranges', 'servicing', 'clubs']
-        for (const type of types) {
-          const { data, error } = await supabase
-            .from(type)
-            .select('*')
-            .order('created_at', { ascending: false })
-            .limit(3)
-
-          if (error) {
-            console.error(`Error fetching ${type}:`, error)
-          } else if (data && data.length > 0) {
-            // Convert each item to an Establishment
-            data.forEach((item: any) => {
-              establishments.push({
-                id: item.id,
-                business_name: item.business_name,
-                logo_url: item.logo_url,
-                location: item.location,
-                phone: item.phone,
-                email: item.email,
-                description: item.description,
-                website: item.website,
-                slug: item.slug,
-                type:
-                  type === 'stores'
-                    ? 'store'
-                    : type === 'ranges'
-                      ? 'range'
-                      : type === 'clubs'
-                        ? 'club'
-                        : 'servicing',
-              })
-            })
-          }
-        }
-
-        // Sort all establishments by creation date and take the 3 most recent
-        if (mounted && establishments.length > 0) {
-          const sorted = establishments.sort(
-            (a: any, b: any) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime()
-          )
-          setFeaturedEstablishments(sorted.slice(0, 3))
-        }
-
-        if (mounted) {
-          setIsLoading(false)
-          setRetryCount(0) // Reset retry count on successful fetch
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        if (mounted) {
-          // If we haven't exceeded max retries, try again with exponential backoff
-          if (retryCount < MAX_RETRIES) {
-            const nextRetry = Math.min(1000 * Math.pow(2, retryCount), 10000)
-            retryTimeout = setTimeout(() => {
-              setRetryCount(prev => prev + 1)
-              fetchData()
-            }, nextRetry)
-          } else {
-            setIsLoading(false)
-            toast({
-              variant: 'destructive',
-              title: 'Error',
-              description: 'Something went wrong. Please refresh the page.',
-            })
-          }
-        }
-      }
-    }
-
-    fetchData()
-
-    return () => {
-      mounted = false
-      if (retryTimeout) clearTimeout(retryTimeout)
-    }
-  }, [supabase, toast, retryCount])
+  const { data, isLoading, error } = useHomePageData()
+  const {
+    recentListings,
+    featuredListings,
+    latestPosts,
+    latestEvents,
+    featuredEstablishments,
+    isAuthenticated,
+  } = data
 
   function formatPrice(price: number) {
     return new Intl.NumberFormat('en-MT', {
@@ -285,6 +51,17 @@ export default function Home() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <LoadingState message="Loading content..." />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-destructive mb-4">Failed to load homepage data</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
       </div>
     )
   }
@@ -449,7 +226,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {latestPosts.map(post => (
-              <Link key={post.id} href={`/blog/${post.slug}`}>
+              <Link key={post.id} href={`/blog/${post.category}/${post.slug}`}>
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                   {post.featured_image ? (
                     <div className="aspect-video relative overflow-hidden">
@@ -498,35 +275,43 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {latestEvents.map(event => (
-              <Link key={event.id} href={`/events/${event.id}`}>
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
-                  {event.poster_url ? (
-                    <div className="aspect-video relative overflow-hidden">
-                      <img
-                        src={event.poster_url}
-                        alt={event.title}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-video bg-muted flex items-center justify-center">
-                      <Calendar className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                  )}
-                  <CardContent className="p-4">
-                    <Badge className="mb-2">{event.type}</Badge>
-                    <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-                      {event.title}
-                    </h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      <span>{format(new Date(event.start_date), 'PPP')}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+            {latestEvents.length > 0 ? (
+              latestEvents.map(event => (
+                <Link key={event.id} href={`/events/${event.id}`}>
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+                    {event.poster_url ? (
+                      <div className="aspect-video relative overflow-hidden">
+                        <img
+                          src={event.poster_url}
+                          alt={event.title}
+                          className="object-cover w-full h-full"
+                        />
+                      </div>
+                    ) : (
+                      <div className="aspect-video bg-muted flex items-center justify-center">
+                        <Calendar className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    )}
+                    <CardContent className="p-4">
+                      <Badge className="mb-2">{event.type}</Badge>
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                        {event.title}
+                      </h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>{format(new Date(event.start_date), 'PPP')}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-8">
+                <p className="text-muted-foreground">
+                  No upcoming events at the moment. Check back soon!
+                </p>
+              </div>
+            )}
           </div>
           <div className="mt-6 flex justify-center">
             <Link href="/events">
