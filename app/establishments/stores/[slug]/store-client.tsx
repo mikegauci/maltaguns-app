@@ -159,7 +159,10 @@ export default function StoreClient({ store }: { store: Store }) {
 
           {isOwner && (
             <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Link href={`/blog/create?store_id=${store.id}`} className="w-full sm:w-auto">
+              <Link
+                href={`/blog/create?store_id=${store.id}`}
+                className="w-full sm:w-auto"
+              >
                 <Button className="bg-primary w-full sm:w-auto">
                   <Pencil className="h-4 w-4 mr-2" />
                   Create New Post
@@ -193,7 +196,9 @@ export default function StoreClient({ store }: { store: Store }) {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
-                    <span className="text-sm sm:text-base">{store.location}</span>
+                    <span className="text-sm sm:text-base">
+                      {store.location}
+                    </span>
                   </div>
                   {store.phone && (
                     <div className="flex items-center gap-2">

@@ -125,15 +125,18 @@ export default function RangeClient({ range }: { range: Range }) {
   }, [hasBlogPosts, loading, range.id])
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <BackButton label="Back to Ranges" href="/establishments/ranges" />
 
           {isOwner && (
-            <div className="flex items-center gap-2">
-              <Link href={`/blog/create?range_id=${range.id}`}>
-                <Button className="bg-primary">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Link
+                href={`/blog/create?range_id=${range.id}`}
+                className="w-full sm:w-auto"
+              >
+                <Button className="bg-primary w-full sm:w-auto">
                   <Pencil className="h-4 w-4 mr-2" />
                   Create New Post
                 </Button>
@@ -144,36 +147,38 @@ export default function RangeClient({ range }: { range: Range }) {
 
         {/* Range Profile */}
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start gap-6">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
               {range.logo_url ? (
                 <img
                   src={range.logo_url}
                   alt={range.business_name}
-                  className="w-32 h-32 object-contain rounded-lg"
+                  className="w-20 h-20 sm:w-32 sm:h-32 object-contain rounded-lg mx-auto sm:mx-0"
                 />
               ) : (
-                <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center">
-                  <MapPin className="h-12 w-12 text-muted-foreground" />
+                <div className="w-20 h-20 sm:w-32 sm:h-32 bg-muted rounded-lg flex items-center justify-center mx-auto sm:mx-0">
+                  <MapPin className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
                 </div>
               )}
 
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-4">
+              <div className="flex-1 w-full">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-center sm:text-left">
                   {range.business_name}
                 </h1>
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-muted-foreground" />
-                    <span>{range.location}</span>
+                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm sm:text-base">
+                      {range.location}
+                    </span>
                   </div>
                   {range.phone && (
                     <div className="flex items-center gap-2">
-                      <Phone className="h-5 w-5 text-muted-foreground" />
+                      <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                       <a
                         href={`tel:${range.phone}`}
-                        className="hover:underline"
+                        className="hover:underline text-sm sm:text-base"
                       >
                         {range.phone}
                       </a>
@@ -181,10 +186,10 @@ export default function RangeClient({ range }: { range: Range }) {
                   )}
                   {range.email && (
                     <div className="flex items-center gap-2">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
+                      <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                       <a
                         href={`mailto:${range.email}`}
-                        className="hover:underline"
+                        className="hover:underline text-sm sm:text-base break-all"
                       >
                         {range.email}
                       </a>
@@ -192,12 +197,12 @@ export default function RangeClient({ range }: { range: Range }) {
                   )}
                   {range.website && (
                     <div className="flex items-center gap-2">
-                      <Globe className="h-5 w-5 text-muted-foreground" />
+                      <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                       <a
                         href={range.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:underline"
+                        className="hover:underline text-sm sm:text-base break-all"
                       >
                         {range.website}
                       </a>
@@ -206,9 +211,13 @@ export default function RangeClient({ range }: { range: Range }) {
                 </div>
 
                 {range.description && (
-                  <div className="mt-6">
-                    <h2 className="text-xl font-semibold mb-2">About</h2>
-                    <p className="text-muted-foreground">{range.description}</p>
+                  <div className="mt-4 sm:mt-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-2">
+                      About
+                    </h2>
+                    <p className="text-muted-foreground text-sm sm:text-base">
+                      {range.description}
+                    </p>
                   </div>
                 )}
               </div>

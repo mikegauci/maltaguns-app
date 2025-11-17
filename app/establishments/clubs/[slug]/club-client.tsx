@@ -133,15 +133,18 @@ export default function ClubClient({ club }: { club: Club }) {
   }, [hasBlogPosts, loading, club.id])
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen bg-background p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+        <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <BackButton label="Back to Clubs" href="/establishments/clubs" />
 
           {isOwner && (
-            <div className="flex items-center gap-2">
-              <Link href={`/blog/create?club_id=${club.id}`}>
-                <Button className="bg-primary">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Link
+                href={`/blog/create?club_id=${club.id}`}
+                className="w-full sm:w-auto"
+              >
+                <Button className="bg-primary w-full sm:w-auto">
                   <Pencil className="h-4 w-4 mr-2" />
                   Create New Post
                 </Button>
@@ -152,44 +155,49 @@ export default function ClubClient({ club }: { club: Club }) {
 
         {/* Club Profile */}
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-start gap-6">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
               {club.logo_url ? (
                 <img
                   src={club.logo_url}
                   alt={club.business_name}
-                  className="w-32 h-32 object-contain rounded-lg"
+                  className="w-20 h-20 sm:w-32 sm:h-32 object-contain rounded-lg mx-auto sm:mx-0"
                 />
               ) : (
-                <div className="w-32 h-32 bg-muted rounded-lg flex items-center justify-center">
-                  <Users className="h-12 w-12 text-muted-foreground" />
+                <div className="w-20 h-20 sm:w-32 sm:h-32 bg-muted rounded-lg flex items-center justify-center mx-auto sm:mx-0">
+                  <Users className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
                 </div>
               )}
 
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold mb-4">
+              <div className="flex-1 w-full">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-center sm:text-left">
                   {club.business_name}
                 </h1>
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-muted-foreground" />
-                    <span>{club.location}</span>
+                    <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                    <span className="text-sm sm:text-base">
+                      {club.location}
+                    </span>
                   </div>
                   {club.phone && (
                     <div className="flex items-center gap-2">
-                      <Phone className="h-5 w-5 text-muted-foreground" />
-                      <a href={`tel:${club.phone}`} className="hover:underline">
+                      <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                      <a
+                        href={`tel:${club.phone}`}
+                        className="hover:underline text-sm sm:text-base"
+                      >
                         {club.phone}
                       </a>
                     </div>
                   )}
                   {club.email && (
                     <div className="flex items-center gap-2">
-                      <Mail className="h-5 w-5 text-muted-foreground" />
+                      <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                       <a
                         href={`mailto:${club.email}`}
-                        className="hover:underline"
+                        className="hover:underline text-sm sm:text-base break-all"
                       >
                         {club.email}
                       </a>
@@ -197,12 +205,12 @@ export default function ClubClient({ club }: { club: Club }) {
                   )}
                   {club.website && (
                     <div className="flex items-center gap-2">
-                      <Globe className="h-5 w-5 text-muted-foreground" />
+                      <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                       <a
                         href={club.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="hover:underline"
+                        className="hover:underline text-sm sm:text-base break-all"
                       >
                         {club.website}
                       </a>
@@ -211,9 +219,13 @@ export default function ClubClient({ club }: { club: Club }) {
                 </div>
 
                 {club.description && (
-                  <div className="mt-6">
-                    <h2 className="text-xl font-semibold mb-2">About</h2>
-                    <p className="text-muted-foreground">{club.description}</p>
+                  <div className="mt-4 sm:mt-6">
+                    <h2 className="text-lg sm:text-xl font-semibold mb-2">
+                      About
+                    </h2>
+                    <p className="text-muted-foreground text-sm sm:text-base">
+                      {club.description}
+                    </p>
                   </div>
                 )}
               </div>
