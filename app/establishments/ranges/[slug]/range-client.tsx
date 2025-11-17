@@ -4,14 +4,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import {
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
-  BookOpen,
-  Pencil,
-} from 'lucide-react'
+import { MapPin, Phone, Mail, Globe, BookOpen, Pencil } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'

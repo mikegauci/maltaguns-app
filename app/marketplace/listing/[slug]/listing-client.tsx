@@ -14,6 +14,7 @@ import {
   Calendar,
   User,
   ChevronRight,
+  ChevronLeft,
   Star,
   Store,
   CheckCircle,

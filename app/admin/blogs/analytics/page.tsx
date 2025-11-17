@@ -24,6 +24,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { format, subDays, startOfDay } from 'date-fns'
+import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
 
 // Remove hardcoded admin list - use database is_admin field instead

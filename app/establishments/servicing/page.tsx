@@ -4,14 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Wrench,
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
-  Plus,
-} from 'lucide-react'
+import { Wrench, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'

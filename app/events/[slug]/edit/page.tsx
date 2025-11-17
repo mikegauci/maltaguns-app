@@ -25,11 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import {
-  Trash2,
-  Calendar as CalendarIcon,
-  Clock,
-} from 'lucide-react'
+import { Trash2, Calendar as CalendarIcon, Clock } from 'lucide-react'
 import { Database } from '@/lib/database.types'
 import { BackButton } from '@/components/ui/back-button'
 import {

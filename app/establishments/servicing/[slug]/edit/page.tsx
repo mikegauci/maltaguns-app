@@ -347,8 +347,8 @@ export default function EditServicingPage({
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
-        <BackButton 
-          label="Back to servicing profile" 
+        <BackButton
+          label="Back to servicing profile"
           href={`/establishments/servicing/${params.slug}`}
           className="mb-6"
         />

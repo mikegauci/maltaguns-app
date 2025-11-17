@@ -14,15 +14,15 @@ interface BackButtonProps {
 /**
  * Reusable back button component with consistent styling across the app
  * Uses Next.js Link for optimal SEO, accessibility, and UX.
- * 
+ *
  * @example
  * <BackButton label="Back to blog" href="/blog" />
  * <BackButton label="Back to post" href="/blog/news/my-post" />
  */
-export function BackButton({ 
-  label = 'Back', 
+export function BackButton({
+  label = 'Back',
   href,
-  className = '' 
+  className = '',
 }: BackButtonProps) {
   return (
     <div className={className}>
@@ -38,4 +38,3 @@ export function BackButton({
     </div>
   )
 }
-

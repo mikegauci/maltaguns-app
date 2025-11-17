@@ -933,11 +933,7 @@ export default function CreateBlogPost() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto">
-        <BackButton 
-          label="Back to blog" 
-          href="/blog"
-          className="mb-6"
-        />
+        <BackButton label="Back to blog" href="/blog" className="mb-6" />
 
         <Card>
           <CardHeader>

@@ -348,8 +348,8 @@ export default function EditRangePage({
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
-        <BackButton 
-          label="Back to range profile" 
+        <BackButton
+          label="Back to range profile"
           href={`/establishments/ranges/${params.slug}`}
           className="mb-6"
         />

@@ -4,14 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-  Store,
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
-  Plus,
-} from 'lucide-react'
+import { Store, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'

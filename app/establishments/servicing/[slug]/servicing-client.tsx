@@ -159,7 +159,10 @@ export default function ServicingClient({
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="mb-6 flex items-center justify-between">
-          <BackButton label="Back to Servicing" href="/establishments/servicing" />
+          <BackButton
+            label="Back to Servicing"
+            href="/establishments/servicing"
+          />
 
           {isOwner && (
             <div className="flex items-center gap-2">

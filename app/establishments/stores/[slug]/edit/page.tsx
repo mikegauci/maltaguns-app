@@ -345,8 +345,8 @@ export default function EditStorePage({
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
-        <BackButton 
-          label="Back to store profile" 
+        <BackButton
+          label="Back to store profile"
           href={`/establishments/stores/${params.slug}`}
           className="mb-6"
         />

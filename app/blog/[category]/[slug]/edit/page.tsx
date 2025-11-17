@@ -745,8 +745,8 @@ export default function EditBlogPost({
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto">
-        <BackButton 
-          label="Back to post" 
+        <BackButton
+          label="Back to post"
           href={`/blog/${params.category}/${params.slug}`}
           className="mb-6"
         />
