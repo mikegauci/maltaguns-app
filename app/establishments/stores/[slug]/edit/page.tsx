@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft } from 'lucide-react'
+import { BackButton } from '@/components/ui/back-button'
 import { Database } from '@/lib/database.types'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -345,16 +345,11 @@ export default function EditStorePage({
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.push(`/establishments/stores/${params.slug}`)}
-            className="flex items-center text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to store profile
-          </Button>
-        </div>
+        <BackButton 
+          label="Back to store profile" 
+          href={`/establishments/stores/${params.slug}`}
+          className="mb-6"
+        />
 
         <Card>
           <CardHeader>

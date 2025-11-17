@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft } from 'lucide-react'
+import { BackButton } from '@/components/ui/back-button'
 import { Database } from '@/lib/database.types'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -348,14 +348,11 @@ export default function EditRangePage({
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => router.back()}
-          className="mb-6 flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
+        <BackButton 
+          label="Back to range profile" 
+          href={`/establishments/ranges/${params.slug}`}
+          className="mb-6"
+        />
 
         <Card>
           <CardHeader>

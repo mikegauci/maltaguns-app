@@ -12,12 +12,12 @@ import {
   Mail,
   Phone,
   Coins,
-  ChevronLeft,
   Pencil,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { BackButton } from '@/components/ui/back-button'
 
 interface Event {
   id: string
@@ -105,14 +105,7 @@ export default function EventClient({ event }: EventClientProps) {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto py-8 px-4">
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/events')}
-          className="flex items-center text-muted-foreground hover:text-foreground mb-6"
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Back to events
-        </Button>
+        <BackButton label="Back to events" href="/events" className="mb-6" />
 
         <div className="bg-card rounded-lg shadow-md overflow-hidden">
           {/* Event Header */}

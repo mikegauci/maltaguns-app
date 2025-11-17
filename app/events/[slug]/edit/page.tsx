@@ -26,12 +26,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import {
-  ArrowLeft,
   Trash2,
   Calendar as CalendarIcon,
   Clock,
 } from 'lucide-react'
 import { Database } from '@/lib/database.types'
+import { BackButton } from '@/components/ui/back-button'
 import {
   Dialog,
   DialogContent,
@@ -517,14 +517,11 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      <Button
-        variant="ghost"
-        className="mb-6 hover:bg-muted"
-        onClick={() => router.back()}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back
-      </Button>
+      <BackButton
+        label="Back to event"
+        href={`/events/${params.slug}`}
+        className="mb-6"
+      />
 
       <Card className="shadow-md">
         <CardHeader className="border-b bg-muted/50">

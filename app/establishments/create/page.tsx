@@ -32,7 +32,8 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { ArrowLeft, Store, Users, Wrench, MapPin } from 'lucide-react'
+import { Store, Users, Wrench, MapPin } from 'lucide-react'
+import { BackButton } from '@/components/ui/back-button'
 import { Database } from '@/lib/database.types'
 import Link from 'next/link'
 
@@ -340,12 +341,7 @@ export default function CreateEstablishmentPage() {
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
-        <Link href="/" className="inline-block mb-6">
-          <Button variant="ghost" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Button>
-        </Link>
+        <BackButton label="Back to Home" href="/" className="mb-6" />
 
         <Card>
           <CardHeader>

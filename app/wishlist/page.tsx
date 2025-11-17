@@ -17,7 +17,6 @@ import {
   Heart,
   Trash2,
   Eye,
-  ArrowLeft,
   ShoppingCart,
   User,
   Store,
@@ -28,6 +27,7 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { useSupabase } from '@/components/providers/supabase-provider'
 import { toast } from 'sonner'
+import { BackButton } from '@/components/ui/back-button'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
 import {
@@ -198,11 +198,7 @@ export default function WishlistPage() {
               <Link href="/login">
                 <Button className="w-full">Log In</Button>
               </Link>
-              <Link href="/">
-                <Button variant="outline" className="w-full">
-                  Back to Home
-                </Button>
-              </Link>
+              <BackButton label="Back to Home" href="/" />
             </div>
           </CardContent>
         </Card>
@@ -214,14 +210,7 @@ export default function WishlistPage() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/marketplace')}
-            className="flex items-center text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to marketplace
-          </Button>
+          <BackButton label="Back to marketplace" href="/marketplace" />
         </div>
 
         <div className="mb-8">

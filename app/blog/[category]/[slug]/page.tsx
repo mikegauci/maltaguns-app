@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Pencil, Store, Users, MapPin, Wrench } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import ViewTracker from '@/app/components/blog/ViewTracker'
+import { BackButton } from '@/components/ui/back-button'
 
 interface BlogPost {
   id: string
@@ -301,12 +302,7 @@ export default async function BlogPost({
       <ViewTracker postId={post.id} />
       <div className="container max-w-screen-lg mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
-          <Link
-            href="/blog"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            ← Back to blog
-          </Link>
+          <BackButton label="Back to blog" href="/blog" />
           {canEdit && (
             <Link href={`/blog/${params.category}/${params.slug}/edit`}>
               <Button>

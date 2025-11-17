@@ -7,6 +7,7 @@ import { format } from 'date-fns'
 import { DataTable } from '@/components/admin/data-table'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { BackButton } from '@/components/ui/back-button'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
 import { EditEventCreditDialog } from '@/components/admin/edit-event-credit-dialog'
@@ -220,12 +221,7 @@ function EventCreditsPageComponent() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Event Credit Management</h1>
         <div className="flex items-center gap-6">
-          <button
-            onClick={() => router.push('/admin')}
-            className="text-blue-500 hover:underline"
-          >
-            Back to Dashboard
-          </button>
+          <BackButton label="Back to Dashboard" href="/admin" />
           <Button onClick={handleAddEventCredit}>
             <Plus className="h-4 w-4 mr-2" />
             Add Event Credits

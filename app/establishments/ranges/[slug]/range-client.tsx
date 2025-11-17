@@ -9,10 +9,10 @@ import {
   Phone,
   Mail,
   Globe,
-  ArrowLeft,
   BookOpen,
   Pencil,
 } from 'lucide-react'
+import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -135,14 +135,7 @@ export default function RangeClient({ range }: { range: Range }) {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="mb-6 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/establishments/ranges')}
-            className="flex items-center text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Ranges
-          </Button>
+          <BackButton label="Back to Ranges" href="/establishments/ranges" />
 
           {isOwner && (
             <div className="flex items-center gap-2">

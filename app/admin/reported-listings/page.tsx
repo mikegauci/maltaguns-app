@@ -19,6 +19,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { BackButton } from '@/components/ui/back-button'
 import dynamic from 'next/dynamic'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -384,12 +385,7 @@ function ReportedListingsPageComponent() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Reported Listings</h1>
-        <button
-          onClick={() => router.push('/admin')}
-          className="text-blue-500 hover:underline"
-        >
-          Back to Dashboard
-        </button>
+        <BackButton label="Back to Dashboard" href="/admin" />
       </div>
 
       <DataTable

@@ -11,8 +11,8 @@ import {
   Mail,
   Globe,
   Plus,
-  ArrowLeft,
 } from 'lucide-react'
+import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
@@ -73,14 +73,7 @@ export default function ClubsPage() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={() => router.push('/establishments')}
-          className="flex items-center text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Establishments
-        </Button>
+        <BackButton label="Back to Establishments" href="/establishments" />
 
         {/* Hero Section */}
         <div className="text-center">

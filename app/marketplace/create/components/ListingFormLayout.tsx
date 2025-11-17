@@ -1,5 +1,4 @@
 import { ReactNode } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -8,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { ArrowLeft } from 'lucide-react'
+import { BackButton } from '@/components/ui/back-button'
 
 interface ListingFormLayoutProps {
   title: string
@@ -25,22 +24,13 @@ export function ListingFormLayout({
   credits,
   showCredits = false,
 }: ListingFormLayoutProps) {
-  const router = useRouter()
-
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
         <div
           className={`mb-6 ${showCredits ? 'flex items-center justify-between' : ''}`}
         >
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/marketplace/create')}
-            className="flex items-center text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to listing types
-          </Button>
+          <BackButton label="Back to listing types" href="/marketplace/create" />
           {showCredits && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">

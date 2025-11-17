@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
+import { BackButton } from '@/components/ui/back-button'
 
 const resetPasswordSchema = z
   .object({
@@ -217,13 +218,7 @@ export default function ResetPassword() {
           ) : error ? (
             <div className="flex flex-col gap-4">
               <div className="text-sm text-destructive mb-4">{error}</div>
-              <Button
-                variant="default"
-                onClick={() => router.push('/login')}
-                className="w-full"
-              >
-                Back to Login
-              </Button>
+              <BackButton label="Back to Login" href="/login" />
             </div>
           ) : (
             <Form {...form}>

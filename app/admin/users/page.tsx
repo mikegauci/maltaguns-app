@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import dynamic from 'next/dynamic'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
+import { BackButton } from '@/components/ui/back-button'
 
 interface Establishment {
   type: 'store' | 'club' | 'servicing' | 'range'
@@ -819,12 +820,7 @@ function UsersPageComponent() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">User Management</h1>
-        <button
-          onClick={() => router.push('/admin')}
-          className="text-blue-500 hover:underline"
-        >
-          Back to Dashboard
-        </button>
+        <BackButton label="Back to Dashboard" href="/admin" />
       </div>
 
       <DataTable

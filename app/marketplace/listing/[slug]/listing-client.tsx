@@ -7,20 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Package,
-  ArrowLeft,
   Mail,
   Phone,
   Lock,
   Pencil,
   Calendar,
   User,
-  ChevronLeft,
   ChevronRight,
   Star,
   Store,
   CheckCircle,
 } from 'lucide-react'
 import Link from 'next/link'
+import { BackButton } from '@/components/ui/back-button'
 import { format } from 'date-fns'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useSupabase } from '@/components/providers/supabase-provider'
@@ -507,14 +506,7 @@ export default function ListingClient({
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/marketplace')}
-            className="flex items-center text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to marketplace
-          </Button>
+          <BackButton label="Back to marketplace" href="/marketplace" />
 
           {isOwner && (
             <div className="flex gap-2">

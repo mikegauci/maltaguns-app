@@ -27,6 +27,7 @@ import { CreditDialog } from '@/components/credit-dialog'
 import { EventCreditDialog } from '@/components/event-credit-dialog'
 import { useSupabase } from '@/components/providers/supabase-provider'
 import { LoadingState } from '@/components/ui/loading-state'
+import { BackButton } from '@/components/ui/back-button'
 
 // Import types
 import { profileSchema, ProfileForm } from './types'
@@ -174,11 +175,7 @@ export default function ProfilePage() {
               <Link href="/login">
                 <Button className="w-full">Log In</Button>
               </Link>
-              <Link href="/">
-                <Button variant="outline" className="w-full">
-                  Back to Home
-                </Button>
-              </Link>
+              <BackButton label="Back to Home" href="/" />
             </div>
           </CardContent>
         </Card>

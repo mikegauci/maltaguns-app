@@ -33,7 +33,8 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { EventCreditDialog } from '@/components/event-credit-dialog'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { BackButton } from '@/components/ui/back-button'
+import { Loader2 } from 'lucide-react'
 import { Database } from '@/lib/database.types'
 
 // Force dynamic rendering to avoid hydration issues
@@ -513,14 +514,7 @@ export default function CreateEventPage() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6 flex items-center justify-between">
-          <Button
-            variant="ghost"
-            onClick={() => router.push('/events')}
-            className="flex items-center text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to events
-          </Button>
+          <BackButton label="Back to events" href="/events" />
           <div className="flex items-center gap-2">
             <div className="bg-muted px-4 py-2 rounded-md">
               <span className="text-sm text-muted-foreground">

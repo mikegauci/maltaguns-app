@@ -25,8 +25,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { BackButton } from '@/components/ui/back-button'
 import {
-  ArrowLeft,
   Bold,
   Italic,
   Heading2,
@@ -745,18 +745,11 @@ export default function EditBlogPost({
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <Button
-            variant="ghost"
-            onClick={() =>
-              router.push(`/blog/${params.category}/${params.slug}`)
-            }
-            className="flex items-center text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to post
-          </Button>
-        </div>
+        <BackButton 
+          label="Back to post" 
+          href={`/blog/${params.category}/${params.slug}`}
+          className="mb-6"
+        />
 
         <Card>
           <CardHeader>

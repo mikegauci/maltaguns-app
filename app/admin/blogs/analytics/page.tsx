@@ -24,7 +24,7 @@ import {
   BarChart3,
 } from 'lucide-react'
 import { format, subDays, startOfDay } from 'date-fns'
-import Link from 'next/link'
+import { BackButton } from '@/components/ui/back-button'
 
 // Remove hardcoded admin list - use database is_admin field instead
 
@@ -367,11 +367,7 @@ export default function BlogAnalyticsPage() {
             Track blog performance and engagement metrics
           </p>
         </div>
-        <Link href="/admin/blogs">
-          <Badge variant="outline" className="hover:bg-accent cursor-pointer">
-            ← Back to Blog Management
-          </Badge>
-        </Link>
+        <BackButton label="Back to Blog Management" href="/admin/blogs" />
       </div>
 
       {/* Overview Stats */}

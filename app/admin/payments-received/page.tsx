@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { ExternalLink, Copy } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
+import { BackButton } from '@/components/ui/back-button'
 
 interface Payment {
   id: string
@@ -239,12 +240,7 @@ function PaymentsReceivedPageComponent() {
           <p className="text-muted-foreground">
             View all payment transactions and their status
           </p>
-          <button
-            onClick={() => router.push('/admin')}
-            className="text-blue-500 hover:underline"
-          >
-            Back to Dashboard
-          </button>
+          <BackButton label="Back to Dashboard" href="/admin" />
         </div>
       </div>
 
