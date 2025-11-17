@@ -167,7 +167,7 @@ export function useProfileData({
           // Fetch blog posts
           const { data: blogPostsData } = await supabase
             .from('blog_posts')
-            .select('id, title, slug, published, created_at')
+            .select('id, title, slug, category, published, created_at')
             .eq('author_id', userId)
             .order('created_at', { ascending: false })
           if (blogPostsData) setBlogPosts(blogPostsData)

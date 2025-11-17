@@ -60,7 +60,7 @@ export const MyBlogPosts = ({
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <Link
-                      href={`/blog/${post.slug}`}
+                      href={`/blog/${post.category}/${post.slug}`}
                       className="w-full sm:w-auto"
                     >
                       <Button variant="outline" size="sm" className="w-full">
@@ -69,7 +69,7 @@ export const MyBlogPosts = ({
                       </Button>
                     </Link>
                     <Link
-                      href={`/blog/${post.slug}/edit`}
+                      href={`/blog/${post.category}/${post.slug}/edit`}
                       className="w-full sm:w-auto"
                     >
                       <Button variant="outline" size="sm" className="w-full">
