@@ -161,7 +161,12 @@ export default function Register() {
         return
       }
 
-      // Verify the license image using OCR - this now includes auto-rotation
+      // Get current form values for name verification
+      const formValues = form.getValues()
+      const userFirstName = formValues.first_name
+      const userLastName = formValues.last_name
+
+      // Verify the license image using OCR - this now includes auto-rotation and name verification
       const {
         isVerified,
         isExpired,
@@ -170,19 +175,53 @@ export default function Register() {
         orientation,
         rotationAngle,
         correctedImageUrl,
-      } = await verifyLicenseImage(file)
+        nameMatch,
+        extractedName,
+        nameMatchDetails,
+      } = await verifyLicenseImage(file, userFirstName, userLastName)
 
-      // If the license is expired, don't allow it to be uploaded
-      if (isExpired) {
+      // Check for verification issues - continue with upload but mark as not verified
+      const hasNameMismatch = userFirstName && userLastName && !nameMatch
+      const hasVerificationIssues = isExpired || hasNameMismatch
+
+      // Build combined warning message if there are issues
+      if (hasVerificationIssues) {
+        const issues: string[] = []
+
+        if (isExpired && expiryDate) {
+          issues.push(`• License expired on ${expiryDate}`)
+        } else if (isExpired) {
+          issues.push(`• License appears to be expired`)
+        }
+
+        if (hasNameMismatch && nameMatchDetails) {
+          issues.push(
+            `• Name mismatch: License shows "${nameMatchDetails.licenseName}" but profile shows "${nameMatchDetails.profileName}"`
+          )
+        } else if (hasNameMismatch) {
+          issues.push(
+            `• Name on license does not match profile${extractedName ? `: ${extractedName}` : ''}`
+          )
+        }
+
         toast({
-          variant: 'destructive',
-          title: 'Expired license',
-          description: expiryDate
-            ? `This license expired on ${expiryDate}. Please upload a valid license.`
-            : 'This license appears to be expired. Please upload a valid license.',
+          title: 'License uploaded - manual verification required',
+          description:
+            issues.length > 0 ? (
+              <div className="space-y-2">
+                {issues.map((issue, index) => (
+                  <div key={index}>{issue}</div>
+                ))}
+                <div className="mt-3">
+                  Your license will require manual verification. You may still
+                  proceed to register.
+                </div>
+              </div>
+            ) : (
+              'Your license will require manual verification. You may still proceed to register.'
+            ),
+          className: 'bg-amber-100 text-amber-800 border-amber-200',
         })
-        setUploadingLicense(false)
-        return
       }
 
       // If the orientation is still problematic after auto-rotation, warn the user
@@ -224,21 +263,24 @@ export default function Register() {
       // Store verification status to use during registration
       form.setValue('isVerified', isVerified)
 
-      if (isVerified) {
-        toast({
-          title: 'License uploaded and verified',
-          description: expiryDate
-            ? `Your license has been verified and is valid until ${expiryDate}.`
-            : 'Your license has been uploaded and verified successfully.',
-          className: 'bg-green-600 text-white border-green-600',
-        })
-      } else {
-        toast({
-          title: 'License uploaded',
-          description:
-            'Your license has been uploaded but could not be automatically verified. An administrator will review your license manually. You may still proceed to register your account.',
-          className: 'bg-amber-100 text-amber-800 border-amber-200',
-        })
+      // Show success toast only if no issues were found
+      if (!hasVerificationIssues) {
+        if (isVerified) {
+          toast({
+            title: 'License uploaded and verified',
+            description: expiryDate
+              ? `Your license has been verified and is valid until ${expiryDate}.`
+              : 'Your license has been uploaded and verified successfully.',
+            className: 'bg-green-600 text-white border-green-600',
+          })
+        } else {
+          toast({
+            title: 'License uploaded',
+            description:
+              'Your license has been uploaded but could not be automatically verified. An administrator will review your license manually. You may still proceed to register your account.',
+            className: 'bg-amber-100 text-amber-800 border-amber-200',
+          })
+        }
       }
     } catch (error) {
       toast({

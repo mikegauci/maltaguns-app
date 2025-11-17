@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { verifyLicenseImage } from '@/utils/license-verification'
 import { Profile, Listing, ProfileForm } from '../types'
+import React from 'react'
 
 interface HandlerDependencies {
   supabase: SupabaseClient
@@ -55,19 +56,63 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         return
       }
 
-      const { isVerified, isExpired, expiryDate, correctedImageUrl } =
-        await verifyLicenseImage(file)
+      // Get user's name from profile for verification
+      const userFirstName = profile?.first_name ?? undefined
+      const userLastName = profile?.last_name ?? undefined
 
-      if (isExpired) {
+      const {
+        isVerified,
+        isExpired,
+        expiryDate,
+        correctedImageUrl,
+        nameMatch,
+        extractedName,
+        nameMatchDetails,
+      } = await verifyLicenseImage(file, userFirstName, userLastName)
+
+      // Check for verification issues - continue with upload but mark as not verified
+      const hasNameMismatch = userFirstName && userLastName && !nameMatch
+      const hasVerificationIssues = isExpired || hasNameMismatch
+
+      // Build combined warning message if there are issues
+      if (hasVerificationIssues) {
+        const issues: string[] = []
+
+        if (isExpired && expiryDate) {
+          issues.push(`• License expired on ${expiryDate}`)
+        } else if (isExpired) {
+          issues.push(`• License appears to be expired`)
+        }
+
+        if (hasNameMismatch && nameMatchDetails) {
+          issues.push(
+            `• Name mismatch: License shows "${nameMatchDetails.licenseName}" but profile shows "${nameMatchDetails.profileName}"`
+          )
+        } else if (hasNameMismatch) {
+          issues.push(
+            `• Name on license does not match profile${extractedName ? `: ${extractedName}` : ''}`
+          )
+        }
+
         toast({
-          variant: 'destructive',
-          title: 'Expired license',
-          description: expiryDate
-            ? `This license expired on ${expiryDate}. Please upload a valid license.`
-            : 'This license appears to be expired. Please upload a valid license.',
+          title: 'License uploaded - manual verification required',
+          description:
+            issues.length > 0
+              ? React.createElement(
+                  'div',
+                  { className: 'space-y-2' },
+                  ...issues.map((issue, index) =>
+                    React.createElement('div', { key: index }, issue)
+                  ),
+                  React.createElement(
+                    'div',
+                    { className: 'mt-3' },
+                    'Your license will require manual verification by an administrator.'
+                  )
+                )
+              : 'Your license will require manual verification by an administrator.',
+          className: 'bg-amber-100 text-amber-800 border-amber-200',
         })
-        setUploadingLicense(false)
-        return
       }
 
       const imageToUpload = correctedImageUrl
@@ -110,17 +155,22 @@ export function createProfileHandlers(deps: HandlerDependencies) {
           : null
       )
 
-      toast({
-        title: isVerified
-          ? 'License uploaded and verified'
-          : 'License uploaded',
-        description: isVerified
-          ? 'Your license has been verified successfully.'
-          : 'Your license will be reviewed by an administrator.',
-        className: isVerified
-          ? 'bg-green-600 text-white border-green-600'
-          : 'bg-amber-100 text-amber-800 border-amber-200',
-      })
+      // Show success toast only if no issues were found
+      if (!hasVerificationIssues) {
+        if (isVerified) {
+          toast({
+            title: 'License uploaded and verified',
+            description: 'Your license has been verified successfully.',
+            className: 'bg-green-600 text-white border-green-600',
+          })
+        } else {
+          toast({
+            title: 'License uploaded',
+            description: 'Your license will be reviewed by an administrator.',
+            className: 'bg-amber-100 text-amber-800 border-amber-200',
+          })
+        }
+      }
     } catch (error) {
       toast({
         variant: 'destructive',
