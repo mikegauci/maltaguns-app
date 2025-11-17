@@ -19,7 +19,7 @@ import Link from 'next/link'
 import { format } from 'date-fns'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
-import { useHomePageData } from '@/app/hooks/useHomePageData'
+import { useHomePageData } from '@/hooks/useHomePageData'
 
 function slugify(text: string) {
   return text

@@ -44,6 +44,7 @@ import { Info, Eye, EyeOff } from 'lucide-react'
 import React from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { verifyLicenseImage } from '@/utils/license-verification'
+import { useClickableTooltip } from '@/hooks/useClickableTooltip'
 
 const phoneRegex = /^(356|)(\d{8})$/
 
@@ -109,10 +110,9 @@ export default function Register() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
-  const [tooltipOpen, setTooltipOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const tooltipTriggerRef = React.useRef<HTMLButtonElement>(null)
+  const { isOpen, triggerProps, contentProps } = useClickableTooltip()
 
   const form = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
@@ -131,46 +131,6 @@ export default function Register() {
       acceptTerms: false,
     },
   })
-
-  // Toggle tooltip open state on click
-  const handleTooltipToggle = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setTooltipOpen(!tooltipOpen)
-  }
-
-  // Close tooltip when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      // Don't close if clicking the trigger element
-      if (
-        tooltipTriggerRef.current &&
-        tooltipTriggerRef.current.contains(e.target as Node)
-      ) {
-        return
-      }
-
-      // Don't close if clicking inside the tooltip content
-      const tooltipContent = document.querySelector('[role="tooltip"]')
-      if (tooltipContent && tooltipContent.contains(e.target as Node)) {
-        return
-      }
-
-      setTooltipOpen(false)
-    }
-
-    // Only add the listener if the tooltip is open
-    if (tooltipOpen) {
-      // Use setTimeout to ensure this runs after the current click event
-      setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside)
-      }, 0)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [tooltipOpen])
 
   const watchInterestedInSelling = form.watch('interestedInSelling')
 
@@ -677,22 +637,22 @@ export default function Register() {
                   <div className="flex items-center gap-2">
                     <h3 className="font-medium">User Verification</h3>
                     <TooltipProvider>
-                      <Tooltip open={tooltipOpen}>
-                        <TooltipTrigger
-                          asChild
-                          onClick={handleTooltipToggle}
-                          ref={tooltipTriggerRef}
-                        >
-                          <span className="cursor-help">
-                            <Info className="h-4 w-4 text-muted-foreground" />
-                          </span>
+                      <Tooltip open={isOpen}>
+                        <TooltipTrigger asChild {...triggerProps}>
+                          <button
+                            type="button"
+                            className="inline-flex items-center justify-center p-1 -m-1 rounded hover:bg-accent transition-colors touch-manipulation"
+                            aria-label="License verification information"
+                          >
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                          </button>
                         </TooltipTrigger>
                         <TooltipContent
                           className="w-[calc(100vw-32px)] max-w-[320px] sm:max-w-md p-3 sm:p-4 text-xs"
                           sideOffset={5}
                           align="center"
                           side="bottom"
-                          onClick={e => e.stopPropagation()}
+                          {...contentProps}
                         >
                           <p>
                             To ensure compliance with Maltese law and EU

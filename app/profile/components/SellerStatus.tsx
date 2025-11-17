@@ -25,6 +25,7 @@ import {
   CheckCircle2,
 } from 'lucide-react'
 import { Profile } from '../types'
+import { useClickableTooltip } from '@/hooks/useClickableTooltip'
 
 interface SellerStatusProps {
   profile: Profile
@@ -41,8 +42,11 @@ export const SellerStatus = ({
   handleLicenseUpload,
   handleRemoveLicense,
 }: SellerStatusProps) => {
+  const { isOpen, triggerProps, contentProps } = useClickableTooltip()
+
   return (
-    <Card>
+    <TooltipProvider>
+      <Card>
       <CardHeader>
         <CardTitle>Seller Status</CardTitle>
         <CardDescription>
@@ -87,20 +91,29 @@ export const SellerStatus = ({
                   : 'Pending Verification'}
               </Badge>
               {!profile.is_verified && profile.license_image && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="w-[200px] text-xs">
-                        Your license has been uploaded but is pending
-                        verification. This may take up to 24 hours. You can
-                        still create non-firearm listings.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Tooltip open={isOpen}>
+                  <TooltipTrigger asChild {...triggerProps}>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center p-1 -m-1 rounded hover:bg-accent transition-colors touch-manipulation"
+                      aria-label="Verification information"
+                    >
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    sideOffset={8}
+                    className="max-w-[250px] sm:max-w-[300px]"
+                    {...contentProps}
+                  >
+                    <p className="text-xs sm:text-sm">
+                      Your license has been uploaded but is pending
+                      verification. This may take up to 24 hours. You can
+                      still create non-firearm listings.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
           )}
@@ -194,6 +207,7 @@ export const SellerStatus = ({
           ></div>
         </div>
       )}
-    </Card>
+      </Card>
+    </TooltipProvider>
   )
 }

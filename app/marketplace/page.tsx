@@ -360,7 +360,7 @@ export default function Marketplace() {
             </p>
           </div>
         </div>
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex flex-row gap-4 mb-6">
           <Link href="/marketplace/create">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
