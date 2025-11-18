@@ -60,4 +60,3 @@ export const ESTABLISHMENT_CONFIG: Record<
 export function getEstablishmentConfig(type: EstablishmentType) {
   return ESTABLISHMENT_CONFIG[type]
 }
-

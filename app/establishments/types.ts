@@ -44,4 +44,3 @@ export interface EstablishmentWithDetails extends BaseEstablishment {
   listings: Listing[]
   blogPosts: BlogPost[]
 }
-
