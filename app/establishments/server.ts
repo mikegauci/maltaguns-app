@@ -52,25 +52,28 @@ export async function fetchEstablishmentBySlug(
     `Fetching blog posts for ${config.label} ID: ${establishment.id} using ${config.blogForeignKey}`
   )
 
-  let { data: blogPosts, error: blogPostsError } = await supabase
+  let { data: blogPosts, error: blogPostsError } = (await supabase
     .from('blog_posts')
     .select(
       `
-      id,
-      title,
-      slug,
-      content,
-      featured_image,
-      created_at,
-      category,
-      ${config.blogForeignKey},
-      author_id,
-      author:profiles(username)
-    `
+        id,
+        title,
+        slug,
+        content,
+        featured_image,
+        created_at,
+        category,
+        ${config.blogForeignKey},
+        author_id,
+        author:profiles(username)
+      `
     )
     .eq(config.blogForeignKey, establishment.id)
     .eq('published', true)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false })) as {
+    data: any[] | null
+    error: any
+  }
 
   if (blogPostsError) {
     console.error(
@@ -89,7 +92,7 @@ export async function fetchEstablishmentBySlug(
         `Trying admin client for ${config.label} ID: ${establishment.id}`
       )
 
-      const { data: adminBlogPosts, error: adminError } = await supabaseAdmin
+      const { data: adminBlogPosts, error: adminError } = (await supabaseAdmin
         .from('blog_posts')
         .select(
           `
@@ -107,7 +110,10 @@ export async function fetchEstablishmentBySlug(
         )
         .eq(config.blogForeignKey, establishment.id)
         .eq('published', true)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false })) as {
+        data: any[] | null
+        error: any
+      }
 
       if (!adminError && adminBlogPosts && adminBlogPosts.length > 0) {
         console.log(
