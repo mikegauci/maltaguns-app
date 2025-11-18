@@ -4,54 +4,21 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import {
-  Store,
-  MapPin,
-  Phone,
-  Mail,
-  Globe,
-  BookOpen,
-  Pencil,
-} from 'lucide-react'
+import { MapPin, Phone, Mail, Globe, BookOpen, Pencil } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { format } from 'date-fns'
 import BlogPostCard from '@/app/components/blog/BlogPostCard'
 import { BackButton } from '@/components/ui/back-button'
+import {
+  EstablishmentWithDetails,
+  EstablishmentType,
+} from '@/app/establishments/types'
+import { getEstablishmentConfig } from '@/app/establishments/config'
 
-interface Store {
-  id: string
-  business_name: string
-  logo_url: string | null
-  location: string
-  phone: string | null
-  email: string | null
-  description: string | null
-  website: string | null
-  owner_id: string
-  slug: string
-  listings: {
-    id: string
-    title: string
-    type: 'firearms' | 'non_firearms'
-    category: string
-    price: number
-    thumbnail: string
-    created_at: string
-  }[]
-  blogPosts: {
-    id: string
-    title: string
-    slug: string
-    content: string
-    featured_image: string | null
-    created_at: string
-    author: {
-      username: string
-    }
-    category: string
-  }[]
+interface EstablishmentClientProps {
+  establishment: EstablishmentWithDetails
+  type: EstablishmentType
 }
 
 function slugify(text: string) {
@@ -69,51 +36,50 @@ function formatPrice(price: number) {
   }).format(price)
 }
 
-function truncateText(text: string, words: number) {
-  // Remove HTML tags
-  const strippedText = text.replace(/<[^>]*>/g, '')
-  const wordArray = strippedText.split(' ')
-  if (wordArray.length <= words) return strippedText
-  return wordArray.slice(0, words).join(' ') + '...'
-}
-
-export default function StoreClient({ store }: { store: Store }) {
+export default function EstablishmentClient({
+  establishment,
+  type,
+}: EstablishmentClientProps) {
   const router = useRouter()
   const [isOwner, setIsOwner] = useState(false)
   const [blogPosts, setBlogPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
+  const config = getEstablishmentConfig(type)
+  const Icon = config.icon
+
   // Check if blog posts array is valid
   const hasBlogPosts =
-    Array.isArray(store.blogPosts) && store.blogPosts.length > 0
+    Array.isArray(establishment.blogPosts) && establishment.blogPosts.length > 0
 
   useEffect(() => {
-    // Check if current user is the owner of this store
+    // Check if current user is the owner
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        setIsOwner(session.user.id === store.owner_id)
+        setIsOwner(session.user.id === establishment.owner_id)
       }
     })
 
     // Update blog posts if they change
-    if (Array.isArray(store.blogPosts)) {
-      setBlogPosts(store.blogPosts)
+    if (Array.isArray(establishment.blogPosts)) {
+      setBlogPosts(establishment.blogPosts)
     } else {
-      setBlogPosts([]) // Set to empty array if not valid
+      setBlogPosts([])
     }
 
     setLoading(false)
-  }, [store.owner_id, store.blogPosts])
+  }, [establishment.owner_id, establishment.blogPosts])
 
   // Fetch blog posts directly from the client side as a fallback
   useEffect(() => {
     const fetchBlogPosts = async () => {
       try {
-        console.log(`Fetching blog posts for store ID: ${store.id}`)
+        console.log(
+          `Fetching blog posts for ${config.label} ID: ${establishment.id}`
+        )
         setLoading(true)
 
-        // Fetch blog posts from blog_posts table with store_id filter
         const { data, error } = await supabase
           .from('blog_posts')
           .select(
@@ -128,18 +94,17 @@ export default function StoreClient({ store }: { store: Store }) {
             author:profiles(username)
           `
           )
-          .eq('store_id', store.id)
+          .eq(config.blogForeignKey, establishment.id)
           .eq('published', true)
           .order('created_at', { ascending: false })
 
         if (error) {
           console.error('Error fetching blog posts from client:', error)
         } else if (data && data.length > 0) {
-          console.log(`Found ${data.length} blog posts for store:`, data)
-          // Set the blog posts
+          console.log(`Found ${data.length} blog posts:`, data)
           setBlogPosts(data)
         } else {
-          console.log('No blog posts found for this store')
+          console.log(`No blog posts found for this ${config.label}`)
         }
       } catch (error) {
         console.error('Error in client-side fetch:', error)
@@ -149,18 +114,21 @@ export default function StoreClient({ store }: { store: Store }) {
     }
 
     fetchBlogPosts()
-  }, [store.id, refreshTrigger])
+  }, [establishment.id, refreshTrigger, config.label, config.blogForeignKey])
 
   return (
     <div className="min-h-screen bg-background p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
         <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <BackButton label="Back to Stores" href="/establishments/stores" />
+          <BackButton
+            label={`Back to ${config.labelPlural}`}
+            href={config.baseUrl}
+          />
 
           {isOwner && (
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <Link
-                href={`/blog/create?store_id=${store.id}`}
+                href={`/blog/create?${config.createQueryParam}=${establishment.id}`}
                 className="w-full sm:w-auto"
               >
                 <Button className="bg-primary w-full sm:w-auto">
@@ -172,74 +140,74 @@ export default function StoreClient({ store }: { store: Store }) {
           )}
         </div>
 
-        {/* Store Profile */}
+        {/* Establishment Profile */}
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-              {store.logo_url ? (
+              {establishment.logo_url ? (
                 <img
-                  src={store.logo_url}
-                  alt={store.business_name}
+                  src={establishment.logo_url}
+                  alt={establishment.business_name}
                   className="w-20 h-20 sm:w-32 sm:h-32 object-contain rounded-lg mx-auto sm:mx-0"
                 />
               ) : (
                 <div className="w-20 h-20 sm:w-32 sm:h-32 bg-muted rounded-lg flex items-center justify-center mx-auto sm:mx-0">
-                  <Store className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
+                  <Icon className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
                 </div>
               )}
 
               <div className="flex-1 w-full">
                 <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-center sm:text-left">
-                  {store.business_name}
+                  {establishment.business_name}
                 </h1>
 
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                     <span className="text-sm sm:text-base">
-                      {store.location}
+                      {establishment.location}
                     </span>
                   </div>
-                  {store.phone && (
+                  {establishment.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                       <a
-                        href={`tel:${store.phone}`}
+                        href={`tel:${establishment.phone}`}
                         className="hover:underline text-sm sm:text-base"
                       >
-                        {store.phone}
+                        {establishment.phone}
                       </a>
                     </div>
                   )}
-                  {store.email && (
+                  {establishment.email && (
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                       <a
-                        href={`mailto:${store.email}`}
+                        href={`mailto:${establishment.email}`}
                         className="hover:underline text-sm sm:text-base break-all"
                       >
-                        {store.email}
+                        {establishment.email}
                       </a>
                     </div>
                   )}
-                  {store.website && (
+                  {establishment.website && (
                     <div className="flex items-center gap-2">
                       <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                       <a
-                        href={store.website}
+                        href={establishment.website}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:underline text-sm sm:text-base break-all"
                       >
-                        {store.website}
+                        {establishment.website}
                       </a>
                     </div>
                   )}
                 </div>
 
-                {store.description && (
+                {establishment.description && (
                   <p className="text-muted-foreground whitespace-pre-wrap text-sm sm:text-base">
-                    {store.description}
+                    {establishment.description}
                   </p>
                 )}
               </div>
@@ -251,7 +219,7 @@ export default function StoreClient({ store }: { store: Store }) {
         <div>
           <h2 className="text-2xl font-bold mb-6">Available Listings</h2>
 
-          {store.listings.length === 0 ? (
+          {establishment.listings.length === 0 ? (
             <Card className="p-6 text-center">
               <p className="text-muted-foreground">
                 No active listings available.
@@ -259,7 +227,7 @@ export default function StoreClient({ store }: { store: Store }) {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {store.listings.map(listing => (
+              {establishment.listings.map(listing => (
                 <Link
                   key={listing.id}
                   href={`/marketplace/listing/${slugify(listing.title)}`}
@@ -298,7 +266,9 @@ export default function StoreClient({ store }: { store: Store }) {
             <h2 className="text-2xl font-bold">Latest Posts</h2>
 
             {isOwner && (
-              <Link href={`/blog/create?store_id=${store.id}`}>
+              <Link
+                href={`/blog/create?${config.createQueryParam}=${establishment.id}`}
+              >
                 <Button>
                   <BookOpen className="h-4 w-4 mr-2" />
                   Write Post
@@ -325,3 +295,4 @@ export default function StoreClient({ store }: { store: Store }) {
     </div>
   )
 }
+
