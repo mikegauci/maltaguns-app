@@ -665,9 +665,7 @@ export default function Register() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        I&apos;m interested in selling firearms
-                      </FormLabel>
+                      <FormLabel>I&apos;m a licensed firearm owner</FormLabel>
                     </div>
                   </FormItem>
                 )}
@@ -697,35 +695,37 @@ export default function Register() {
                           {...contentProps}
                         >
                           <p>
-                            To ensure compliance with Maltese law and EU
-                            regulations, Maltaguns requires users who wish to
-                            sell firearms to upload a valid firearms license.
-                            Verification documents are used solely to confirm
-                            your eligibility to participate in firearm-related
-                            transactions on our platform.
+                            Maltaguns requires users who wish to{' '}
+                            <strong>buy or sell</strong> firearms to verify
+                            their account. Verification documents are used
+                            solely to confirm you are licensed.
                           </p>
                           <p className="mt-2">
-                            If you choose to use the platform without selling
-                            firearms, you can do so. You may verify your license
-                            at a later stage if you eventually decide to list
-                            firearms for sale.
+                            If you do not wish to verify at this stage or are
+                            not licensed, you may proceed by unselecting the box
+                            above. You can still verify your account later if
+                            you choose to.
+                          </p>
+                          <p className="mt-2">
+                            For any questions or concerns regarding data
+                            processing or your privacy, please contact us at{' '}
+                            <Link
+                              href="mailto:support@maltaguns.com"
+                              className="text-primary hover:underline"
+                            >
+                              support@maltaguns.com
+                            </Link>
+                            .
                           </p>
                           <p className="mt-2">
                             We are committed to safeguarding your privacy and
                             ensuring the secure handling of your data. Your
                             documents will be strictly reviewed for verification
                             purposes only and will not be shared with any third
-                            parties or made accessible to anyone else.
-                          </p>
-                          <p className="mt-2">
-                            All data processing is conducted in full compliance
-                            with the General Data Protection Regulation (GDPR)
-                            and relevant Maltese legislation.
-                          </p>
-                          <p className="mt-2">
-                            For any questions or concerns regarding data
-                            processing or your privacy, please contact us at
-                            support@maltaguns.com.
+                            parties or made accessible to anyone else. All data
+                            processing is conducted in full compliance with the
+                            General Data Protection Regulation (GDPR) and
+                            relevant Maltese legislation.
                           </p>
                         </TooltipContent>
                       </Tooltip>
