@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
-import { DataTable } from '@/components/admin/data-table'
+import { DataTable } from '@/app/admin'
 import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'

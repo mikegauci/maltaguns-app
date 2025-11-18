@@ -4,14 +4,19 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
-import { DataTable } from '@/components/admin/data-table'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { BackButton } from '@/components/ui/back-button'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
-import { EditCreditDialog } from '@/components/admin/edit-credit-dialog'
-import { AddCreditDialog } from '@/components/admin/add-credit-dialog'
+import {
+  DataTable,
+  AdminPageLayout,
+  AdminLoadingState,
+  AdminErrorState,
+  AdminDataCount,
+  EditCreditDialog,
+  AddCreditDialog,
+} from '@/app/admin'
 
 interface Credit {
   id: string
@@ -185,53 +190,33 @@ function CreditsPageComponent() {
   ]
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg">Loading credits data...</p>
-        </div>
-      </div>
-    )
+    return <AdminLoadingState message="Loading credits data..." />
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center p-6 bg-destructive/10 border border-destructive rounded-lg max-w-lg">
-          <h2 className="text-xl font-bold text-destructive mb-4">
-            Error Loading Credits
-          </h2>
-          <p className="mb-4">{error}</p>
-          <button
-            onClick={() => router.refresh()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
+      <AdminErrorState
+        title="Error Loading Credits"
+        message={error}
+        onRetry={() => router.refresh()}
+      />
     )
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Credit Management</h1>
-        <div className="flex items-center gap-6">
-          <BackButton label="Back to Dashboard" href="/admin" />
-          <Button onClick={handleAddCredit}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Credits
-          </Button>
-        </div>
-      </div>
-
-      <p className="text-muted-foreground mb-6">
-        {credits.length === 0
-          ? 'No credits found.'
-          : `Showing ${credits.length} credit records.`}
-      </p>
+    <AdminPageLayout
+      title="Credit Management"
+      actionButton={{
+        label: 'Add Credits',
+        icon: Plus,
+        onClick: handleAddCredit,
+      }}
+    >
+      <AdminDataCount
+        count={credits.length}
+        singularLabel="credit record"
+        pluralLabel="credit records"
+      />
 
       <DataTable
         columns={columns}
@@ -255,7 +240,7 @@ function CreditsPageComponent() {
         profiles={profiles}
         onSuccess={fetchData}
       />
-    </div>
+    </AdminPageLayout>
   )
 }
 

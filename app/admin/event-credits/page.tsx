@@ -4,14 +4,16 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
-import { DataTable } from '@/components/admin/data-table'
+import {
+  DataTable,
+  EditEventCreditDialog,
+  AddEventCreditDialog,
+} from '@/app/admin'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
-import { EditEventCreditDialog } from '@/components/admin/edit-event-credit-dialog'
-import { AddEventCreditDialog } from '@/components/admin/add-event-credit-dialog'
 
 interface EventCredit {
   id: string
