@@ -40,6 +40,7 @@ import {
   PriceField,
   ImageUploadField,
 } from '../components/FormFields'
+import { getAllowedCategories, LicenseTypes } from '@/lib/license-utils'
 
 export default function CreateFirearmsListing() {
   const router = useRouter()
@@ -47,11 +48,13 @@ export default function CreateFirearmsListing() {
   const supabase = createClientComponentClient()
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [allowedCategories, setAllowedCategories] = useState<string[]>([])
+  const [isLoadingLicenses, setIsLoadingLicenses] = useState(true)
 
   const form = useForm<FirearmsForm>({
     resolver: zodResolver(firearmsSchema),
     defaultValues: {
-      category: 'airguns',
+      category: 'replica_deactivated',
       calibre: '',
       title: '',
       description: '',
@@ -73,6 +76,54 @@ export default function CreateFirearmsListing() {
     toast,
     setIsSubmitting,
   })
+
+  // Fetch user's license types and determine allowed categories
+  useEffect(() => {
+    async function fetchUserLicenseTypes() {
+      if (!userId) return
+
+      try {
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('license_types')
+          .eq('id', userId)
+          .single()
+
+        if (error) {
+          console.error('Error fetching license types:', error)
+          setAllowedCategories([])
+          return
+        }
+
+        const licenseTypes = profile?.license_types as LicenseTypes | null
+        const allowed = getAllowedCategories(licenseTypes)
+        setAllowedCategories(allowed)
+
+        // Set default category to the first allowed category
+        if (allowed.length > 0) {
+          // Find the first matching category key from firearmsCategories
+          const firstAllowedCategory = Object.entries(firearmsCategories).find(
+            ([_, label]) => allowed.includes(label)
+          )
+          if (firstAllowedCategory) {
+            form.setValue(
+              'category',
+              firstAllowedCategory[0] as FirearmsForm['category']
+            )
+          }
+        }
+      } catch (error) {
+        console.error('Error:', error)
+        setAllowedCategories([])
+      } finally {
+        setIsLoadingLicenses(false)
+      }
+    }
+
+    if (!isLoading && userId) {
+      fetchUserLicenseTypes()
+    }
+  }, [isLoading, userId, supabase, form])
 
   useEffect(() => {
     if (!isLoading && userId) {
@@ -97,10 +148,26 @@ export default function CreateFirearmsListing() {
     })
   }
 
-  if (isLoading) {
+  if (isLoading || isLoadingLicenses) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Loading...</p>
+      </div>
+    )
+  }
+
+  // Check if user has no allowed categories
+  if (allowedCategories.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="max-w-md text-center space-y-4">
+          <h2 className="text-2xl font-bold">No License Detected</h2>
+          <p className="text-muted-foreground">
+            You need a verified firearms license to create firearms listings.
+            Please upload your license in your profile to get started.
+          </p>
+          <Button onClick={() => router.push('/profile')}>Go to Profile</Button>
+        </div>
       </div>
     )
   }
@@ -132,9 +199,14 @@ export default function CreateFirearmsListing() {
                     </FormControl>
                     <SelectContent>
                       {Object.entries(firearmsCategories)
-                        .filter(
-                          ([value]) => value !== 'ammunition' || isRetailer
-                        )
+                        .filter(([value, label]) => {
+                          // Filter by allowed categories based on user's license
+                          if (!allowedCategories.includes(label)) {
+                            return false
+                          }
+                          // Additionally filter ammunition for non-retailers
+                          return value !== 'ammunition' || isRetailer
+                        })
                         .map(([value, label]) => (
                           <SelectItem key={value} value={value}>
                             {label}

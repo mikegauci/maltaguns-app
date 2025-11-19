@@ -48,6 +48,36 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         throw new Error('Not authenticated')
       }
 
+      // Check if user is verified and has valid license and ID card
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_verified, id_card_verified, license_image, id_card_image')
+        .eq('id', session.user.id)
+        .single()
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError)
+        throw new Error('Failed to verify user profile')
+      }
+
+      if (!profile) {
+        throw new Error('User profile not found')
+      }
+
+      // Check if user has verified license
+      if (!profile.is_verified || !profile.license_image) {
+        throw new Error(
+          'You must have a verified firearms license to create a firearms listing. Please upload your license in your profile.'
+        )
+      }
+
+      // Check if user has verified ID card
+      if (!profile.id_card_verified || !profile.id_card_image) {
+        throw new Error(
+          'You must have a verified ID card to create a firearms listing. Please upload your ID card in your profile.'
+        )
+      }
+
       // Get all image URLs
       const imageUrls = data.images.map(img =>
         typeof img === 'string' ? img : img.toString()

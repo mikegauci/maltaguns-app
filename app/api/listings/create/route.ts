@@ -29,6 +29,52 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
+    // If this is a firearms listing, check if user is verified
+    if (data.type === 'firearms') {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_verified, id_card_verified, license_image, id_card_image')
+        .eq('id', user.id)
+        .single()
+
+      if (profileError) {
+        console.error('Error fetching profile:', profileError)
+        return NextResponse.json(
+          { error: 'Failed to verify user profile' },
+          { status: 500 }
+        )
+      }
+
+      if (!profile) {
+        return NextResponse.json(
+          { error: 'User profile not found' },
+          { status: 404 }
+        )
+      }
+
+      // Check if user has verified license
+      if (!profile.is_verified || !profile.license_image) {
+        return NextResponse.json(
+          {
+            error:
+              'You must have a verified firearms license to create a firearms listing. Please upload your license in your profile.',
+          },
+          { status: 403 }
+        )
+      }
+
+      // Check if user has verified ID card
+      if (!profile.id_card_verified || !profile.id_card_image) {
+        return NextResponse.json(
+          {
+            error:
+              'You must have a verified ID card to create a firearms listing. Please upload your ID card in your profile.',
+          },
+          { status: 403 }
+        )
+      }
+    }
+
     // Format the images as a PostgreSQL array literal
     const imageUrls = data.images || []
     const formattedImages =

@@ -29,16 +29,33 @@ import { createNavigationHandlers } from './handlers/navigationHandlers'
 export default function CreateListing() {
   const router = useRouter()
   const [showLicenseDialog, setShowLicenseDialog] = useState(false)
+  const [dialogMessage, setDialogMessage] = useState({
+    title: 'Verification Required',
+    description:
+      'To sell firearms on Maltaguns, you must verify your account. Please go to your profile to complete verification.',
+  })
 
   // Use custom hook for seller status checking
-  const { isLoading, isSeller } = useSellerStatus()
+  const {
+    isLoading,
+    isSeller,
+    isVerified,
+    isIdCardVerified,
+    hasLicense,
+    hasIdCard,
+  } = useSellerStatus()
 
   // Create navigation handlers
   const { handleFirearmsClick, handleNonFirearmsClick, handleGoToProfile } =
     createNavigationHandlers({
       router,
       isSeller,
+      isVerified,
+      isIdCardVerified,
+      hasLicense,
+      hasIdCard,
       setShowLicenseDialog,
+      setDialogMessage,
     })
 
   if (isLoading) {
@@ -112,18 +129,15 @@ export default function CreateListing() {
         >
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>License upload required</AlertDialogTitle>
+              <AlertDialogTitle>{dialogMessage.title}</AlertDialogTitle>
               <AlertDialogDescription>
-                To sell firearms on Maltaguns, we must first verify that you are
-                infact licensed. please upload a picture of your latest license
-                on your profile. This is only required once and your account
-                will then be certified for future firearm sales
+                {dialogMessage.description}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleGoToProfile}>
-                Modify Profile
+                Go to Profile
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

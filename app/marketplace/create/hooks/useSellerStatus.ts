@@ -7,6 +7,10 @@ export function useSellerStatus() {
   const supabase = createClientComponentClient()
   const [isLoading, setIsLoading] = useState(true)
   const [isSeller, setIsSeller] = useState(false)
+  const [isVerified, setIsVerified] = useState(false)
+  const [isIdCardVerified, setIsIdCardVerified] = useState(false)
+  const [hasLicense, setHasLicense] = useState(false)
+  const [hasIdCard, setHasIdCard] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -51,7 +55,9 @@ export function useSellerStatus() {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('is_seller')
+          .select(
+            'is_seller, is_verified, id_card_verified, license_image, id_card_image'
+          )
           .eq('id', session.user.id)
           .single()
 
@@ -62,6 +68,10 @@ export function useSellerStatus() {
 
         if (mounted) {
           setIsSeller(profile?.is_seller || false)
+          setIsVerified(profile?.is_verified || false)
+          setIsIdCardVerified(profile?.id_card_verified || false)
+          setHasLicense(!!profile?.license_image)
+          setHasIdCard(!!profile?.id_card_image)
           setIsLoading(false)
         }
       } catch (error) {
@@ -79,5 +89,12 @@ export function useSellerStatus() {
     }
   }, [router, supabase])
 
-  return { isLoading, isSeller }
+  return {
+    isLoading,
+    isSeller,
+    isVerified,
+    isIdCardVerified,
+    hasLicense,
+    hasIdCard,
+  }
 }
