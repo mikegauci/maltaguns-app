@@ -30,6 +30,7 @@ interface User {
   is_seller: boolean
   is_verified: boolean
   license_image: string | null
+  id_card_image: string | null
   is_disabled: boolean
   first_name: string | null
   last_name: string | null
@@ -105,6 +106,7 @@ function UsersPageComponent() {
     is_seller: false,
     is_verified: false,
     license_image: null as string | null,
+    id_card_image: null as string | null,
     is_disabled: false,
     first_name: '' as string | null,
     last_name: '' as string | null,
@@ -276,6 +278,30 @@ function UsersPageComponent() {
               </a>
             ) : (
               'No license'
+            )}
+          </div>
+        )
+      },
+    },
+    {
+      accessorKey: 'id_card_image',
+      header: 'ID Card',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const idCardUrl = row.getValue('id_card_image') as string | null
+        return (
+          <div className="flex items-center">
+            {idCardUrl ? (
+              <a
+                href={idCardUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+              >
+                View ID
+              </a>
+            ) : (
+              'No ID'
             )}
           </div>
         )
@@ -457,6 +483,7 @@ function UsersPageComponent() {
       is_seller: false,
       is_verified: false,
       license_image: null,
+      id_card_image: null,
       is_disabled: false,
       first_name: '',
       last_name: '',
@@ -475,6 +502,7 @@ function UsersPageComponent() {
       is_seller: user.is_seller,
       is_verified: user.is_verified,
       license_image: user.license_image,
+      id_card_image: user.id_card_image,
       is_disabled: user.is_disabled,
       first_name: user.first_name,
       last_name: user.last_name,
@@ -588,6 +616,51 @@ function UsersPageComponent() {
           error instanceof Error
             ? error.message
             : 'Failed to delete license image',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleDeleteIdCard() {
+    if (!selectedUser || !formData.id_card_image) return
+
+    try {
+      setIsSubmitting(true)
+
+      // Use the API endpoint to delete the ID card
+      const response = await fetch(`/api/users/${selectedUser.id}/id-card`, {
+        method: 'DELETE',
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete ID card image')
+      }
+
+      // Update local state
+      setFormData({
+        ...formData,
+        id_card_image: null,
+      })
+
+      toast({
+        title: 'Success',
+        description: 'ID card image deleted successfully',
+      })
+
+      // Close the edit dialog and refresh the users list
+      setIsEditDialogOpen(false)
+      fetchUsers()
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete ID card image',
       })
     } finally {
       setIsSubmitting(false)
@@ -1046,6 +1119,50 @@ function UsersPageComponent() {
                       />
                     </svg>
                     Delete License Image
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          {formData.id_card_image && (
+            <div className="space-y-2">
+              <Label>ID Card Image</Label>
+              <div className="border p-2 rounded-md">
+                <div className="flex flex-col gap-2">
+                  <a
+                    href={formData.id_card_image}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline flex items-center gap-2"
+                  >
+                    <img
+                      src={formData.id_card_image}
+                      alt="ID Card"
+                      className="w-20 h-20 object-cover border rounded"
+                    />
+                    <span>View Full Size</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handleDeleteIdCard}
+                    disabled={isSubmitting}
+                    className="text-red-500 hover:underline text-sm flex items-center gap-1 mt-2"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                    Delete ID Card Image
                   </button>
                 </div>
               </div>
