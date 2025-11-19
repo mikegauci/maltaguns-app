@@ -48,7 +48,6 @@ import {
   verifyIdCardImage,
 } from '@/utils/document-verification'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
-import heic2any from 'heic2any'
 
 const phoneRegex = /^(356|)(\d{8})$/
 
@@ -68,6 +67,10 @@ async function convertHeicToJpeg(file: File): Promise<File> {
 
   try {
     console.log('Converting HEIC image to JPEG...')
+
+    // Dynamically import heic2any only when needed (client-side only)
+    const heic2any = (await import('heic2any')).default
+
     const convertedBlob = await heic2any({
       blob: file,
       toType: 'image/jpeg',

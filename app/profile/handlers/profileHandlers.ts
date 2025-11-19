@@ -5,7 +5,6 @@ import {
 } from '@/utils/document-verification'
 import { Profile, Listing, ProfileForm } from '../types'
 import React from 'react'
-import heic2any from 'heic2any'
 
 /**
  * Converts HEIC/HEIF images to JPEG for browser compatibility
@@ -23,6 +22,10 @@ async function convertHeicToJpeg(file: File): Promise<File> {
 
   try {
     console.log('Converting HEIC image to JPEG...')
+
+    // Dynamically import heic2any only when needed (client-side only)
+    const heic2any = (await import('heic2any')).default
+
     const convertedBlob = await heic2any({
       blob: file,
       toType: 'image/jpeg',
