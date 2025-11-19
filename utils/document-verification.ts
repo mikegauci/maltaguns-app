@@ -478,10 +478,10 @@ function verifyName(
           if (isValidName(prevLine)) {
             extractedName = prevLine
             console.log(`✓ Name found BEFORE label at line ${j}: "${extractedName}"`)
-            break
-          }
-        }
-        
+        break
+      }
+    }
+
         if (extractedName) break
         
         // Strategy 3: Check lines AFTER the label
@@ -596,6 +596,45 @@ function normalizeString(str: string): string {
     .replace(/[^\w\s]/g, '') // Remove special characters
     .replace(/\s+/g, ' ') // Normalize whitespace
     .trim()
+}
+
+/**
+ * Calculates the Levenshtein distance between two strings
+ * @param str1 First string
+ * @param str2 Second string
+ * @returns The edit distance (number of changes needed)
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const s1 = str1.toLowerCase()
+  const s2 = str2.toLowerCase()
+
+  if (s1 === s2) return 0
+
+  const matrix: number[][] = []
+
+  for (let i = 0; i <= s2.length; i++) {
+    matrix[i] = [i]
+  }
+
+  for (let j = 0; j <= s1.length; j++) {
+    matrix[0][j] = j
+  }
+
+  for (let i = 1; i <= s2.length; i++) {
+    for (let j = 1; j <= s1.length; j++) {
+      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          matrix[i][j - 1] + 1,     // insertion
+          matrix[i - 1][j] + 1      // deletion
+        )
+      }
+    }
+  }
+
+  return matrix[s2.length][s1.length]
 }
 
 /**
@@ -727,4 +766,466 @@ function detectLicenseTypes(text: string): LicenseTypes {
   }
 
   return licenseTypes
+}
+
+/**
+ * Preprocesses an ID card image for better OCR results
+ * Enhances contrast and reduces noise from holograms/watermarks
+ */
+async function preprocessIdCardImage(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+
+    if (!ctx) {
+      reject(new Error('Could not get canvas context'))
+      return
+    }
+
+    img.onload = () => {
+      try {
+        // Set canvas to image dimensions
+        canvas.width = img.width
+        canvas.height = img.height
+
+        // Draw the original image
+        ctx.drawImage(img, 0, 0)
+
+        // Get image data
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const data = imageData.data
+
+        // Convert to grayscale and enhance contrast
+        for (let i = 0; i < data.length; i += 4) {
+          // Grayscale conversion
+          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+
+          // High contrast adjustment - makes text darker and background lighter
+          // This helps with holographic patterns
+          let enhanced = gray
+          if (gray < 128) {
+            // Darken dark areas (text)
+            enhanced = gray * 0.7
+          } else {
+            // Brighten light areas (background)
+            enhanced = 255 - (255 - gray) * 0.5
+          }
+
+          // Apply the enhanced value
+          data[i] = enhanced // R
+          data[i + 1] = enhanced // G
+          data[i + 2] = enhanced // B
+          // Alpha stays the same
+        }
+
+        // Put the modified image data back
+        ctx.putImageData(imageData, 0, 0)
+
+        // Convert canvas to blob and then to File
+        canvas.toBlob(
+          blob => {
+            if (blob) {
+              const processedFile = new File([blob], file.name, {
+                type: 'image/png',
+                lastModified: Date.now(),
+              })
+              console.log('✓ ID card image preprocessed for better OCR')
+              resolve(processedFile)
+            } else {
+              reject(new Error('Failed to create blob from canvas'))
+            }
+          },
+          'image/png',
+          1.0
+        )
+      } catch (error) {
+        reject(error)
+      }
+    }
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image for preprocessing'))
+    }
+
+    // Load the image
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+/**
+ * Verifies if an uploaded ID card image is valid and matches the user's name
+ * @param file The image file to verify
+ * @param userFirstName User's first name from profile
+ * @param userLastName User's last name from profile
+ * @returns A Promise that resolves to an object containing verification results
+ */
+export async function verifyIdCardImage(
+  file: File,
+  userFirstName: string,
+  userLastName: string
+): Promise<{
+  isVerified: boolean
+  text: string
+  nameMatch: boolean
+  extractedName: string | null
+  nameMatchDetails?: {
+    idCardName: string
+    profileName: string
+    similarityScore: number
+  }
+}> {
+  try {
+    if (!file) {
+      throw new Error('No file provided')
+    }
+
+    console.log('Starting ID card verification...')
+
+    // Preprocess the image for better OCR results (especially for ID cards with holograms)
+    const preprocessedFile = await preprocessIdCardImage(file)
+
+    // Auto-rotate the image for best OCR results
+    const { bestImage, bestRotation, bestConfidence, bestText } =
+      await findBestOrientation(preprocessedFile)
+
+    console.log(`Best orientation: ${bestRotation}°, Confidence: ${bestConfidence}%`)
+
+    // Create a Tesseract worker with enhanced settings for ID cards
+    const worker = await createWorker('eng', 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`)
+        }
+      },
+    })
+
+    // Configure Tesseract for better text recognition
+    await worker.setParameters({
+      tessedit_char_whitelist:
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 /.-\'ĄĊĖĠĦŻàèìòùÀÈÌÒÙ',
+    })
+
+    // Use the best rotated image we found
+    const { confidence, text } = bestText
+      ? { confidence: bestConfidence, text: bestText }
+      : (await worker.recognize(bestImage)).data
+
+    // Terminate the worker
+    await worker.terminate()
+
+    console.log('ID Card OCR Text:', text)
+    console.log('OCR Confidence:', confidence)
+
+    // Check if this is a Malta ID card - use flexible patterns to handle OCR errors
+    const normalizedText = text.replace(/\s+/g, ' ').toUpperCase()
+    
+    // Multiple patterns to catch variations in OCR
+    const idCardPatterns = [
+      /KARTA.*TAL.*IDENTIT/i,           // "KARTA TAL-IDENTITÀ"
+      /IDENTITY.*CARD/i,                 // "IDENTITY CARD"
+      /REPUBBLIKA.*TA.*MALTA/i,          // "REPUBBLIKA TA' MALTA"
+      /REPUBLIC.*OF.*MALTA/i,            // "REPUBLIC OF MALTA"
+      /ISEM.*NAME/i,                     // "ISEM / NAME" field
+      /NRU.*NO.*\d{7,8}[A-Z]/i,         // ID number format "NRU./NO. 0024894M"
+      /NAZZJONAL/i,                      // "NAZZJONALITÀ"
+      /NATIONALITY/i,                    // "NATIONALITY"
+      /MLT/,                             // Nationality code
+      /TISWA.*MINN.*VALID.*FROM/i,      // Date fields
+      /TISWA.*SA.*VALID.*UNTIL/i,       // Date fields
+    ]
+
+    const matchCount = idCardPatterns.filter(pattern => pattern.test(text)).length
+    const isMaltaIdCard = matchCount >= 2 // At least 2 patterns must match
+
+    console.log(`ID card pattern matches: ${matchCount}/11`)
+
+    if (!isMaltaIdCard) {
+      console.warn('Not a valid Malta ID card - missing required header text')
+      console.log('Text snippet:', text.substring(0, 200))
+      return {
+        isVerified: false,
+        text,
+        nameMatch: false,
+        extractedName: null,
+      }
+    }
+
+    console.log('✓ Valid Malta ID card detected')
+
+    // Extract and verify name
+    const extractedName = extractIdCardName(text)
+    console.log('Extracted name from ID card:', extractedName)
+
+    let nameMatch = false
+    let nameMatchDetails
+
+    if (extractedName && userFirstName && userLastName) {
+      const result = verifyIdCardName(
+        extractedName,
+        userFirstName,
+        userLastName
+      )
+      nameMatch = result.matches
+      nameMatchDetails = {
+        idCardName: extractedName,
+        profileName: `${userFirstName} ${userLastName}`,
+        similarityScore: result.similarityScore,
+      }
+
+      if (nameMatch) {
+        console.log(
+          `✓ Name match confirmed: "${extractedName}" matches "${userFirstName} ${userLastName}"`
+        )
+      } else {
+        console.warn(
+          `✗ Name mismatch: ID card has "${extractedName}" but profile has "${userFirstName} ${userLastName}" (similarity: ${result.similarityScore}%)`
+        )
+      }
+    }
+
+    const isVerified = isMaltaIdCard && nameMatch
+
+    return {
+      isVerified,
+      text,
+      nameMatch,
+      extractedName,
+      nameMatchDetails,
+    }
+  } catch (error) {
+    console.error('Error verifying ID card:', error)
+    throw new Error('Failed to verify ID card. Please try again.')
+  }
+}
+
+/**
+ * Extracts the name from ID card OCR text
+ * Uses multiple strategies to find the name on the ID card
+ * Handles cases where surname and first name are on separate lines
+ */
+function extractIdCardName(text: string): string | null {
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+
+  console.log('Searching for name in ID card text...')
+
+  // Strategy 1: Look for "ISEM / NAME" or "ISEM/NAME" label
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+
+    // Check if this line contains the name label (flexible matching)
+    if (/ISEM.*\/?.*NAME/i.test(line) || /ISEM/i.test(line) && /NAME/i.test(line)) {
+      console.log(`Found ISEM/NAME label at line ${i}: "${line}"`)
+
+      // Try to extract name from the same line (after the label)
+      const sameLine = line.replace(/.*ISEM\s*\/?\s*NAME[:\s]*/i, '').replace(/ISEM/i, '').replace(/NAME/i, '').trim()
+      if (sameLine && isValidIdCardName(sameLine)) {
+        console.log(`Name extracted from same line: "${sameLine}"`)
+        return cleanName(sameLine)
+      }
+
+      // Check the next few lines for the name (could be surname + firstname on separate lines)
+      const nameParts: string[] = []
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        const nextLine = lines[j].trim()
+        
+        // Stop if we hit another field label
+        if (/^(SESS|SEX|NAZZJONAL|NATIONALITY|DATA|DATE|TISWA|VALID|FIRMA|SIGNATURE)/i.test(nextLine)) {
+          break
+        }
+        
+        if (nextLine && isValidIdCardName(nextLine)) {
+          console.log(`Found name part at line ${j}: "${nextLine}"`)
+          nameParts.push(nextLine)
+          
+          // Try to get at least 2 lines (surname + firstname)
+          if (nameParts.length >= 2) {
+            const fullName = nameParts.join(' ')
+            console.log(`Combined name from multiple lines: "${fullName}"`)
+            return cleanName(fullName)
+          }
+        }
+      }
+      
+      // If we got at least one name part, use it
+      if (nameParts.length > 0) {
+        const fullName = nameParts.join(' ')
+        console.log(`Name from ${nameParts.length} line(s): "${fullName}"`)
+        return cleanName(fullName)
+      }
+    }
+  }
+
+  // Strategy 2: Look for lines that start with "ISEM" or "NAME" alone
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (/^ISEM\b/i.test(line) || /^NAME\b/i.test(line)) {
+      console.log(`Found name label at line ${i}: "${line}"`)
+
+      // Check next few lines and combine them
+      const nameParts: string[] = []
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        const nextLine = lines[j].trim()
+        
+        // Stop if we hit another field label
+        if (/^(SESS|SEX|NAZZJONAL|NATIONALITY|DATA|DATE|TISWA|VALID|FIRMA|SIGNATURE)/i.test(nextLine)) {
+          break
+        }
+        
+        if (nextLine && isValidIdCardName(nextLine)) {
+          nameParts.push(nextLine)
+          
+          if (nameParts.length >= 2) {
+            const fullName = nameParts.join(' ')
+            console.log(`Combined name: "${fullName}"`)
+            return cleanName(fullName)
+          }
+        }
+      }
+      
+      if (nameParts.length > 0) {
+        const fullName = nameParts.join(' ')
+        return cleanName(fullName)
+      }
+    }
+  }
+
+  console.warn('Could not extract name from ID card')
+  return null
+}
+
+/**
+ * Validates if a string looks like a valid name from an ID card
+ */
+function isValidIdCardName(text: string): boolean {
+  // Must be at least 2 characters
+  if (text.length < 2) return false
+
+  // Must contain at least one letter
+  if (!/[a-zA-Z]/.test(text)) return false
+
+  // Must be mostly letters (at least 70% alphabetic characters)
+  const letterCount = (text.match(/[a-zA-Z]/g) || []).length
+  const totalChars = text.replace(/\s/g, '').length
+  if (totalChars > 0 && letterCount / totalChars < 0.7) return false
+
+  // Should not contain document numbers or ID patterns
+  if (/NRU|NO\.|DOC|CAN|\d{7,}/i.test(text)) return false
+
+  // Should not be a common ID card field or label
+  const invalidPatterns = [
+    /^ISEM$/i,
+    /^NAME$/i,
+    /^KARTA/i,
+    /^IDENTITY/i,
+    /^CARD/i,
+    /^REPUBBLIKA/i,
+    /^REPUBLIC/i,
+    /^MALTA/i,
+    /^NAZZJONAL/i,
+    /^NATIONALITY/i,
+    /^DATA/i,
+    /^DATE/i,
+    /^BIRTH/i,
+    /^TWEILD/i,
+    /^\d+$/,  // Only digits
+    /^MLT$/i,
+    /^M$/i,
+    /^F$/i,
+  ]
+
+  for (const pattern of invalidPatterns) {
+    if (pattern.test(text)) return false
+  }
+
+  return true
+}
+
+/**
+ * Cleans up an extracted name by removing extra characters
+ */
+function cleanName(name: string): string {
+  // Remove any leading/trailing special characters but keep internal ones
+  return name
+    .trim()
+    .replace(/^[^a-zA-Z]+/, '') // Remove leading non-letters
+    .replace(/[^a-zA-Z\s'-]+$/, '') // Remove trailing non-letters (keep spaces, hyphens, apostrophes)
+    .replace(/\s+/g, ' ') // Normalize multiple spaces
+    .trim()
+}
+
+/**
+ * Verifies if the extracted ID card name matches the user's profile name
+ * Uses the same logic as license name verification
+ */
+function verifyIdCardName(
+  idCardName: string,
+  profileFirstName: string,
+  profileLastName: string
+): {
+  matches: boolean
+  similarityScore: number
+} {
+  const normalizedIdCardName = idCardName.toUpperCase()
+  const normalizedProfileName = `${profileFirstName} ${profileLastName}`.toUpperCase()
+
+  console.log(
+    `Name matching - ID Card: "${normalizedIdCardName}", Profile: "${normalizedProfileName}"`
+  )
+
+  // Split names into words for flexible matching
+  const idCardWords = normalizedIdCardName.split(/\s+/).filter(w => w.length > 1)
+  const profileFirstNameNorm = profileFirstName.toUpperCase()
+  const profileLastNameNorm = profileLastName.toUpperCase()
+
+  // Check if both first and last name from profile appear in the ID card text
+  // This handles cases where ID card might have middle names
+  let firstNameMatch = false
+  let lastNameMatch = false
+
+  for (const word of idCardWords) {
+    // Check for first name match (with some tolerance for OCR errors)
+    if (
+      word === profileFirstNameNorm ||
+      levenshteinDistance(word, profileFirstNameNorm) <=
+        Math.max(1, profileFirstNameNorm.length * 0.25)
+    ) {
+      firstNameMatch = true
+      console.log(`First name match: "${word}" ≈ "${profileFirstNameNorm}"`)
+    }
+
+    // Check for last name match (with some tolerance for OCR errors)
+    if (
+      word === profileLastNameNorm ||
+      levenshteinDistance(word, profileLastNameNorm) <=
+        Math.max(1, profileLastNameNorm.length * 0.25)
+    ) {
+      lastNameMatch = true
+      console.log(`Last name match: "${word}" ≈ "${profileLastNameNorm}"`)
+    }
+  }
+
+  const matches = firstNameMatch && lastNameMatch
+
+  // Calculate similarity score
+  const distance = levenshteinDistance(
+    normalizedIdCardName,
+    normalizedProfileName
+  )
+  const maxLength = Math.max(
+    normalizedIdCardName.length,
+    normalizedProfileName.length
+  )
+  const similarityScore = Math.round(
+    ((maxLength - distance) / maxLength) * 100
+  )
+
+  console.log(
+    `First name match: ${firstNameMatch}, Last name match: ${lastNameMatch}, Overall similarity: ${similarityScore}%`
+  )
+
+  return {
+    matches,
+    similarityScore,
+  }
 }

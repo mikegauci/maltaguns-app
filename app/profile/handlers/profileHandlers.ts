@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { verifyLicenseImage } from '@/utils/license-verification'
+import { verifyLicenseImage, verifyIdCardImage } from '@/utils/document-verification'
 import { Profile, Listing, ProfileForm } from '../types'
 import React from 'react'
 import heic2any from 'heic2any'
@@ -292,6 +292,35 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       // Convert HEIC to JPEG if needed (for browser compatibility)
       const file = await convertHeicToJpeg(originalFile)
 
+      // Get user's name from profile for verification
+      const userFirstName = profile?.first_name ?? ''
+      const userLastName = profile?.last_name ?? ''
+
+      // Verify the ID card image using OCR
+      const { isVerified, nameMatch, extractedName } = await verifyIdCardImage(
+        file,
+        userFirstName,
+        userLastName
+      )
+
+      if (!isVerified) {
+        if (!nameMatch && extractedName) {
+          toast({
+            variant: 'destructive',
+            title: 'ID card verification failed',
+            description: `The name on the ID card (${extractedName}) does not match your profile name (${userFirstName} ${userLastName}).`,
+          })
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Invalid ID card',
+            description:
+              'This does not appear to be a valid Malta ID card. Please ensure the image shows "KARTA TAL-IDENTITA" or "IDENTITY CARD".',
+          })
+        }
+        return
+      }
+
       const fileExt = file.name.split('.').pop()
       const fileName = `id-card-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `id-cards/${fileName}`
@@ -325,8 +354,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       )
 
       toast({
-        title: 'ID card uploaded',
-        description: 'Your ID card has been uploaded successfully.',
+        title: 'ID card verified & uploaded',
+        description: `Your ID card has been verified successfully. Name: ${extractedName}`,
         className: 'bg-green-600 text-white border-green-600',
       })
     } catch (error) {
