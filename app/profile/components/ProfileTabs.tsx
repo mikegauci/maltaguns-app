@@ -57,6 +57,8 @@ interface ProfileTabsProps {
   setIsEditing: (value: boolean) => void
   uploadingLicense: boolean
   uploadingIdCard: boolean
+  licenseUploadProgress: number
+  idCardUploadProgress: number
   establishmentInfoOpen: boolean
   setEstablishmentInfoOpen: (value: boolean) => void
 
@@ -107,6 +109,8 @@ export function ProfileTabs({
   setIsEditing,
   uploadingLicense,
   uploadingIdCard,
+  licenseUploadProgress,
+  idCardUploadProgress,
   establishmentInfoOpen,
   setEstablishmentInfoOpen,
   onSubmit,
@@ -219,6 +223,8 @@ export function ProfileTabs({
           profile={profile}
           uploadingLicense={uploadingLicense}
           uploadingIdCard={uploadingIdCard}
+          licenseUploadProgress={licenseUploadProgress}
+          idCardUploadProgress={idCardUploadProgress}
           handleLicenseUpload={handleLicenseUpload}
           handleIdCardUpload={handleIdCardUpload}
           handleRemoveLicense={handleRemoveLicense}

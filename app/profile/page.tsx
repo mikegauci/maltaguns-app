@@ -50,6 +50,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
   const [uploadingIdCard, setUploadingIdCard] = useState(false)
+  const [licenseUploadProgress, setLicenseUploadProgress] = useState(0)
+  const [idCardUploadProgress, setIdCardUploadProgress] = useState(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [listingToDelete, setListingToDelete] = useState<string | null>(null)
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
@@ -106,6 +108,8 @@ export default function ProfilePage() {
     setProfile,
     setListings,
     profile,
+    setLicenseUploadProgress,
+    setIdCardUploadProgress,
   })
 
   const contentHandlers = createContentHandlers({
@@ -230,6 +234,8 @@ export default function ProfilePage() {
           setIsEditing={setIsEditing}
           uploadingLicense={uploadingLicense}
           uploadingIdCard={uploadingIdCard}
+          licenseUploadProgress={licenseUploadProgress}
+          idCardUploadProgress={idCardUploadProgress}
           establishmentInfoOpen={establishmentInfoOpen}
           setEstablishmentInfoOpen={setEstablishmentInfoOpen}
           onSubmit={onSubmit}

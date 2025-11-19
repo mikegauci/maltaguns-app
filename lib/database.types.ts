@@ -22,6 +22,7 @@ export interface Database {
           is_verified: boolean
           license_image: string | null
           id_card_image: string | null
+          id_card_verified: boolean
           license_types: Json | null
           contact_preference: string | null
           created_at: string
@@ -39,6 +40,7 @@ export interface Database {
           is_verified?: boolean
           license_image?: string | null
           id_card_image?: string | null
+          id_card_verified?: boolean
           license_types?: Json | null
           contact_preference?: string | null
           created_at?: string
@@ -56,6 +58,7 @@ export interface Database {
           is_verified?: boolean
           license_image?: string | null
           id_card_image?: string | null
+          id_card_verified?: boolean
           license_types?: Json | null
           contact_preference?: string | null
           created_at?: string

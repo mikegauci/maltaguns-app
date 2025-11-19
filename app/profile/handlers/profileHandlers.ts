@@ -1,5 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { verifyLicenseImage, verifyIdCardImage } from '@/utils/document-verification'
+import {
+  verifyLicenseImage,
+  verifyIdCardImage,
+} from '@/utils/document-verification'
 import { Profile, Listing, ProfileForm } from '../types'
 import React from 'react'
 import heic2any from 'heic2any'
@@ -8,10 +11,12 @@ import heic2any from 'heic2any'
  * Converts HEIC/HEIF images to JPEG for browser compatibility
  */
 async function convertHeicToJpeg(file: File): Promise<File> {
-  const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || 
-                 file.name.toLowerCase().endsWith('.heic') || 
-                 file.name.toLowerCase().endsWith('.heif')
-  
+  const isHeic =
+    file.type === 'image/heic' ||
+    file.type === 'image/heif' ||
+    file.name.toLowerCase().endsWith('.heic') ||
+    file.name.toLowerCase().endsWith('.heif')
+
   if (!isHeic) {
     return file // Return original file if not HEIC
   }
@@ -26,19 +31,21 @@ async function convertHeicToJpeg(file: File): Promise<File> {
 
     // heic2any can return Blob or Blob[], handle both cases
     const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
-    
+
     // Create a new File from the converted Blob
     const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg')
     const convertedFile = new File([blob], newFileName, {
       type: 'image/jpeg',
       lastModified: Date.now(),
     })
-    
+
     console.log(`✓ Converted ${file.name} to ${newFileName}`)
     return convertedFile
   } catch (error) {
     console.error('Error converting HEIC to JPEG:', error)
-    throw new Error('Failed to convert HEIC image. Please try a JPEG or PNG instead.')
+    throw new Error(
+      'Failed to convert HEIC image. Please try a JPEG or PNG instead.'
+    )
   }
 }
 
@@ -50,6 +57,8 @@ interface HandlerDependencies {
   ) => void
   setListings: (listings: Listing[] | ((prev: Listing[]) => Listing[])) => void
   profile: Profile | null
+  setLicenseUploadProgress?: (progress: number) => void
+  setIdCardUploadProgress?: (progress: number) => void
 }
 
 // Helper: Convert data URL to File
@@ -64,7 +73,15 @@ export async function urlToFile(
 }
 
 export function createProfileHandlers(deps: HandlerDependencies) {
-  const { supabase, toast, setProfile, setListings, profile } = deps
+  const {
+    supabase,
+    toast,
+    setProfile,
+    setListings,
+    profile,
+    setLicenseUploadProgress,
+    setIdCardUploadProgress,
+  } = deps
 
   async function handleLicenseUpload(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -76,11 +93,20 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       if (!originalFile) return
 
       setUploadingLicense(true)
+      setLicenseUploadProgress?.(0)
 
       // Accept common image formats including HEIC/HEIF from iPhones
-      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif']
-      const isValidImage = validImageTypes.some(type => originalFile.type.toLowerCase().includes(type.split('/')[1]))
-      
+      const validImageTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/heic',
+        'image/heif',
+      ]
+      const isValidImage = validImageTypes.some(type =>
+        originalFile.type.toLowerCase().includes(type.split('/')[1])
+      )
+
       if (!originalFile.type.startsWith('image/') && !isValidImage) {
         toast({
           variant: 'destructive',
@@ -99,12 +125,17 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         return
       }
 
+      setLicenseUploadProgress?.(10) // Validation complete
+
       // Convert HEIC to JPEG if needed (for browser compatibility)
       const file = await convertHeicToJpeg(originalFile)
+      setLicenseUploadProgress?.(20) // Conversion complete
 
       // Get user's name from profile for verification
       const userFirstName = profile?.first_name ?? undefined
       const userLastName = profile?.last_name ?? undefined
+
+      setLicenseUploadProgress?.(30) // Starting verification
 
       const {
         isVerified,
@@ -116,6 +147,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         nameMatchDetails,
         licenseTypes,
       } = await verifyLicenseImage(file, userFirstName, userLastName)
+
+      setLicenseUploadProgress?.(70) // Verification complete
 
       // Check for verification issues - continue with upload but mark as not verified
       const hasNameMismatch = userFirstName && userLastName && !nameMatch
@@ -166,6 +199,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         ? await urlToFile(correctedImageUrl, `rotated-${file.name}`, file.type)
         : file
 
+      setLicenseUploadProgress?.(80) // Preparing upload
+
       const fileExt = file.name.split('.').pop()
       const fileName = `license-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `licenses/${fileName}`
@@ -175,6 +210,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         .upload(filePath, imageToUpload)
 
       if (uploadError) throw uploadError
+
+      setLicenseUploadProgress?.(90) // Upload complete
 
       const {
         data: { publicUrl },
@@ -192,6 +229,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
       if (updateError) throw updateError
 
+      setLicenseUploadProgress?.(95) // Database updated
+
       setProfile(prev =>
         prev
           ? {
@@ -204,6 +243,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
           : null
       )
 
+      setLicenseUploadProgress?.(100) // Complete
+
       // Build detected license types message
       const detectedLicenses = []
       if (licenseTypes.tslA) detectedLicenses.push('TSL-A')
@@ -211,11 +252,13 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       if (licenseTypes.tslB) detectedLicenses.push('TSL-B')
       if (licenseTypes.hunting) detectedLicenses.push('Hunting')
       if (licenseTypes.collectorsA) detectedLicenses.push('Collectors-A')
-      if (licenseTypes.collectorsASpecial) detectedLicenses.push('Collectors-A (special)')
+      if (licenseTypes.collectorsASpecial)
+        detectedLicenses.push('Collectors-A (special)')
 
-      const licensesMessage = detectedLicenses.length > 0 
-        ? `Detected licenses: ${detectedLicenses.join(', ')}`
-        : 'No license types detected. Please contact support.'
+      const licensesMessage =
+        detectedLicenses.length > 0
+          ? `Detected licenses: ${detectedLicenses.join(', ')}`
+          : 'No license types detected. Please contact support.'
 
       // Show success toast only if no issues were found
       if (!hasVerificationIssues) {
@@ -225,7 +268,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
             description: React.createElement(
               'div',
               {},
-              expiryDate && React.createElement('div', {}, `Valid until ${expiryDate}.`),
+              expiryDate &&
+                React.createElement('div', {}, `Valid until ${expiryDate}.`),
               React.createElement('div', { className: 'mt-1' }, licensesMessage)
             ),
             className: 'bg-green-600 text-white border-green-600',
@@ -236,9 +280,21 @@ export function createProfileHandlers(deps: HandlerDependencies) {
             description: React.createElement(
               'div',
               {},
-              React.createElement('div', {}, 'Your license has been uploaded but could not be automatically verified.'),
-              React.createElement('div', { className: 'mt-1' }, licensesMessage),
-              React.createElement('div', { className: 'mt-2' }, 'Your license will be reviewed by an administrator.')
+              React.createElement(
+                'div',
+                {},
+                'Your license has been uploaded but could not be automatically verified.'
+              ),
+              React.createElement(
+                'div',
+                { className: 'mt-1' },
+                licensesMessage
+              ),
+              React.createElement(
+                'div',
+                { className: 'mt-2' },
+                'Your license will be reviewed by an administrator.'
+              )
             ),
             className: 'bg-amber-100 text-amber-800 border-amber-200',
           })
@@ -253,6 +309,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       })
     } finally {
       setUploadingLicense(false)
+      setLicenseUploadProgress?.(0)
     }
   }
 
@@ -266,11 +323,20 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       if (!originalFile) return
 
       setUploadingIdCard(true)
+      setIdCardUploadProgress?.(0)
 
       // Accept common image formats including HEIC/HEIF from iPhones
-      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif']
-      const isValidImage = validImageTypes.some(type => originalFile.type.toLowerCase().includes(type.split('/')[1]))
-      
+      const validImageTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/heic',
+        'image/heif',
+      ]
+      const isValidImage = validImageTypes.some(type =>
+        originalFile.type.toLowerCase().includes(type.split('/')[1])
+      )
+
       if (!originalFile.type.startsWith('image/') && !isValidImage) {
         toast({
           variant: 'destructive',
@@ -289,12 +355,17 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         return
       }
 
+      setIdCardUploadProgress?.(10) // Validation complete
+
       // Convert HEIC to JPEG if needed (for browser compatibility)
       const file = await convertHeicToJpeg(originalFile)
+      setIdCardUploadProgress?.(30) // Conversion complete
 
       // Get user's name from profile for verification
       const userFirstName = profile?.first_name ?? ''
       const userLastName = profile?.last_name ?? ''
+
+      setIdCardUploadProgress?.(40) // Starting verification
 
       // Verify the ID card image using OCR
       const { isVerified, nameMatch, extractedName } = await verifyIdCardImage(
@@ -302,6 +373,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         userFirstName,
         userLastName
       )
+
+      setIdCardUploadProgress?.(70) // Verification complete
 
       if (!isVerified) {
         if (!nameMatch && extractedName) {
@@ -321,6 +394,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         return
       }
 
+      setIdCardUploadProgress?.(80) // Preparing upload
+
       const fileExt = file.name.split('.').pop()
       const fileName = `id-card-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `id-cards/${fileName}`
@@ -331,6 +406,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
       if (uploadError) throw uploadError
 
+      setIdCardUploadProgress?.(90) // Upload complete
+
       const {
         data: { publicUrl },
       } = supabase.storage.from('licenses').getPublicUrl(filePath)
@@ -339,26 +416,42 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         .from('profiles')
         .update({
           id_card_image: publicUrl,
+          id_card_verified: true,
         })
         .eq('id', profile?.id)
 
       if (updateError) throw updateError
+
+      setIdCardUploadProgress?.(95) // Database updated
 
       setProfile(prev =>
         prev
           ? {
               ...prev,
               id_card_image: publicUrl,
+              id_card_verified: true,
             }
           : null
       )
 
+      setIdCardUploadProgress?.(100) // Complete
+
       toast({
         title: 'ID card verified & uploaded',
-        description: `Your ID card has been verified successfully. Name: ${extractedName}`,
+        description: 'Your ID card has been verified successfully.',
         className: 'bg-green-600 text-white border-green-600',
       })
     } catch (error) {
+      // If upload fails after verification, ensure id_card_verified is reset
+      if (profile?.id) {
+        await supabase
+          .from('profiles')
+          .update({ id_card_verified: false })
+          .eq('id', profile.id)
+
+        setProfile(prev => (prev ? { ...prev, id_card_verified: false } : null))
+      }
+
       toast({
         variant: 'destructive',
         title: 'Upload failed',
@@ -367,6 +460,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       })
     } finally {
       setUploadingIdCard(false)
+      setIdCardUploadProgress?.(0)
     }
   }
 
@@ -418,6 +512,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         .from('profiles')
         .update({
           id_card_image: null,
+          id_card_verified: false,
         })
         .eq('id', profile.id)
 
@@ -428,6 +523,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
           ? {
               ...prev,
               id_card_image: null,
+              id_card_verified: false,
             }
           : null
       )

@@ -66,6 +66,34 @@ export function useProfileData({
 
           if (profileError) throw profileError
 
+          // Check if verification flags are true but images are missing
+          // If so, reset the verification status
+          let needsUpdate = false
+          const updates: any = {}
+
+          if (profileData.id_card_verified && !profileData.id_card_image) {
+            console.log(
+              'ID card verified but image missing, resetting verification status'
+            )
+            updates.id_card_verified = false
+            profileData.id_card_verified = false
+            needsUpdate = true
+          }
+
+          if (profileData.is_verified && !profileData.license_image) {
+            console.log(
+              'License verified but image missing, resetting verification status'
+            )
+            updates.is_verified = false
+            profileData.is_verified = false
+            needsUpdate = true
+          }
+
+          // Update database if needed
+          if (needsUpdate) {
+            await supabase.from('profiles').update(updates).eq('id', userId)
+          }
+
           setProfile(profileData)
           form.reset({
             first_name: profileData.first_name || '',

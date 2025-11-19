@@ -251,17 +251,36 @@ function checkExpirationDate(text: string): {
 } {
   try {
     console.log('Searching for expiry date in text...')
-    
+
     let dateStr: string | null = null
     let matchedPattern = ''
-    
+
     // Strategy 1: Try pattern matching on full text
     const patterns = [
-      { regex: /Valida\s*sa\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'Valida sa:' },
-      { regex: /Valid\s*sa\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'Valid sa:' },
-      { regex: /Valid\s*till\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'Valid till:' },
-      { regex: /Expir(?:es|y)\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'Expiry:' },
-      { regex: /(?:valida|valid)[^\d]{0,20}(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'valida/valid (loose)' },
+      {
+        regex:
+          /Valida\s*sa\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
+        name: 'Valida sa:',
+      },
+      {
+        regex: /Valid\s*sa\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
+        name: 'Valid sa:',
+      },
+      {
+        regex:
+          /Valid\s*till\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
+        name: 'Valid till:',
+      },
+      {
+        regex:
+          /Expir(?:es|y)\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
+        name: 'Expiry:',
+      },
+      {
+        regex:
+          /(?:valida|valid)[^\d]{0,20}(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
+        name: 'valida/valid (loose)',
+      },
     ]
 
     for (const { regex, name } of patterns) {
@@ -269,7 +288,9 @@ function checkExpirationDate(text: string): {
       if (match && match[1]) {
         dateStr = match[1]
         matchedPattern = name
-        console.log(`✓ License expiry date found: ${dateStr} using pattern: ${name}`)
+        console.log(
+          `✓ License expiry date found: ${dateStr} using pattern: ${name}`
+        )
         break
       }
     }
@@ -278,35 +299,41 @@ function checkExpirationDate(text: string): {
     if (!dateStr) {
       console.log('Pattern matching failed, trying line-by-line search...')
       const lines = text.split('\n')
-      
+
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
-        
+
         // Check if this line contains the expiry label
         if (/Valida\s*sa|Valid\s*(?:sa|till|until)|Expir/i.test(line)) {
           console.log(`Found expiry label at line ${i}: "${line}"`)
-          
+
           // Check same line for date
-          const dateMatch = line.match(/(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/)
+          const dateMatch = line.match(
+            /(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/
+          )
           if (dateMatch) {
             dateStr = dateMatch[1]
             matchedPattern = 'same line as label'
             console.log(`✓ Date found on same line: ${dateStr}`)
             break
           }
-          
+
           // Check next few lines for date
           for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
             const nextLine = lines[j].trim()
-            const dateMatch = nextLine.match(/(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/)
+            const dateMatch = nextLine.match(
+              /(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/
+            )
             if (dateMatch) {
               dateStr = dateMatch[1]
               matchedPattern = `line ${j} after label`
-              console.log(`✓ Date found on next line ${j}: "${nextLine}" -> ${dateStr}`)
+              console.log(
+                `✓ Date found on next line ${j}: "${nextLine}" -> ${dateStr}`
+              )
               break
             }
           }
-          
+
           if (dateStr) break
         }
       }
@@ -438,15 +465,15 @@ function verifyName(
 
     // Split text into lines for processing
     const lines = text.split('\n')
-    
+
     // Look for the line containing the name label
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
-      
+
       // Check if this line contains the name label
       if (/Isem u Kunjom|Name and Surname/i.test(line)) {
         console.log(`Found name label at line ${i}: "${line}"`)
-        
+
         // Helper function to validate a name
         const isValidName = (text: string): boolean => {
           if (!text || text.length < 5) return false
@@ -454,57 +481,68 @@ function verifyName(
           if (words.length < 2) return false
           if (!/^[A-Z\s]+$/i.test(text)) return false
           if (/^(bin|bint|son|daughter)$/i.test(text)) return false
-          if (/(residing|li jogghod|address|karta|id card)/i.test(text)) return false
+          if (/(residing|li jogghod|address|karta|id card)/i.test(text))
+            return false
           return true
         }
-        
+
         // Strategy 1: Check same line after label
-        const remainingText = line.replace(/.*(?:Isem u Kunjom|Name and Surname)[:\s]*/i, '').trim()
+        const remainingText = line
+          .replace(/.*(?:Isem u Kunjom|Name and Surname)[:\s]*/i, '')
+          .trim()
         if (remainingText) {
           console.log(`Checking same line remaining text: "${remainingText}"`)
           // Split by relationship terms to get name before them
-          const nameParts = remainingText.split(/\s+(?:bin|bint|son|daughter)\s+/i)
+          const nameParts = remainingText.split(
+            /\s+(?:bin|bint|son|daughter)\s+/i
+          )
           if (nameParts[0] && isValidName(nameParts[0])) {
             extractedName = nameParts[0].trim()
-            console.log(`✓ Name found on same line (before relationship term): "${extractedName}"`)
+            console.log(
+              `✓ Name found on same line (before relationship term): "${extractedName}"`
+            )
             break
           }
         }
-        
+
         // Strategy 2: Check lines BEFORE the label (name might appear above)
         for (let j = Math.max(0, i - 2); j < i; j++) {
           const prevLine = lines[j].trim()
           console.log(`Checking line ${j} (before label): "${prevLine}"`)
           if (isValidName(prevLine)) {
             extractedName = prevLine
-            console.log(`✓ Name found BEFORE label at line ${j}: "${extractedName}"`)
-        break
-      }
-    }
+            console.log(
+              `✓ Name found BEFORE label at line ${j}: "${extractedName}"`
+            )
+            break
+          }
+        }
 
         if (extractedName) break
-        
+
         // Strategy 3: Check lines AFTER the label
         for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
           const nextLine = lines[j].trim()
           if (!nextLine) continue
-          
+
           console.log(`Checking line ${j} (after label): "${nextLine}"`)
-          
+
           // Skip pure relationship terms
           if (/^(bin|bint|son|daughter)$/i.test(nextLine)) {
             console.log(`  → Skipping relationship term`)
             continue
           }
-          
+
           // Check if this line has a valid name
           if (isValidName(nextLine)) {
             extractedName = nextLine
-            console.log(`✓ Name found AFTER label at line ${j}: "${extractedName}"`)
+            console.log(
+              `✓ Name found AFTER label at line ${j}: "${extractedName}"`
+            )
             break
           }
         }
-        
+
         if (extractedName) break
       }
     }
@@ -516,7 +554,7 @@ function verifyName(
         extractedName: null,
       }
     }
-    
+
     // Clean up the extracted name - remove extra whitespace and common OCR artifacts
     extractedName = extractedName
       .replace(/\s+/g, ' ') // Normalize whitespace
@@ -530,42 +568,52 @@ function verifyName(
 
     // Split license name into words for matching
     const licenseWords = licenseName.split(/\s+/).filter(w => w.length > 1)
-    
+
     // Check if profile first name and last name appear in license (in any order)
     const profileFirstName = normalizeString(userFirstName)
     const profileLastName = normalizeString(userLastName)
-    
+
     let firstNameMatch = false
     let lastNameMatch = false
-    
+
     for (const licenseWord of licenseWords) {
       // Check for first name match (allow partial match for OCR errors)
       if (!firstNameMatch) {
-        const firstSimilarity = calculateStringSimilarity(licenseWord, profileFirstName)
+        const firstSimilarity = calculateStringSimilarity(
+          licenseWord,
+          profileFirstName
+        )
         if (firstSimilarity >= 0.75) {
           firstNameMatch = true
         }
       }
-      
+
       // Check for last name match (allow partial match for OCR errors)
       if (!lastNameMatch) {
-        const lastSimilarity = calculateStringSimilarity(licenseWord, profileLastName)
+        const lastSimilarity = calculateStringSimilarity(
+          licenseWord,
+          profileLastName
+        )
         if (lastSimilarity >= 0.75) {
           lastNameMatch = true
         }
       }
-      
+
       if (firstNameMatch && lastNameMatch) break
     }
-    
+
     // Consider it a match if both first and last name match
     const nameMatch = firstNameMatch && lastNameMatch
-    
+
     // Calculate overall similarity for reporting
     const similarityScore = calculateStringSimilarity(licenseName, profileName)
 
-    console.log(`Name matching - License: "${extractedName}", Profile: "${userFirstName} ${userLastName}"`)
-    console.log(`First name match: ${firstNameMatch}, Last name match: ${lastNameMatch}, Overall similarity: ${Math.round(similarityScore * 100)}%`)
+    console.log(
+      `Name matching - License: "${extractedName}", Profile: "${userFirstName} ${userLastName}"`
+    )
+    console.log(
+      `First name match: ${firstNameMatch}, Last name match: ${lastNameMatch}, Overall similarity: ${Math.round(similarityScore * 100)}%`
+    )
 
     return {
       nameMatch,
@@ -627,8 +675,8 @@ function levenshteinDistance(str1: string, str2: string): number {
       } else {
         matrix[i][j] = Math.min(
           matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j] + 1      // deletion
+          matrix[i][j - 1] + 1, // insertion
+          matrix[i - 1][j] + 1 // deletion
         )
       }
     }
@@ -689,7 +737,7 @@ function calculateStringSimilarity(str1: string, str2: string): number {
  */
 function detectLicenseTypes(text: string): LicenseTypes {
   const normalizedText = text.toLowerCase()
-  
+
   const licenseTypes: LicenseTypes = {
     tslA: false,
     tslASpecial: false,
@@ -734,10 +782,7 @@ function detectLicenseTypes(text: string): LicenseTypes {
 
   // Detect Hunting License
   // Patterns: "HUNTING", "KACCA"
-  if (
-    /hunting/i.test(normalizedText) ||
-    /kac[cq]a/i.test(normalizedText)
-  ) {
+  if (/hunting/i.test(normalizedText) || /kac[cq]a/i.test(normalizedText)) {
     licenseTypes.hunting = true
     console.log('Detected: Hunting')
   }
@@ -799,7 +844,8 @@ async function preprocessIdCardImage(file: File): Promise<File> {
         // Convert to grayscale and enhance contrast
         for (let i = 0; i < data.length; i += 4) {
           // Grayscale conversion
-          const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+          const gray =
+            0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
 
           // High contrast adjustment - makes text darker and background lighter
           // This helps with holographic patterns
@@ -889,7 +935,9 @@ export async function verifyIdCardImage(
     const { bestImage, bestRotation, bestConfidence, bestText } =
       await findBestOrientation(preprocessedFile)
 
-    console.log(`Best orientation: ${bestRotation}°, Confidence: ${bestConfidence}%`)
+    console.log(
+      `Best orientation: ${bestRotation}°, Confidence: ${bestConfidence}%`
+    )
 
     // Create a Tesseract worker with enhanced settings for ID cards
     const worker = await createWorker('eng', 1, {
@@ -903,7 +951,7 @@ export async function verifyIdCardImage(
     // Configure Tesseract for better text recognition
     await worker.setParameters({
       tessedit_char_whitelist:
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 /.-\'ĄĊĖĠĦŻàèìòùÀÈÌÒÙ',
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 /.-'ĄĊĖĠĦŻàèìòùÀÈÌÒÙ",
     })
 
     // Use the best rotated image we found
@@ -919,23 +967,25 @@ export async function verifyIdCardImage(
 
     // Check if this is a Malta ID card - use flexible patterns to handle OCR errors
     const normalizedText = text.replace(/\s+/g, ' ').toUpperCase()
-    
+
     // Multiple patterns to catch variations in OCR
     const idCardPatterns = [
-      /KARTA.*TAL.*IDENTIT/i,           // "KARTA TAL-IDENTITÀ"
-      /IDENTITY.*CARD/i,                 // "IDENTITY CARD"
-      /REPUBBLIKA.*TA.*MALTA/i,          // "REPUBBLIKA TA' MALTA"
-      /REPUBLIC.*OF.*MALTA/i,            // "REPUBLIC OF MALTA"
-      /ISEM.*NAME/i,                     // "ISEM / NAME" field
-      /NRU.*NO.*\d{7,8}[A-Z]/i,         // ID number format "NRU./NO. 0024894M"
-      /NAZZJONAL/i,                      // "NAZZJONALITÀ"
-      /NATIONALITY/i,                    // "NATIONALITY"
-      /MLT/,                             // Nationality code
-      /TISWA.*MINN.*VALID.*FROM/i,      // Date fields
-      /TISWA.*SA.*VALID.*UNTIL/i,       // Date fields
+      /KARTA.*TAL.*IDENTIT/i, // "KARTA TAL-IDENTITÀ"
+      /IDENTITY.*CARD/i, // "IDENTITY CARD"
+      /REPUBBLIKA.*TA.*MALTA/i, // "REPUBBLIKA TA' MALTA"
+      /REPUBLIC.*OF.*MALTA/i, // "REPUBLIC OF MALTA"
+      /ISEM.*NAME/i, // "ISEM / NAME" field
+      /NRU.*NO.*\d{7,8}[A-Z]/i, // ID number format "NRU./NO. 0024894M"
+      /NAZZJONAL/i, // "NAZZJONALITÀ"
+      /NATIONALITY/i, // "NATIONALITY"
+      /MLT/, // Nationality code
+      /TISWA.*MINN.*VALID.*FROM/i, // Date fields
+      /TISWA.*SA.*VALID.*UNTIL/i, // Date fields
     ]
 
-    const matchCount = idCardPatterns.filter(pattern => pattern.test(text)).length
+    const matchCount = idCardPatterns.filter(pattern =>
+      pattern.test(text)
+    ).length
     const isMaltaIdCard = matchCount >= 2 // At least 2 patterns must match
 
     console.log(`ID card pattern matches: ${matchCount}/11`)
@@ -1005,7 +1055,10 @@ export async function verifyIdCardImage(
  * Handles cases where surname and first name are on separate lines
  */
 function extractIdCardName(text: string): string | null {
-  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0)
+  const lines = text
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
 
   console.log('Searching for name in ID card text...')
 
@@ -1014,11 +1067,18 @@ function extractIdCardName(text: string): string | null {
     const line = lines[i]
 
     // Check if this line contains the name label (flexible matching)
-    if (/ISEM.*\/?.*NAME/i.test(line) || /ISEM/i.test(line) && /NAME/i.test(line)) {
+    if (
+      /ISEM.*\/?.*NAME/i.test(line) ||
+      (/ISEM/i.test(line) && /NAME/i.test(line))
+    ) {
       console.log(`Found ISEM/NAME label at line ${i}: "${line}"`)
 
       // Try to extract name from the same line (after the label)
-      const sameLine = line.replace(/.*ISEM\s*\/?\s*NAME[:\s]*/i, '').replace(/ISEM/i, '').replace(/NAME/i, '').trim()
+      const sameLine = line
+        .replace(/.*ISEM\s*\/?\s*NAME[:\s]*/i, '')
+        .replace(/ISEM/i, '')
+        .replace(/NAME/i, '')
+        .trim()
       if (sameLine && isValidIdCardName(sameLine)) {
         console.log(`Name extracted from same line: "${sameLine}"`)
         return cleanName(sameLine)
@@ -1028,16 +1088,20 @@ function extractIdCardName(text: string): string | null {
       const nameParts: string[] = []
       for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
         const nextLine = lines[j].trim()
-        
+
         // Stop if we hit another field label
-        if (/^(SESS|SEX|NAZZJONAL|NATIONALITY|DATA|DATE|TISWA|VALID|FIRMA|SIGNATURE)/i.test(nextLine)) {
+        if (
+          /^(SESS|SEX|NAZZJONAL|NATIONALITY|DATA|DATE|TISWA|VALID|FIRMA|SIGNATURE)/i.test(
+            nextLine
+          )
+        ) {
           break
         }
-        
+
         if (nextLine && isValidIdCardName(nextLine)) {
           console.log(`Found name part at line ${j}: "${nextLine}"`)
           nameParts.push(nextLine)
-          
+
           // Try to get at least 2 lines (surname + firstname)
           if (nameParts.length >= 2) {
             const fullName = nameParts.join(' ')
@@ -1046,7 +1110,7 @@ function extractIdCardName(text: string): string | null {
           }
         }
       }
-      
+
       // If we got at least one name part, use it
       if (nameParts.length > 0) {
         const fullName = nameParts.join(' ')
@@ -1066,15 +1130,19 @@ function extractIdCardName(text: string): string | null {
       const nameParts: string[] = []
       for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
         const nextLine = lines[j].trim()
-        
+
         // Stop if we hit another field label
-        if (/^(SESS|SEX|NAZZJONAL|NATIONALITY|DATA|DATE|TISWA|VALID|FIRMA|SIGNATURE)/i.test(nextLine)) {
+        if (
+          /^(SESS|SEX|NAZZJONAL|NATIONALITY|DATA|DATE|TISWA|VALID|FIRMA|SIGNATURE)/i.test(
+            nextLine
+          )
+        ) {
           break
         }
-        
+
         if (nextLine && isValidIdCardName(nextLine)) {
           nameParts.push(nextLine)
-          
+
           if (nameParts.length >= 2) {
             const fullName = nameParts.join(' ')
             console.log(`Combined name: "${fullName}"`)
@@ -1082,7 +1150,7 @@ function extractIdCardName(text: string): string | null {
           }
         }
       }
-      
+
       if (nameParts.length > 0) {
         const fullName = nameParts.join(' ')
         return cleanName(fullName)
@@ -1128,7 +1196,7 @@ function isValidIdCardName(text: string): boolean {
     /^DATE/i,
     /^BIRTH/i,
     /^TWEILD/i,
-    /^\d+$/,  // Only digits
+    /^\d+$/, // Only digits
     /^MLT$/i,
     /^M$/i,
     /^F$/i,
@@ -1167,14 +1235,17 @@ function verifyIdCardName(
   similarityScore: number
 } {
   const normalizedIdCardName = idCardName.toUpperCase()
-  const normalizedProfileName = `${profileFirstName} ${profileLastName}`.toUpperCase()
+  const normalizedProfileName =
+    `${profileFirstName} ${profileLastName}`.toUpperCase()
 
   console.log(
     `Name matching - ID Card: "${normalizedIdCardName}", Profile: "${normalizedProfileName}"`
   )
 
   // Split names into words for flexible matching
-  const idCardWords = normalizedIdCardName.split(/\s+/).filter(w => w.length > 1)
+  const idCardWords = normalizedIdCardName
+    .split(/\s+/)
+    .filter(w => w.length > 1)
   const profileFirstNameNorm = profileFirstName.toUpperCase()
   const profileLastNameNorm = profileLastName.toUpperCase()
 
@@ -1216,9 +1287,7 @@ function verifyIdCardName(
     normalizedIdCardName.length,
     normalizedProfileName.length
   )
-  const similarityScore = Math.round(
-    ((maxLength - distance) / maxLength) * 100
-  )
+  const similarityScore = Math.round(((maxLength - distance) / maxLength) * 100)
 
   console.log(
     `First name match: ${firstNameMatch}, Last name match: ${lastNameMatch}, Overall similarity: ${similarityScore}%`

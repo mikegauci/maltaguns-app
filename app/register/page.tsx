@@ -43,7 +43,10 @@ import {
 import { Info, Eye, EyeOff } from 'lucide-react'
 import React from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { verifyLicenseImage, verifyIdCardImage } from '@/utils/document-verification'
+import {
+  verifyLicenseImage,
+  verifyIdCardImage,
+} from '@/utils/document-verification'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
 import heic2any from 'heic2any'
 
@@ -53,10 +56,12 @@ const phoneRegex = /^(356|)(\d{8})$/
  * Converts HEIC/HEIF images to JPEG for browser compatibility
  */
 async function convertHeicToJpeg(file: File): Promise<File> {
-  const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || 
-                 file.name.toLowerCase().endsWith('.heic') || 
-                 file.name.toLowerCase().endsWith('.heif')
-  
+  const isHeic =
+    file.type === 'image/heic' ||
+    file.type === 'image/heif' ||
+    file.name.toLowerCase().endsWith('.heic') ||
+    file.name.toLowerCase().endsWith('.heif')
+
   if (!isHeic) {
     return file // Return original file if not HEIC
   }
@@ -71,19 +76,21 @@ async function convertHeicToJpeg(file: File): Promise<File> {
 
     // heic2any can return Blob or Blob[], handle both cases
     const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
-    
+
     // Create a new File from the converted Blob
     const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg')
     const convertedFile = new File([blob], newFileName, {
       type: 'image/jpeg',
       lastModified: Date.now(),
     })
-    
+
     console.log(`✓ Converted ${file.name} to ${newFileName}`)
     return convertedFile
   } catch (error) {
     console.error('Error converting HEIC to JPEG:', error)
-    throw new Error('Failed to convert HEIC image. Please try a JPEG or PNG instead.')
+    throw new Error(
+      'Failed to convert HEIC image. Please try a JPEG or PNG instead.'
+    )
   }
 }
 
@@ -121,15 +128,18 @@ const registerSchema = z
     phone: z.string().regex(phoneRegex, 'Invalid phone number format'),
     address: z.string().min(5, 'Address must be at least 5 characters'),
     interestedInSelling: z.boolean().default(false),
-    licenseTypes: z.object({
-      tslA: z.boolean().default(false),
-      tslASpecial: z.boolean().default(false),
-      tslB: z.boolean().default(false),
-      hunting: z.boolean().default(false),
-      collectorsA: z.boolean().default(false),
-      collectorsASpecial: z.boolean().default(false),
-    }).optional(),
+    licenseTypes: z
+      .object({
+        tslA: z.boolean().default(false),
+        tslASpecial: z.boolean().default(false),
+        tslB: z.boolean().default(false),
+        hunting: z.boolean().default(false),
+        collectorsA: z.boolean().default(false),
+        collectorsASpecial: z.boolean().default(false),
+      })
+      .optional(),
     idCardImage: z.any().optional(),
+    idCardVerified: z.boolean().default(false),
     licenseImage: z.any().optional(),
     isVerified: z.boolean().default(false),
     contactPreference: z.enum(['email', 'phone', 'both']).default('both'),
@@ -159,6 +169,8 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
   const [uploadingIdCard, setUploadingIdCard] = useState(false)
+  const [licenseUploadProgress, setLicenseUploadProgress] = useState(0)
+  const [idCardUploadProgress, setIdCardUploadProgress] = useState(0)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const { isOpen, triggerProps, contentProps } = useClickableTooltip()
@@ -199,11 +211,20 @@ export default function Register() {
       if (!originalFile) return
 
       setUploadingLicense(true)
+      setLicenseUploadProgress(0)
 
       // Accept common image formats including HEIC/HEIF from iPhones
-      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif']
-      const isValidImage = validImageTypes.some(type => originalFile.type.toLowerCase().includes(type.split('/')[1]))
-      
+      const validImageTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/heic',
+        'image/heif',
+      ]
+      const isValidImage = validImageTypes.some(type =>
+        originalFile.type.toLowerCase().includes(type.split('/')[1])
+      )
+
       if (!originalFile.type.startsWith('image/') && !isValidImage) {
         toast({
           variant: 'destructive',
@@ -222,13 +243,18 @@ export default function Register() {
         return
       }
 
+      setLicenseUploadProgress(10) // Validation complete
+
       // Convert HEIC to JPEG if needed (for browser compatibility)
       const file = await convertHeicToJpeg(originalFile)
+      setLicenseUploadProgress(20) // Conversion complete
 
       // Get current form values for name verification
       const formValues = form.getValues()
       const userFirstName = formValues.first_name
       const userLastName = formValues.last_name
+
+      setLicenseUploadProgress(30) // Starting verification
 
       // Verify the license image using OCR - this now includes auto-rotation, name verification, and license type detection
       const {
@@ -244,6 +270,8 @@ export default function Register() {
         nameMatchDetails,
         licenseTypes,
       } = await verifyLicenseImage(file, userFirstName, userLastName)
+
+      setLicenseUploadProgress(70) // Verification complete
 
       // Check for verification issues - continue with upload but mark as not verified
       const hasNameMismatch = userFirstName && userLastName && !nameMatch
@@ -305,6 +333,8 @@ export default function Register() {
         ? await urlToFile(correctedImageUrl, `rotated-${file.name}`, file.type)
         : file
 
+      setLicenseUploadProgress(80) // Preparing upload
+
       const fileExt = file.name.split('.').pop()
       const fileName = `license-${Date.now()}-${Math.random()
         .toString(36)
@@ -320,6 +350,8 @@ export default function Register() {
 
       if (error) throw error
 
+      setLicenseUploadProgress(95) // Upload complete
+
       const { data: publicUrlData } = supabase.storage
         .from('licenses')
         .getPublicUrl(filePath)
@@ -330,6 +362,8 @@ export default function Register() {
       // Auto-populate detected license types
       form.setValue('licenseTypes', licenseTypes)
 
+      setLicenseUploadProgress(100) // Complete
+
       // Show success toast only if no issues were found
       if (!hasVerificationIssues) {
         // Build detected license types message
@@ -339,11 +373,13 @@ export default function Register() {
         if (licenseTypes.tslB) detectedLicenses.push('TSL-B')
         if (licenseTypes.hunting) detectedLicenses.push('Hunting')
         if (licenseTypes.collectorsA) detectedLicenses.push('Collectors-A')
-        if (licenseTypes.collectorsASpecial) detectedLicenses.push('Collectors-A (special)')
+        if (licenseTypes.collectorsASpecial)
+          detectedLicenses.push('Collectors-A (special)')
 
-        const licensesMessage = detectedLicenses.length > 0 
-          ? `Detected licenses: ${detectedLicenses.join(', ')}`
-          : 'No license types detected. Please contact support.'
+        const licensesMessage =
+          detectedLicenses.length > 0
+            ? `Detected licenses: ${detectedLicenses.join(', ')}`
+            : 'No license types detected. Please contact support.'
 
         if (isVerified) {
           toast({
@@ -361,9 +397,15 @@ export default function Register() {
             title: 'License uploaded',
             description: (
               <div>
-                <div>Your license has been uploaded but could not be automatically verified.</div>
+                <div>
+                  Your license has been uploaded but could not be automatically
+                  verified.
+                </div>
                 <div className="mt-1">{licensesMessage}</div>
-                <div className="mt-2">An administrator will review your license manually. You may still proceed to register your account.</div>
+                <div className="mt-2">
+                  An administrator will review your license manually. You may
+                  still proceed to register your account.
+                </div>
               </div>
             ),
             className: 'bg-amber-100 text-amber-800 border-amber-200',
@@ -379,6 +421,7 @@ export default function Register() {
       })
     } finally {
       setUploadingLicense(false)
+      setLicenseUploadProgress(0)
     }
   }
 
@@ -390,11 +433,20 @@ export default function Register() {
       if (!originalFile) return
 
       setUploadingIdCard(true)
+      setIdCardUploadProgress(0)
 
       // Accept common image formats including HEIC/HEIF from iPhones
-      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif']
-      const isValidImage = validImageTypes.some(type => originalFile.type.toLowerCase().includes(type.split('/')[1]))
-      
+      const validImageTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/heic',
+        'image/heif',
+      ]
+      const isValidImage = validImageTypes.some(type =>
+        originalFile.type.toLowerCase().includes(type.split('/')[1])
+      )
+
       if (!originalFile.type.startsWith('image/') && !isValidImage) {
         toast({
           variant: 'destructive',
@@ -413,13 +465,18 @@ export default function Register() {
         return
       }
 
+      setIdCardUploadProgress(10) // Validation complete
+
       // Convert HEIC to JPEG if needed (for browser compatibility)
       const file = await convertHeicToJpeg(originalFile)
+      setIdCardUploadProgress(30) // Conversion complete
 
       // Get current form values for name verification
       const formValues = form.getValues()
       const userFirstName = formValues.first_name
       const userLastName = formValues.last_name
+
+      setIdCardUploadProgress(40) // Starting verification
 
       // Verify the ID card image using OCR
       const { isVerified, nameMatch, extractedName } = await verifyIdCardImage(
@@ -427,6 +484,8 @@ export default function Register() {
         userFirstName,
         userLastName
       )
+
+      setIdCardUploadProgress(70) // Verification complete
 
       if (!isVerified) {
         if (!nameMatch && extractedName) {
@@ -446,6 +505,8 @@ export default function Register() {
         return
       }
 
+      setIdCardUploadProgress(80) // Preparing upload
+
       const fileExt = file.name.split('.').pop()
       const fileName = `id-card-${Date.now()}-${Math.random()
         .toString(36)
@@ -461,18 +522,27 @@ export default function Register() {
 
       if (error) throw error
 
+      setIdCardUploadProgress(95) // Upload complete
+
       const { data: publicUrlData } = supabase.storage
         .from('licenses')
         .getPublicUrl(filePath)
 
       form.setValue('idCardImage', publicUrlData.publicUrl)
+      form.setValue('idCardVerified', true)
+
+      setIdCardUploadProgress(100) // Complete
 
       toast({
         title: 'ID card verified & uploaded',
-        description: `Your ID card has been verified successfully. Name: ${extractedName}`,
+        description: 'Your ID card has been verified successfully.',
         className: 'bg-green-600 text-white border-green-600',
       })
     } catch (error) {
+      // If upload fails after verification, ensure idCardVerified is reset
+      form.setValue('idCardVerified', false)
+      form.setValue('idCardImage', '')
+
       toast({
         variant: 'destructive',
         title: 'Upload failed',
@@ -481,6 +551,7 @@ export default function Register() {
       })
     } finally {
       setUploadingIdCard(false)
+      setIdCardUploadProgress(0)
     }
   }
 
@@ -536,6 +607,9 @@ export default function Register() {
         is_verified: data.isVerified,
         license_image: data.interestedInSelling ? data.licenseImage : null,
         id_card_image: data.interestedInSelling ? data.idCardImage : null,
+        id_card_verified: data.interestedInSelling
+          ? data.idCardVerified
+          : false,
         license_types: data.interestedInSelling ? data.licenseTypes : null,
         contact_preference: data.contactPreference,
       })
@@ -857,9 +931,7 @@ export default function Register() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        I&apos;m a licensed firearm owner
-                      </FormLabel>
+                      <FormLabel>I&apos;m a licensed firearm owner</FormLabel>
                     </div>
                   </FormItem>
                 )}
@@ -889,16 +961,37 @@ export default function Register() {
                           {...contentProps}
                         >
                           <p>
-                            Maltaguns requires users who wish to <strong>buy or sell</strong> firearms to verify their account. Verification documents are used solely to confirm you are licensed.
+                            Maltaguns requires users who wish to{' '}
+                            <strong>buy or sell</strong> firearms to verify
+                            their account. Verification documents are used
+                            solely to confirm you are licensed.
                           </p>
                           <p className="mt-2">
-                            If you do not wish to verify at this stage or are not licensed, you may proceed by unselecting the box above. You can still verify your account later if you choose to.
+                            If you do not wish to verify at this stage or are
+                            not licensed, you may proceed by unselecting the box
+                            above. You can still verify your account later if
+                            you choose to.
                           </p>
                           <p className="mt-2">
-                            For any questions or concerns regarding data processing or your privacy, please contact us at <Link href="mailto:support@maltaguns.com" className="text-primary hover:underline">support@maltaguns.com</Link>.
+                            For any questions or concerns regarding data
+                            processing or your privacy, please contact us at{' '}
+                            <Link
+                              href="mailto:support@maltaguns.com"
+                              className="text-primary hover:underline"
+                            >
+                              support@maltaguns.com
+                            </Link>
+                            .
                           </p>
                           <p className="mt-2">
-                            We are committed to safeguarding your privacy and ensuring the secure handling of your data. Your documents will be strictly reviewed for verification purposes only and will not be shared with any third parties or made accessible to anyone else. All data processing is conducted in full compliance with the General Data Protection Regulation (GDPR) and relevant Maltese legislation.
+                            We are committed to safeguarding your privacy and
+                            ensuring the secure handling of your data. Your
+                            documents will be strictly reviewed for verification
+                            purposes only and will not be shared with any third
+                            parties or made accessible to anyone else. All data
+                            processing is conducted in full compliance with the
+                            General Data Protection Regulation (GDPR) and
+                            relevant Maltese legislation.
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -956,7 +1049,7 @@ export default function Register() {
                             <Input type="hidden" {...field} />
                             {uploadingIdCard && (
                               <p className="text-sm text-muted-foreground">
-                                Uploading ID card...
+                                Uploading ID card... {idCardUploadProgress}%
                               </p>
                             )}
                             {field.value && (
@@ -1067,7 +1160,7 @@ export default function Register() {
                             <Input type="hidden" {...field} />
                             {uploadingLicense && (
                               <p className="text-sm text-muted-foreground">
-                                Uploading license...
+                                Uploading license... {licenseUploadProgress}%
                               </p>
                             )}
                             {field.value && (

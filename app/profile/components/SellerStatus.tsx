@@ -32,6 +32,8 @@ interface SellerStatusProps {
   profile: Profile
   uploadingLicense: boolean
   uploadingIdCard: boolean
+  licenseUploadProgress: number
+  idCardUploadProgress: number
   handleLicenseUpload: (
     event: React.ChangeEvent<HTMLInputElement>
   ) => Promise<void>
@@ -46,6 +48,8 @@ export const SellerStatus = ({
   profile,
   uploadingLicense,
   uploadingIdCard,
+  licenseUploadProgress,
+  idCardUploadProgress,
   handleLicenseUpload,
   handleIdCardUpload,
   handleRemoveLicense,
@@ -70,62 +74,135 @@ export const SellerStatus = ({
               <Shield className="h-5 w-5 text-primary" />
               <span className="font-medium">Seller Status:</span>
               <Badge
-                variant={profile.is_seller ? 'default' : 'secondary'}
+                variant={
+                  profile.is_seller &&
+                  profile.is_verified &&
+                  profile.license_image &&
+                  profile.id_card_verified &&
+                  profile.id_card_image
+                    ? 'default'
+                    : 'secondary'
+                }
                 className={
-                  profile.is_seller
+                  profile.is_seller &&
+                  profile.is_verified &&
+                  profile.license_image &&
+                  profile.id_card_verified &&
+                  profile.id_card_image
                     ? 'bg-green-600 hover:bg-green-600 text-white'
                     : ''
                 }
               >
-                {profile.is_seller ? 'Registered Seller' : 'Not a Seller'}
+                {profile.is_seller &&
+                profile.is_verified &&
+                profile.license_image &&
+                profile.id_card_verified &&
+                profile.id_card_image
+                  ? 'Registered Seller'
+                  : 'Not a Seller'}
               </Badge>
             </div>
 
-            {profile.is_seller && (
-              <div className="flex items-center gap-2">
-                <CheckCircle2
-                  className={`h-5 w-5 ${profile.is_verified ? 'text-green-600' : 'text-amber-500'}`}
-                />
-                <span className="font-medium">Verification:</span>
-                <Badge
-                  variant={profile.is_verified ? 'default' : 'outline'}
-                  className={
-                    profile.is_verified
-                      ? 'bg-green-600 hover:bg-green-600 text-white'
-                      : 'border-amber-500 text-amber-500'
-                  }
-                >
-                  {profile.is_verified
-                    ? 'License Verified'
-                    : 'Pending Verification'}
-                </Badge>
-                {!profile.is_verified && profile.license_image && (
-                  <Tooltip open={isOpen}>
-                    <TooltipTrigger asChild {...triggerProps}>
-                      <button
-                        type="button"
-                        className="inline-flex items-center justify-center p-1 -m-1 rounded hover:bg-accent transition-colors touch-manipulation"
-                        aria-label="Verification information"
-                      >
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="right"
-                      sideOffset={8}
-                      className="max-w-[250px] sm:max-w-[300px]"
-                      {...contentProps}
+            {/* ID Card Verification Status */}
+            <div className="flex items-center gap-2">
+              <CheckCircle2
+                className={`h-5 w-5 ${profile.id_card_verified && profile.id_card_image ? 'text-green-600' : 'text-amber-500'}`}
+              />
+              <span className="font-medium">ID Card:</span>
+              <Badge
+                variant={
+                  profile.id_card_verified && profile.id_card_image
+                    ? 'default'
+                    : 'outline'
+                }
+                className={
+                  profile.id_card_verified && profile.id_card_image
+                    ? 'bg-green-600 hover:bg-green-600 text-white'
+                    : 'border-amber-500 text-amber-500'
+                }
+              >
+                {profile.id_card_verified && profile.id_card_image
+                  ? 'Verified'
+                  : profile.id_card_image
+                    ? 'Pending'
+                    : 'Not Uploaded'}
+              </Badge>
+              {!(profile.id_card_verified && profile.id_card_image) && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center p-1 -m-1 rounded hover:bg-accent transition-colors touch-manipulation"
+                      aria-label="ID card verification information"
                     >
-                      <p className="text-xs sm:text-sm">
-                        Your license has been uploaded but is pending
-                        verification. This may take up to 24 hours. You can
-                        still create non-firearm listings.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            )}
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    sideOffset={8}
+                    className="max-w-[250px] sm:max-w-[300px]"
+                  >
+                    <p className="text-xs sm:text-sm">
+                      {profile.id_card_image
+                        ? 'Your ID card has been uploaded but verification is pending. A verified ID card is required along with your license to view seller contact information in marketplace listings.'
+                        : 'Upload your Malta ID card for verification. This is required along with your license to view seller contact information in marketplace listings.'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+
+            {/* License Verification Status */}
+            <div className="flex items-center gap-2">
+              <CheckCircle2
+                className={`h-5 w-5 ${profile.is_verified && profile.license_image ? 'text-green-600' : 'text-amber-500'}`}
+              />
+              <span className="font-medium">License:</span>
+              <Badge
+                variant={
+                  profile.is_verified && profile.license_image
+                    ? 'default'
+                    : 'outline'
+                }
+                className={
+                  profile.is_verified && profile.license_image
+                    ? 'bg-green-600 hover:bg-green-600 text-white'
+                    : 'border-amber-500 text-amber-500'
+                }
+              >
+                {profile.is_verified && profile.license_image
+                  ? 'Verified'
+                  : profile.license_image
+                    ? 'Pending'
+                    : 'Not Uploaded'}
+              </Badge>
+              {!(profile.is_verified && profile.license_image) && (
+                <Tooltip open={isOpen}>
+                  <TooltipTrigger asChild {...triggerProps}>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center p-1 -m-1 rounded hover:bg-accent transition-colors touch-manipulation"
+                      aria-label="Verification information"
+                    >
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-foreground transition-colors" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    sideOffset={8}
+                    className="max-w-[250px] sm:max-w-[300px]"
+                    {...contentProps}
+                  >
+                    <p className="text-xs sm:text-sm">
+                      {profile.license_image
+                        ? 'Your license has been uploaded but is pending verification. This may take up to 24 hours. You can still create non-firearm listings.'
+                        : 'Upload your firearms license for verification. This is required to list firearms for sale.'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -166,7 +243,12 @@ export const SellerStatus = ({
                 />
                 <label
                   htmlFor="id-card-upload"
-                  className="bg-black text-white px-4 py-2 rounded cursor-pointer hover:bg-gray-800 transition-colors flex items-center"
+                  className={`bg-black text-white px-4 py-2 rounded flex items-center transition-colors ${
+                    uploadingIdCard
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'cursor-pointer hover:bg-gray-800'
+                  }`}
+                  style={uploadingIdCard ? { pointerEvents: 'none' } : {}}
                 >
                   {profile.id_card_image ? (
                     <RefreshCw className="h-4 w-4 mr-2" />
@@ -174,141 +256,173 @@ export const SellerStatus = ({
                     <Upload className="h-4 w-4 mr-2" />
                   )}
                   {uploadingIdCard
-                    ? 'Uploading...'
+                    ? `Uploading... ${idCardUploadProgress}%`
                     : profile.id_card_image
                       ? 'Replace ID Card'
                       : 'Upload ID Card'}
                 </label>
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Upload an image of your Malta ID card for verification. License types will be automatically detected from your firearms license.
+                Upload an image of your Malta ID card for verification. ID cards
+                types will be automatically detected from your first and last
+                name on your profile.
               </p>
             </div>
 
             {/* License Section */}
-          <div className="space-y-4">
+            <div className="space-y-4">
               <h3 className="text-sm font-semibold">Firearms License</h3>
-            {profile.license_image && (
-              <div className="relative">
-                <p className="text-sm font-medium text-muted-foreground mb-2">
-                  Current License:
-                </p>
-                <div className="relative inline-block">
-                  <img
-                    id="profile-license-preview"
-                    src={profile.license_image}
-                    alt="License"
-                    className="w-64 h-auto rounded-md mb-4"
-                    data-rotation="0"
-                  />
-                  <button
-                    onClick={handleRemoveLicense}
-                    className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1 rounded-full hover:bg-opacity-100 transition-all"
-                    title="Remove license"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                  
+              {profile.license_image && (
+                <div className="relative">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
+                    Current License:
+                  </p>
+                  <div className="relative inline-block">
+                    <img
+                      id="profile-license-preview"
+                      src={profile.license_image}
+                      alt="License"
+                      className="w-64 h-auto rounded-md mb-4"
+                      data-rotation="0"
+                    />
+                    <button
+                      onClick={handleRemoveLicense}
+                      className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1 rounded-full hover:bg-opacity-100 transition-all"
+                      title="Remove license"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
                   {/* Display detected license types */}
                   {profile.license_types && (
                     <div className="mt-4 p-3 border rounded-md bg-muted/20">
-                      <p className="text-sm font-semibold mb-2">Detected License Types:</p>
+                      <p className="text-sm font-semibold mb-2">
+                        Detected License Types:
+                      </p>
                       <div className="flex flex-wrap gap-2">
                         {(() => {
-                          const licenses = profile.license_types as unknown as LicenseTypes
+                          const licenses =
+                            profile.license_types as unknown as LicenseTypes
                           const detectedLicenses = []
-                          
+
                           if (licenses.tslA) {
                             detectedLicenses.push(
-                              <Badge key="tslA" className="bg-blue-600 hover:bg-blue-700">
+                              <Badge
+                                key="tslA"
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
                                 TSL-A
                               </Badge>
                             )
                           }
                           if (licenses.tslASpecial) {
                             detectedLicenses.push(
-                              <Badge key="tslASpecial" className="bg-purple-600 hover:bg-purple-700">
+                              <Badge
+                                key="tslASpecial"
+                                className="bg-purple-600 hover:bg-purple-700"
+                              >
                                 TSL-A (special)
                               </Badge>
                             )
                           }
                           if (licenses.tslB) {
                             detectedLicenses.push(
-                              <Badge key="tslB" className="bg-green-600 hover:bg-green-700">
+                              <Badge
+                                key="tslB"
+                                className="bg-green-600 hover:bg-green-700"
+                              >
                                 TSL-B
                               </Badge>
                             )
                           }
                           if (licenses.hunting) {
                             detectedLicenses.push(
-                              <Badge key="hunting" className="bg-amber-600 hover:bg-amber-700">
+                              <Badge
+                                key="hunting"
+                                className="bg-amber-600 hover:bg-amber-700"
+                              >
                                 Hunting
                               </Badge>
                             )
                           }
                           if (licenses.collectorsA) {
                             detectedLicenses.push(
-                              <Badge key="collectorsA" className="bg-indigo-600 hover:bg-indigo-700">
+                              <Badge
+                                key="collectorsA"
+                                className="bg-indigo-600 hover:bg-indigo-700"
+                              >
                                 Collectors-A
                               </Badge>
                             )
                           }
                           if (licenses.collectorsASpecial) {
                             detectedLicenses.push(
-                              <Badge key="collectorsASpecial" className="bg-rose-600 hover:bg-rose-700">
+                              <Badge
+                                key="collectorsASpecial"
+                                className="bg-rose-600 hover:bg-rose-700"
+                              >
                                 Collectors-A (special)
                               </Badge>
                             )
                           }
-                          
-                          return detectedLicenses.length > 0 
-                            ? detectedLicenses 
-                            : <span className="text-sm text-muted-foreground">No license types detected</span>
+
+                          return detectedLicenses.length > 0 ? (
+                            detectedLicenses
+                          ) : (
+                            <span className="text-sm text-muted-foreground">
+                              No license types detected
+                            </span>
+                          )
                         })()}
                       </div>
                     </div>
                   )}
-              </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              <Input
-                type="file"
-                accept="image/*,.heic,.heif"
-                onChange={handleLicenseUpload}
-                disabled={uploadingLicense}
-                className="hidden"
-                id="license-upload"
-              />
-              <label
-                htmlFor="license-upload"
-                className="bg-black text-white px-4 py-2 rounded cursor-pointer hover:bg-gray-800 transition-colors flex items-center"
-              >
-                {profile.license_image ? (
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                {uploadingLicense
-                  ? 'Uploading...'
-                  : profile.license_image
-                    ? 'Replace License'
-                    : 'Upload License'}
-              </label>
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              {profile.is_seller ? (
-                  'Upload a new license image to update your license types. License types are automatically detected from your document.'
-              ) : (
-                <span
-                  dangerouslySetInnerHTML={{
-                    __html:
-                        'You can currently add listings that are <b>not firearms</b> such as assesories. <br/> If you wish to sell <b>Firearms</b> or other license required items, please upload a picture of your license to certify your account. License types will be automatically detected.',
-                  }}
-                />
+                </div>
               )}
-            </p>
+
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*,.heic,.heif"
+                  onChange={handleLicenseUpload}
+                  disabled={uploadingLicense}
+                  className="hidden"
+                  id="license-upload"
+                />
+                <label
+                  htmlFor="license-upload"
+                  className={`bg-black text-white px-4 py-2 rounded flex items-center transition-colors ${
+                    uploadingLicense
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'cursor-pointer hover:bg-gray-800'
+                  }`}
+                  style={uploadingLicense ? { pointerEvents: 'none' } : {}}
+                >
+                  {profile.license_image ? (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {uploadingLicense
+                    ? `Uploading... ${licenseUploadProgress}%`
+                    : profile.license_image
+                      ? 'Replace License'
+                      : 'Upload License'}
+                </label>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                {profile.is_seller ? (
+                  'Upload a new license image to update your license types. License types are automatically detected from your document.'
+                ) : (
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        'You can currently add listings that are <b>not firearms</b> such as assesories. <br/> If you wish to sell <b>Firearms</b> or other license required items, please upload a picture of your license to certify your account. License types will be automatically detected.',
+                    }}
+                  />
+                )}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -328,7 +442,8 @@ export const SellerStatus = ({
               match those on your pofile. Uploaded images will not be shared
               with anyone and are strictly used for verification purposes only.
               Should you have any questions please email us on
-              Info@maltaguns.com. Your license types will be automatically detected from the image.
+              Info@maltaguns.com. Your license types will be automatically
+              detected from the image.
             </p>
             <div
               className="w-full max-w-md h-72 rounded-md bg-cover bg-center bg-no-repeat"

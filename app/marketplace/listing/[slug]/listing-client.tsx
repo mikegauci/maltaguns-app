@@ -179,6 +179,7 @@ export default function ListingClient({
     null
   )
   const [hasRequiredLicense, setHasRequiredLicense] = useState(false)
+  const [userIdCardVerified, setUserIdCardVerified] = useState(false)
 
   // Use the first image from the listing, or the default if none are available
   const images =
@@ -200,12 +201,12 @@ export default function ListingClient({
         setUserId(session.user.id)
         setIsOwner(isUserOwner)
         setSessionChecked(true)
-        
+
         // If user is owner, they always have access
         if (isUserOwner) {
           setHasRequiredLicense(true)
         }
-        
+
         return session
       }
 
@@ -305,7 +306,7 @@ export default function ListingClient({
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('license_types')
+        .select('license_types, id_card_verified')
         .eq('id', userIdToCheck)
         .single()
 
@@ -316,19 +317,24 @@ export default function ListingClient({
       }
 
       const licenses = data?.license_types as LicenseTypes | null
+      const idCardVerified = data?.id_card_verified ?? false
       setUserLicenseTypes(licenses)
+      setUserIdCardVerified(idCardVerified)
 
-      // Check if user has required license for this listing category
+      // Check if user has required license AND verified ID card for this listing category
       const categoryLabel = getCategoryLabel(listing.category, listing.type)
-      const hasAccess = canViewSellerInfo(licenses, categoryLabel)
-      
-      console.log('License check result:', {
+      const hasLicenseAccess = canViewSellerInfo(licenses, categoryLabel)
+      const hasAccess = hasLicenseAccess && idCardVerified
+
+      console.log('License and ID card check result:', {
         userIdToCheck,
         licenses,
+        idCardVerified,
         categoryLabel,
+        hasLicenseAccess,
         hasAccess,
       })
-      
+
       setHasRequiredLicense(hasAccess)
     } catch (error) {
       console.error('Error checking user license access:', error)
@@ -425,7 +431,14 @@ export default function ListingClient({
         hasRequiredLicense,
       })
     }
-  }, [userId, isOwner, isLoading, sessionChecked, listing.seller, hasRequiredLicense])
+  }, [
+    userId,
+    isOwner,
+    isLoading,
+    sessionChecked,
+    listing.seller,
+    hasRequiredLicense,
+  ])
 
   function handleFeatureListing() {
     if (!userId) {
@@ -596,11 +609,52 @@ export default function ListingClient({
       )
     }
 
-    // Show message for authenticated users WITHOUT required license
+    // Show message for authenticated users WITHOUT required license or ID card verification
     if (userId && !hasRequiredLicense) {
       const categoryLabel = getCategoryLabel(listing.category, listing.type)
       const requiredLicenses = getRequiredLicenses(categoryLabel)
+      const hasLicenseAccess = canViewSellerInfo(
+        userLicenseTypes,
+        categoryLabel
+      )
 
+      // Case 1: User has the license but ID card not verified
+      if (hasLicenseAccess && !userIdCardVerified) {
+        return (
+          <div className="space-y-4">
+            <div className="relative min-h-[200px]">
+              <div className="blur-sm">
+                <p className="font-semibold">••••••••••</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span>••••••@••••.com</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>+356 •••• ••••</span>
+                </div>
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
+                <Lock className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-center text-muted-foreground mb-2 font-semibold">
+                  ID Card Verification Required
+                </p>
+                <p className="text-xs text-center text-muted-foreground mb-4">
+                  You have the required license for this category, but your ID
+                  card needs to be verified to view seller information.
+                </p>
+                <Link href="/profile" className="w-full">
+                  <Button variant="outline" className="w-full" size="sm">
+                    Verify ID Card
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      // Case 2: User doesn't have the required license
       return (
         <div className="space-y-4">
           <div className="relative min-h-[200px]">
@@ -618,11 +672,11 @@ export default function ListingClient({
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
               <Lock className="h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-sm text-center text-muted-foreground mb-2 font-semibold">
-                License Required
+                License & ID Card Required
               </p>
               <p className="text-xs text-center text-muted-foreground mb-4">
-                You need one of the following licenses to view seller information
-                for this category ({categoryLabel}):
+                You need one of the following licenses and a verified ID card to
+                view seller information for this category ({categoryLabel}):
               </p>
               <div className="text-xs text-center text-muted-foreground mb-4 space-y-1">
                 {requiredLicenses.map((license, index) => (

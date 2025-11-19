@@ -90,7 +90,9 @@ export function getAllowedCategories(
   const allowedCategories = new Set<string>()
 
   // Add replica/deactivated for all users with any license
-  const hasAnyLicense = Object.values(licenseTypes).some(value => value === true)
+  const hasAnyLicense = Object.values(licenseTypes).some(
+    value => value === true
+  )
   if (hasAnyLicense) {
     allowedCategories.add(FIREARM_CATEGORIES.REPLICA)
   }
@@ -98,8 +100,7 @@ export function getAllowedCategories(
   // Add categories based on each license type
   Object.entries(licenseTypes).forEach(([licenseType, hasLicense]) => {
     if (hasLicense) {
-      const categories =
-        LICENSE_CATEGORY_MAP[licenseType as keyof LicenseTypes]
+      const categories = LICENSE_CATEGORY_MAP[licenseType as keyof LicenseTypes]
       categories.forEach(category => allowedCategories.add(category))
     }
   })
@@ -178,4 +179,3 @@ export function getActiveLicenses(licenseTypes: LicenseTypes | null): string[] {
       formatLicenseName(licenseType as keyof LicenseTypes)
     )
 }
-
