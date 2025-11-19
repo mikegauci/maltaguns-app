@@ -158,7 +158,7 @@ export const SellerStatus = ({
               <div className="flex items-center gap-2">
                 <Input
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif"
                   onChange={handleIdCardUpload}
                   disabled={uploadingIdCard}
                   className="hidden"
@@ -275,7 +275,7 @@ export const SellerStatus = ({
             <div className="flex items-center gap-2">
               <Input
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif"
                 onChange={handleLicenseUpload}
                 disabled={uploadingLicense}
                 className="hidden"

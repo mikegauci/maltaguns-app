@@ -45,8 +45,47 @@ import React from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { verifyLicenseImage } from '@/utils/license-verification'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
+import heic2any from 'heic2any'
 
 const phoneRegex = /^(356|)(\d{8})$/
+
+/**
+ * Converts HEIC/HEIF images to JPEG for browser compatibility
+ */
+async function convertHeicToJpeg(file: File): Promise<File> {
+  const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || 
+                 file.name.toLowerCase().endsWith('.heic') || 
+                 file.name.toLowerCase().endsWith('.heif')
+  
+  if (!isHeic) {
+    return file // Return original file if not HEIC
+  }
+
+  try {
+    console.log('Converting HEIC image to JPEG...')
+    const convertedBlob = await heic2any({
+      blob: file,
+      toType: 'image/jpeg',
+      quality: 0.9,
+    })
+
+    // heic2any can return Blob or Blob[], handle both cases
+    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
+    
+    // Create a new File from the converted Blob
+    const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg')
+    const convertedFile = new File([blob], newFileName, {
+      type: 'image/jpeg',
+      lastModified: Date.now(),
+    })
+    
+    console.log(`✓ Converted ${file.name} to ${newFileName}`)
+    return convertedFile
+  } catch (error) {
+    console.error('Error converting HEIC to JPEG:', error)
+    throw new Error('Failed to convert HEIC image. Please try a JPEG or PNG instead.')
+  }
+}
 
 const registerSchema = z
   .object({
@@ -156,21 +195,25 @@ export default function Register() {
     event: React.ChangeEvent<HTMLInputElement>
   ) {
     try {
-      const file = event.target.files?.[0]
-      if (!file) return
+      const originalFile = event.target.files?.[0]
+      if (!originalFile) return
 
       setUploadingLicense(true)
 
-      if (!file.type.startsWith('image/')) {
+      // Accept common image formats including HEIC/HEIF from iPhones
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif']
+      const isValidImage = validImageTypes.some(type => originalFile.type.toLowerCase().includes(type.split('/')[1]))
+      
+      if (!originalFile.type.startsWith('image/') && !isValidImage) {
         toast({
           variant: 'destructive',
           title: 'Invalid file type',
-          description: 'Please upload an image file (JPEG/PNG).',
+          description: 'Please upload an image file (JPEG, PNG, or HEIC).',
         })
         return
       }
 
-      if (file.size > 5 * 1024 * 1024) {
+      if (originalFile.size > 5 * 1024 * 1024) {
         toast({
           variant: 'destructive',
           title: 'File too large',
@@ -178,6 +221,9 @@ export default function Register() {
         })
         return
       }
+
+      // Convert HEIC to JPEG if needed (for browser compatibility)
+      const file = await convertHeicToJpeg(originalFile)
 
       // Get current form values for name verification
       const formValues = form.getValues()
@@ -340,21 +386,25 @@ export default function Register() {
     event: React.ChangeEvent<HTMLInputElement>
   ) {
     try {
-      const file = event.target.files?.[0]
-      if (!file) return
+      const originalFile = event.target.files?.[0]
+      if (!originalFile) return
 
       setUploadingIdCard(true)
 
-      if (!file.type.startsWith('image/')) {
+      // Accept common image formats including HEIC/HEIF from iPhones
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif']
+      const isValidImage = validImageTypes.some(type => originalFile.type.toLowerCase().includes(type.split('/')[1]))
+      
+      if (!originalFile.type.startsWith('image/') && !isValidImage) {
         toast({
           variant: 'destructive',
           title: 'Invalid file type',
-          description: 'Please upload an image file (JPEG/PNG).',
+          description: 'Please upload an image file (JPEG, PNG, or HEIC).',
         })
         return
       }
 
-      if (file.size > 5 * 1024 * 1024) {
+      if (originalFile.size > 5 * 1024 * 1024) {
         toast({
           variant: 'destructive',
           title: 'File too large',
@@ -362,6 +412,9 @@ export default function Register() {
         })
         return
       }
+
+      // Convert HEIC to JPEG if needed (for browser compatibility)
+      const file = await convertHeicToJpeg(originalFile)
 
       const fileExt = file.name.split('.').pop()
       const fileName = `id-card-${Date.now()}-${Math.random()
@@ -865,7 +918,7 @@ export default function Register() {
                             <Input
                               id="id-card-upload"
                               type="file"
-                              accept="image/*"
+                              accept="image/*,.heic,.heif"
                               onChange={handleIdCardUpload}
                               disabled={uploadingIdCard}
                               className="hidden"
@@ -976,7 +1029,7 @@ export default function Register() {
                             <Input
                               id="license-upload"
                               type="file"
-                              accept="image/*"
+                              accept="image/*,.heic,.heif"
                               onChange={handleLicenseUpload}
                               disabled={uploadingLicense}
                               className="hidden"
