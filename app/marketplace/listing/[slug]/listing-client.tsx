@@ -31,6 +31,11 @@ import { toast } from 'sonner'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
 import { WishlistButton } from '@/components/wishlist-button'
+import {
+  canViewSellerInfo,
+  getRequiredLicenses,
+  LicenseTypes,
+} from '@/lib/license-utils'
 
 // Default image to use when no images are provided
 const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
@@ -170,6 +175,10 @@ export default function ListingClient({
   const [showReportDialog, setShowReportDialog] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [isSellerVerified, setIsSellerVerified] = useState(false)
+  const [userLicenseTypes, setUserLicenseTypes] = useState<LicenseTypes | null>(
+    null
+  )
+  const [hasRequiredLicense, setHasRequiredLicense] = useState(false)
 
   // Use the first image from the listing, or the default if none are available
   const images =
@@ -186,21 +195,31 @@ export default function ListingClient({
           listingSellerId: listing.seller_id,
         })
 
+        const isUserOwner = session.user.id === listing.seller_id
+
         setUserId(session.user.id)
-        setIsOwner(session.user.id === listing.seller_id)
+        setIsOwner(isUserOwner)
         setSessionChecked(true)
+        
+        // If user is owner, they always have access
+        if (isUserOwner) {
+          setHasRequiredLicense(true)
+        }
+        
         return session
       }
 
       console.log('No session found')
       setUserId(null)
       setIsOwner(false)
+      setHasRequiredLicense(false)
       setSessionChecked(true)
       return null
     } catch (error) {
       console.error('Error checking ownership:', error)
       setUserId(null)
       setIsOwner(false)
+      setHasRequiredLicense(false)
       setSessionChecked(true)
       return null
     }
@@ -276,6 +295,47 @@ export default function ListingClient({
     }
   }
 
+  // Function to fetch user's license types and check access
+  async function checkUserLicenseAccess(userIdToCheck: string) {
+    if (!userIdToCheck) {
+      setHasRequiredLicense(false)
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('license_types')
+        .eq('id', userIdToCheck)
+        .single()
+
+      if (error) {
+        console.error('Error fetching user license types:', error)
+        setHasRequiredLicense(false)
+        return
+      }
+
+      const licenses = data?.license_types as LicenseTypes | null
+      setUserLicenseTypes(licenses)
+
+      // Check if user has required license for this listing category
+      const categoryLabel = getCategoryLabel(listing.category, listing.type)
+      const hasAccess = canViewSellerInfo(licenses, categoryLabel)
+      
+      console.log('License check result:', {
+        userIdToCheck,
+        licenses,
+        categoryLabel,
+        hasAccess,
+      })
+      
+      setHasRequiredLicense(hasAccess)
+    } catch (error) {
+      console.error('Error checking user license access:', error)
+      setHasRequiredLicense(false)
+    }
+  }
+
   useEffect(() => {
     let mounted = true
     let timeoutId: NodeJS.Timeout
@@ -292,12 +352,15 @@ export default function ListingClient({
         })
 
         // If we're not logged in, we can skip other checks
-        if (!currentSession) {
+        if (!currentSession || !currentSession.user) {
           if (mounted) {
             setIsLoading(false)
           }
           return
         }
+
+        // Get the user ID from the session
+        const currentUserId = currentSession.user.id
 
         // Run remaining checks in parallel only if we have a session
         if (mounted) {
@@ -305,6 +368,7 @@ export default function ListingClient({
             checkIfFeatured(),
             checkIfRetailer(),
             checkIfSellerVerified(),
+            checkUserLicenseAccess(currentUserId),
           ])
         }
 
@@ -337,10 +401,17 @@ export default function ListingClient({
     }
   }, [session, listing.id, listing.seller_id])
 
+  // Check license access whenever userId changes
+  useEffect(() => {
+    if (userId && !isOwner) {
+      checkUserLicenseAccess(userId)
+    }
+  }, [userId, isOwner, listing.category, listing.type])
+
   // Remove duplicate auth state listener
   useEffect(() => {
-    console.log('Current user state:', { userId, isOwner })
-  }, [userId, isOwner])
+    console.log('Current user state:', { userId, isOwner, hasRequiredLicense })
+  }, [userId, isOwner, hasRequiredLicense])
 
   // Render debug info in development
   useEffect(() => {
@@ -351,9 +422,10 @@ export default function ListingClient({
         isLoading,
         sessionChecked,
         hasSellerInfo: !!listing.seller,
+        hasRequiredLicense,
       })
     }
-  }, [userId, isOwner, isLoading, sessionChecked, listing.seller])
+  }, [userId, isOwner, isLoading, sessionChecked, listing.seller, hasRequiredLicense])
 
   function handleFeatureListing() {
     if (!userId) {
@@ -386,6 +458,7 @@ export default function ListingClient({
       sessionChecked,
       hasSellerInfo: !!listing.seller,
       sellerInfo: listing.seller,
+      hasRequiredLicense,
     })
 
     // Show loading state while checking session
@@ -397,8 +470,64 @@ export default function ListingClient({
       )
     }
 
-    // Show seller information for authenticated users
-    if (userId && listing.seller) {
+    // If user is the owner, always show seller info
+    if (isOwner && listing.seller) {
+      return (
+        <>
+          <div className="flex items-center gap-2 mb-3">
+            {isRetailer ? (
+              <Store className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <User className="h-4 w-4 text-muted-foreground" />
+            )}
+            <span className="text-sm text-muted-foreground">
+              {isRetailer ? 'Enterprise' : 'Individual'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold">{listing.seller.username}</p>
+            {isSellerVerified && (
+              <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                Verified Gun Seller
+              </Badge>
+            )}
+          </div>
+
+          {listing.seller.email &&
+            (listing.seller.contact_preference === 'email' ||
+              listing.seller.contact_preference === 'both' ||
+              !listing.seller.contact_preference) && (
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <a
+                  href={`mailto:${listing.seller.email}`}
+                  className="text-primary hover:underline"
+                >
+                  {listing.seller.email}
+                </a>
+              </div>
+            )}
+          {listing.seller.phone &&
+            (listing.seller.contact_preference === 'phone' ||
+              listing.seller.contact_preference === 'both' ||
+              !listing.seller.contact_preference) && (
+              <div className="flex items-center gap-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <a
+                  href={`tel:${listing.seller.phone}`}
+                  className="text-primary hover:underline"
+                >
+                  {listing.seller.phone}
+                </a>
+              </div>
+            )}
+        </>
+      )
+    }
+
+    // Show seller information for authenticated users WITH required license
+    if (userId && listing.seller && hasRequiredLicense) {
       return (
         <>
           <div className="flex items-center gap-2 mb-3">
@@ -464,6 +593,52 @@ export default function ListingClient({
 
           {!isOwner && <ReportListingDialog listingId={listing.id} />}
         </>
+      )
+    }
+
+    // Show message for authenticated users WITHOUT required license
+    if (userId && !hasRequiredLicense) {
+      const categoryLabel = getCategoryLabel(listing.category, listing.type)
+      const requiredLicenses = getRequiredLicenses(categoryLabel)
+
+      return (
+        <div className="space-y-4">
+          <div className="relative min-h-[200px]">
+            <div className="blur-sm">
+              <p className="font-semibold">••••••••••</p>
+              <div className="flex items-center gap-2 mt-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span>••••••@••••.com</span>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <span>+356 •••• ••••</span>
+              </div>
+            </div>
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
+              <Lock className="h-8 w-8 text-muted-foreground mb-2" />
+              <p className="text-sm text-center text-muted-foreground mb-2 font-semibold">
+                License Required
+              </p>
+              <p className="text-xs text-center text-muted-foreground mb-4">
+                You need one of the following licenses to view seller information
+                for this category ({categoryLabel}):
+              </p>
+              <div className="text-xs text-center text-muted-foreground mb-4 space-y-1">
+                {requiredLicenses.map((license, index) => (
+                  <div key={index} className="font-medium">
+                    • {license}
+                  </div>
+                ))}
+              </div>
+              <Link href="/profile" className="w-full">
+                <Button variant="outline" className="w-full" size="sm">
+                  Update License Information
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
       )
     }
 

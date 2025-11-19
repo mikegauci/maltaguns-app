@@ -1,4 +1,5 @@
 import { createWorker } from 'tesseract.js'
+import { LicenseTypes } from '@/lib/license-utils'
 
 /**
  * Verifies if an uploaded license image contains the required text and is not expired
@@ -27,6 +28,7 @@ export async function verifyLicenseImage(
     profileName: string
     similarityScore: number
   }
+  licenseTypes: LicenseTypes
 }> {
   try {
     if (!file) {
@@ -69,6 +71,9 @@ export async function verifyLicenseImage(
     // Extract and verify name if user details provided
     const nameVerification = verifyName(text, userFirstName, userLastName)
 
+    // Detect license types from the text
+    const licenseTypes = detectLicenseTypes(text)
+
     // License is only verified if: has police header, not expired, AND name matches (if name provided)
     const isVerified =
       hasPoliceHeader &&
@@ -87,6 +92,7 @@ export async function verifyLicenseImage(
       nameMatch: nameVerification.nameMatch,
       extractedName: nameVerification.extractedName,
       nameMatchDetails: nameVerification.nameMatchDetails,
+      licenseTypes,
     }
   } catch (error) {
     console.error('License verification error:', error)
@@ -100,6 +106,14 @@ export async function verifyLicenseImage(
       hasDate: false,
       nameMatch: false,
       extractedName: null,
+      licenseTypes: {
+        tslA: false,
+        tslASpecial: false,
+        tslB: false,
+        hunting: false,
+        collectorsA: false,
+        collectorsASpecial: false,
+      },
     }
   }
 }
@@ -236,37 +250,83 @@ function checkExpirationDate(text: string): {
   hasDate: boolean
 } {
   try {
-    // Define multiple regex patterns to find dates after various keywords
+    console.log('Searching for expiry date in text...')
+    
+    let dateStr: string | null = null
+    let matchedPattern = ''
+    
+    // Strategy 1: Try pattern matching on full text
     const patterns = [
-      // "Valida sa:" (Maltese) - most common
-      /Valida\s*sa\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
-      // "Valid till:" (English)
-      /Valid\s*till\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
-      // "Valid until:"
-      /Valid\s*until\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
-      // "Expires:" or "Expiry:"
-      /Expir(?:es|y)\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
-      // Sometimes OCR reads it without the colon
-      /Valida\s*sa\s+(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i,
+      { regex: /Valida\s*sa\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'Valida sa:' },
+      { regex: /Valid\s*sa\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'Valid sa:' },
+      { regex: /Valid\s*till\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'Valid till:' },
+      { regex: /Expir(?:es|y)\s*[:\.]?\s*(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'Expiry:' },
+      { regex: /(?:valida|valid)[^\d]{0,20}(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/i, name: 'valida/valid (loose)' },
     ]
 
-    let dateStr: string | null = null
-
-    // Try each pattern
-    for (const pattern of patterns) {
-      const match = text.match(pattern)
+    for (const { regex, name } of patterns) {
+      const match = text.match(regex)
       if (match && match[1]) {
         dateStr = match[1]
-        console.log(
-          `License expiry date found: ${dateStr} using pattern: ${pattern}`
-        )
+        matchedPattern = name
+        console.log(`✓ License expiry date found: ${dateStr} using pattern: ${name}`)
         break
       }
     }
 
-    // If no date string found, indicate this
+    // Strategy 2: Line-by-line search (in case date is on different line than label)
     if (!dateStr) {
-      console.warn('No expiry date found in license text')
+      console.log('Pattern matching failed, trying line-by-line search...')
+      const lines = text.split('\n')
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        
+        // Check if this line contains the expiry label
+        if (/Valida\s*sa|Valid\s*(?:sa|till|until)|Expir/i.test(line)) {
+          console.log(`Found expiry label at line ${i}: "${line}"`)
+          
+          // Check same line for date
+          const dateMatch = line.match(/(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/)
+          if (dateMatch) {
+            dateStr = dateMatch[1]
+            matchedPattern = 'same line as label'
+            console.log(`✓ Date found on same line: ${dateStr}`)
+            break
+          }
+          
+          // Check next few lines for date
+          for (let j = i + 1; j < Math.min(i + 3, lines.length); j++) {
+            const nextLine = lines[j].trim()
+            const dateMatch = nextLine.match(/(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4})/)
+            if (dateMatch) {
+              dateStr = dateMatch[1]
+              matchedPattern = `line ${j} after label`
+              console.log(`✓ Date found on next line ${j}: "${nextLine}" -> ${dateStr}`)
+              break
+            }
+          }
+          
+          if (dateStr) break
+        }
+      }
+    }
+
+    // Strategy 3: Find ANY date that looks like expiry (last resort)
+    if (!dateStr) {
+      console.log('Line search failed, looking for any date pattern...')
+      const allDates = text.match(/(\d{2}[\/\.\-]\d{2}[\/\.\-]\d{4})/g)
+      if (allDates && allDates.length > 0) {
+        // Take the last date found (usually expiry is near the end)
+        dateStr = allDates[allDates.length - 1]
+        matchedPattern = 'fallback (last date found)'
+        console.log(`⚠ Using fallback - last date found: ${dateStr}`)
+      }
+    }
+
+    if (!dateStr) {
+      console.warn('❌ No expiry date found in license text')
+      console.log('Text searched (first 500 chars):', text.substring(0, 500))
       return { isExpired: false, expiryDate: null, hasDate: false }
     }
 
@@ -316,7 +376,7 @@ function checkExpirationDate(text: string): {
     const isExpired = expiryDate < today
 
     console.log(
-      `License expiry check: Expiry date: ${expiryDate.toISOString().split('T')[0]}, Today: ${today.toISOString().split('T')[0]}, Expired: ${isExpired}`
+      `License expiry check [${matchedPattern}]: Expiry date: ${expiryDate.toISOString().split('T')[0]}, Today: ${today.toISOString().split('T')[0]}, Expired: ${isExpired}`
     )
 
     return {
@@ -373,59 +433,139 @@ function verifyName(
   }
 
   try {
-    // Extract name from license
-    // Look for patterns like "Isem u Kunjom" or "Name and Surname" followed by the actual name
-    const namePatterns = [
-      /(?:Isem u Kunjom|Name and Surname)[:\s]*([A-Z][A-Z\s]+?)(?:\s{2,}|bint|daught)/i,
-      /(?:Isem u Kunjom|Name and Surname)[:\s]*([A-Z][A-Z\s]+?)(?=\s*Il-poghod|residing at)/i,
-      /(?:Isem u Kunjom|Name and Surname)[:\s]*([A-Z][A-Z\s]+?)(?=\s*[A-Z]+\s*FLT|TRIQ|STREET)/i,
-    ]
-
+    // Extract name from license - simplified approach
     let extractedName: string | null = null
 
-    for (const pattern of namePatterns) {
-      const match = text.match(pattern)
-      if (match && match[1]) {
-        extractedName = match[1].trim()
-        break
-      }
-    }
-
-    // If no match found using patterns, try finding name after specific keywords
-    if (!extractedName) {
-      const lines = text.split('\n')
-      for (let i = 0; i < lines.length; i++) {
-        if (
-          /Isem u Kunjom|Name and Surname/i.test(lines[i]) &&
-          i + 1 < lines.length
-        ) {
-          // Name might be on the next line
-          const nextLine = lines[i + 1].trim()
-          if (nextLine && /^[A-Z\s]+$/.test(nextLine) && nextLine.length > 3) {
-            extractedName = nextLine
+    // Split text into lines for processing
+    const lines = text.split('\n')
+    
+    // Look for the line containing the name label
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // Check if this line contains the name label
+      if (/Isem u Kunjom|Name and Surname/i.test(line)) {
+        console.log(`Found name label at line ${i}: "${line}"`)
+        
+        // Helper function to validate a name
+        const isValidName = (text: string): boolean => {
+          if (!text || text.length < 5) return false
+          const words = text.split(/\s+/).filter(w => w.length > 1)
+          if (words.length < 2) return false
+          if (!/^[A-Z\s]+$/i.test(text)) return false
+          if (/^(bin|bint|son|daughter)$/i.test(text)) return false
+          if (/(residing|li jogghod|address|karta|id card)/i.test(text)) return false
+          return true
+        }
+        
+        // Strategy 1: Check same line after label
+        const remainingText = line.replace(/.*(?:Isem u Kunjom|Name and Surname)[:\s]*/i, '').trim()
+        if (remainingText) {
+          console.log(`Checking same line remaining text: "${remainingText}"`)
+          // Split by relationship terms to get name before them
+          const nameParts = remainingText.split(/\s+(?:bin|bint|son|daughter)\s+/i)
+          if (nameParts[0] && isValidName(nameParts[0])) {
+            extractedName = nameParts[0].trim()
+            console.log(`✓ Name found on same line (before relationship term): "${extractedName}"`)
             break
           }
         }
+        
+        // Strategy 2: Check lines BEFORE the label (name might appear above)
+        for (let j = Math.max(0, i - 2); j < i; j++) {
+          const prevLine = lines[j].trim()
+          console.log(`Checking line ${j} (before label): "${prevLine}"`)
+          if (isValidName(prevLine)) {
+            extractedName = prevLine
+            console.log(`✓ Name found BEFORE label at line ${j}: "${extractedName}"`)
+            break
+          }
+        }
+        
+        if (extractedName) break
+        
+        // Strategy 3: Check lines AFTER the label
+        for (let j = i + 1; j < Math.min(i + 4, lines.length); j++) {
+          const nextLine = lines[j].trim()
+          if (!nextLine) continue
+          
+          console.log(`Checking line ${j} (after label): "${nextLine}"`)
+          
+          // Skip pure relationship terms
+          if (/^(bin|bint|son|daughter)$/i.test(nextLine)) {
+            console.log(`  → Skipping relationship term`)
+            continue
+          }
+          
+          // Check if this line has a valid name
+          if (isValidName(nextLine)) {
+            extractedName = nextLine
+            console.log(`✓ Name found AFTER label at line ${j}: "${extractedName}"`)
+            break
+          }
+        }
+        
+        if (extractedName) break
       }
     }
 
     if (!extractedName) {
-      console.warn('Could not extract name from license')
+      console.warn('Could not extract name from license text')
       return {
         nameMatch: false,
         extractedName: null,
       }
     }
+    
+    // Clean up the extracted name - remove extra whitespace and common OCR artifacts
+    extractedName = extractedName
+      .replace(/\s+/g, ' ') // Normalize whitespace
+      .replace(/[^\w\s]/g, '') // Remove special characters
+      .trim()
+      .toUpperCase()
 
     // Normalize names for comparison
     const licenseName = normalizeString(extractedName)
     const profileName = normalizeString(`${userFirstName} ${userLastName}`)
 
-    // Calculate similarity score
+    // Split license name into words for matching
+    const licenseWords = licenseName.split(/\s+/).filter(w => w.length > 1)
+    
+    // Check if profile first name and last name appear in license (in any order)
+    const profileFirstName = normalizeString(userFirstName)
+    const profileLastName = normalizeString(userLastName)
+    
+    let firstNameMatch = false
+    let lastNameMatch = false
+    
+    for (const licenseWord of licenseWords) {
+      // Check for first name match (allow partial match for OCR errors)
+      if (!firstNameMatch) {
+        const firstSimilarity = calculateStringSimilarity(licenseWord, profileFirstName)
+        if (firstSimilarity >= 0.75) {
+          firstNameMatch = true
+        }
+      }
+      
+      // Check for last name match (allow partial match for OCR errors)
+      if (!lastNameMatch) {
+        const lastSimilarity = calculateStringSimilarity(licenseWord, profileLastName)
+        if (lastSimilarity >= 0.75) {
+          lastNameMatch = true
+        }
+      }
+      
+      if (firstNameMatch && lastNameMatch) break
+    }
+    
+    // Consider it a match if both first and last name match
+    const nameMatch = firstNameMatch && lastNameMatch
+    
+    // Calculate overall similarity for reporting
     const similarityScore = calculateStringSimilarity(licenseName, profileName)
 
-    // Consider it a match if similarity is above 70% (accounts for OCR errors, middle names, etc.)
-    const nameMatch = similarityScore >= 0.7
+    console.log(`Name matching - License: "${extractedName}", Profile: "${userFirstName} ${userLastName}"`)
+    console.log(`First name match: ${firstNameMatch}, Last name match: ${lastNameMatch}, Overall similarity: ${Math.round(similarityScore * 100)}%`)
 
     return {
       nameMatch,
@@ -501,4 +641,90 @@ function calculateStringSimilarity(str1: string, str2: string): number {
 
   // Convert distance to similarity score (0 to 1)
   return 1 - distance / maxLength
+}
+
+/**
+ * Detects license types from the OCR text
+ * @param text OCR extracted text from the license
+ * @returns LicenseTypes object with detected licenses set to true
+ */
+function detectLicenseTypes(text: string): LicenseTypes {
+  const normalizedText = text.toLowerCase()
+  
+  const licenseTypes: LicenseTypes = {
+    tslA: false,
+    tslASpecial: false,
+    tslB: false,
+    hunting: false,
+    collectorsA: false,
+    collectorsASpecial: false,
+  }
+
+  // Detect TSL-A Special (must check this before regular TSL-A)
+  // Patterns: "TSA TARGET SHOOTER SPECIAL", "TARGET SHOOTER A SPECIAL", "LICENZJA SPECJALI"
+  if (
+    /ts[al].*target.*shooter.*spec[ia]/i.test(normalizedText) ||
+    /target.*shooter.*spec[ia]/i.test(normalizedText) ||
+    /licenz[jz]a.*specjal/i.test(normalizedText)
+  ) {
+    licenseTypes.tslASpecial = true
+    console.log('Detected: TSL-A (special)')
+  }
+
+  // Detect regular TSL-A ONLY if TSL-A Special is not detected
+  // Patterns: "TARGET SHOOTER A" (but not special), "LONG/SHORT FIREARM"
+  if (!licenseTypes.tslASpecial) {
+    if (
+      /target.*shooter.*a\b/i.test(normalizedText) ||
+      /long.*short.*firearm/i.test(normalizedText)
+    ) {
+      licenseTypes.tslA = true
+      console.log('Detected: TSL-A')
+    }
+  }
+
+  // Detect TSL-B
+  // Patterns: "TARGET SHOOTER B", "S/GUN", "SHOTGUN"
+  if (
+    /target.*shooter.*b/i.test(normalizedText) ||
+    /s\/gun/i.test(normalizedText)
+  ) {
+    licenseTypes.tslB = true
+    console.log('Detected: TSL-B')
+  }
+
+  // Detect Hunting License
+  // Patterns: "HUNTING", "KACCA"
+  if (
+    /hunting/i.test(normalizedText) ||
+    /kac[cq]a/i.test(normalizedText)
+  ) {
+    licenseTypes.hunting = true
+    console.log('Detected: Hunting')
+  }
+
+  // Detect Collectors-A Special (must check before regular Collectors-A)
+  // Patterns: "COLLECTOR LICENCE A SPECIAL", "KOLLEZZJONI SPECJALI"
+  if (
+    /collector.*licen[cs]e.*a.*spec[ia]/i.test(normalizedText) ||
+    /kollezz.*specjal/i.test(normalizedText)
+  ) {
+    licenseTypes.collectorsASpecial = true
+    console.log('Detected: Collectors-A (special)')
+  }
+
+  // Detect regular Collectors-A ONLY if Collectors-A Special is not detected
+  // Patterns: "COLLECTOR LICENCE A" (but not special), "GHAZ-ZAMMA"
+  if (!licenseTypes.collectorsASpecial) {
+    if (
+      /collector.*licen[cs]e.*a\b/i.test(normalizedText) ||
+      /gh[ao]z[- ]?[sz]amma/i.test(normalizedText) ||
+      /kollezz[jz]oni/i.test(normalizedText)
+    ) {
+      licenseTypes.collectorsA = true
+      console.log('Detected: Collectors-A')
+    }
+  }
+
+  return licenseTypes
 }

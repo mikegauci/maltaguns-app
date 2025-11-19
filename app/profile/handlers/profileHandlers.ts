@@ -68,6 +68,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         nameMatch,
         extractedName,
         nameMatchDetails,
+        licenseTypes,
       } = await verifyLicenseImage(file, userFirstName, userLastName)
 
       // Check for verification issues - continue with upload but mark as not verified
@@ -139,6 +140,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
           license_image: publicUrl,
           is_seller: true,
           is_verified: isVerified,
+          license_types: licenseTypes,
         })
         .eq('id', profile?.id)
 
@@ -151,22 +153,47 @@ export function createProfileHandlers(deps: HandlerDependencies) {
               license_image: publicUrl,
               is_seller: true,
               is_verified: isVerified,
+              license_types: licenseTypes as any,
             }
           : null
       )
+
+      // Build detected license types message
+      const detectedLicenses = []
+      if (licenseTypes.tslA) detectedLicenses.push('TSL-A')
+      if (licenseTypes.tslASpecial) detectedLicenses.push('TSL-A (special)')
+      if (licenseTypes.tslB) detectedLicenses.push('TSL-B')
+      if (licenseTypes.hunting) detectedLicenses.push('Hunting')
+      if (licenseTypes.collectorsA) detectedLicenses.push('Collectors-A')
+      if (licenseTypes.collectorsASpecial) detectedLicenses.push('Collectors-A (special)')
+
+      const licensesMessage = detectedLicenses.length > 0 
+        ? `Detected licenses: ${detectedLicenses.join(', ')}`
+        : 'No license types detected. Please contact support.'
 
       // Show success toast only if no issues were found
       if (!hasVerificationIssues) {
         if (isVerified) {
           toast({
             title: 'License uploaded and verified',
-            description: 'Your license has been verified successfully.',
+            description: React.createElement(
+              'div',
+              {},
+              expiryDate && React.createElement('div', {}, `Valid until ${expiryDate}.`),
+              React.createElement('div', { className: 'mt-1' }, licensesMessage)
+            ),
             className: 'bg-green-600 text-white border-green-600',
           })
         } else {
           toast({
             title: 'License uploaded',
-            description: 'Your license will be reviewed by an administrator.',
+            description: React.createElement(
+              'div',
+              {},
+              React.createElement('div', {}, 'Your license has been uploaded but could not be automatically verified.'),
+              React.createElement('div', { className: 'mt-1' }, licensesMessage),
+              React.createElement('div', { className: 'mt-2' }, 'Your license will be reviewed by an administrator.')
+            ),
             className: 'bg-amber-100 text-amber-800 border-amber-200',
           })
         }
@@ -180,6 +207,84 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       })
     } finally {
       setUploadingLicense(false)
+    }
+  }
+
+  async function handleIdCardUpload(
+    event: React.ChangeEvent<HTMLInputElement>,
+    uploadingIdCard: boolean,
+    setUploadingIdCard: (value: boolean) => void
+  ) {
+    try {
+      const file = event.target.files?.[0]
+      if (!file) return
+
+      setUploadingIdCard(true)
+
+      if (!file.type.startsWith('image/')) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid file type',
+          description: 'Please upload an image file (JPEG/PNG).',
+        })
+        return
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'ID card image must be under 5MB.',
+        })
+        return
+      }
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `id-card-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const filePath = `id-cards/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('licenses')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('licenses').getPublicUrl(filePath)
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          id_card_image: publicUrl,
+        })
+        .eq('id', profile?.id)
+
+      if (updateError) throw updateError
+
+      setProfile(prev =>
+        prev
+          ? {
+              ...prev,
+              id_card_image: publicUrl,
+            }
+          : null
+      )
+
+      toast({
+        title: 'ID card uploaded',
+        description: 'Your ID card has been uploaded successfully.',
+        className: 'bg-green-600 text-white border-green-600',
+      })
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Upload failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload ID card.',
+      })
+    } finally {
+      setUploadingIdCard(false)
     }
   }
 
@@ -219,6 +324,42 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         title: 'Remove failed',
         description:
           error instanceof Error ? error.message : 'Failed to remove license.',
+      })
+    }
+  }
+
+  async function handleRemoveIdCard() {
+    try {
+      if (!profile?.id) return
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          id_card_image: null,
+        })
+        .eq('id', profile.id)
+
+      if (error) throw error
+
+      setProfile(prev =>
+        prev
+          ? {
+              ...prev,
+              id_card_image: null,
+            }
+          : null
+      )
+
+      toast({
+        title: 'ID card removed',
+        description: 'Your ID card has been removed successfully.',
+      })
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Remove failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to remove ID card.',
       })
     }
   }
@@ -501,7 +642,9 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
   return {
     handleLicenseUpload,
+    handleIdCardUpload,
     handleRemoveLicense,
+    handleRemoveIdCard,
     onSubmit,
     handleListingStatusChange,
     handleDeleteListing,

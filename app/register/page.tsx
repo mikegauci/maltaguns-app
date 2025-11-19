@@ -82,6 +82,15 @@ const registerSchema = z
     phone: z.string().regex(phoneRegex, 'Invalid phone number format'),
     address: z.string().min(5, 'Address must be at least 5 characters'),
     interestedInSelling: z.boolean().default(false),
+    licenseTypes: z.object({
+      tslA: z.boolean().default(false),
+      tslASpecial: z.boolean().default(false),
+      tslB: z.boolean().default(false),
+      hunting: z.boolean().default(false),
+      collectorsA: z.boolean().default(false),
+      collectorsASpecial: z.boolean().default(false),
+    }).optional(),
+    idCardImage: z.any().optional(),
     licenseImage: z.any().optional(),
     isVerified: z.boolean().default(false),
     contactPreference: z.enum(['email', 'phone', 'both']).default('both'),
@@ -96,9 +105,9 @@ const registerSchema = z
   .refine(
     data =>
       !data.interestedInSelling ||
-      (data.interestedInSelling && data.licenseImage),
+      (data.interestedInSelling && data.idCardImage && data.licenseImage),
     {
-      message: 'License image is required for sellers',
+      message: 'ID card and license images are required for sellers',
       path: ['licenseImage'],
     }
   )
@@ -110,6 +119,7 @@ export default function Register() {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
+  const [uploadingIdCard, setUploadingIdCard] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const { isOpen, triggerProps, contentProps } = useClickableTooltip()
@@ -127,6 +137,14 @@ export default function Register() {
       phone: '',
       address: '',
       interestedInSelling: false,
+      licenseTypes: {
+        tslA: false,
+        tslASpecial: false,
+        tslB: false,
+        hunting: false,
+        collectorsA: false,
+        collectorsASpecial: false,
+      },
       contactPreference: 'both',
       acceptTerms: false,
     },
@@ -166,7 +184,7 @@ export default function Register() {
       const userFirstName = formValues.first_name
       const userLastName = formValues.last_name
 
-      // Verify the license image using OCR - this now includes auto-rotation and name verification
+      // Verify the license image using OCR - this now includes auto-rotation, name verification, and license type detection
       const {
         isVerified,
         isExpired,
@@ -178,6 +196,7 @@ export default function Register() {
         nameMatch,
         extractedName,
         nameMatchDetails,
+        licenseTypes,
       } = await verifyLicenseImage(file, userFirstName, userLastName)
 
       // Check for verification issues - continue with upload but mark as not verified
@@ -262,22 +281,45 @@ export default function Register() {
       form.setValue('licenseImage', publicUrlData.publicUrl)
       // Store verification status to use during registration
       form.setValue('isVerified', isVerified)
+      // Auto-populate detected license types
+      form.setValue('licenseTypes', licenseTypes)
 
       // Show success toast only if no issues were found
       if (!hasVerificationIssues) {
+        // Build detected license types message
+        const detectedLicenses = []
+        if (licenseTypes.tslA) detectedLicenses.push('TSL-A')
+        if (licenseTypes.tslASpecial) detectedLicenses.push('TSL-A (special)')
+        if (licenseTypes.tslB) detectedLicenses.push('TSL-B')
+        if (licenseTypes.hunting) detectedLicenses.push('Hunting')
+        if (licenseTypes.collectorsA) detectedLicenses.push('Collectors-A')
+        if (licenseTypes.collectorsASpecial) detectedLicenses.push('Collectors-A (special)')
+
+        const licensesMessage = detectedLicenses.length > 0 
+          ? `Detected licenses: ${detectedLicenses.join(', ')}`
+          : 'No license types detected. Please contact support.'
+
         if (isVerified) {
           toast({
             title: 'License uploaded and verified',
-            description: expiryDate
-              ? `Your license has been verified and is valid until ${expiryDate}.`
-              : 'Your license has been uploaded and verified successfully.',
+            description: (
+              <div>
+                {expiryDate && <div>Valid until {expiryDate}.</div>}
+                <div className="mt-1">{licensesMessage}</div>
+              </div>
+            ),
             className: 'bg-green-600 text-white border-green-600',
           })
         } else {
           toast({
             title: 'License uploaded',
-            description:
-              'Your license has been uploaded but could not be automatically verified. An administrator will review your license manually. You may still proceed to register your account.',
+            description: (
+              <div>
+                <div>Your license has been uploaded but could not be automatically verified.</div>
+                <div className="mt-1">{licensesMessage}</div>
+                <div className="mt-2">An administrator will review your license manually. You may still proceed to register your account.</div>
+              </div>
+            ),
             className: 'bg-amber-100 text-amber-800 border-amber-200',
           })
         }
@@ -291,6 +333,71 @@ export default function Register() {
       })
     } finally {
       setUploadingLicense(false)
+    }
+  }
+
+  async function handleIdCardUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    try {
+      const file = event.target.files?.[0]
+      if (!file) return
+
+      setUploadingIdCard(true)
+
+      if (!file.type.startsWith('image/')) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid file type',
+          description: 'Please upload an image file (JPEG/PNG).',
+        })
+        return
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'ID card image must be under 5MB.',
+        })
+        return
+      }
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `id-card-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(7)}.${fileExt}`
+      const filePath = `id-cards/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from('licenses')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (error) throw error
+
+      const { data: publicUrlData } = supabase.storage
+        .from('licenses')
+        .getPublicUrl(filePath)
+
+      form.setValue('idCardImage', publicUrlData.publicUrl)
+
+      toast({
+        title: 'ID card uploaded',
+        description: 'Your ID card has been uploaded successfully.',
+        className: 'bg-green-600 text-white border-green-600',
+      })
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Upload failed',
+        description:
+          error instanceof Error ? error.message : 'Failed to upload ID card.',
+      })
+    } finally {
+      setUploadingIdCard(false)
     }
   }
 
@@ -345,6 +452,8 @@ export default function Register() {
         is_seller: data.interestedInSelling,
         is_verified: data.isVerified,
         license_image: data.interestedInSelling ? data.licenseImage : null,
+        id_card_image: data.interestedInSelling ? data.idCardImage : null,
+        license_types: data.interestedInSelling ? data.licenseTypes : null,
         contact_preference: data.contactPreference,
       })
 
@@ -665,7 +774,9 @@ export default function Register() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>I&apos;m a licensed firearm owner</FormLabel>
+                      <FormLabel>
+                        I&apos;m a licensed firearm owner
+                      </FormLabel>
                     </div>
                   </FormItem>
                 )}
@@ -695,42 +806,132 @@ export default function Register() {
                           {...contentProps}
                         >
                           <p>
-                            Maltaguns requires users who wish to{' '}
-                            <strong>buy or sell</strong> firearms to verify
-                            their account. Verification documents are used
-                            solely to confirm you are licensed.
+                            Maltaguns requires users who wish to <strong>buy or sell</strong> firearms to verify their account. Verification documents are used solely to confirm you are licensed.
                           </p>
                           <p className="mt-2">
-                            If you do not wish to verify at this stage or are
-                            not licensed, you may proceed by unselecting the box
-                            above. You can still verify your account later if
-                            you choose to.
+                            If you do not wish to verify at this stage or are not licensed, you may proceed by unselecting the box above. You can still verify your account later if you choose to.
                           </p>
                           <p className="mt-2">
-                            For any questions or concerns regarding data
-                            processing or your privacy, please contact us at{' '}
-                            <Link
-                              href="mailto:support@maltaguns.com"
-                              className="text-primary hover:underline"
-                            >
-                              support@maltaguns.com
-                            </Link>
-                            .
+                            For any questions or concerns regarding data processing or your privacy, please contact us at <Link href="mailto:support@maltaguns.com" className="text-primary hover:underline">support@maltaguns.com</Link>.
                           </p>
                           <p className="mt-2">
-                            We are committed to safeguarding your privacy and
-                            ensuring the secure handling of your data. Your
-                            documents will be strictly reviewed for verification
-                            purposes only and will not be shared with any third
-                            parties or made accessible to anyone else. All data
-                            processing is conducted in full compliance with the
-                            General Data Protection Regulation (GDPR) and
-                            relevant Maltese legislation.
+                            We are committed to safeguarding your privacy and ensuring the secure handling of your data. Your documents will be strictly reviewed for verification purposes only and will not be shared with any third parties or made accessible to anyone else. All data processing is conducted in full compliance with the General Data Protection Regulation (GDPR) and relevant Maltese legislation.
                           </p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
+
+                  {/* ID Card Upload */}
+                  <FormField
+                    control={form.control}
+                    name="idCardImage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ID Card</FormLabel>
+                        <FormControl>
+                          <div className="space-y-4">
+                            {!field.value && (
+                              <Button
+                                type="button"
+                                variant="default"
+                                className="bg-black hover:bg-black/90 text-white w-fit flex items-center gap-2 rounded-xl"
+                                onClick={() =>
+                                  document
+                                    .getElementById('id-card-upload')
+                                    ?.click()
+                                }
+                                disabled={uploadingIdCard}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="24"
+                                  height="24"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  className="w-5 h-5"
+                                >
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                  <polyline points="17 8 12 3 7 8" />
+                                  <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                Upload ID Card
+                              </Button>
+                            )}
+                            <Input
+                              id="id-card-upload"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleIdCardUpload}
+                              disabled={uploadingIdCard}
+                              className="hidden"
+                            />
+                            <Input type="hidden" {...field} />
+                            {uploadingIdCard && (
+                              <p className="text-sm text-muted-foreground">
+                                Uploading ID card...
+                              </p>
+                            )}
+                            {field.value && (
+                              <div className="mt-4 space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 text-green-600">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="24"
+                                      height="24"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      className="w-5 h-5"
+                                    >
+                                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                      <polyline points="22 4 12 14.01 9 11.01" />
+                                    </svg>
+                                    <span className="font-medium">
+                                      ID card uploaded successfully
+                                    </span>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    className="text-xs"
+                                    onClick={() => {
+                                      form.setValue('idCardImage', '')
+                                      form.trigger('idCardImage')
+                                    }}
+                                  >
+                                    Remove
+                                  </Button>
+                                </div>
+
+                                {/* ID Card Preview */}
+                                <div className="space-y-2">
+                                  <div className="relative w-full h-48 rounded-lg overflow-hidden border">
+                                    <img
+                                      id="id-card-preview"
+                                      src={field.value}
+                                      alt="Uploaded ID card"
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                   {/* License Upload */}
                   <FormField
@@ -876,7 +1077,7 @@ export default function Register() {
               <Button
                 type="submit"
                 className="w-full bg-[#4CAF50] hover:bg-[#45a049] text-white font-semibold py-6 rounded-lg"
-                disabled={isLoading || uploadingLicense}
+                disabled={isLoading || uploadingLicense || uploadingIdCard}
               >
                 {isLoading ? 'Creating account...' : 'Create account'}
               </Button>

@@ -21,6 +21,9 @@ export interface Database {
           is_seller: boolean
           is_verified: boolean
           license_image: string | null
+          id_card_image: string | null
+          license_types: Json | null
+          contact_preference: string | null
           created_at: string
           email: string | null
         }
@@ -35,6 +38,9 @@ export interface Database {
           is_seller?: boolean
           is_verified?: boolean
           license_image?: string | null
+          id_card_image?: string | null
+          license_types?: Json | null
+          contact_preference?: string | null
           created_at?: string
           email?: string | null
         }
@@ -49,6 +55,9 @@ export interface Database {
           is_seller?: boolean
           is_verified?: boolean
           license_image?: string | null
+          id_card_image?: string | null
+          license_types?: Json | null
+          contact_preference?: string | null
           created_at?: string
           email?: string | null
         }

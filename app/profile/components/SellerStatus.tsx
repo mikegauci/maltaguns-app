@@ -26,21 +26,30 @@ import {
 } from 'lucide-react'
 import { Profile } from '../types'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
+import { LicenseTypes } from '@/lib/license-utils'
 
 interface SellerStatusProps {
   profile: Profile
   uploadingLicense: boolean
+  uploadingIdCard: boolean
   handleLicenseUpload: (
     event: React.ChangeEvent<HTMLInputElement>
   ) => Promise<void>
+  handleIdCardUpload: (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => Promise<void>
   handleRemoveLicense: () => Promise<void>
+  handleRemoveIdCard: () => Promise<void>
 }
 
 export const SellerStatus = ({
   profile,
   uploadingLicense,
+  uploadingIdCard,
   handleLicenseUpload,
+  handleIdCardUpload,
   handleRemoveLicense,
+  handleRemoveIdCard,
 }: SellerStatusProps) => {
   const { isOpen, triggerProps, contentProps } = useClickableTooltip()
 
@@ -119,7 +128,66 @@ export const SellerStatus = ({
             )}
           </div>
 
+          <div className="space-y-6">
+            {/* ID Card Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-semibold">ID Card</h3>
+              {profile.id_card_image && (
+                <div className="relative">
+                  <p className="text-sm font-medium text-muted-foreground mb-2">
+                    Current ID Card:
+                  </p>
+                  <div className="relative inline-block">
+                    <img
+                      id="profile-id-card-preview"
+                      src={profile.id_card_image}
+                      alt="ID Card"
+                      className="w-64 h-auto rounded-md mb-4"
+                    />
+                    <button
+                      onClick={handleRemoveIdCard}
+                      className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1 rounded-full hover:bg-opacity-100 transition-all"
+                      title="Remove ID card"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleIdCardUpload}
+                  disabled={uploadingIdCard}
+                  className="hidden"
+                  id="id-card-upload"
+                />
+                <label
+                  htmlFor="id-card-upload"
+                  className="bg-black text-white px-4 py-2 rounded cursor-pointer hover:bg-gray-800 transition-colors flex items-center"
+                >
+                  {profile.id_card_image ? (
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {uploadingIdCard
+                    ? 'Uploading...'
+                    : profile.id_card_image
+                      ? 'Replace ID Card'
+                      : 'Upload ID Card'}
+                </label>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Upload an image of your Malta ID card for verification. License types will be automatically detected from your firearms license.
+              </p>
+            </div>
+
+            {/* License Section */}
           <div className="space-y-4">
+              <h3 className="text-sm font-semibold">Firearms License</h3>
             {profile.license_image && (
               <div className="relative">
                 <p className="text-sm font-medium text-muted-foreground mb-2">
@@ -141,6 +209,66 @@ export const SellerStatus = ({
                     <X className="h-4 w-4" />
                   </button>
                 </div>
+                  
+                  {/* Display detected license types */}
+                  {profile.license_types && (
+                    <div className="mt-4 p-3 border rounded-md bg-muted/20">
+                      <p className="text-sm font-semibold mb-2">Detected License Types:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {(() => {
+                          const licenses = profile.license_types as unknown as LicenseTypes
+                          const detectedLicenses = []
+                          
+                          if (licenses.tslA) {
+                            detectedLicenses.push(
+                              <Badge key="tslA" className="bg-blue-600 hover:bg-blue-700">
+                                TSL-A
+                              </Badge>
+                            )
+                          }
+                          if (licenses.tslASpecial) {
+                            detectedLicenses.push(
+                              <Badge key="tslASpecial" className="bg-purple-600 hover:bg-purple-700">
+                                TSL-A (special)
+                              </Badge>
+                            )
+                          }
+                          if (licenses.tslB) {
+                            detectedLicenses.push(
+                              <Badge key="tslB" className="bg-green-600 hover:bg-green-700">
+                                TSL-B
+                              </Badge>
+                            )
+                          }
+                          if (licenses.hunting) {
+                            detectedLicenses.push(
+                              <Badge key="hunting" className="bg-amber-600 hover:bg-amber-700">
+                                Hunting
+                              </Badge>
+                            )
+                          }
+                          if (licenses.collectorsA) {
+                            detectedLicenses.push(
+                              <Badge key="collectorsA" className="bg-indigo-600 hover:bg-indigo-700">
+                                Collectors-A
+                              </Badge>
+                            )
+                          }
+                          if (licenses.collectorsASpecial) {
+                            detectedLicenses.push(
+                              <Badge key="collectorsASpecial" className="bg-rose-600 hover:bg-rose-700">
+                                Collectors-A (special)
+                              </Badge>
+                            )
+                          }
+                          
+                          return detectedLicenses.length > 0 
+                            ? detectedLicenses 
+                            : <span className="text-sm text-muted-foreground">No license types detected</span>
+                        })()}
+                      </div>
+                    </div>
+                  )}
               </div>
             )}
 
@@ -171,16 +299,17 @@ export const SellerStatus = ({
             </div>
             <p className="text-sm text-muted-foreground mt-2">
               {profile.is_seller ? (
-                'Upload a new license image if your current one has expired.'
+                  'Upload a new license image to update your license types. License types are automatically detected from your document.'
               ) : (
                 <span
                   dangerouslySetInnerHTML={{
                     __html:
-                      'You can currently add listings that are <b>not firearms</b> such as assesories. <br/> If you wish to sell <b>Firearms</b> or other license required items, please upload a picture of your license to certify your account.',
+                        'You can currently add listings that are <b>not firearms</b> such as assesories. <br/> If you wish to sell <b>Firearms</b> or other license required items, please upload a picture of your license to certify your account. License types will be automatically detected.',
                   }}
                 />
               )}
             </p>
+            </div>
           </div>
         </CardContent>
         {!profile.license_image && (
@@ -199,7 +328,7 @@ export const SellerStatus = ({
               match those on your pofile. Uploaded images will not be shared
               with anyone and are strictly used for verification purposes only.
               Should you have any questions please email us on
-              Info@maltaguns.com.
+              Info@maltaguns.com. Your license types will be automatically detected from the image.
             </p>
             <div
               className="w-full max-w-md h-72 rounded-md bg-cover bg-center bg-no-repeat"

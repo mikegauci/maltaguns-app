@@ -49,6 +49,7 @@ export default function ProfilePage() {
   // UI State
   const [isEditing, setIsEditing] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
+  const [uploadingIdCard, setUploadingIdCard] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [listingToDelete, setListingToDelete] = useState<string | null>(null)
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
@@ -126,6 +127,16 @@ export default function ProfilePage() {
       event,
       uploadingLicense,
       setUploadingLicense
+    )
+  }
+
+  const handleIdCardUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    await profileHandlers.handleIdCardUpload(
+      event,
+      uploadingIdCard,
+      setUploadingIdCard
     )
   }
 
@@ -218,11 +229,14 @@ export default function ProfilePage() {
           isEditing={isEditing}
           setIsEditing={setIsEditing}
           uploadingLicense={uploadingLicense}
+          uploadingIdCard={uploadingIdCard}
           establishmentInfoOpen={establishmentInfoOpen}
           setEstablishmentInfoOpen={setEstablishmentInfoOpen}
           onSubmit={onSubmit}
           handleLicenseUpload={handleLicenseUpload}
+          handleIdCardUpload={handleIdCardUpload}
           handleRemoveLicense={profileHandlers.handleRemoveLicense}
+          handleRemoveIdCard={profileHandlers.handleRemoveIdCard}
           handleListingStatusChange={profileHandlers.handleListingStatusChange}
           handleRenewListing={profileHandlers.handleRenewListing}
           confirmDeleteListing={confirmDeleteListing}

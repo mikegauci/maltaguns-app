@@ -56,6 +56,7 @@ interface ProfileTabsProps {
   isEditing: boolean
   setIsEditing: (value: boolean) => void
   uploadingLicense: boolean
+  uploadingIdCard: boolean
   establishmentInfoOpen: boolean
   setEstablishmentInfoOpen: (value: boolean) => void
 
@@ -64,7 +65,11 @@ interface ProfileTabsProps {
   handleLicenseUpload: (
     event: React.ChangeEvent<HTMLInputElement>
   ) => Promise<void>
+  handleIdCardUpload: (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => Promise<void>
   handleRemoveLicense: () => Promise<void>
+  handleRemoveIdCard: () => Promise<void>
   handleListingStatusChange: (
     listingId: string,
     newStatus: string
@@ -101,11 +106,14 @@ export function ProfileTabs({
   isEditing,
   setIsEditing,
   uploadingLicense,
+  uploadingIdCard,
   establishmentInfoOpen,
   setEstablishmentInfoOpen,
   onSubmit,
   handleLicenseUpload,
+  handleIdCardUpload,
   handleRemoveLicense,
+  handleRemoveIdCard,
   handleListingStatusChange,
   handleRenewListing,
   confirmDeleteListing,
@@ -210,8 +218,11 @@ export function ProfileTabs({
         <SellerStatus
           profile={profile}
           uploadingLicense={uploadingLicense}
+          uploadingIdCard={uploadingIdCard}
           handleLicenseUpload={handleLicenseUpload}
+          handleIdCardUpload={handleIdCardUpload}
           handleRemoveLicense={handleRemoveLicense}
+          handleRemoveIdCard={handleRemoveIdCard}
         />
       </TabsContent>
 
