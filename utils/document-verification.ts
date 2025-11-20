@@ -1022,16 +1022,6 @@ export async function verifyIdCardImage(
         profileName: `${userFirstName} ${userLastName}`,
         similarityScore: result.similarityScore,
       }
-
-      if (nameMatch) {
-        console.log(
-          `✓ Name match confirmed: "${extractedName}" matches "${userFirstName} ${userLastName}"`
-        )
-      } else {
-        console.warn(
-          `✗ Name mismatch: ID card has "${extractedName}" but profile has "${userFirstName} ${userLastName}" (similarity: ${result.similarityScore}%)`
-        )
-      }
     }
 
     const isVerified = isMaltaIdCard && nameMatch

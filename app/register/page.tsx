@@ -44,58 +44,13 @@ import { Info, Eye, EyeOff } from 'lucide-react'
 import React from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import {
-  verifyLicenseImage,
-  verifyIdCardImage,
-} from '@/utils/document-verification'
+  uploadAndVerifyLicense,
+  uploadAndVerifyIdCard,
+} from '@/utils/document-upload-handlers'
+import { DocumentUploadButton } from '@/components/DocumentUploadButton'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
 
 const phoneRegex = /^(356|)(\d{8})$/
-
-/**
- * Converts HEIC/HEIF images to JPEG for browser compatibility
- */
-async function convertHeicToJpeg(file: File): Promise<File> {
-  const isHeic =
-    file.type === 'image/heic' ||
-    file.type === 'image/heif' ||
-    file.name.toLowerCase().endsWith('.heic') ||
-    file.name.toLowerCase().endsWith('.heif')
-
-  if (!isHeic) {
-    return file // Return original file if not HEIC
-  }
-
-  try {
-    console.log('Converting HEIC image to JPEG...')
-
-    // Dynamically import heic2any only when needed (client-side only)
-    const heic2any = (await import('heic2any')).default
-
-    const convertedBlob = await heic2any({
-      blob: file,
-      toType: 'image/jpeg',
-      quality: 0.9,
-    })
-
-    // heic2any can return Blob or Blob[], handle both cases
-    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
-
-    // Create a new File from the converted Blob
-    const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg')
-    const convertedFile = new File([blob], newFileName, {
-      type: 'image/jpeg',
-      lastModified: Date.now(),
-    })
-
-    console.log(`✓ Converted ${file.name} to ${newFileName}`)
-    return convertedFile
-  } catch (error) {
-    console.error('Error converting HEIC to JPEG:', error)
-    throw new Error(
-      'Failed to convert HEIC image. Please try a JPEG or PNG instead.'
-    )
-  }
-}
 
 const registerSchema = z
   .object({
@@ -209,379 +164,70 @@ export default function Register() {
   async function handleLicenseUpload(
     event: React.ChangeEvent<HTMLInputElement>
   ) {
+    const originalFile = event.target.files?.[0]
+    if (!originalFile) return
+
+    setUploadingLicense(true)
+
     try {
-      const originalFile = event.target.files?.[0]
-      if (!originalFile) return
-
-      setUploadingLicense(true)
-      setLicenseUploadProgress(0)
-
-      // Accept common image formats including HEIC/HEIF from iPhones
-      const validImageTypes = [
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/heic',
-        'image/heif',
-      ]
-      const isValidImage = validImageTypes.some(type =>
-        originalFile.type.toLowerCase().includes(type.split('/')[1])
+      const formValues = form.getValues()
+      const result = await uploadAndVerifyLicense(
+        originalFile,
+        formValues.first_name,
+        formValues.last_name,
+        {
+          supabase,
+          toast,
+          setProgress: setLicenseUploadProgress,
+        }
       )
 
-      if (!originalFile.type.startsWith('image/') && !isValidImage) {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid file type',
-          description: 'Please upload an image file (JPEG, PNG, or HEIC).',
-        })
-        return
-      }
-
-      if (originalFile.size > 5 * 1024 * 1024) {
-        toast({
-          variant: 'destructive',
-          title: 'File too large',
-          description: 'License image must be under 5MB.',
-        })
-        return
-      }
-
-      setLicenseUploadProgress(10) // Validation complete
-
-      // Convert HEIC to JPEG if needed (for browser compatibility)
-      const file = await convertHeicToJpeg(originalFile)
-      setLicenseUploadProgress(20) // Conversion complete
-
-      // Get current form values for name verification
-      const formValues = form.getValues()
-      const userFirstName = formValues.first_name
-      const userLastName = formValues.last_name
-
-      setLicenseUploadProgress(30) // Starting verification
-
-      // Verify the license image using OCR - this now includes auto-rotation, name verification, and license type detection
-      const {
-        isVerified,
-        isExpired,
-        expiryDate,
-        text,
-        orientation,
-        rotationAngle,
-        correctedImageUrl,
-        nameMatch,
-        extractedName,
-        nameMatchDetails,
-        licenseTypes,
-      } = await verifyLicenseImage(file, userFirstName, userLastName)
-
-      setLicenseUploadProgress(70) // Verification complete
-
-      // Check for verification issues - continue with upload but mark as not verified
-      const hasNameMismatch = userFirstName && userLastName && !nameMatch
-      const hasVerificationIssues = isExpired || hasNameMismatch
-
-      // Build combined warning message if there are issues
-      if (hasVerificationIssues) {
-        const issues: string[] = []
-
-        if (isExpired && expiryDate) {
-          issues.push(`• License expired on ${expiryDate}`)
-        } else if (isExpired) {
-          issues.push(`• License appears to be expired`)
-        }
-
-        if (hasNameMismatch && nameMatchDetails) {
-          issues.push(
-            `• Name mismatch: License shows "${nameMatchDetails.licenseName}" but profile shows "${nameMatchDetails.profileName}"`
-          )
-        } else if (hasNameMismatch) {
-          issues.push(
-            `• Name on license does not match profile${extractedName ? `: ${extractedName}` : ''}`
-          )
-        }
-
-        toast({
-          title: 'License uploaded - manual verification required',
-          description:
-            issues.length > 0 ? (
-              <div className="space-y-2">
-                {issues.map((issue, index) => (
-                  <div key={index}>{issue}</div>
-                ))}
-                <div className="mt-3">
-                  Your license will require manual verification. You may still
-                  proceed to register.
-                </div>
-              </div>
-            ) : (
-              'Your license will require manual verification. You may still proceed to register.'
-            ),
-          className: 'bg-amber-100 text-amber-800 border-amber-200',
-        })
-      }
-
-      // If the orientation is still problematic after auto-rotation, warn the user
-      if (orientation === 'rotated') {
-        toast({
-          title: 'Image may be difficult to read',
-          description:
-            'The system had trouble reading your license clearly, but has attempted to correct its orientation automatically.',
-          className: 'bg-amber-100 text-amber-800 border-amber-200',
-        })
-        // Continue with upload - don't block it
-      }
-
-      // Use the corrected image URL if available
-      const imageToUpload = correctedImageUrl
-        ? await urlToFile(correctedImageUrl, `rotated-${file.name}`, file.type)
-        : file
-
-      setLicenseUploadProgress(80) // Preparing upload
-
-      const fileExt = file.name.split('.').pop()
-      const fileName = `license-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(7)}.${fileExt}`
-      const filePath = `licenses/${fileName}`
-
-      const { data, error } = await supabase.storage
-        .from('licenses')
-        .upload(filePath, imageToUpload, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-
-      if (error) throw error
-
-      setLicenseUploadProgress(95) // Upload complete
-
-      const { data: publicUrlData } = supabase.storage
-        .from('licenses')
-        .getPublicUrl(filePath)
-
-      form.setValue('licenseImage', publicUrlData.publicUrl)
-      // Store verification status to use during registration
-      form.setValue('isVerified', isVerified)
-      // Auto-populate detected license types
-      form.setValue('licenseTypes', licenseTypes)
-
-      setLicenseUploadProgress(100) // Complete
-
-      // Show success toast only if no issues were found
-      if (!hasVerificationIssues) {
-        // Build detected license types message
-        const detectedLicenses = []
-        if (licenseTypes.tslA) detectedLicenses.push('TSL-A')
-        if (licenseTypes.tslASpecial) detectedLicenses.push('TSL-A (special)')
-        if (licenseTypes.tslB) detectedLicenses.push('TSL-B')
-        if (licenseTypes.hunting) detectedLicenses.push('Hunting')
-        if (licenseTypes.collectorsA) detectedLicenses.push('Collectors-A')
-        if (licenseTypes.collectorsASpecial)
-          detectedLicenses.push('Collectors-A (special)')
-
-        const licensesMessage =
-          detectedLicenses.length > 0
-            ? `Detected licenses: ${detectedLicenses.join(', ')}`
-            : 'No license types detected. Please contact support.'
-
-        if (isVerified) {
-          toast({
-            title: 'License uploaded and verified',
-            description: (
-              <div>
-                {expiryDate && <div>Valid until {expiryDate}.</div>}
-                <div className="mt-1">{licensesMessage}</div>
-              </div>
-            ),
-            className: 'bg-green-600 text-white border-green-600',
-          })
-        } else {
-          toast({
-            title: 'License uploaded',
-            description: (
-              <div>
-                <div>
-                  Your license has been uploaded but could not be automatically
-                  verified.
-                </div>
-                <div className="mt-1">{licensesMessage}</div>
-                <div className="mt-2">
-                  An administrator will review your license manually. You may
-                  still proceed to register your account.
-                </div>
-              </div>
-            ),
-            className: 'bg-amber-100 text-amber-800 border-amber-200',
-          })
-        }
+      if (result.success && result.publicUrl) {
+        form.setValue('licenseImage', result.publicUrl)
+        form.setValue('isVerified', result.isVerified)
+        form.setValue('licenseTypes', result.licenseTypes)
       }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Upload failed',
-        description:
-          error instanceof Error ? error.message : 'Failed to upload license.',
-      })
+      // Error handling is done in the shared function
+      console.error('License upload error:', error)
     } finally {
       setUploadingLicense(false)
-      setLicenseUploadProgress(0)
     }
   }
 
   async function handleIdCardUpload(
     event: React.ChangeEvent<HTMLInputElement>
   ) {
+    const originalFile = event.target.files?.[0]
+    if (!originalFile) return
+
+    setUploadingIdCard(true)
+
     try {
-      const originalFile = event.target.files?.[0]
-      if (!originalFile) return
-
-      setUploadingIdCard(true)
-      setIdCardUploadProgress(0)
-
-      // Accept common image formats including HEIC/HEIF from iPhones
-      const validImageTypes = [
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/heic',
-        'image/heif',
-      ]
-      const isValidImage = validImageTypes.some(type =>
-        originalFile.type.toLowerCase().includes(type.split('/')[1])
-      )
-
-      if (!originalFile.type.startsWith('image/') && !isValidImage) {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid file type',
-          description: 'Please upload an image file (JPEG, PNG, or HEIC).',
-        })
-        return
-      }
-
-      if (originalFile.size > 5 * 1024 * 1024) {
-        toast({
-          variant: 'destructive',
-          title: 'File too large',
-          description: 'ID card image must be under 5MB.',
-        })
-        return
-      }
-
-      setIdCardUploadProgress(10) // Validation complete
-
-      // Convert HEIC to JPEG if needed (for browser compatibility)
-      const file = await convertHeicToJpeg(originalFile)
-      setIdCardUploadProgress(30) // Conversion complete
-
-      // Get current form values for name verification
       const formValues = form.getValues()
-      const userFirstName = formValues.first_name
-      const userLastName = formValues.last_name
-
-      setIdCardUploadProgress(40) // Starting verification
-
-      // Verify the ID card image using OCR
-      const { isVerified, nameMatch, extractedName } = await verifyIdCardImage(
-        file,
-        userFirstName,
-        userLastName
+      const result = await uploadAndVerifyIdCard(
+        originalFile,
+        formValues.first_name,
+        formValues.last_name,
+        {
+          supabase,
+          toast,
+          setProgress: setIdCardUploadProgress,
+        }
       )
 
-      setIdCardUploadProgress(70) // Verification complete
-
-      // Build verification issue message
-      let verificationIssues: string[] = []
-      if (!isVerified) {
-        if (!nameMatch && extractedName) {
-          verificationIssues.push(
-            `Name mismatch: ID card shows a differnt name, but your profile shows "${userFirstName} ${userLastName}"`
-          )
-        } else {
-          verificationIssues.push(
-            'Not recognized as a valid Malta ID card - missing required text or format'
-          )
-        }
-      }
-
-      setIdCardUploadProgress(80) // Preparing upload
-
-      // Upload the image regardless of verification status
-      const fileExt = file.name.split('.').pop()
-      const fileName = `id-card-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(7)}.${fileExt}`
-      const filePath = `id-cards/${fileName}`
-
-      const { data, error } = await supabase.storage
-        .from('licenses')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-
-      if (error) throw error
-
-      setIdCardUploadProgress(95) // Upload complete
-
-      const { data: publicUrlData } = supabase.storage
-        .from('licenses')
-        .getPublicUrl(filePath)
-
-      form.setValue('idCardImage', publicUrlData.publicUrl)
-      form.setValue('idCardVerified', isVerified) // Set based on verification result
-
-      setIdCardUploadProgress(100) // Complete
-
-      // Show appropriate toast based on verification status
-      if (isVerified) {
-        toast({
-          title: 'ID card verified & uploaded',
-          description: 'Your ID card has been verified successfully.',
-          className: 'bg-green-600 text-white border-green-600',
-        })
-      } else {
-        toast({
-          title: 'ID card uploaded - manual verification required',
-          description: React.createElement(
-            'div',
-            {},
-            verificationIssues.map((issue, index) =>
-              React.createElement(
-                'div',
-                { key: index, className: 'mb-1' },
-                `• ${issue}`
-              )
-            ),
-            React.createElement(
-              'div',
-              { className: 'mt-2' },
-              'Your ID card will require manual verification by an administrator.'
-            )
-          ),
-          className: 'bg-amber-100 text-amber-800 border-amber-200',
-        })
+      if (result.success && result.publicUrl) {
+        form.setValue('idCardImage', result.publicUrl)
+        form.setValue('idCardVerified', result.isVerified)
       }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Upload failed',
-        description:
-          error instanceof Error ? error.message : 'Failed to upload ID card.',
-      })
+      // Error handling is done in the shared function
+      console.error('ID card upload error:', error)
     } finally {
       setUploadingIdCard(false)
-      setIdCardUploadProgress(0)
     }
   }
 
-  /**
-   * Converts a data URL to a File object
-   * @param url The data URL to convert
-   * @param filename The name for the new file
-   * @param mimeType The MIME type of the file
-   * @returns A Promise that resolves to a File object
-   */
   async function urlToFile(
     url: string,
     filename: string,
@@ -1028,71 +674,65 @@ export default function Register() {
                         <FormControl>
                           <div className="space-y-4">
                             {!field.value && (
-                              <Button
-                                type="button"
-                                variant="default"
-                                className="bg-black hover:bg-black/90 text-white w-fit flex items-center gap-2 rounded-xl"
-                                onClick={() =>
-                                  document
-                                    .getElementById('id-card-upload')
-                                    ?.click()
-                                }
-                                disabled={uploadingIdCard}
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="24"
-                                  height="24"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="w-5 h-5"
-                                >
-                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                  <polyline points="17 8 12 3 7 8" />
-                                  <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                Upload ID Card
-                              </Button>
+                              <DocumentUploadButton
+                                id="id-card-upload"
+                                label="Upload ID Card"
+                                replaceLabel="Replace ID Card"
+                                isUploading={uploadingIdCard}
+                                uploadProgress={idCardUploadProgress}
+                                hasExistingDocument={false}
+                                onChange={handleIdCardUpload}
+                              />
                             )}
-                            <Input
-                              id="id-card-upload"
-                              type="file"
-                              accept="image/*,.heic,.heif"
-                              onChange={handleIdCardUpload}
-                              disabled={uploadingIdCard}
-                              className="hidden"
-                            />
                             <Input type="hidden" {...field} />
-                            {uploadingIdCard && (
-                              <p className="text-sm text-muted-foreground">
-                                Uploading ID card... {idCardUploadProgress}%
-                              </p>
-                            )}
                             {field.value && (
                               <div className="mt-4 space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2 text-green-600">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="24"
-                                      height="24"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      className="w-5 h-5"
-                                    >
-                                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                      <polyline points="22 4 12 14.01 9 11.01" />
-                                    </svg>
-                                    <span className="font-medium">
-                                      ID card uploaded successfully
+                                  <div
+                                    className={`flex items-center gap-2 ${
+                                      form.watch('idCardVerified')
+                                        ? 'text-green-600'
+                                        : 'text-amber-600'
+                                    }`}
+                                  >
+                                    {form.watch('idCardVerified') ? (
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="w-5 h-5"
+                                      >
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                        <polyline points="22 4 12 14.01 9 11.01" />
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="w-5 h-5"
+                                      >
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="12" y1="16" x2="12" y2="12" />
+                                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                                      </svg>
+                                    )}
+                                    <span className="text-sm font-medium">
+                                      {form.watch('idCardVerified')
+                                        ? 'ID card uploaded successfully'
+                                        : 'Image uploaded successfully, however requires manual verification'}
                                     </span>
                                   </div>
                                   <Button
@@ -1139,71 +779,65 @@ export default function Register() {
                         <FormControl>
                           <div className="space-y-4">
                             {!field.value && (
-                              <Button
-                                type="button"
-                                variant="default"
-                                className="bg-black hover:bg-black/90 text-white w-fit flex items-center gap-2 rounded-xl"
-                                onClick={() =>
-                                  document
-                                    .getElementById('license-upload')
-                                    ?.click()
-                                }
-                                disabled={uploadingLicense}
-                              >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="24"
-                                  height="24"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  className="w-5 h-5"
-                                >
-                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                  <polyline points="17 8 12 3 7 8" />
-                                  <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                Upload License
-                              </Button>
+                              <DocumentUploadButton
+                                id="license-upload"
+                                label="Upload License"
+                                replaceLabel="Replace License"
+                                isUploading={uploadingLicense}
+                                uploadProgress={licenseUploadProgress}
+                                hasExistingDocument={false}
+                                onChange={handleLicenseUpload}
+                              />
                             )}
-                            <Input
-                              id="license-upload"
-                              type="file"
-                              accept="image/*,.heic,.heif"
-                              onChange={handleLicenseUpload}
-                              disabled={uploadingLicense}
-                              className="hidden"
-                            />
                             <Input type="hidden" {...field} />
-                            {uploadingLicense && (
-                              <p className="text-sm text-muted-foreground">
-                                Uploading license... {licenseUploadProgress}%
-                              </p>
-                            )}
                             {field.value && (
                               <div className="mt-4 space-y-2">
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2 text-green-600">
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="24"
-                                      height="24"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      className="w-5 h-5"
-                                    >
-                                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                      <polyline points="22 4 12 14.01 9 11.01" />
-                                    </svg>
-                                    <span className="font-medium">
-                                      License uploaded successfully
+                                  <div
+                                    className={`flex items-center gap-2 ${
+                                      form.watch('isVerified')
+                                        ? 'text-green-600'
+                                        : 'text-amber-600'
+                                    }`}
+                                  >
+                                    {form.watch('isVerified') ? (
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="w-5 h-5"
+                                      >
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                        <polyline points="22 4 12 14.01 9 11.01" />
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="24"
+                                        height="24"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className="w-5 h-5"
+                                      >
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="12" y1="16" x2="12" y2="12" />
+                                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                                      </svg>
+                                    )}
+                                    <span className="text-sm font-medium">
+                                      {form.watch('isVerified')
+                                        ? 'License uploaded successfully'
+                                        : 'Image uploaded successfully, however requires manual verification'}
                                     </span>
                                   </div>
                                   <Button

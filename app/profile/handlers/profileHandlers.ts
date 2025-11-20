@@ -1,56 +1,14 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import {
-  verifyLicenseImage,
-  verifyIdCardImage,
-} from '@/utils/document-verification'
+  uploadAndVerifyLicense,
+  uploadAndVerifyIdCard,
+} from '@/utils/document-upload-handlers'
 import { Profile, Listing, ProfileForm } from '../types'
 import React from 'react'
 
 /**
- * Converts HEIC/HEIF images to JPEG for browser compatibility
+ * @deprecated Moved to document-upload-handlers.ts
  */
-async function convertHeicToJpeg(file: File): Promise<File> {
-  const isHeic =
-    file.type === 'image/heic' ||
-    file.type === 'image/heif' ||
-    file.name.toLowerCase().endsWith('.heic') ||
-    file.name.toLowerCase().endsWith('.heif')
-
-  if (!isHeic) {
-    return file // Return original file if not HEIC
-  }
-
-  try {
-    console.log('Converting HEIC image to JPEG...')
-
-    // Dynamically import heic2any only when needed (client-side only)
-    const heic2any = (await import('heic2any')).default
-
-    const convertedBlob = await heic2any({
-      blob: file,
-      toType: 'image/jpeg',
-      quality: 0.9,
-    })
-
-    // heic2any can return Blob or Blob[], handle both cases
-    const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob
-
-    // Create a new File from the converted Blob
-    const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg')
-    const convertedFile = new File([blob], newFileName, {
-      type: 'image/jpeg',
-      lastModified: Date.now(),
-    })
-
-    console.log(`✓ Converted ${file.name} to ${newFileName}`)
-    return convertedFile
-  } catch (error) {
-    console.error('Error converting HEIC to JPEG:', error)
-    throw new Error(
-      'Failed to convert HEIC image. Please try a JPEG or PNG instead.'
-    )
-  }
-}
 
 interface HandlerDependencies {
   supabase: SupabaseClient
@@ -91,217 +49,47 @@ export function createProfileHandlers(deps: HandlerDependencies) {
     uploadingLicense: boolean,
     setUploadingLicense: (value: boolean) => void
   ) {
+    const originalFile = event.target.files?.[0]
+    if (!originalFile) return
+
+    setUploadingLicense(true)
+
     try {
-      const originalFile = event.target.files?.[0]
-      if (!originalFile) return
-
-      setUploadingLicense(true)
-      setLicenseUploadProgress?.(0)
-
-      // Accept common image formats including HEIC/HEIF from iPhones
-      const validImageTypes = [
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/heic',
-        'image/heif',
-      ]
-      const isValidImage = validImageTypes.some(type =>
-        originalFile.type.toLowerCase().includes(type.split('/')[1])
+      const result = await uploadAndVerifyLicense(
+        originalFile,
+        profile?.first_name ?? '',
+        profile?.last_name ?? '',
+        {
+          supabase,
+          toast,
+          setProgress: setLicenseUploadProgress,
+        }
       )
 
-      if (!originalFile.type.startsWith('image/') && !isValidImage) {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid file type',
-          description: 'Please upload an image file (JPEG, PNG, or HEIC).',
-        })
-        return
-      }
-
-      if (originalFile.size > 5 * 1024 * 1024) {
-        toast({
-          variant: 'destructive',
-          title: 'File too large',
-          description: 'License image must be under 5MB.',
-        })
-        return
-      }
-
-      setLicenseUploadProgress?.(10) // Validation complete
-
-      // Convert HEIC to JPEG if needed (for browser compatibility)
-      const file = await convertHeicToJpeg(originalFile)
-      setLicenseUploadProgress?.(20) // Conversion complete
-
-      // Get user's name from profile for verification
-      const userFirstName = profile?.first_name ?? undefined
-      const userLastName = profile?.last_name ?? undefined
-
-      setLicenseUploadProgress?.(30) // Starting verification
-
-      const {
-        isVerified,
-        isExpired,
-        expiryDate,
-        correctedImageUrl,
-        nameMatch,
-        extractedName,
-        nameMatchDetails,
-        licenseTypes,
-      } = await verifyLicenseImage(file, userFirstName, userLastName)
-
-      setLicenseUploadProgress?.(70) // Verification complete
-
-      // Check for verification issues - continue with upload but mark as not verified
-      const hasNameMismatch = userFirstName && userLastName && !nameMatch
-      const hasVerificationIssues = isExpired || hasNameMismatch
-
-      // Build combined warning message if there are issues
-      if (hasVerificationIssues) {
-        const issues: string[] = []
-
-        if (isExpired && expiryDate) {
-          issues.push(`• License expired on ${expiryDate}`)
-        } else if (isExpired) {
-          issues.push(`• License appears to be expired`)
-        }
-
-        if (hasNameMismatch && nameMatchDetails) {
-          issues.push(
-            `• Name mismatch: License shows "${nameMatchDetails.licenseName}" but profile shows "${nameMatchDetails.profileName}"`
-          )
-        } else if (hasNameMismatch) {
-          issues.push(
-            `• Name on license does not match profile${extractedName ? `: ${extractedName}` : ''}`
-          )
-        }
-
-        toast({
-          title: 'License uploaded - manual verification required',
-          description:
-            issues.length > 0
-              ? React.createElement(
-                  'div',
-                  { className: 'space-y-2' },
-                  ...issues.map((issue, index) =>
-                    React.createElement('div', { key: index }, issue)
-                  ),
-                  React.createElement(
-                    'div',
-                    { className: 'mt-3' },
-                    'Your license will require manual verification by an administrator.'
-                  )
-                )
-              : 'Your license will require manual verification by an administrator.',
-          className: 'bg-amber-100 text-amber-800 border-amber-200',
-        })
-      }
-
-      const imageToUpload = correctedImageUrl
-        ? await urlToFile(correctedImageUrl, `rotated-${file.name}`, file.type)
-        : file
-
-      setLicenseUploadProgress?.(80) // Preparing upload
-
-      const fileExt = file.name.split('.').pop()
-      const fileName = `license-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = `licenses/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('licenses')
-        .upload(filePath, imageToUpload)
-
-      if (uploadError) throw uploadError
-
-      setLicenseUploadProgress?.(90) // Upload complete
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('licenses').getPublicUrl(filePath)
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          license_image: publicUrl,
-          is_seller: true,
-          is_verified: isVerified,
-          license_types: licenseTypes,
-        })
-        .eq('id', profile?.id)
-
-      if (updateError) throw updateError
-
-      setLicenseUploadProgress?.(95) // Database updated
-
-      setProfile(prev =>
-        prev
-          ? {
-              ...prev,
-              license_image: publicUrl,
-              is_seller: true,
-              is_verified: isVerified,
-              license_types: licenseTypes as any,
-            }
-          : null
-      )
-
-      setLicenseUploadProgress?.(100) // Complete
-
-      // Build detected license types message
-      const detectedLicenses = []
-      if (licenseTypes.tslA) detectedLicenses.push('TSL-A')
-      if (licenseTypes.tslASpecial) detectedLicenses.push('TSL-A (special)')
-      if (licenseTypes.tslB) detectedLicenses.push('TSL-B')
-      if (licenseTypes.hunting) detectedLicenses.push('Hunting')
-      if (licenseTypes.collectorsA) detectedLicenses.push('Collectors-A')
-      if (licenseTypes.collectorsASpecial)
-        detectedLicenses.push('Collectors-A (special)')
-
-      const licensesMessage =
-        detectedLicenses.length > 0
-          ? `Detected licenses: ${detectedLicenses.join(', ')}`
-          : 'No license types detected. Please contact support.'
-
-      // Show success toast only if no issues were found
-      if (!hasVerificationIssues) {
-        if (isVerified) {
-          toast({
-            title: 'License uploaded and verified',
-            description: React.createElement(
-              'div',
-              {},
-              expiryDate &&
-                React.createElement('div', {}, `Valid until ${expiryDate}.`),
-              React.createElement('div', { className: 'mt-1' }, licensesMessage)
-            ),
-            className: 'bg-green-600 text-white border-green-600',
+      if (result.success && result.publicUrl) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            license_image: result.publicUrl,
+            is_seller: true,
+            is_verified: result.isVerified,
+            license_types: result.licenseTypes as any,
           })
-        } else {
-          toast({
-            title: 'License uploaded',
-            description: React.createElement(
-              'div',
-              {},
-              React.createElement(
-                'div',
-                {},
-                'Your license has been uploaded but could not be automatically verified.'
-              ),
-              React.createElement(
-                'div',
-                { className: 'mt-1' },
-                licensesMessage
-              ),
-              React.createElement(
-                'div',
-                { className: 'mt-2' },
-                'Your license will be reviewed by an administrator.'
-              )
-            ),
-            className: 'bg-amber-100 text-amber-800 border-amber-200',
-          })
-        }
+          .eq('id', profile?.id)
+
+        if (updateError) throw updateError
+
+        setProfile(prev =>
+          prev
+            ? {
+                ...prev,
+                license_image: result.publicUrl || null,
+                is_seller: true,
+                is_verified: result.isVerified,
+                license_types: result.licenseTypes as any,
+              }
+            : null
+        )
       }
     } catch (error) {
       toast({
@@ -312,7 +100,6 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       })
     } finally {
       setUploadingLicense(false)
-      setLicenseUploadProgress?.(0)
     }
   }
 
@@ -321,149 +108,43 @@ export function createProfileHandlers(deps: HandlerDependencies) {
     uploadingIdCard: boolean,
     setUploadingIdCard: (value: boolean) => void
   ) {
+    const originalFile = event.target.files?.[0]
+    if (!originalFile) return
+
+    setUploadingIdCard(true)
+
     try {
-      const originalFile = event.target.files?.[0]
-      if (!originalFile) return
-
-      setUploadingIdCard(true)
-      setIdCardUploadProgress?.(0)
-
-      // Accept common image formats including HEIC/HEIF from iPhones
-      const validImageTypes = [
-        'image/jpeg',
-        'image/jpg',
-        'image/png',
-        'image/heic',
-        'image/heif',
-      ]
-      const isValidImage = validImageTypes.some(type =>
-        originalFile.type.toLowerCase().includes(type.split('/')[1])
-      )
-
-      if (!originalFile.type.startsWith('image/') && !isValidImage) {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid file type',
-          description: 'Please upload an image file (JPEG, PNG, or HEIC).',
-        })
-        return
-      }
-
-      if (originalFile.size > 5 * 1024 * 1024) {
-        toast({
-          variant: 'destructive',
-          title: 'File too large',
-          description: 'ID card image must be under 5MB.',
-        })
-        return
-      }
-
-      setIdCardUploadProgress?.(10) // Validation complete
-
-      // Convert HEIC to JPEG if needed (for browser compatibility)
-      const file = await convertHeicToJpeg(originalFile)
-      setIdCardUploadProgress?.(30) // Conversion complete
-
-      // Get user's name from profile for verification
-      const userFirstName = profile?.first_name ?? ''
-      const userLastName = profile?.last_name ?? ''
-
-      setIdCardUploadProgress?.(40) // Starting verification
-
-      // Verify the ID card image using OCR
-      const { isVerified, nameMatch, extractedName } = await verifyIdCardImage(
-        file,
-        userFirstName,
-        userLastName
-      )
-
-      setIdCardUploadProgress?.(70) // Verification complete
-
-      // Build verification issue message
-      let verificationIssues: string[] = []
-      if (!isVerified) {
-        if (!nameMatch && extractedName) {
-          verificationIssues.push(
-            `Name mismatch: ID card shows a differnt name, but your profile shows "${userFirstName} ${userLastName}"`
-          )
-        } else {
-          verificationIssues.push(
-            'Not recognized as a valid Malta ID card - missing required text or format'
-          )
+      const result = await uploadAndVerifyIdCard(
+        originalFile,
+        profile?.first_name ?? '',
+        profile?.last_name ?? '',
+        {
+          supabase,
+          toast,
+          setProgress: setIdCardUploadProgress,
         }
-      }
-
-      setIdCardUploadProgress?.(80) // Preparing upload
-
-      // Upload the image regardless of verification status
-      const fileExt = file.name.split('.').pop()
-      const fileName = `id-card-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = `id-cards/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('licenses')
-        .upload(filePath, file)
-
-      if (uploadError) throw uploadError
-
-      setIdCardUploadProgress?.(90) // Upload complete
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('licenses').getPublicUrl(filePath)
-
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          id_card_image: publicUrl,
-          id_card_verified: isVerified, // Set based on verification result
-        })
-        .eq('id', profile?.id)
-
-      if (updateError) throw updateError
-
-      setIdCardUploadProgress?.(95) // Database updated
-
-      setProfile(prev =>
-        prev
-          ? {
-              ...prev,
-              id_card_image: publicUrl,
-              id_card_verified: isVerified,
-            }
-          : null
       )
 
-      setIdCardUploadProgress?.(100) // Complete
+      if (result.success && result.publicUrl) {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            id_card_image: result.publicUrl,
+            id_card_verified: result.isVerified,
+          })
+          .eq('id', profile?.id)
 
-      // Show appropriate toast based on verification status
-      if (isVerified) {
-        toast({
-          title: 'ID card verified & uploaded',
-          description: 'Your ID card has been verified successfully.',
-          className: 'bg-green-600 text-white border-green-600',
-        })
-      } else {
-        toast({
-          title: 'ID card uploaded - manual verification required',
-          description: React.createElement(
-            'div',
-            {},
-            verificationIssues.map((issue, index) =>
-              React.createElement(
-                'div',
-                { key: index, className: 'mb-1' },
-                `• ${issue}`
-              )
-            ),
-            React.createElement(
-              'div',
-              { className: 'mt-2' },
-              'Your ID card will require manual verification by an administrator.'
-            )
-          ),
-          className: 'bg-amber-100 text-amber-800 border-amber-200',
-        })
+        if (updateError) throw updateError
+
+        setProfile(prev =>
+          prev
+            ? {
+                ...prev,
+                id_card_image: result.publicUrl || null,
+                id_card_verified: result.isVerified,
+              }
+            : null
+        )
       }
     } catch (error) {
       toast({
@@ -474,7 +155,6 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       })
     } finally {
       setUploadingIdCard(false)
-      setIdCardUploadProgress?.(0)
     }
   }
 

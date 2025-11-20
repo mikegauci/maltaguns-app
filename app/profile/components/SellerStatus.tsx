@@ -8,25 +8,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import {
-  Shield,
-  AlertCircle,
-  Upload,
-  RefreshCw,
-  X,
-  Info,
-  CheckCircle2,
-} from 'lucide-react'
+import { Shield, AlertCircle, X, Info, CheckCircle2 } from 'lucide-react'
 import { Profile } from '../types'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
 import { LicenseTypes } from '@/lib/license-utils'
+import { DocumentUploadButton } from '@/components/DocumentUploadButton'
 
 interface SellerStatusProps {
   profile: Profile
@@ -232,36 +224,15 @@ export const SellerStatus = ({
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  accept="image/*,.heic,.heif"
-                  onChange={handleIdCardUpload}
-                  disabled={uploadingIdCard}
-                  className="hidden"
-                  id="id-card-upload"
-                />
-                <label
-                  htmlFor="id-card-upload"
-                  className={`bg-black text-white px-4 py-2 rounded flex items-center transition-colors ${
-                    uploadingIdCard
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'cursor-pointer hover:bg-gray-800'
-                  }`}
-                  style={uploadingIdCard ? { pointerEvents: 'none' } : {}}
-                >
-                  {profile.id_card_image ? (
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Upload className="h-4 w-4 mr-2" />
-                  )}
-                  {uploadingIdCard
-                    ? `Uploading... ${idCardUploadProgress}%`
-                    : profile.id_card_image
-                      ? 'Replace ID Card'
-                      : 'Upload ID Card'}
-                </label>
-              </div>
+              <DocumentUploadButton
+                id="id-card-upload"
+                label="Upload ID Card"
+                replaceLabel="Replace ID Card"
+                isUploading={uploadingIdCard}
+                uploadProgress={idCardUploadProgress}
+                hasExistingDocument={!!profile.id_card_image}
+                onChange={handleIdCardUpload}
+              />
               <p className="text-sm text-muted-foreground mt-2">
                 Upload an image of your Malta ID card for verification. ID cards
                 types will be automatically detected from your first and last
@@ -381,36 +352,15 @@ export const SellerStatus = ({
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
-                <Input
-                  type="file"
-                  accept="image/*,.heic,.heif"
-                  onChange={handleLicenseUpload}
-                  disabled={uploadingLicense}
-                  className="hidden"
-                  id="license-upload"
-                />
-                <label
-                  htmlFor="license-upload"
-                  className={`bg-black text-white px-4 py-2 rounded flex items-center transition-colors ${
-                    uploadingLicense
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'cursor-pointer hover:bg-gray-800'
-                  }`}
-                  style={uploadingLicense ? { pointerEvents: 'none' } : {}}
-                >
-                  {profile.license_image ? (
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Upload className="h-4 w-4 mr-2" />
-                  )}
-                  {uploadingLicense
-                    ? `Uploading... ${licenseUploadProgress}%`
-                    : profile.license_image
-                      ? 'Replace License'
-                      : 'Upload License'}
-                </label>
-              </div>
+              <DocumentUploadButton
+                id="license-upload"
+                label="Upload License"
+                replaceLabel="Replace License"
+                isUploading={uploadingLicense}
+                uploadProgress={licenseUploadProgress}
+                hasExistingDocument={!!profile.license_image}
+                onChange={handleLicenseUpload}
+              />
               <p className="text-sm text-muted-foreground mt-2">
                 {profile.is_seller ? (
                   'Upload a new license image to update your license types. License types are automatically detected from your document.'
