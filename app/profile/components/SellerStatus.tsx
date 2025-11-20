@@ -221,90 +221,90 @@ export const SellerStatus = ({
                 hasExistingDocument={!!profile.license_image}
                 onChange={handleLicenseUpload}
               />
-                                {/* Display detected license types */}
-                                {profile.license_types && (
-                    <div className="p-3 border rounded-md bg-muted/20">
-                      <p className="text-xs font-semibold mb-2 text-muted-foreground">
-                        Detected License Types:
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(() => {
-                          const licenses =
-                            profile.license_types as unknown as LicenseTypes
-                          const detectedLicenses = []
+              {/* Display detected license types */}
+              {profile.license_types && (
+                <div className="p-3 border rounded-md bg-muted/20">
+                  <p className="text-xs font-semibold mb-2 text-muted-foreground">
+                    Detected License Types:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(() => {
+                      const licenses =
+                        profile.license_types as unknown as LicenseTypes
+                      const detectedLicenses = []
 
-                          if (licenses.tslA) {
-                            detectedLicenses.push(
-                              <Badge
-                                key="tslA"
-                                className="bg-blue-600 hover:bg-blue-700 text-xs"
-                              >
-                                TSL-A
-                              </Badge>
-                            )
-                          }
-                          if (licenses.tslASpecial) {
-                            detectedLicenses.push(
-                              <Badge
-                                key="tslASpecial"
-                                className="bg-purple-600 hover:bg-purple-700 text-xs"
-                              >
-                                TSL-A (special)
-                              </Badge>
-                            )
-                          }
-                          if (licenses.tslB) {
-                            detectedLicenses.push(
-                              <Badge
-                                key="tslB"
-                                className="bg-green-600 hover:bg-green-700 text-xs"
-                              >
-                                TSL-B
-                              </Badge>
-                            )
-                          }
-                          if (licenses.hunting) {
-                            detectedLicenses.push(
-                              <Badge
-                                key="hunting"
-                                className="bg-amber-600 hover:bg-amber-700 text-xs"
-                              >
-                                Hunting
-                              </Badge>
-                            )
-                          }
-                          if (licenses.collectorsA) {
-                            detectedLicenses.push(
-                              <Badge
-                                key="collectorsA"
-                                className="bg-indigo-600 hover:bg-indigo-700 text-xs"
-                              >
-                                Collectors-A
-                              </Badge>
-                            )
-                          }
-                          if (licenses.collectorsASpecial) {
-                            detectedLicenses.push(
-                              <Badge
-                                key="collectorsASpecial"
-                                className="bg-rose-600 hover:bg-rose-700 text-xs"
-                              >
-                                Collectors-A (special)
-                              </Badge>
-                            )
-                          }
+                      if (licenses.tslA) {
+                        detectedLicenses.push(
+                          <Badge
+                            key="tslA"
+                            className="bg-blue-600 hover:bg-blue-700 text-xs"
+                          >
+                            TSL-A
+                          </Badge>
+                        )
+                      }
+                      if (licenses.tslASpecial) {
+                        detectedLicenses.push(
+                          <Badge
+                            key="tslASpecial"
+                            className="bg-purple-600 hover:bg-purple-700 text-xs"
+                          >
+                            TSL-A (special)
+                          </Badge>
+                        )
+                      }
+                      if (licenses.tslB) {
+                        detectedLicenses.push(
+                          <Badge
+                            key="tslB"
+                            className="bg-green-600 hover:bg-green-700 text-xs"
+                          >
+                            TSL-B
+                          </Badge>
+                        )
+                      }
+                      if (licenses.hunting) {
+                        detectedLicenses.push(
+                          <Badge
+                            key="hunting"
+                            className="bg-amber-600 hover:bg-amber-700 text-xs"
+                          >
+                            Hunting
+                          </Badge>
+                        )
+                      }
+                      if (licenses.collectorsA) {
+                        detectedLicenses.push(
+                          <Badge
+                            key="collectorsA"
+                            className="bg-indigo-600 hover:bg-indigo-700 text-xs"
+                          >
+                            Collectors-A
+                          </Badge>
+                        )
+                      }
+                      if (licenses.collectorsASpecial) {
+                        detectedLicenses.push(
+                          <Badge
+                            key="collectorsASpecial"
+                            className="bg-rose-600 hover:bg-rose-700 text-xs"
+                          >
+                            Collectors-A (special)
+                          </Badge>
+                        )
+                      }
 
-                          return detectedLicenses.length > 0 ? (
-                            detectedLicenses
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              No license types detected
-                            </span>
-                          )
-                        })()}
-                      </div>
-                    </div>
-                  )}
+                      return detectedLicenses.length > 0 ? (
+                        detectedLicenses
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          No license types detected
+                        </span>
+                      )
+                    })()}
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
                 {profile.is_seller
                   ? 'Upload your firearms license. License types are detected automatically.'

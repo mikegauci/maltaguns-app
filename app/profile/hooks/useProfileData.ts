@@ -133,7 +133,11 @@ export function useProfileData({
             .select('*')
             .eq('created_by', userId)
             .order('created_at', { ascending: false }),
-          supabase.from('credits').select('amount').eq('user_id', userId).single(),
+          supabase
+            .from('credits')
+            .select('amount')
+            .eq('user_id', userId)
+            .single(),
           supabase
             .from('credits_events')
             .select('amount')
@@ -158,34 +162,37 @@ export function useProfileData({
           )
 
           const now = new Date()
-          const listingsWithFeatures = listingsResult.data.map((listing: any) => {
-            const expirationDate = new Date(listing.expires_at)
-            const featuredEndDate = featuredEndDates.get(listing.id)
+          const listingsWithFeatures = listingsResult.data.map(
+            (listing: any) => {
+              const expirationDate = new Date(listing.expires_at)
+              const featuredEndDate = featuredEndDates.get(listing.id)
 
-            const diffTime = expirationDate.getTime() - now.getTime()
-            const daysUntilExpiration = Math.ceil(
-              diffTime / (1000 * 60 * 60 * 24)
-            )
-
-            let featuredDaysRemaining = 0
-            if (featuredEndDate && featuredEndDate > now) {
-              const featuredDiffTime = featuredEndDate.getTime() - now.getTime()
-              featuredDaysRemaining = Math.max(
-                0,
-                Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24))
+              const diffTime = expirationDate.getTime() - now.getTime()
+              const daysUntilExpiration = Math.ceil(
+                diffTime / (1000 * 60 * 60 * 24)
               )
-            }
 
-            return {
-              ...listing,
-              is_featured: featuredEndDate ? featuredEndDate > now : false,
-              days_until_expiration: daysUntilExpiration,
-              featured_days_remaining: featuredDaysRemaining,
-              is_near_expiration:
-                daysUntilExpiration <= 3 && daysUntilExpiration > 0,
-              is_expired: daysUntilExpiration <= 0,
+              let featuredDaysRemaining = 0
+              if (featuredEndDate && featuredEndDate > now) {
+                const featuredDiffTime =
+                  featuredEndDate.getTime() - now.getTime()
+                featuredDaysRemaining = Math.max(
+                  0,
+                  Math.ceil(featuredDiffTime / (1000 * 60 * 60 * 24))
+                )
+              }
+
+              return {
+                ...listing,
+                is_featured: featuredEndDate ? featuredEndDate > now : false,
+                days_until_expiration: daysUntilExpiration,
+                featured_days_remaining: featuredDaysRemaining,
+                is_near_expiration:
+                  daysUntilExpiration <= 3 && daysUntilExpiration > 0,
+                is_expired: daysUntilExpiration <= 0,
+              }
             }
-          })
+          )
 
           const activeListings = listingsWithFeatures.filter(l => !l.is_expired)
           setListings(activeListings)
@@ -244,7 +251,11 @@ export function useProfileData({
 
       const [listingCreditsResult, eventCreditsResult, transactionsResult] =
         await Promise.all([
-          supabase.from('credits').select('amount').eq('user_id', userId).single(),
+          supabase
+            .from('credits')
+            .select('amount')
+            .eq('user_id', userId)
+            .single(),
           supabase
             .from('credits_events')
             .select('amount')
