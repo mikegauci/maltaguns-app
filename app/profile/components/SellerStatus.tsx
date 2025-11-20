@@ -14,7 +14,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { Shield, AlertCircle, X, Info, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, X, Info, CheckCircle2, ShieldCheck } from 'lucide-react'
 import { Profile } from '../types'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
 import { LicenseTypes } from '@/lib/license-utils'
@@ -63,7 +63,7 @@ export const SellerStatus = ({
         <CardContent className="space-y-4">
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
+              <ShieldCheck className="h-5 w-5 text-primary" />
               <span className="font-medium">Seller Status:</span>
               <Badge
                 variant={
@@ -97,9 +97,13 @@ export const SellerStatus = ({
 
             {/* ID Card Verification Status */}
             <div className="flex items-center gap-2">
-              <CheckCircle2
-                className={`h-5 w-5 ${profile.id_card_verified && profile.id_card_image ? 'text-green-600' : 'text-amber-500'}`}
-              />
+              {profile.id_card_verified && profile.id_card_image ? (
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              ) : profile.id_card_image ? (
+                <Info className="h-5 w-5 text-amber-500" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-gray-400" />
+              )}
               <span className="font-medium">ID Card:</span>
               <Badge
                 variant={
@@ -110,7 +114,9 @@ export const SellerStatus = ({
                 className={
                   profile.id_card_verified && profile.id_card_image
                     ? 'bg-green-600 hover:bg-green-600 text-white'
-                    : 'border-amber-500 text-amber-500'
+                    : profile.id_card_image
+                      ? 'border-amber-500 text-amber-500'
+                      : 'border-gray-400 text-gray-400'
                 }
               >
                 {profile.id_card_verified && profile.id_card_image
@@ -147,9 +153,13 @@ export const SellerStatus = ({
 
             {/* License Verification Status */}
             <div className="flex items-center gap-2">
-              <CheckCircle2
-                className={`h-5 w-5 ${profile.is_verified && profile.license_image ? 'text-green-600' : 'text-amber-500'}`}
-              />
+              {profile.is_verified && profile.license_image ? (
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
+              ) : profile.license_image ? (
+                <Info className="h-5 w-5 text-amber-500" />
+              ) : (
+                <AlertCircle className="h-5 w-5 text-gray-400" />
+              )}
               <span className="font-medium">License:</span>
               <Badge
                 variant={
@@ -160,7 +170,9 @@ export const SellerStatus = ({
                 className={
                   profile.is_verified && profile.license_image
                     ? 'bg-green-600 hover:bg-green-600 text-white'
-                    : 'border-amber-500 text-amber-500'
+                    : profile.license_image
+                      ? 'border-amber-500 text-amber-500'
+                      : 'border-gray-400 text-gray-400'
                 }
               >
                 {profile.is_verified && profile.license_image
