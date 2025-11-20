@@ -490,26 +490,23 @@ export default function Register() {
 
       setIdCardUploadProgress(70) // Verification complete
 
+      // Build verification issue message
+      let verificationIssues: string[] = []
       if (!isVerified) {
         if (!nameMatch && extractedName) {
-          toast({
-            variant: 'destructive',
-            title: 'ID card verification failed',
-            description: `The name on the ID card (${extractedName}) does not match your profile name (${userFirstName} ${userLastName}).`,
-          })
+          verificationIssues.push(
+            `Name mismatch: ID card shows a differnt name, but your profile shows "${userFirstName} ${userLastName}"`
+          )
         } else {
-          toast({
-            variant: 'destructive',
-            title: 'Invalid ID card',
-            description:
-              'This does not appear to be a valid Malta ID card. Please ensure the image shows "KARTA TAL-IDENTITA" or "IDENTITY CARD".',
-          })
+          verificationIssues.push(
+            'Not recognized as a valid Malta ID card - missing required text or format'
+          )
         }
-        return
       }
 
       setIdCardUploadProgress(80) // Preparing upload
 
+      // Upload the image regardless of verification status
       const fileExt = file.name.split('.').pop()
       const fileName = `id-card-${Date.now()}-${Math.random()
         .toString(36)
@@ -532,20 +529,40 @@ export default function Register() {
         .getPublicUrl(filePath)
 
       form.setValue('idCardImage', publicUrlData.publicUrl)
-      form.setValue('idCardVerified', true)
+      form.setValue('idCardVerified', isVerified) // Set based on verification result
 
       setIdCardUploadProgress(100) // Complete
 
-      toast({
-        title: 'ID card verified & uploaded',
-        description: 'Your ID card has been verified successfully.',
-        className: 'bg-green-600 text-white border-green-600',
-      })
+      // Show appropriate toast based on verification status
+      if (isVerified) {
+        toast({
+          title: 'ID card verified & uploaded',
+          description: 'Your ID card has been verified successfully.',
+          className: 'bg-green-600 text-white border-green-600',
+        })
+      } else {
+        toast({
+          title: 'ID card uploaded - manual verification required',
+          description: React.createElement(
+            'div',
+            {},
+            verificationIssues.map((issue, index) =>
+              React.createElement(
+                'div',
+                { key: index, className: 'mb-1' },
+                `• ${issue}`
+              )
+            ),
+            React.createElement(
+              'div',
+              { className: 'mt-2' },
+              'Your ID card will require manual verification by an administrator.'
+            )
+          ),
+          className: 'bg-amber-100 text-amber-800 border-amber-200',
+        })
+      }
     } catch (error) {
-      // If upload fails after verification, ensure idCardVerified is reset
-      form.setValue('idCardVerified', false)
-      form.setValue('idCardImage', '')
-
       toast({
         variant: 'destructive',
         title: 'Upload failed',

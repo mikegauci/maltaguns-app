@@ -31,6 +31,7 @@ interface User {
   is_verified: boolean
   license_image: string | null
   id_card_image: string | null
+  id_card_verified: boolean
   is_disabled: boolean
   first_name: string | null
   last_name: string | null
@@ -241,23 +242,40 @@ function UsersPageComponent() {
       accessorKey: 'is_verified',
       header: 'Verified',
       enableSorting: true,
-      cell: ({ row }) => (
-        <div className="flex items-center">
-          {row.getValue('is_verified') ? (
-            <span className="flex items-center gap-1 text-green-600">
-              <CheckCircle2 className="h-4 w-4" />
-              Yes
-            </span>
-          ) : row.getValue('is_seller') ? (
-            <span className="flex items-center gap-1 text-amber-500">
-              <AlertCircle className="h-4 w-4" />
-              Pending
-            </span>
-          ) : (
-            'N/A'
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const user = row.original
+        const isFullyVerified =
+          user.is_verified && user.id_card_verified && user.is_seller
+
+        // Determine what's pending
+        let pendingText = 'Pending'
+        if (user.is_seller && !isFullyVerified) {
+          const pendingItems: string[] = []
+          if (!user.is_verified) pendingItems.push('License')
+          if (!user.id_card_verified) pendingItems.push('ID Card')
+          if (pendingItems.length > 0) {
+            pendingText = `Pending: ${pendingItems.join(' & ')}`
+          }
+        }
+
+        return (
+          <div className="flex items-center">
+            {isFullyVerified ? (
+              <span className="flex items-center gap-1 text-green-600">
+                <CheckCircle2 className="h-4 w-4" />
+                Yes
+              </span>
+            ) : user.is_seller ? (
+              <span className="flex items-center gap-1 text-amber-500">
+                <AlertCircle className="h-4 w-4" />
+                {pendingText}
+              </span>
+            ) : (
+              'N/A'
+            )}
+          </div>
+        )
+      },
     },
     {
       accessorKey: 'license_image',
@@ -380,6 +398,15 @@ function UsersPageComponent() {
                         : 'Verify License',
                       onClick: () => handleToggleVerification(user),
                       variant: user.is_verified ? 'destructive' : 'default',
+                    },
+                    {
+                      label: user.id_card_verified
+                        ? 'Unverify ID Card'
+                        : 'Verify ID Card',
+                      onClick: () => handleToggleIdCardVerification(user),
+                      variant: user.id_card_verified
+                        ? 'destructive'
+                        : 'default',
                     },
                   ]
                 : []),
@@ -838,6 +865,50 @@ function UsersPageComponent() {
           error instanceof Error
             ? error.message
             : `Failed to ${user.is_verified ? 'unverify' : 'verify'} user`,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleToggleIdCardVerification(user: User) {
+    try {
+      setIsSubmitting(true)
+
+      // Use the API endpoint to toggle the ID card verification status
+      const response = await fetch(`/api/users/${user.id}/verify-id-card`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          verified: !user.id_card_verified,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+            `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} ID card`
+        )
+      }
+
+      toast({
+        title: 'Success',
+        description: `ID card ${user.id_card_verified ? 'unverified' : 'verified'} successfully`,
+      })
+
+      fetchUsers()
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} ID card`,
       })
     } finally {
       setIsSubmitting(false)
