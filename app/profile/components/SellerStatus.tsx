@@ -160,7 +160,7 @@ export const SellerStatus = ({
                 onChange={handleIdCardUpload}
               />
               <p className="text-xs text-muted-foreground">
-                Upload your Malta ID card. Verification is automatic based on
+                Upload your Maltese ID card. Verification is automatic based on
                 your profile name.
               </p>
             </div>
