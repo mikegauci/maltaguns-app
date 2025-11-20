@@ -209,9 +209,20 @@ export const SellerStatus = ({
                       <X className="h-4 w-4" />
                     </button>
                   </div>
+                </div>
+              )}
 
-                  {/* Display detected license types */}
-                  {profile.license_types && (
+              <DocumentUploadButton
+                id="license-upload"
+                label="Upload License"
+                replaceLabel="Replace License"
+                isUploading={uploadingLicense}
+                uploadProgress={licenseUploadProgress}
+                hasExistingDocument={!!profile.license_image}
+                onChange={handleLicenseUpload}
+              />
+                                {/* Display detected license types */}
+                                {profile.license_types && (
                     <div className="p-3 border rounded-md bg-muted/20">
                       <p className="text-xs font-semibold mb-2 text-muted-foreground">
                         Detected License Types:
@@ -294,18 +305,6 @@ export const SellerStatus = ({
                       </div>
                     </div>
                   )}
-                </div>
-              )}
-
-              <DocumentUploadButton
-                id="license-upload"
-                label="Upload License"
-                replaceLabel="Replace License"
-                isUploading={uploadingLicense}
-                uploadProgress={licenseUploadProgress}
-                hasExistingDocument={!!profile.license_image}
-                onChange={handleLicenseUpload}
-              />
               <p className="text-xs text-muted-foreground">
                 {profile.is_seller
                   ? 'Upload your firearms license. License types are detected automatically.'
