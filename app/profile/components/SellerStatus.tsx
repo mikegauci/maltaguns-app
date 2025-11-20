@@ -9,16 +9,16 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { AlertCircle, X, Info, CheckCircle2, ShieldCheck } from 'lucide-react'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { AlertCircle, X, Info, Maximize2 } from 'lucide-react'
 import { Profile } from '../types'
-import { useClickableTooltip } from '@/hooks/useClickableTooltip'
 import { LicenseTypes } from '@/lib/license-utils'
 import { DocumentUploadButton } from '@/components/DocumentUploadButton'
+import { useState } from 'react'
 
 interface SellerStatusProps {
   profile: Profile
@@ -47,10 +47,13 @@ export const SellerStatus = ({
   handleRemoveLicense,
   handleRemoveIdCard,
 }: SellerStatusProps) => {
-  const { isOpen, triggerProps, contentProps } = useClickableTooltip()
+  const [fullscreenImage, setFullscreenImage] = useState<{
+    url: string
+    title: string
+  } | null>(null)
 
   return (
-    <TooltipProvider>
+    <>
       <Card>
         <CardHeader>
           <CardTitle>Seller Status</CardTitle>
@@ -137,8 +140,20 @@ export const SellerStatus = ({
                       id="profile-id-card-preview"
                       src={profile.id_card_image}
                       alt="ID Card"
-                      className="w-full h-auto rounded-md border"
+                      className="w-[100%] h-[220px] object-cover rounded-md border"
                     />
+                    <button
+                      onClick={() =>
+                        setFullscreenImage({
+                          url: profile.id_card_image!,
+                          title: 'ID Card',
+                        })
+                      }
+                      className="absolute top-2 left-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
+                      title="View full screen"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </button>
                     <button
                       onClick={handleRemoveIdCard}
                       className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
@@ -198,9 +213,21 @@ export const SellerStatus = ({
                       id="profile-license-preview"
                       src={profile.license_image}
                       alt="License"
-                      className="w-full h-auto rounded-md border"
+                      className="w-[100%] h-[220px] object-cover rounded-md border"
                       data-rotation="0"
                     />
+                    <button
+                      onClick={() =>
+                        setFullscreenImage({
+                          url: profile.license_image!,
+                          title: 'Firearms License',
+                        })
+                      }
+                      className="absolute top-2 left-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
+                      title="View full screen"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </button>
                     <button
                       onClick={handleRemoveLicense}
                       className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
@@ -350,6 +377,33 @@ export const SellerStatus = ({
           )}
         </CardContent>
       </Card>
-    </TooltipProvider>
+
+      {/* Fullscreen Image Dialog */}
+      <Dialog
+        open={fullscreenImage !== null}
+        onOpenChange={() => setFullscreenImage(null)}
+      >
+        <DialogContent className="max-w-4xl w-full">
+          <button
+            onClick={() => setFullscreenImage(null)}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-10"
+            aria-label="Close"
+          >
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close</span>
+          </button>
+          <DialogHeader>
+            <DialogTitle>{fullscreenImage?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="relative w-full">
+            <img
+              src={fullscreenImage?.url}
+              alt={fullscreenImage?.title}
+              className="w-full h-auto max-h-[80vh] object-contain rounded-md"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

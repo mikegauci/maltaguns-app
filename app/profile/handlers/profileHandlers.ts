@@ -168,6 +168,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
           license_image: null,
           is_seller: false,
           is_verified: false,
+          license_types: null,
         })
         .eq('id', profile.id)
 
@@ -180,6 +181,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
               license_image: null,
               is_seller: false,
               is_verified: false,
+              license_types: null,
             }
           : null
       )

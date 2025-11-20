@@ -54,6 +54,8 @@ export async function DELETE(
       .update({
         license_image: null,
         is_seller: false,
+        is_verified: false,
+        license_types: null,
       })
       .eq('id', userId)
 
