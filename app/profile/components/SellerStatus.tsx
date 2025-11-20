@@ -380,7 +380,7 @@ export const SellerStatus = ({
                   <span
                     dangerouslySetInnerHTML={{
                       __html:
-                        'You can currently add listings that are <b>not firearms</b> such as assesories. <br/> If you wish to sell <b>Firearms</b> or other license required items, please upload a picture of your license to certify your account. License types will be automatically detected.',
+                        '<strong>Non-Licensed Seller</strong> <br /><br />You can currently only add listings and contact seller for listings that are <strong>non-firearms</strong><br/ >If you wish to list or contact sellers of <strong>Firearms</strong>, please upload a picture of a valid firearms license to verify your account.',
                     }}
                   />
                 )}
