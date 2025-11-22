@@ -24,7 +24,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Loader2 } from 'lucide-react'
-import { CreditDialog } from '@/components/credit-dialog'
+import { CreditDialog } from '@/components/dialogs/CreditDialog'
 
 // Import shared modules
 import { firearmsCategories } from '../constants'

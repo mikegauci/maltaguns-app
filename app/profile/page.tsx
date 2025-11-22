@@ -22,10 +22,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Trash2, X } from 'lucide-react'
-import { FeatureCreditDialog } from '@/components/feature-credit-dialog'
-import { CreditDialog } from '@/components/credit-dialog'
-import { EventCreditDialog } from '@/components/event-credit-dialog'
-import { useSupabase } from '@/components/providers/supabase-provider'
+import { FeatureCreditDialog } from '@/components/dialogs/FeatureCreditDialog'
+import { CreditDialog } from '@/components/dialogs/CreditDialog'
+import { EventCreditDialog } from '@/components/dialogs/EventCreditDialog'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LoadingState } from '@/components/ui/loading-state'
 import { BackButton } from '@/components/ui/back-button'
 

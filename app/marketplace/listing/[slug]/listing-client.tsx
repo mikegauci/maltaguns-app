@@ -23,14 +23,14 @@ import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
 import { format } from 'date-fns'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useSupabase } from '@/components/providers/supabase-provider'
-import { FeatureCreditDialog } from '@/components/feature-credit-dialog'
-import { ReportListingDialog } from '@/components/report-listing-dialog'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { FeatureCreditDialog } from '@/components/dialogs/FeatureCreditDialog'
+import { ReportListingDialog } from '@/components/dialogs/ReportListingDialog'
 import { AutoFeatureHandler } from '../../auto-feature-handler'
 import { toast } from 'sonner'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
-import { WishlistButton } from '@/components/wishlist-button'
+import { WishlistButton } from '@/components/WishlistButton'
 import {
   canViewSellerInfo,
   getRequiredLicenses,

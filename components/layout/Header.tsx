@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { SearchBar } from '@/components/search'
+import { SearchBar } from '@/components/Search'
 import {
   Store,
   BookOpen,
@@ -18,7 +18,7 @@ import {
   Boxes,
   Heart,
 } from 'lucide-react'
-import { useSupabase } from './providers/supabase-provider'
+import { useSupabase } from '../providers/SupabaseProvider'
 import { forceLogout } from '@/lib/auth-utils'
 import {
   DropdownMenu,

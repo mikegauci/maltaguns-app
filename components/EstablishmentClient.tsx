@@ -8,7 +8,7 @@ import { MapPin, Phone, Mail, Globe, BookOpen, Pencil } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import BlogPostCard from '@/app/components/blog/BlogPostCard'
+import BlogPostCard from '@/components/blog/BlogPostCard'
 import { BackButton } from '@/components/ui/back-button'
 import {
   EstablishmentWithDetails,

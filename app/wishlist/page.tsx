@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { useSupabase } from '@/components/providers/supabase-provider'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { toast } from 'sonner'
 import { BackButton } from '@/components/ui/back-button'
 import { LoadingState } from '@/components/ui/loading-state'

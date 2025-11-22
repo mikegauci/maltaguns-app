@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { EventCreditDialog } from '@/components/event-credit-dialog'
+import { EventCreditDialog } from '@/components/dialogs/EventCreditDialog'
 import { BackButton } from '@/components/ui/back-button'
 import { Loader2 } from 'lucide-react'
 import { Database } from '@/lib/database.types'

@@ -17,7 +17,7 @@ import { supabase } from '@/lib/supabase'
 import { AutoFeatureHandler } from './auto-feature-handler'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
-import { WishlistButton } from '@/components/wishlist-button'
+import { WishlistButton } from '@/components/WishlistButton'
 
 interface Listing {
   id: string

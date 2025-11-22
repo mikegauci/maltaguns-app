@@ -4,7 +4,7 @@ import { Database } from '@/lib/database.types'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import BlogPostCard from '@/app/components/blog/BlogPostCard'
+import BlogPostCard from '@/components/blog/BlogPostCard'
 
 // Force dynamic rendering for this page
 export const dynamic = 'force-dynamic'

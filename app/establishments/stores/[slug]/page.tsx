@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { headers } from 'next/headers'
-import EstablishmentClient from '@/app/establishments/components/EstablishmentClient'
+import EstablishmentClient from '@/components/EstablishmentClient'
 import { fetchEstablishmentBySlug } from '@/app/establishments/server'
 
 // Force dynamic rendering (disable static export)

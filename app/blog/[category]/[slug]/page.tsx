@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Pencil, Store, Users, MapPin, Wrench } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import ViewTracker from '@/app/components/blog/ViewTracker'
+import ViewTracker from '@/components/blog/ViewTracker'
 import { BackButton } from '@/components/ui/back-button'
 
 interface BlogPost {
