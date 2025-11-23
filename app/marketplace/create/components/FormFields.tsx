@@ -22,8 +22,8 @@ interface ImageUploadFieldProps<T extends FieldValues>
   extends FormFieldProps<T> {
   uploadedImages: string[]
   uploading: boolean
-  handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
-  handleDeleteImage: (index: number) => void
+  handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void // eslint-disable-line unused-imports/no-unused-vars
+  handleDeleteImage: (index: number) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
 export function TitleField<T extends FieldValues>({
@@ -127,7 +127,7 @@ export function ImageUploadField<T extends FieldValues>({
     <FormField
       control={control}
       name={name}
-      render={({ field }) => (
+      render={() => (
         <FormItem>
           <FormLabel>Images</FormLabel>
           <FormControl>

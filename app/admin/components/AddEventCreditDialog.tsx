@@ -47,13 +47,13 @@ interface Profile {
 
 interface AddEventCreditDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   profiles: Profile[]
   onSuccess?: () => void
 }
 
 export function AddEventCreditDialog({
-  open,
+  open, // eslint-disable-line unused-imports/no-unused-vars
   onOpenChange,
   profiles,
   onSuccess,

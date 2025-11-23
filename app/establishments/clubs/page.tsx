@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Users, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
@@ -23,7 +22,6 @@ interface Club {
 }
 
 export default function ClubsPage() {
-  const router = useRouter()
   const [clubs, setClubs] = useState<Club[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)

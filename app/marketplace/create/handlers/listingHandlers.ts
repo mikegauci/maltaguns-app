@@ -11,7 +11,7 @@ interface CreateListingDependencies {
     description?: string
     variant?: 'default' | 'destructive'
   }) => void
-  setIsSubmitting: (value: boolean) => void
+  setIsSubmitting: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
 export function createListingHandlers(deps: CreateListingDependencies) {
@@ -25,7 +25,7 @@ export function createListingHandlers(deps: CreateListingDependencies) {
     price: number
     images: any[]
     credits: number
-    setCredits: (credits: number) => void
+    setCredits: (credits: number) => void // eslint-disable-line unused-imports/no-unused-vars
   }) {
     try {
       setIsSubmitting(true)

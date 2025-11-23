@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { DataTable } from '@/app/admin'
@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, Copy } from 'lucide-react'
 import dynamic from 'next/dynamic'
-import { useRouter } from 'next/navigation'
 import { BackButton } from '@/components/ui/back-button'
 
 interface Payment {
@@ -41,7 +40,6 @@ export default function PaymentsReceivedPage() {
 }
 
 function PaymentsReceivedPageComponent() {
-  const router = useRouter()
   const { toast } = useToast()
   const [payments, setPayments] = useState<Payment[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -190,11 +188,7 @@ function PaymentsReceivedPageComponent() {
     },
   ]
 
-  useEffect(() => {
-    fetchPayments()
-  }, [])
-
-  async function fetchPayments() {
+  const fetchPayments = useCallback(async () => {
     try {
       setIsLoading(true)
 
@@ -230,7 +224,11 @@ function PaymentsReceivedPageComponent() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    fetchPayments()
+  }, [fetchPayments])
 
   return (
     <div className="space-y-6">

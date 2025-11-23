@@ -19,7 +19,7 @@ const stripePromise = loadStripe(
 
 interface EventCreditDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   userId: string
   onSuccess?: () => void
 }
@@ -28,7 +28,6 @@ export function EventCreditDialog({
   open,
   onOpenChange,
   userId,
-  onSuccess,
 }: EventCreditDialogProps) {
   const router = useRouter()
 

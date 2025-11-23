@@ -93,7 +93,6 @@ export default function ProfilePage() {
     events,
     setEvents,
     creditTransactions,
-    setCreditTransactions,
     listingIdToTitleMap,
     loading,
     listingCredits,

@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -59,11 +58,9 @@ export default function EstablishmentsPage() {
 }
 
 function EstablishmentsPageComponent() {
-  const router = useRouter()
   const { toast } = useToast()
   const [establishments, setEstablishments] = useState<Establishment[]>([])
   const [users, setUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -243,12 +240,7 @@ function EstablishmentsPageComponent() {
     },
   ]
 
-  useEffect(() => {
-    fetchEstablishments()
-    fetchUsers()
-  }, [])
-
-  async function fetchUsers() {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/users', {
         method: 'GET',
@@ -273,12 +265,10 @@ function EstablishmentsPageComponent() {
           error instanceof Error ? error.message : 'Failed to fetch users',
       })
     }
-  }
+  }, [toast])
 
-  async function fetchEstablishments() {
+  const fetchEstablishments = useCallback(async () => {
     try {
-      setIsLoading(true)
-
       // Use the API endpoint to get establishments
       const response = await fetch('/api/admin/establishments', {
         method: 'GET',
@@ -323,10 +313,13 @@ function EstablishmentsPageComponent() {
             ? `${error.message}. Please check console for more details.`
             : 'Failed to fetch establishments. Please check console for more details.',
       })
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [toast])
+
+  useEffect(() => {
+    fetchEstablishments()
+    fetchUsers()
+  }, [fetchEstablishments, fetchUsers])
 
   // Logo upload handler
   const handleLogoUpload = async (

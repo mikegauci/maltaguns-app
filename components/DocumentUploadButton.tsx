@@ -9,7 +9,7 @@ interface DocumentUploadButtonProps {
   uploadProgress: number
   hasExistingDocument: boolean
   acceptedFormats?: string
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
 export const DocumentUploadButton = ({

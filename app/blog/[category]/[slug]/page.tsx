@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import ViewTracker from '@/components/blog/ViewTracker'
 import { BackButton } from '@/components/ui/back-button'
 
-interface BlogPost {
+interface BlogPostType {
   id: string
   title: string
   content: string
@@ -35,36 +35,6 @@ interface BlogPost {
   club?: { id: string; business_name: string; slug: string }[]
   range?: { id: string; business_name: string; slug: string }[]
   servicing?: { id: string; business_name: string; slug: string }[]
-}
-
-type SupabaseResponse = {
-  id: string
-  title: string
-  content: string
-  slug: string
-  featured_image: string | null
-  published: boolean
-  created_at: string
-  author_id: string
-  store_id?: string
-  club_id?: string
-  range_id?: string
-  servicing_id?: string
-  author: {
-    username: string
-  } | null
-  retailer:
-    | {
-        id: string
-        business_name: string
-        slug: string
-        logo_url: string | null
-      }[]
-    | null
-  store: { id: string; business_name: string; slug: string }[] | null
-  club: { id: string; business_name: string; slug: string }[] | null
-  range: { id: string; business_name: string; slug: string }[] | null
-  servicing: { id: string; business_name: string; slug: string }[] | null
 }
 
 // Force dynamic rendering (disable static export)
@@ -250,7 +220,7 @@ export default async function BlogPost({
   }
 
   // Convert the post to the expected interface
-  const blogPost: BlogPost = {
+  const blogPost: BlogPostType = {
     id: post.id,
     title: post.title,
     content: post.content,

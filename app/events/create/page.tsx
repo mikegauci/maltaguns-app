@@ -86,22 +86,6 @@ function getMaxDateString() {
   return maxDate.toISOString().split('T')[0]
 }
 
-type EventFormType = {
-  title: string
-  description: string
-  organizer: string
-  type: (typeof eventTypes)[number]
-  startDate: string
-  endDate?: string
-  startTime?: string
-  endTime?: string
-  location: string
-  phone?: string
-  email?: string
-  price?: number
-  posterUrl?: string
-}
-
 // Add slugify function
 function slugify(text: string) {
   return text
@@ -408,7 +392,7 @@ export default function CreateEventPage() {
       const slug = slugify(data.title)
 
       // Create the event with correct column names
-      const { data: event, error: eventError } = await supabase
+      const { error: eventError } = await supabase
         .from('events')
         .insert({
           title: data.title,

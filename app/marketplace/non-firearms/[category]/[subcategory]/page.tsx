@@ -47,10 +47,6 @@ export default function NonFirearmsSubcategoryPage({
     notFound()
   }
 
-  // Get the category and subcategory labels from constants
-  const categoryLabel =
-    nonFirearmsCategories[categoryKey as keyof typeof nonFirearmsCategories]
-
   const subcategoryLabel =
     categorySubcategories[subcategoryKey as keyof typeof categorySubcategories]
 

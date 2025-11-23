@@ -269,7 +269,7 @@ export default function CreateEstablishmentPage() {
               : 'ranges'
 
       // Insert new establishment
-      const { error, data: newEstablishment } = await supabase
+      const { error } = await supabase
         .from(tableName)
         .insert({
           business_name: data.businessName,

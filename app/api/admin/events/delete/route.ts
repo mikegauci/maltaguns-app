@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     console.log('[ADMIN DELETE API] Admin attempting to delete event:', eventId)
 
     // First verify that the event exists (admin can delete any event)
-    const { data: eventData, error: eventError } = await supabaseAdmin
+    const { error: eventError } = await supabaseAdmin
       .from('events')
       .select('*')
       .eq('id', eventId)

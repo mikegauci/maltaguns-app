@@ -24,9 +24,9 @@ import { Profile, ProfileForm } from '../types'
 interface ProfileInformationProps {
   profile: Profile
   isEditing: boolean
-  setIsEditing: (value: boolean) => void
+  setIsEditing: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   form: UseFormReturn<ProfileForm>
-  onSubmit: (data: ProfileForm) => Promise<void>
+  onSubmit: (data: ProfileForm) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
 }
 
 export const ProfileInformation = ({

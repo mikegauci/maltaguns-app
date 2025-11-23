@@ -7,8 +7,8 @@ interface NavigationHandlerDependencies {
   isIdCardVerified: boolean
   hasLicense: boolean
   hasIdCard: boolean
-  setShowLicenseDialog: (show: boolean) => void
-  setDialogMessage: (message: { title: string; description: string }) => void
+  setShowLicenseDialog: (show: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setDialogMessage: (message: { title: string; description: string }) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
 export function createNavigationHandlers(deps: NavigationHandlerDependencies) {

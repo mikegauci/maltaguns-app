@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     )
 
     // First verify that the blog post exists
-    const { data: blogPost, error: blogPostError } = await supabaseAdmin
+    const { error: blogPostError } = await supabaseAdmin
       .from('blog_posts')
       .select('*')
       .eq('id', postId)

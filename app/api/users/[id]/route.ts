@@ -171,10 +171,9 @@ export async function DELETE(
     }
 
     // Call the delete_user_complete function with the correct parameter name
-    const { data: deleteResult, error: deleteError } = await supabase.rpc(
-      'delete_user_complete',
-      { target_user_id: params.id }
-    )
+    const { error: deleteError } = await supabase.rpc('delete_user_complete', {
+      target_user_id: params.id,
+    })
 
     if (deleteError) {
       console.error('Error deleting user:', deleteError)

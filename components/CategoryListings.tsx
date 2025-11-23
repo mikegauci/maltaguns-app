@@ -82,60 +82,6 @@ function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
     : nonFirearmsCategories[category] || category
 }
 
-function getSubcategoryLabel(category: string, subcategory: string): string {
-  const subcategories = {
-    airsoft: {
-      airsoft_guns: 'Airsoft Guns',
-      bbs_co2: 'BBs & CO2',
-      batteries_electronics: 'Batteries & Electronics',
-      clothing: 'Clothing',
-      other: 'Other',
-    },
-    reloading: {
-      presses: 'Presses',
-      dies: 'Dies',
-      tools: 'Tools',
-      tumblers_media: 'Tumblers & Media',
-      primers_heads: 'Primers & Heads',
-      other: 'Other',
-    },
-    militaria: {
-      uniforms: 'Uniforms',
-      helmets: 'Helmets',
-      swords_bayonets_knives: 'Swords, Bayonets & Knives',
-      medals_badges: 'Medals & Badges',
-      other: 'Other',
-    },
-    accessories: {
-      cleaning_maintenance: 'Cleaning & Maintenance',
-      bipods_stands: 'Bipods & Stands',
-      slings_holsters: 'Slings & Holsters',
-      scopes_sights_optics: 'Scopes, Sights & Optics',
-      magazines: 'Magazines',
-      books_manuals: 'Books & Manuals',
-      hunting_equipment: 'Hunting Equipment',
-      safes_cabinets: 'Safes & Cabinets',
-      ammo_boxes: 'Ammo Boxes',
-      gun_cases: 'Gun Cases',
-      safety_equipment: 'Safety Equipment',
-      grips: 'Grips',
-      other: 'Other',
-    },
-  } as const
-
-  if (!(category in subcategories)) {
-    return subcategory // Return original if category doesn't exist
-  }
-
-  const categorySubcategories =
-    subcategories[category as keyof typeof subcategories]
-
-  return (
-    categorySubcategories[subcategory as keyof typeof categorySubcategories] ||
-    subcategory
-  )
-}
-
 export default function CategoryListings({
   type,
   category,

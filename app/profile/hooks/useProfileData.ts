@@ -277,7 +277,7 @@ export function useProfileData({
     } catch (error) {
       console.error('Error refreshing credits:', error)
     }
-  }, [session?.user?.id, supabase])
+  }, [session?.user, supabase])
 
   return {
     profile,

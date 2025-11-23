@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     // Execute raw SQL to drop the constraint on featured_listings if it exists
     const { error: dropFeaturedError } = await supabase.rpc('exec_sql', {

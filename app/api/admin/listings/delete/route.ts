@@ -55,7 +55,7 @@ export async function POST(request: Request) {
     )
 
     // First verify that the listing exists (admin can delete any listing)
-    const { data: listingData, error: listingError } = await supabaseAdmin
+    const { error: listingError } = await supabaseAdmin
       .from('listings')
       .select('*')
       .eq('id', listingId)

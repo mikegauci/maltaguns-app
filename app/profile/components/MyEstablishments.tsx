@@ -25,9 +25,9 @@ interface MyEstablishmentsProps {
   clubs: Club[]
   servicing: Servicing[]
   ranges: Range[]
-  handleDeleteStore: (storeId: string) => Promise<void>
+  handleDeleteStore: (storeId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
   establishmentInfoOpen: boolean
-  setEstablishmentInfoOpen: (open: boolean) => void
+  setEstablishmentInfoOpen: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
 export const MyEstablishments = ({

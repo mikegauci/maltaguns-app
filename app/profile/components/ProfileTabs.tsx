@@ -54,41 +54,41 @@ interface ProfileTabsProps {
   // Form & UI State
   form: UseFormReturn<ProfileForm>
   isEditing: boolean
-  setIsEditing: (value: boolean) => void
+  setIsEditing: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   uploadingLicense: boolean
   uploadingIdCard: boolean
   licenseUploadProgress: number
   idCardUploadProgress: number
   establishmentInfoOpen: boolean
-  setEstablishmentInfoOpen: (value: boolean) => void
+  setEstablishmentInfoOpen: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
 
   // Handlers
-  onSubmit: (data: ProfileForm) => Promise<void>
+  onSubmit: (data: ProfileForm) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
   handleLicenseUpload: (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement> // eslint-disable-line unused-imports/no-unused-vars
   ) => Promise<void>
   handleIdCardUpload: (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement> // eslint-disable-line unused-imports/no-unused-vars
   ) => Promise<void>
   handleRemoveLicense: () => Promise<void>
   handleRemoveIdCard: () => Promise<void>
   handleListingStatusChange: (
-    listingId: string,
-    newStatus: string
+    listingId: string, // eslint-disable-line unused-imports/no-unused-vars
+    newStatus: string // eslint-disable-line unused-imports/no-unused-vars
   ) => Promise<void>
-  handleRenewListing: (listingId: string) => Promise<void>
-  confirmDeleteListing: (listingId: string) => void
-  handleDeletePost: (postId: string) => Promise<void>
-  handleDeleteEvent: (eventId: string) => Promise<void>
-  handleDeleteStore: (storeId: string) => Promise<void>
+  handleRenewListing: (listingId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  confirmDeleteListing: (listingId: string) => void // eslint-disable-line unused-imports/no-unused-vars
+  handleDeletePost: (postId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  handleDeleteEvent: (eventId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  handleDeleteStore: (storeId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
 
   // Dialog setters
-  setListingToFeature: (id: string | null) => void
-  setFeatureDialogOpen: (open: boolean) => void
-  setListingToRemoveFeature: (id: string | null) => void
-  setRemoveFeatureDialogOpen: (open: boolean) => void
-  setShowCreditDialog: (open: boolean) => void
-  setShowEventCreditDialog: (open: boolean) => void
+  setListingToFeature: (id: string | null) => void // eslint-disable-line unused-imports/no-unused-vars
+  setFeatureDialogOpen: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setListingToRemoveFeature: (id: string | null) => void // eslint-disable-line unused-imports/no-unused-vars
+  setRemoveFeatureDialogOpen: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setShowCreditDialog: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setShowEventCreditDialog: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
 export function ProfileTabs({

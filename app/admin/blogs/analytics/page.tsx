@@ -143,7 +143,7 @@ export default function BlogAnalyticsPage() {
         // Check if we have the extended columns by trying to fetch one post with all fields
         let extendedData = null
         try {
-          const { data: testPost, error: testError } = await supabase
+          const { error: testError } = await supabase
             .from('blog_posts')
             .select(
               'view_count, category, store_id, club_id, range_id, servicing_id'

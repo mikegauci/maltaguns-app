@@ -19,7 +19,7 @@ const FEATURE_PRICE = 5
 
 interface FeatureListingDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   userId: string
   listingId: string
   onSuccess?: () => void
@@ -30,13 +30,11 @@ export function FeatureCreditDialog({
   onOpenChange,
   userId,
   listingId,
-  onSuccess,
 }: FeatureListingDialogProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [isRenewal, setIsRenewal] = useState(false)
-  const [featuredDaysRemaining, setFeaturedDaysRemaining] = useState(0)
 
   useEffect(() => {
     // Check if this is a renewal
@@ -58,13 +56,6 @@ export function FeatureCreditDialog({
         }
 
         if (feature) {
-          const endDate = new Date(feature.end_date)
-          const currentDate = new Date()
-          const daysRemaining = Math.ceil(
-            (endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
-          )
-          setFeaturedDaysRemaining(daysRemaining)
-          // Remove free renewal - always treat as a new feature purchase
           setIsRenewal(false)
         }
       } catch (error) {

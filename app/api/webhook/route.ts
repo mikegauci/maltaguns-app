@@ -1,5 +1,3 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
@@ -387,9 +385,6 @@ export async function POST(request: Request) {
           'listingId:',
           listingId
         )
-
-        // Create a Supabase client
-        const supabase = createRouteHandlerClient({ cookies })
 
         try {
           // First, check the listing details to get current expiry

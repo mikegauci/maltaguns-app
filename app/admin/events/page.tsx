@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { format, parseISO } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -59,7 +58,6 @@ export default function EventsPage() {
 }
 
 function EventsPageComponent() {
-  const router = useRouter()
   const { toast } = useToast()
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -185,11 +183,7 @@ function EventsPageComponent() {
     },
   ]
 
-  useEffect(() => {
-    fetchEvents()
-  }, [])
-
-  async function fetchEvents() {
+  const fetchEvents = useCallback(async () => {
     try {
       setIsLoading(true)
 
@@ -254,7 +248,11 @@ function EventsPageComponent() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase, toast])
+
+  useEffect(() => {
+    fetchEvents()
+  }, [fetchEvents])
 
   function handleEdit(event: Event) {
     setSelectedEvent(event)

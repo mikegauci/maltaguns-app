@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     }
 
     // Feature the listing
-    const { data: featuredData, error: featuredError } = await supabaseAdmin
+    const { error: featuredError } = await supabaseAdmin
       .from('featured_listings')
       .insert({
         listing_id: listingId,

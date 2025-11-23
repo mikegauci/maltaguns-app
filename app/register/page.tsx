@@ -227,16 +227,6 @@ export default function Register() {
     }
   }
 
-  async function urlToFile(
-    url: string,
-    filename: string,
-    mimeType: string
-  ): Promise<File> {
-    const res = await fetch(url)
-    const buf = await res.arrayBuffer()
-    return new File([buf], filename, { type: mimeType })
-  }
-
   async function onSubmit(data: RegisterForm) {
     try {
       setIsLoading(true)

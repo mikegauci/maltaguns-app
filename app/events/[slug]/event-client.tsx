@@ -42,7 +42,6 @@ interface EventClientProps {
 
 export default function EventClient({ event }: EventClientProps) {
   const router = useRouter()
-  const [isOwner, setIsOwner] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -59,10 +58,8 @@ export default function EventClient({ event }: EventClientProps) {
         setCurrentUserId(session.user.id)
         const isUserOwner = session.user.id === event.created_by
         console.log('Is owner?', isUserOwner)
-        setIsOwner(isUserOwner)
       } else {
         setCurrentUserId(null)
-        setIsOwner(false)
         console.log('Is owner? false (no session or user ID)')
       }
     }
@@ -85,7 +82,7 @@ export default function EventClient({ event }: EventClientProps) {
     return () => {
       authSubscription?.unsubscribe()
     }
-  }, [event.created_by, supabase.auth]) // Add supabase.auth as a dependency
+  }, [event])
 
   const formatTime = (time: string | null) => {
     if (!time) return null

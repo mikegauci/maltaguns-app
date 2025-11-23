@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { format, parseISO } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -67,7 +66,6 @@ export default function ListingsPage() {
 }
 
 function ListingsPageComponent() {
-  const router = useRouter()
   const { toast } = useToast()
   const [listings, setListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -252,11 +250,7 @@ function ListingsPageComponent() {
     },
   ]
 
-  useEffect(() => {
-    fetchListings()
-  }, [])
-
-  async function fetchListings() {
+  const fetchListings = useCallback(async () => {
     try {
       setIsLoading(true)
 
@@ -340,7 +334,11 @@ function ListingsPageComponent() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase, toast])
+
+  useEffect(() => {
+    fetchListings()
+  }, [fetchListings])
 
   function handleEdit(listing: Listing) {
     setSelectedListing(listing)

@@ -23,14 +23,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@supabase/supabase-js'
 import { Loader2 } from 'lucide-react'
-
-// Create a direct Supabase client that bypasses RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-)
 
 // Define the form schema
 const formSchema = z.object({
@@ -39,7 +32,7 @@ const formSchema = z.object({
 
 interface EditCreditDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   credit: {
     id: string
     user_id: string
@@ -51,7 +44,7 @@ interface EditCreditDialogProps {
 }
 
 export function EditCreditDialog({
-  open,
+  open, // eslint-disable-line unused-imports/no-unused-vars
   onOpenChange,
   credit,
   onSuccess,

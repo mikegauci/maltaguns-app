@@ -29,7 +29,6 @@ export default function FirearmsCategoryPage({
   const { toast } = useToast()
   const supabase = createClientComponentClient()
   const [isLoading, setIsLoading] = useState(true)
-  const [isRetailer, setIsRetailer] = useState(false)
   const [canAccess, setCanAccess] = useState(false)
 
   // Convert URL slug to category key (e.g., "schedule-1" -> "schedule_1")
@@ -69,7 +68,6 @@ export default function FirearmsCategoryPage({
           }
 
           if (storeData && storeData.length > 0) {
-            setIsRetailer(true)
             setCanAccess(true)
           } else {
             // Not a retailer, show toast and redirect

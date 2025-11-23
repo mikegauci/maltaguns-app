@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Heart } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
@@ -27,12 +27,7 @@ export function WishlistButton({
   const [isCheckingStatus, setIsCheckingStatus] = useState(true)
   const { session } = useSupabase()
 
-  // Check if item is in wishlist when component mounts
-  useEffect(() => {
-    checkWishlistStatus()
-  }, [listingId, session])
-
-  async function checkWishlistStatus() {
+  const checkWishlistStatus = useCallback(async () => {
     if (!session?.user) {
       setIsCheckingStatus(false)
       return
@@ -52,7 +47,12 @@ export function WishlistButton({
     } finally {
       setIsCheckingStatus(false)
     }
-  }
+  }, [session?.user, listingId])
+
+  // Check if item is in wishlist when component mounts
+  useEffect(() => {
+    checkWishlistStatus()
+  }, [checkWishlistStatus])
 
   async function handleWishlistToggle() {
     if (!session?.user) {

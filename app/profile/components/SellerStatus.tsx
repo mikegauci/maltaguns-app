@@ -27,10 +27,10 @@ interface SellerStatusProps {
   licenseUploadProgress: number
   idCardUploadProgress: number
   handleLicenseUpload: (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement> // eslint-disable-line unused-imports/no-unused-vars
   ) => Promise<void>
   handleIdCardUpload: (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement> // eslint-disable-line unused-imports/no-unused-vars
   ) => Promise<void>
   handleRemoveLicense: () => Promise<void>
   handleRemoveIdCard: () => Promise<void>

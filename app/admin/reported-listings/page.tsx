@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -58,7 +57,6 @@ export default function ReportedListingsPage() {
 }
 
 function ReportedListingsPageComponent() {
-  const router = useRouter()
   const { toast } = useToast()
   const [reportedListings, setReportedListings] = useState<ReportedListing[]>(
     []
@@ -233,11 +231,7 @@ function ReportedListingsPageComponent() {
     },
   ]
 
-  useEffect(() => {
-    fetchReportedListings()
-  }, [])
-
-  async function fetchReportedListings() {
+  const fetchReportedListings = useCallback(async () => {
     try {
       setIsLoading(true)
 
@@ -298,7 +292,11 @@ function ReportedListingsPageComponent() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase, toast])
+
+  useEffect(() => {
+    fetchReportedListings()
+  }, [fetchReportedListings])
 
   function handleStatusChange(report: ReportedListing) {
     setSelectedReport(report)

@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { ColumnDef, VisibilityState } from '@tanstack/react-table'
+import { useState, useEffect, useCallback } from 'react'
+import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTable, FormDialog, ConfirmDialog, ActionCell } from '@/app/admin'
@@ -40,9 +39,6 @@ interface User {
   purchasedBefore: boolean
   creditAmount: number
 }
-
-// List of authorized admin emails
-const AUTHORIZED_ADMIN_EMAILS: string[] = []
 
 // Use dynamic import with SSR disabled to prevent hydration issues
 const UsersPageContent = dynamic(() => Promise.resolve(UsersPageComponent), {
@@ -85,10 +81,8 @@ function getEstablishmentLabel(type: string): string {
 }
 
 function UsersPageComponent() {
-  const router = useRouter()
   const { toast } = useToast()
   const [users, setUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -96,9 +90,6 @@ function UsersPageComponent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [notesFormData, setNotesFormData] = useState('')
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    is_admin: false, // Hide is_admin column by default
-  })
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -417,28 +408,8 @@ function UsersPageComponent() {
     },
   ]
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-
-  async function initializeAdminUsers() {
+  const fetchUsers = useCallback(async () => {
     try {
-      // Use our new admin API - the users API already handles admin initialization
-      await fetch('/api/admin/users', {
-        method: 'GET',
-      })
-
-      // The API automatically handles admin initialization, so we just need to refresh
-      fetchUsers()
-    } catch (error) {
-      console.error('Error initializing admin users:', error)
-    }
-  }
-
-  async function fetchUsers() {
-    try {
-      setIsLoading(true)
-
       // First check if we have a valid session
       const {
         data: { session },
@@ -496,10 +467,12 @@ function UsersPageComponent() {
             ? `${error.message}. Please check console for more details.`
             : 'Failed to fetch users. Please check console for more details.',
       })
-    } finally {
-      setIsLoading(false)
     }
-  }
+  }, [supabase, toast])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   function handleCreate() {
     setFormData({

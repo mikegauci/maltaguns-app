@@ -840,7 +840,7 @@ export default function EditBlogPost({
                 <FormField
                   control={form.control}
                   name="content"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
                       <FormLabel>Content</FormLabel>
                       <FormControl>

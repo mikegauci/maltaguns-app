@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -161,7 +161,6 @@ export default function ListingClient({
   listing: ListingDetails
 }) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { supabase, session } = useSupabase()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isFeatured, setIsFeatured] = useState(false)
@@ -170,7 +169,6 @@ export default function ListingClient({
   const [isLoading, setIsLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [isRetailer, setIsRetailer] = useState(false)
-  const [showReportDialog, setShowReportDialog] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [isSellerVerified, setIsSellerVerified] = useState(false)
   const [userLicenseTypes, setUserLicenseTypes] = useState<LicenseTypes | null>(
@@ -184,7 +182,7 @@ export default function ListingClient({
     listing.images.length > 0 ? listing.images : [DEFAULT_LISTING_IMAGE]
 
   // Function to check if the current user is the owner of the listing
-  async function checkOwnership() {
+  const checkOwnership = useCallback(async () => {
     try {
       console.log('Checking session...')
 
@@ -222,10 +220,10 @@ export default function ListingClient({
       setSessionChecked(true)
       return null
     }
-  }
+  }, [session, listing.seller_id])
 
   // Function to check if the listing is featured
-  async function checkIfFeatured() {
+  const checkIfFeatured = useCallback(async () => {
     try {
       const now = new Date().toISOString()
       const { data, error } = await supabase
@@ -244,10 +242,10 @@ export default function ListingClient({
     } catch (error) {
       console.error('Unexpected error checking featured status:', error)
     }
-  }
+  }, [supabase, listing.id])
 
   // Function to check if seller is a retailer
-  async function checkIfRetailer() {
+  const checkIfRetailer = useCallback(async () => {
     if (!listing.seller_id) return
 
     try {
@@ -268,10 +266,10 @@ export default function ListingClient({
       console.error('Error checking store status:', error)
       setIsRetailer(false)
     }
-  }
+  }, [supabase, listing.seller_id])
 
   // Function to check if seller is verified
-  async function checkIfSellerVerified() {
+  const checkIfSellerVerified = useCallback(async () => {
     if (!listing.seller_id) return
 
     try {
@@ -292,53 +290,56 @@ export default function ListingClient({
       console.error('Error checking seller verification status:', error)
       setIsSellerVerified(false)
     }
-  }
+  }, [supabase, listing.seller_id])
 
   // Function to fetch user's license types and check access
-  async function checkUserLicenseAccess(userIdToCheck: string) {
-    if (!userIdToCheck) {
-      setHasRequiredLicense(false)
-      return
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('license_types, id_card_verified')
-        .eq('id', userIdToCheck)
-        .single()
-
-      if (error) {
-        console.error('Error fetching user license types:', error)
+  const checkUserLicenseAccess = useCallback(
+    async (userIdToCheck: string) => {
+      if (!userIdToCheck) {
         setHasRequiredLicense(false)
         return
       }
 
-      const licenses = data?.license_types as LicenseTypes | null
-      const idCardVerified = data?.id_card_verified ?? false
-      setUserLicenseTypes(licenses)
-      setUserIdCardVerified(idCardVerified)
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('license_types, id_card_verified')
+          .eq('id', userIdToCheck)
+          .single()
 
-      // Check if user has required license AND verified ID card for this listing category
-      const categoryLabel = getCategoryLabel(listing.category, listing.type)
-      const hasLicenseAccess = canViewSellerInfo(licenses, categoryLabel)
-      const hasAccess = hasLicenseAccess && idCardVerified
+        if (error) {
+          console.error('Error fetching user license types:', error)
+          setHasRequiredLicense(false)
+          return
+        }
 
-      console.log('License and ID card check result:', {
-        userIdToCheck,
-        licenses,
-        idCardVerified,
-        categoryLabel,
-        hasLicenseAccess,
-        hasAccess,
-      })
+        const licenses = data?.license_types as LicenseTypes | null
+        const idCardVerified = data?.id_card_verified ?? false
+        setUserLicenseTypes(licenses)
+        setUserIdCardVerified(idCardVerified)
 
-      setHasRequiredLicense(hasAccess)
-    } catch (error) {
-      console.error('Error checking user license access:', error)
-      setHasRequiredLicense(false)
-    }
-  }
+        // Check if user has required license AND verified ID card for this listing category
+        const categoryLabel = getCategoryLabel(listing.category, listing.type)
+        const hasLicenseAccess = canViewSellerInfo(licenses, categoryLabel)
+        const hasAccess = hasLicenseAccess && idCardVerified
+
+        console.log('License and ID card check result:', {
+          userIdToCheck,
+          licenses,
+          idCardVerified,
+          categoryLabel,
+          hasLicenseAccess,
+          hasAccess,
+        })
+
+        setHasRequiredLicense(hasAccess)
+      } catch (error) {
+        console.error('Error checking user license access:', error)
+        setHasRequiredLicense(false)
+      }
+    },
+    [supabase, listing.category, listing.type]
+  )
 
   useEffect(() => {
     let mounted = true
@@ -403,14 +404,24 @@ export default function ListingClient({
       mounted = false
       clearTimeout(timeoutId)
     }
-  }, [session, listing.id, listing.seller_id])
+  }, [
+    session,
+    listing.id,
+    listing.seller_id,
+    checkOwnership,
+    checkIfFeatured,
+    checkIfRetailer,
+    checkIfSellerVerified,
+    checkUserLicenseAccess,
+    isLoading,
+  ])
 
   // Check license access whenever userId changes
   useEffect(() => {
     if (userId && !isOwner) {
       checkUserLicenseAccess(userId)
     }
-  }, [userId, isOwner, listing.category, listing.type])
+  }, [userId, isOwner, listing.category, listing.type, checkUserLicenseAccess])
 
   // Remove duplicate auth state listener
   useEffect(() => {

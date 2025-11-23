@@ -31,17 +31,18 @@ import { Listing } from '../types'
 import { formatPrice, slugify } from '../utils'
 import { StatusSelect } from './StatusSelect'
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 interface MyListingsProps {
   listings: Listing[]
   listingCredits: number
-  handleListingStatusChange: (id: string, value: string) => Promise<void>
-  handleRenewListing: (listingId: string) => Promise<void>
-  confirmDeleteListing: (listingId: string) => void
-  setListingToFeature: (listingId: string | null) => void
-  setFeatureDialogOpen: (open: boolean) => void
-  setListingToRemoveFeature: (listingId: string | null) => void
-  setRemoveFeatureDialogOpen: (open: boolean) => void
-  setShowCreditDialog: (open: boolean) => void
+  handleListingStatusChange: (id: string, value: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  handleRenewListing: (listingId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  confirmDeleteListing: (listingId: string) => void // eslint-disable-line unused-imports/no-unused-vars
+  setListingToFeature: (listingId: string | null) => void // eslint-disable-line unused-imports/no-unused-vars
+  setFeatureDialogOpen: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setListingToRemoveFeature: (listingId: string | null) => void // eslint-disable-line unused-imports/no-unused-vars
+  setRemoveFeatureDialogOpen: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setShowCreditDialog: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
 export const MyListings = ({

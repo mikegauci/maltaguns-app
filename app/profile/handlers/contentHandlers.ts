@@ -4,14 +4,15 @@ import { BlogPost, Event, Store, Club, Servicing, Range } from '../types'
 interface ContentHandlerDependencies {
   supabase: SupabaseClient
   toast: any
-  setBlogPosts: (posts: BlogPost[] | ((prev: BlogPost[]) => BlogPost[])) => void
-  setEvents: (events: Event[] | ((prev: Event[]) => Event[])) => void
-  setStores: (stores: Store[] | ((prev: Store[]) => Store[])) => void
-  setClubs: (clubs: Club[] | ((prev: Club[]) => Club[])) => void
+  setBlogPosts: (posts: BlogPost[] | ((prev: BlogPost[]) => BlogPost[])) => void // eslint-disable-line unused-imports/no-unused-vars
+  setEvents: (events: Event[] | ((prev: Event[]) => Event[])) => void // eslint-disable-line unused-imports/no-unused-vars
+  setStores: (stores: Store[] | ((prev: Store[]) => Store[])) => void // eslint-disable-line unused-imports/no-unused-vars
+  setClubs: (clubs: Club[] | ((prev: Club[]) => Club[])) => void // eslint-disable-line unused-imports/no-unused-vars
   setServicing: (
-    servicing: Servicing[] | ((prev: Servicing[]) => Servicing[])
+    // eslint-disable-line unused-imports/no-unused-vars
+    servicing: Servicing[] | ((prev: Servicing[]) => Servicing[]) // eslint-disable-line unused-imports/no-unused-vars
   ) => void
-  setRanges: (ranges: Range[] | ((prev: Range[]) => Range[])) => void
+  setRanges: (ranges: Range[] | ((prev: Range[]) => Range[])) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
 export function createContentHandlers(deps: ContentHandlerDependencies) {

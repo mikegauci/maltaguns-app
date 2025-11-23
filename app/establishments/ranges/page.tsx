@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
@@ -23,7 +22,6 @@ interface Range {
 }
 
 export default function RangesPage() {
-  const router = useRouter()
   const [ranges, setRanges] = useState<Range[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)

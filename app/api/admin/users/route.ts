@@ -3,8 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
-const AUTHORIZED_ADMIN_EMAILS: string[] = []
-
 export async function GET() {
   try {
     // Create a regular Supabase client to check authorization

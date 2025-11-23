@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Wrench, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
@@ -23,7 +22,6 @@ interface Servicing {
 }
 
 export default function ServicingPage() {
-  const router = useRouter()
   const [servicingProviders, setServicingProviders] = useState<Servicing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)

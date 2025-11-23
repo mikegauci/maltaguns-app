@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -40,18 +39,13 @@ export default function EstablishmentClient({
   establishment,
   type,
 }: EstablishmentClientProps) {
-  const router = useRouter()
   const [isOwner, setIsOwner] = useState(false)
   const [blogPosts, setBlogPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [refreshTrigger, setRefreshTrigger] = useState(0)
+  const [refreshTrigger] = useState(0)
 
   const config = getEstablishmentConfig(type)
   const Icon = config.icon
-
-  // Check if blog posts array is valid
-  const hasBlogPosts =
-    Array.isArray(establishment.blogPosts) && establishment.blogPosts.length > 0
 
   useEffect(() => {
     // Check if current user is the owner

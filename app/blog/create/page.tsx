@@ -113,7 +113,6 @@ export default function CreateBlogPost() {
   const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
-  const [featuredImageUrl, setFeaturedImageUrl] = useState('')
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
@@ -123,7 +122,6 @@ export default function CreateBlogPost() {
   const [servicingId, setServicingId] = useState<string | null>(null)
   const [clubId, setClubId] = useState<string | null>(null)
   const [rangeId, setRangeId] = useState<string | null>(null)
-  const [userStore, setUserStore] = useState<any>(null)
   const [imageAltDialogOpen, setImageAltDialogOpen] = useState(false)
   const [imageAltText, setImageAltText] = useState('')
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null)
@@ -134,8 +132,6 @@ export default function CreateBlogPost() {
   const [isEditingExistingImage, setIsEditingExistingImage] = useState(false)
 
   useEffect(() => {
-    let mounted = true
-
     async function checkUserStore() {
       try {
         const {
@@ -184,7 +180,6 @@ export default function CreateBlogPost() {
         if (!storesError && stores) {
           console.log('User store found:', stores)
           setStoreId(stores.id)
-          setUserStore(stores)
           return
         }
 
@@ -199,7 +194,6 @@ export default function CreateBlogPost() {
         if (!servicingError && servicing) {
           console.log('User servicing business found:', servicing)
           setServicingId(servicing.id)
-          setUserStore(servicing) // Reuse userStore for UI consistency
           return
         }
 
@@ -214,7 +208,6 @@ export default function CreateBlogPost() {
         if (!clubError && club) {
           console.log('User club found:', club)
           setClubId(club.id)
-          setUserStore(club) // Reuse userStore for UI consistency
           return
         }
 
@@ -229,7 +222,6 @@ export default function CreateBlogPost() {
         if (!rangeError && range) {
           console.log('User range found:', range)
           setRangeId(range.id)
-          setUserStore(range) // Reuse userStore for UI consistency
           return
         }
 
@@ -240,10 +232,6 @@ export default function CreateBlogPost() {
     }
 
     checkUserStore()
-
-    return () => {
-      mounted = false
-    }
   }, [supabase])
 
   useEffect(() => {
@@ -1024,7 +1012,7 @@ export default function CreateBlogPost() {
                 <FormField
                   control={form.control}
                   name="content"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
                       <FormLabel>Content</FormLabel>
                       <FormControl>

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 
 interface StatusSelectProps {
   value: string
-  onChange: (value: string) => void
+  onChange: (value: string) => void // eslint-disable-line unused-imports/no-unused-vars
   className?: string
 }
 

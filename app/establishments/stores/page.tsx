@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Store, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
@@ -29,7 +28,6 @@ interface Store {
 }
 
 export default function StoresPage() {
-  const router = useRouter()
   const [stores, setStores] = useState<Store[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)

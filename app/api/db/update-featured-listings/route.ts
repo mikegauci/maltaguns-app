@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
     // First, check if the unique constraint exists and drop it
     const { error: checkError } = await supabase.rpc(

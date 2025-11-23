@@ -14,12 +14,13 @@ interface HandlerDependencies {
   supabase: SupabaseClient
   toast: any
   setProfile: (
-    profile: Profile | null | ((prev: Profile | null) => Profile | null)
+    // eslint-disable-line unused-imports/no-unused-vars
+    profile: Profile | null | ((prev: Profile | null) => Profile | null) // eslint-disable-line unused-imports/no-unused-vars
   ) => void
-  setListings: (listings: Listing[] | ((prev: Listing[]) => Listing[])) => void
+  setListings: (listings: Listing[] | ((prev: Listing[]) => Listing[])) => void // eslint-disable-line unused-imports/no-unused-vars
   profile: Profile | null
-  setLicenseUploadProgress?: (progress: number) => void
-  setIdCardUploadProgress?: (progress: number) => void
+  setLicenseUploadProgress?: (progress: number) => void // eslint-disable-line unused-imports/no-unused-vars
+  setIdCardUploadProgress?: (progress: number) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
 // Helper: Convert data URL to File
@@ -47,7 +48,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
   async function handleLicenseUpload(
     event: React.ChangeEvent<HTMLInputElement>,
     uploadingLicense: boolean,
-    setUploadingLicense: (value: boolean) => void
+    setUploadingLicense: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   ) {
     const originalFile = event.target.files?.[0]
     if (!originalFile) return
@@ -106,7 +107,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
   async function handleIdCardUpload(
     event: React.ChangeEvent<HTMLInputElement>,
     uploadingIdCard: boolean,
-    setUploadingIdCard: (value: boolean) => void
+    setUploadingIdCard: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   ) {
     const originalFile = event.target.files?.[0]
     if (!originalFile) return
@@ -240,7 +241,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
   async function onSubmit(
     data: ProfileForm,
-    setIsEditing: (value: boolean) => void
+    setIsEditing: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   ) {
     try {
       if (!profile?.id) return
@@ -325,8 +326,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
   async function handleDeleteListing(
     listingId: string,
-    setDeleteDialogOpen: (value: boolean) => void,
-    setListingToDelete: (value: string | null) => void
+    setDeleteDialogOpen: (value: boolean) => void, // eslint-disable-line unused-imports/no-unused-vars
+    setListingToDelete: (value: string | null) => void // eslint-disable-line unused-imports/no-unused-vars
   ) {
     try {
       const { data: session } = await supabase.auth.getSession()
@@ -419,7 +420,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
   async function handleRenewalSuccess(
     listingToFeature: string | null,
-    setListingToFeature: (value: string | null) => void,
+    setListingToFeature: (value: string | null) => void, // eslint-disable-line unused-imports/no-unused-vars
     refreshCredits: () => Promise<void>
   ): Promise<void> {
     try {

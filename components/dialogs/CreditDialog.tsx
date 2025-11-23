@@ -49,7 +49,7 @@ const plans: Plan[] = [
 
 interface CreditDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   userId: string
   onSuccess?: () => void
   source?: 'profile' | 'marketplace'
@@ -59,7 +59,6 @@ export function CreditDialog({
   open,
   onOpenChange,
   userId,
-  onSuccess,
   source,
 }: CreditDialogProps) {
   const router = useRouter()

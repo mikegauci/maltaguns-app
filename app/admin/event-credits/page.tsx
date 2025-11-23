@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
@@ -38,7 +38,7 @@ function EventCreditsPageComponent() {
     useState<EventCredit | null>(null)
   const supabase = createClientComponentClient()
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       // Check if we're authenticated as admin
       const {
@@ -111,11 +111,11 @@ function EventCreditsPageComponent() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [supabase, toast, router])
 
   useEffect(() => {
     fetchData()
-  }, [supabase, toast, router])
+  }, [fetchData])
 
   const handleEditEventCredit = (eventCredit: EventCredit) => {
     setSelectedEventCredit(eventCredit)

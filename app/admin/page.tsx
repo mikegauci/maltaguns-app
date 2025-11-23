@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import {
   Card,
@@ -25,8 +24,6 @@ export default function AdminDashboard() {
 }
 
 function AdminDashboardComponent() {
-  const [activeTab, setActiveTab] = useState('overview')
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -36,11 +33,7 @@ function AdminDashboardComponent() {
         </Link>
       </div>
 
-      <Tabs
-        defaultValue="overview"
-        onValueChange={setActiveTab}
-        className="space-y-4"
-      >
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AdminCard

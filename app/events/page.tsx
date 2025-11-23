@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Calendar } from '@/components/ui/calendar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -42,12 +41,10 @@ interface Event {
 }
 
 export default function EventsPage() {
-  const router = useRouter()
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([])
   const [pastEvents, setPastEvents] = useState<Event[]>([])
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [calendarEvents, setCalendarEvents] = useState<Event[]>([])
 
   useEffect(() => {
@@ -73,11 +70,6 @@ export default function EventsPage() {
       if (upcoming) setUpcomingEvents(upcoming)
       if (past) setPastEvents(past)
     }
-
-    // Check authentication status
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session)
-    })
 
     fetchEvents()
   }, [])
