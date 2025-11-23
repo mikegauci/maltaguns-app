@@ -13,7 +13,12 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { EstablishmentInfoDialog } from '@/components/dialogs'
 import { Store, Users, Wrench, MapPin, Plus, Info } from 'lucide-react'
-import { Store as StoreType, Club, Servicing, Range } from '../../app/profile/types'
+import {
+  Store as StoreType,
+  Club,
+  Servicing,
+  Range,
+} from '../../app/profile/types'
 
 interface MyEstablishmentsProps {
   stores: StoreType[]

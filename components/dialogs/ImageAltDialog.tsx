@@ -42,7 +42,9 @@ export function ImageAltDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {isEditingExistingImage ? 'Edit Image Alt Text' : 'Add Image Alt Text'}
+            {isEditingExistingImage
+              ? 'Edit Image Alt Text'
+              : 'Add Image Alt Text'}
           </DialogTitle>
           <DialogDescription>
             Enter alternative text to describe the image for accessibility
@@ -77,7 +79,8 @@ export function ImageAltDialog({
           <Button
             onClick={onInsert}
             disabled={
-              !imageAltText || (!isEditingExistingImage && uploadingContentImage)
+              !imageAltText ||
+              (!isEditingExistingImage && uploadingContentImage)
             }
           >
             {!isEditingExistingImage && uploadingContentImage ? (
@@ -96,4 +99,3 @@ export function ImageAltDialog({
     </Dialog>
   )
 }
-

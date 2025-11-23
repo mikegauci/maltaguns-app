@@ -13,7 +13,13 @@ import {
 } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
-import { FeatureCreditDialog, DeleteConfirmationDialog, RemoveFeatureDialog, CreditDialog, EventCreditDialog } from '@/components/dialogs'
+import {
+  FeatureCreditDialog,
+  DeleteConfirmationDialog,
+  RemoveFeatureDialog,
+  CreditDialog,
+  EventCreditDialog,
+} from '@/components/dialogs'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LoadingState } from '@/components/ui/loading-state'
 import { BackButton } from '@/components/ui/back-button'
