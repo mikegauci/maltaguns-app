@@ -24,22 +24,20 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Loader2 } from 'lucide-react'
-import { CreditDialog } from '@/components/dialogs/CreditDialog'
-
-// Import shared modules
+import { CreditDialog } from '@/components/dialogs'
 import { firearmsCategories } from '../constants'
 import { firearmsSchema, FirearmsForm } from '../schemas'
 import { useImageUpload } from '../hooks/useImageUpload'
 import { useAuthSession } from '../hooks/useAuthSession'
 import { useCredits } from '../hooks/useCredits'
 import { createListingHandlers } from '../handlers/listingHandlers'
-import { ListingFormLayout } from '../components/ListingFormLayout'
+import { ListingFormLayout } from '../../../../components/marketplace/ListingFormLayout'
 import {
   TitleField,
   DescriptionField,
   PriceField,
   ImageUploadField,
-} from '../components/FormFields'
+} from '../../../../components/marketplace/FormFields'
 import { getAllowedCategories, LicenseTypes } from '@/lib/license-utils'
 
 export default function CreateFirearmsListing() {

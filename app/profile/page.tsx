@@ -13,34 +13,15 @@ import {
 } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Trash2, X } from 'lucide-react'
-import { FeatureCreditDialog } from '@/components/dialogs/FeatureCreditDialog'
-import { CreditDialog } from '@/components/dialogs/CreditDialog'
-import { EventCreditDialog } from '@/components/dialogs/EventCreditDialog'
+import { FeatureCreditDialog, DeleteConfirmationDialog, RemoveFeatureDialog, CreditDialog, EventCreditDialog } from '@/components/dialogs'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LoadingState } from '@/components/ui/loading-state'
 import { BackButton } from '@/components/ui/back-button'
-
-// Import types
 import { profileSchema, ProfileForm } from './types'
-
-// Import custom hooks
 import { useProfileData } from './hooks/useProfileData'
-
-// Import handlers
 import { createProfileHandlers } from './handlers/profileHandlers'
 import { createContentHandlers } from './handlers/contentHandlers'
-
-// Import components
-import { ProfileTabs } from './components/ProfileTabs'
+import { ProfileTabs } from '../../components/profile/ProfileTabs'
 
 export default function ProfilePage() {
   const { toast } = useToast()
@@ -257,34 +238,16 @@ export default function ProfilePage() {
         />
 
         {/* Dialogs */}
-        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Delete Listing</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this listing? This action cannot
-                be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="mt-4 flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() =>
-                  listingToDelete && handleDeleteListing(listingToDelete)
-                }
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Listing
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DeleteConfirmationDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          title="Delete Listing"
+          description="Are you sure you want to delete this listing? This action cannot be undone."
+          onConfirm={() =>
+            listingToDelete && handleDeleteListing(listingToDelete)
+          }
+          confirmLabel="Delete Listing"
+        />
 
         {listingToFeature && (
           <FeatureCreditDialog
@@ -296,41 +259,17 @@ export default function ProfilePage() {
           />
         )}
 
-        <Dialog
+        <RemoveFeatureDialog
           open={removeFeatureDialogOpen}
           onOpenChange={setRemoveFeatureDialogOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Remove Feature Status</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to remove the featured status from this
-                listing? This will not refund your feature credit.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="mt-4 flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setRemoveFeatureDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  if (listingToRemoveFeature) {
-                    profileHandlers.handleRemoveFeature(listingToRemoveFeature)
-                    setRemoveFeatureDialogOpen(false)
-                    setListingToRemoveFeature(null)
-                  }
-                }}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Remove Feature
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          onConfirm={() => {
+            if (listingToRemoveFeature) {
+              profileHandlers.handleRemoveFeature(listingToRemoveFeature)
+              setRemoveFeatureDialogOpen(false)
+              setListingToRemoveFeature(null)
+            }
+          }}
+        />
 
         <CreditDialog
           open={showCreditDialog}

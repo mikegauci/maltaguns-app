@@ -8,14 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { FullscreenImageDialog } from '@/components/dialogs'
 import { AlertCircle, X, Info, Maximize2 } from 'lucide-react'
-import { Profile } from '../types'
+import { Profile } from '../../app/profile/types'
 import { LicenseTypes } from '@/lib/license-utils'
 import { DocumentUploadButton } from '@/components/DocumentUploadButton'
 import { useState } from 'react'
@@ -379,31 +374,12 @@ export const SellerStatus = ({
       </Card>
 
       {/* Fullscreen Image Dialog */}
-      <Dialog
+      <FullscreenImageDialog
         open={fullscreenImage !== null}
         onOpenChange={() => setFullscreenImage(null)}
-      >
-        <DialogContent className="max-w-4xl w-full">
-          <button
-            onClick={() => setFullscreenImage(null)}
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground z-10"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5" />
-            <span className="sr-only">Close</span>
-          </button>
-          <DialogHeader>
-            <DialogTitle>{fullscreenImage?.title}</DialogTitle>
-          </DialogHeader>
-          <div className="relative w-full">
-            <img
-              src={fullscreenImage?.url}
-              alt={fullscreenImage?.title}
-              className="w-full h-auto max-h-[80vh] object-contain rounded-md"
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
+        imageUrl={fullscreenImage?.url || null}
+        title={fullscreenImage?.title || null}
+      />
     </>
   )
 }

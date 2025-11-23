@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
-import CategoryListings from '@/components/CategoryListings'
+import CategoryListings from '@/components/marketplace/CategoryListings'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useToast } from '@/hooks/use-toast'
 import {

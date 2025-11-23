@@ -25,15 +25,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, LogOut, User, Eye, EyeOff } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { forceLogout } from '@/lib/auth-utils'
+import { ResetPasswordDialog } from '@/components/dialogs'
 import { useLoginAuth } from './hooks/useLoginAuth'
 import { handleLogin, handlePasswordReset } from './handlers/loginHandlers'
 
@@ -304,64 +297,14 @@ export default function Login() {
         </CardContent>
       </Card>
 
-      <Dialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Reset Password</DialogTitle>
-            <DialogDescription>
-              Enter your email address and we'll send you a link to reset your
-              password.
-            </DialogDescription>
-          </DialogHeader>
-          <Form {...resetForm}>
-            <form
-              onSubmit={resetForm.handleSubmit(onResetPassword)}
-              className="space-y-4"
-            >
-              <FormField
-                control={resetForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Enter your email address"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {resetError && (
-                <div className="text-sm text-destructive">{resetError}</div>
-              )}
-
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setResetDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isResetLoading}>
-                  {isResetLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    'Send Reset Link'
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+      <ResetPasswordDialog
+        open={resetDialogOpen}
+        onOpenChange={setResetDialogOpen}
+        form={resetForm}
+        onSubmit={onResetPassword}
+        isLoading={isResetLoading}
+        error={resetError}
+      />
     </div>
   )
 }

@@ -25,17 +25,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Trash2, Calendar as CalendarIcon, Clock } from 'lucide-react'
+import { Calendar as CalendarIcon, Clock, Trash2 } from 'lucide-react'
 import { Database } from '@/lib/database.types'
 import { BackButton } from '@/components/ui/back-button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { format } from 'date-fns'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -893,29 +886,14 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Event</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this event? This action cannot be
-              undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4 flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteEvent}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Event
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Event"
+        description="Are you sure you want to delete this event? This action cannot be undone."
+        onConfirm={handleDeleteEvent}
+        confirmLabel="Delete Event"
+      />
     </div>
   )
 }

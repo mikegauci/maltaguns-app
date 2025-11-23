@@ -29,14 +29,7 @@ import { toast } from 'sonner'
 import { BackButton } from '@/components/ui/back-button'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { DeleteConfirmationDialog } from '@/components/dialogs'
 
 interface WishlistItem {
   id: string
@@ -406,32 +399,15 @@ export default function WishlistPage() {
       </div>
 
       {/* Remove Confirmation Dialog */}
-      <Dialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Remove from Wishlist</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to remove this item from your wishlist?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRemoveDialogOpen(false)}
-              disabled={isRemoving}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => itemToRemove && handleRemoveItem(itemToRemove)}
-              disabled={isRemoving}
-            >
-              {isRemoving ? 'Removing...' : 'Remove'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmationDialog
+        open={removeDialogOpen}
+        onOpenChange={setRemoveDialogOpen}
+        title="Remove from Wishlist"
+        description="Are you sure you want to remove this item from your wishlist?"
+        onConfirm={() => itemToRemove && handleRemoveItem(itemToRemove)}
+        confirmLabel="Remove"
+        isLoading={isRemoving}
+      />
     </div>
   )
 }

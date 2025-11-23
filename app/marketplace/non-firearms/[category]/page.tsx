@@ -1,7 +1,7 @@
 'use client'
 
 import { notFound } from 'next/navigation'
-import CategoryListings from '@/components/CategoryListings'
+import CategoryListings from '@/components/marketplace/CategoryListings'
 import {
   nonFirearmsCategories,
   slugToCategoryKey,

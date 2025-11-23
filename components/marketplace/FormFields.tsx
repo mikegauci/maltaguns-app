@@ -11,7 +11,7 @@ import {
   FormDescription,
 } from '@/components/ui/form'
 import { X } from 'lucide-react'
-import { MAX_FILES } from '../constants'
+import { MAX_FILES } from '../../app/marketplace/create/constants'
 
 interface FormFieldProps<T extends FieldValues> {
   control: Control<T>

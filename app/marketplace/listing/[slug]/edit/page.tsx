@@ -32,17 +32,10 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Trash2 } from 'lucide-react'
 import { Database } from '@/lib/database.types'
 import { BackButton } from '@/components/ui/back-button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { DeleteConfirmationDialog } from '@/components/dialogs'
+import { Trash2 } from 'lucide-react'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
@@ -1019,29 +1012,14 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Listing</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this listing? This action cannot
-              be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="mt-4 flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteListing}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Listing
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Listing"
+        description="Are you sure you want to delete this listing? This action cannot be undone."
+        onConfirm={handleDeleteListing}
+        confirmLabel="Delete Listing"
+      />
     </div>
   )
 }

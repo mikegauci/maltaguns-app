@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Eye, Pencil, Trash2, BookOpen } from 'lucide-react'
 import { format } from 'date-fns'
-import { BlogPost } from '../types'
+import { BlogPost } from '../../app/profile/types'
 
 interface MyBlogPostsProps {
   blogPosts: BlogPost[]

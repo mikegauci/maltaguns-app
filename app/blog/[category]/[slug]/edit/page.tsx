@@ -22,7 +22,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
@@ -38,22 +37,13 @@ import {
   Image as ImageIcon,
   Link as LinkIcon,
 } from 'lucide-react'
+import { LinkDialog, ImageAltDialog } from '@/components/dialogs'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import slug from 'slug'
 import { Database } from '@/lib/database.types'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from '@/components/ui/dialog'
-import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -882,48 +872,18 @@ export default function EditBlogPost({
         </Card>
 
         {/* Add Link Dialog */}
-        <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add Link</DialogTitle>
-              <DialogDescription>
-                Enter the URL and choose if it should open in a new tab
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="url">URL</Label>
-                <Input
-                  id="url"
-                  value={linkUrl}
-                  onChange={e => setLinkUrl(e.target.value)}
-                  placeholder="https://example.com"
-                />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="new-tab"
-                  checked={openInNewTab}
-                  onCheckedChange={checked =>
-                    setOpenInNewTab(checked as boolean)
-                  }
-                />
-                <Label htmlFor="new-tab">Open in new tab</Label>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="secondary">Cancel</Button>
-              </DialogClose>
-              <Button onClick={applyLink} disabled={!linkUrl}>
-                Add Link
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <LinkDialog
+          open={linkDialogOpen}
+          onOpenChange={setLinkDialogOpen}
+          linkUrl={linkUrl}
+          setLinkUrl={setLinkUrl}
+          openInNewTab={openInNewTab}
+          setOpenInNewTab={setOpenInNewTab}
+          onApply={applyLink}
+        />
 
         {/* Add Image Alt Text Dialog */}
-        <Dialog
+        <ImageAltDialog
           open={imageAltDialogOpen}
           onOpenChange={open => {
             if (!open) {
@@ -934,73 +894,19 @@ export default function EditBlogPost({
               setIsEditingExistingImage(false)
             }
           }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {isEditingExistingImage
-                  ? 'Edit Image Alt Text'
-                  : 'Add Image Alt Text'}
-              </DialogTitle>
-              <DialogDescription>
-                Enter alternative text to describe the image for accessibility
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="alt-text">Alt Text</Label>
-                <Input
-                  id="alt-text"
-                  value={imageAltText}
-                  onChange={e => setImageAltText(e.target.value)}
-                  placeholder="Describe the image"
-                />
-              </div>
-              {isEditingExistingImage && selectedImage && (
-                <div className="relative w-full aspect-video">
-                  <img
-                    src={selectedImage.src}
-                    alt={selectedImage.alt}
-                    className="rounded-md object-contain w-full h-full"
-                  />
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setPendingImageFile(null)
-                    setImageAltText('')
-                    setSelectedImage(null)
-                    setIsEditingExistingImage(false)
-                  }}
-                >
-                  Cancel
-                </Button>
-              </DialogClose>
-              <Button
-                onClick={handleImageInsert}
-                disabled={
-                  !imageAltText ||
-                  (!isEditingExistingImage && uploadingContentImage)
-                }
-              >
-                {!isEditingExistingImage && uploadingContentImage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
-                  </>
-                ) : isEditingExistingImage ? (
-                  'Update Alt Text'
-                ) : (
-                  'Insert Image'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+          imageAltText={imageAltText}
+          setImageAltText={setImageAltText}
+          isEditingExistingImage={isEditingExistingImage}
+          selectedImage={selectedImage}
+          uploadingContentImage={uploadingContentImage}
+          onInsert={handleImageInsert}
+          onCancel={() => {
+            setPendingImageFile(null)
+            setImageAltText('')
+            setSelectedImage(null)
+            setIsEditingExistingImage(false)
+          }}
+        />
       </div>
     </div>
   )

@@ -23,12 +23,11 @@ import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
 import { format } from 'date-fns'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
-import { FeatureCreditDialog } from '@/components/dialogs/FeatureCreditDialog'
-import { ReportListingDialog } from '@/components/dialogs/ReportListingDialog'
+import { FeatureCreditDialog, ReportListingDialog } from '@/components/dialogs'
 import { AutoFeatureHandler } from '../../auto-feature-handler'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
-import { WishlistButton } from '@/components/WishlistButton'
+import { WishlistButton } from '@/components/marketplace/WishlistButton'
 import {
   canViewSellerInfo,
   getRequiredLicenses,

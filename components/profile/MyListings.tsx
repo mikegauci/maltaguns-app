@@ -27,8 +27,8 @@ import {
   Calendar,
   X,
 } from 'lucide-react'
-import { Listing } from '../types'
-import { formatPrice, slugify } from '../utils'
+import { Listing } from '../../app/profile/types'
+import { formatPrice, slugify } from '../../app/profile/utils'
 import { StatusSelect } from './StatusSelect'
 
 // eslint-disable-next-line unused-imports/no-unused-vars

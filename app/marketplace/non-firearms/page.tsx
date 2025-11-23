@@ -1,4 +1,4 @@
-import CategoryListings from '@/components/CategoryListings'
+import CategoryListings from '@/components/marketplace/CategoryListings'
 
 export default function NonFirearmsPage() {
   return (

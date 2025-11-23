@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Pencil } from 'lucide-react'
-import { Profile, ProfileForm } from '../types'
+import { Profile, ProfileForm } from '../../app/profile/types'
 
 interface ProfileInformationProps {
   profile: Profile

@@ -34,7 +34,7 @@ import type {
   CreditTransaction,
   Store as StoreType,
   ProfileForm,
-} from '../types'
+} from '../../app/profile/types'
 
 interface ProfileTabsProps {
   // Data
