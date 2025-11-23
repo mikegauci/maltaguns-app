@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Sun as Gun, Package, Star, ArrowLeft, Plus } from 'lucide-react'
+import { Package, Star, ArrowLeft, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'

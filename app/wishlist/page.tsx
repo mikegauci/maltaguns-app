@@ -17,7 +17,6 @@ import {
   Heart,
   Trash2,
   Eye,
-  ShoppingCart,
   User,
   Store,
   CheckCircle,

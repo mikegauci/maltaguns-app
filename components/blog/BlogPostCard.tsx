@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { format, formatDistanceToNow } from 'date-fns'
+import { format } from 'date-fns'
 import { Store, Users, MapPin, Wrench } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 

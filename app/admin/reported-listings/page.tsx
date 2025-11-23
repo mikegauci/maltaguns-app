@@ -20,7 +20,7 @@ import { BackButton } from '@/components/ui/back-button'
 import dynamic from 'next/dynamic'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Eye, ExternalLink } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 
 interface ReportedListing {
   id: string

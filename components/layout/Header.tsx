@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button'
 import { SearchBar } from '@/components/Search'
 import {
   Store,
-  BookOpen,
   Menu,
   X,
   User,
@@ -16,7 +15,6 @@ import {
   Wrench,
   MapPin,
   Boxes,
-  Heart,
 } from 'lucide-react'
 import { useSupabase } from '../providers/SupabaseProvider'
 import { forceLogout } from '@/lib/auth-utils'

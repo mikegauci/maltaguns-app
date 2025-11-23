@@ -15,14 +15,7 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import {
-  Mail,
-  Phone,
-  BookOpen,
-  HelpCircle,
-  AlertCircle,
-  FileText,
-} from 'lucide-react'
+import { BookOpen, HelpCircle, AlertCircle, FileText } from 'lucide-react'
 import Link from 'next/link'
 
 export default function HelpPage() {

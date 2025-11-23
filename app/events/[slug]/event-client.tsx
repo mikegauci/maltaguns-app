@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Calendar as CalendarIcon,
@@ -15,7 +14,6 @@ import {
   Pencil,
 } from 'lucide-react'
 import { format } from 'date-fns'
-import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { BackButton } from '@/components/ui/back-button'
 

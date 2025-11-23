@@ -23,7 +23,7 @@ import {
   Calendar,
   BarChart3,
 } from 'lucide-react'
-import { format, subDays, startOfDay } from 'date-fns'
+import { format } from 'date-fns'
 import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
 

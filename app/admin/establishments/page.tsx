@@ -8,7 +8,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { DataTable, FormDialog, ConfirmDialog, ActionCell } from '@/app/admin'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import {
   Select,
   SelectContent,

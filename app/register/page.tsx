@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -42,7 +42,6 @@ import {
 } from '@/components/ui/tooltip'
 import { Info, Eye, EyeOff } from 'lucide-react'
 import React from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import {
   uploadAndVerifyLicense,
   uploadAndVerifyIdCard,

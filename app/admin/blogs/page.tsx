@@ -46,7 +46,6 @@ import {
   Edit,
   Eye,
   Search,
-  Filter,
   Users,
   Store,
   MapPin,
