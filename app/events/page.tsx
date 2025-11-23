@@ -23,6 +23,7 @@ import {
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { format, addMonths, subMonths, isBefore, startOfDay } from 'date-fns'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Event {
   id: string
@@ -116,17 +117,12 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-12">
-        {/* Hero Section */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Calendar of Events</h1>
-          <p className="text-muted-foreground">
-            Discover and participate in the latest firearms community events
-          </p>
-        </div>
-
-        {/* Upcoming Events Carousel */}
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4">
+        <PageHeader
+          title="Calendar of Events"
+          description="Discover upcoming shooting tournaments, training sessions, club activities, and international trips. Connect with Malta's firearms community and participate in events suited for all skill levels."
+        />
         {upcomingEvents.length > 0 && (
           <Carousel className="w-full">
             <CarouselContent>

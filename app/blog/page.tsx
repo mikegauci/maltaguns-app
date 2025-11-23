@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import BlogPostCard from '../../components/blog/BlogPostCard'
+import { PageHeader } from '@/components/ui/page-header'
 
 // Force dynamic rendering for this page
 export const dynamic = 'force-dynamic'
@@ -154,26 +155,26 @@ export default async function BlogPage() {
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold">Blog</h1>
-          <div className="flex gap-4">
-            {canCreate && (
-              <Link href="/blog/create">
-                <Button className="bg-primary">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Write Post
-                </Button>
-              </Link>
-            )}
-            <Link href="/blog/news">
-              <Button variant="outline">News</Button>
+        <PageHeader
+          title="Blog"
+          description="Read the latest news, guides, and insights from Malta's firearms community. Stay informed about industry updates, safety practices, and expert advice from local dealers and enthusiasts."
+        />
+        <div className="flex gap-4 justify-center mb-8">
+          {canCreate && (
+            <Link href="/blog/create">
+              <Button className="bg-primary">
+                <Plus className="h-4 w-4 mr-2" />
+                Write Post
+              </Button>
             </Link>
-            <Link href="/blog/guides">
-              <Button variant="outline">Guides</Button>
-            </Link>
-          </div>
+          )}
+          <Link href="/blog/news">
+            <Button variant="outline">News</Button>
+          </Link>
+          <Link href="/blog/guides">
+            <Button variant="outline">Guides</Button>
+          </Link>
         </div>
-
         {posts.length === 0 ? (
           <p className="text-muted-foreground text-lg">No blog posts found.</p>
         ) : (

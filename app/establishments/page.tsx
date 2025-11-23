@@ -15,6 +15,7 @@ import {
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Establishment {
   id: string
@@ -116,16 +117,12 @@ export default function EstablishmentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Hero Section */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Establishments</h1>
-          <p className="text-muted-foreground">
-            Find firearms related establishments across Malta
-          </p>
-        </div>
-
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4">
+        <PageHeader
+          title="Establishments"
+          description="Discover trusted firearms dealers, shooting clubs, training ranges, and servicing businesses across Malta. Connect with licensed professionals and certified establishments for all your shooting sports needs."
+        />
         {/* Categories Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Link href="/establishments/stores">

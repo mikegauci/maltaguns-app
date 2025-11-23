@@ -17,18 +17,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { BookOpen, HelpCircle, AlertCircle, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { PageHeader } from '@/components/ui/page-header'
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-background py-16">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold tracking-tight">Help Center</h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Find guides, tutorials, FAQs, and support resources to help you get
-            the most out of MaltaGuns.
-          </p>
-        </div>
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4">
+        <PageHeader
+          title="Help Center"
+          description="Find guides, tutorials, FAQs, and support resources to help you get the most out of MaltaGuns."
+        />
 
         <div className="max-w-4xl mx-auto">
           <Tabs defaultValue="getting-started" className="mb-12">

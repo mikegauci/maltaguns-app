@@ -8,7 +8,7 @@ import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
-
+import { PageHeader } from '@/components/ui/page-header'
 interface Club {
   id: string
   business_name: string
@@ -61,19 +61,14 @@ export default function ClubsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4">
         {/* Back Button */}
         <BackButton label="Back to Establishments" href="/establishments" />
-
-        {/* Hero Section */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Shooting Clubs</h1>
-          <p className="text-muted-foreground">
-            Find shooting clubs and ranges across Malta
-          </p>
-        </div>
-
+        <PageHeader
+          title="Shooting Clubs"
+          description="Find shooting clubs and ranges across Malta"
+        />
         {/* Actions - Only show if authenticated */}
         {isAuthenticated && (
           <div className="flex justify-end">

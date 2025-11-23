@@ -18,6 +18,7 @@ import { AutoFeatureHandler } from './auto-feature-handler'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Listing {
   id: string
@@ -291,22 +292,13 @@ export default function Marketplace() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Marketplace</h1>
-            <p className="text-muted-foreground">
-              Here, you can browse a wide range of firearms, accessories, and
-              other items listed by our reputable sellers. We prioritize your
-              safety and security with a strict commitment to legal compliance
-              and transparency. Whether you're buying or selling, we aim to
-              provide a secure and enjoyable experience while encourage safe and
-              responsible engagement in our community. Enjoy exploring!
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-row gap-4 mb-6">
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4">
+        <PageHeader
+          title="Marketplace"
+          description="Browse firearms, accessories, and related items from verified sellers across Malta. Buy and sell with confidence in a secure, legally compliant platform dedicated to responsible firearm ownership."
+        />
+        <div className="flex flex-row gap-4 mb-6 justify-center">
           <Link href="/marketplace/create">
             <Button>
               <Plus className="mr-2 h-4 w-4" />
