@@ -28,6 +28,7 @@ import { useProfileData } from './hooks/useProfileData'
 import { createProfileHandlers } from './handlers/profileHandlers'
 import { createContentHandlers } from './handlers/contentHandlers'
 import { ProfileTabs } from '../../components/profile/ProfileTabs'
+import { PageHeader } from '@/components/ui/page-header'
 
 export default function ProfilePage() {
   const { toast } = useToast()
@@ -193,14 +194,12 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-          <p className="text-muted-foreground">
-            Manage your account and content
-          </p>
-        </div>
+    <div className="min-h-screen bg-background py-12">
+      <div className="container mx-auto px-4">
+        <PageHeader
+          title="My Profile"
+          description="Manage your account and content"
+        />
 
         <ProfileTabs
           profile={profile}
