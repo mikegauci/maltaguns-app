@@ -29,6 +29,7 @@ import { createProfileHandlers } from './handlers/profileHandlers'
 import { createContentHandlers } from './handlers/contentHandlers'
 import { ProfileTabs } from '../../components/profile/ProfileTabs'
 import { PageHeader } from '@/components/ui/page-header'
+import { PageLayout } from '@/components/ui/page-layout'
 
 export default function ProfilePage() {
   const { toast } = useToast()
@@ -156,15 +157,15 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <LoadingState message="Loading profile..." />
-      </div>
+      </PageLayout>
     )
   }
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <PageLayout centered className="p-6">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Profile Access</CardTitle>
@@ -181,21 +182,20 @@ export default function ProfilePage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
     )
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <LoadingState message="Loading profile data..." />
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto px-4">
+    <PageLayout>
         <PageHeader
           title="My Profile"
           description="Manage your account and content"
@@ -303,7 +303,6 @@ export default function ProfilePage() {
             })
           }}
         />
-      </div>
-    </div>
+    </PageLayout>
   )
 }

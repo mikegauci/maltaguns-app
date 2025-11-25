@@ -16,6 +16,7 @@ import {
 import { format } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { BackButton } from '@/components/ui/back-button'
+import { PageLayout } from '@/components/ui/page-layout'
 
 interface Event {
   id: string
@@ -98,9 +99,8 @@ export default function EventClient({ event }: EventClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-8 px-4">
-        <BackButton label="Back to events" href="/events" className="mb-6" />
+    <PageLayout className="py-8">
+      <BackButton label="Back to events" href="/events" className="mb-6" />
 
         <div className="bg-card rounded-lg shadow-md overflow-hidden">
           {/* Event Header */}
@@ -222,7 +222,6 @@ export default function EventClient({ event }: EventClientProps) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

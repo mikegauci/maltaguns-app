@@ -1,4 +1,6 @@
 import { Metadata } from 'next'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 export const metadata: Metadata = {
   title: 'Terms and Conditions | MaltaGuns',
@@ -8,8 +10,11 @@ export const metadata: Metadata = {
 
 export default function TermsAndConditions() {
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-6">Terms and Conditions</h1>
+    <PageLayout innerClassName="max-w-4xl">
+      <PageHeader
+        title="Terms and Conditions"
+        className="mb-6"
+      />
 
       <div className="prose prose-sm max-w-none text-foreground">
         <h2 className="text-xl font-semibold mt-8 mb-4">
@@ -365,6 +370,6 @@ export default function TermsAndConditions() {
           Email: info@strawberryorangedigital.com
         </p>
       </div>
-    </div>
+    </PageLayout>
   )
 }

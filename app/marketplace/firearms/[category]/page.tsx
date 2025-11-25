@@ -10,6 +10,7 @@ import {
   firearmsCategories,
   slugToCategoryKey,
 } from '@/app/marketplace/create/constants'
+import { PageLayout } from '@/components/ui/page-layout'
 
 interface FirearmsCategoryPageProps {
   params: {
@@ -102,9 +103,9 @@ export default function FirearmsCategoryPage({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </PageLayout>
     )
   }
 

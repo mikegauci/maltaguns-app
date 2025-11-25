@@ -30,6 +30,8 @@ import { BackButton } from '@/components/ui/back-button'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface WishlistItem {
   id: string
@@ -169,15 +171,15 @@ export default function WishlistPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <LoadingState message="Loading your wishlist..." />
-      </div>
+      </PageLayout>
     )
   }
 
   if (!session?.user) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <PageLayout centered className="p-6">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Wishlist Access</CardTitle>
@@ -194,26 +196,21 @@ export default function WishlistPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
+    <PageLayout containerSize="lg" padding="md">
         <div className="mb-6 flex items-center justify-between">
           <BackButton label="Back to marketplace" href="/marketplace" />
         </div>
 
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Heart className="h-8 w-8 text-red-500" />
-            <h1 className="text-4xl font-bold">My Wishlist</h1>
-          </div>
-          <p className="text-muted-foreground">
-            Compare and manage your saved listings
-          </p>
-        </div>
+        <PageHeader
+          title="My Wishlist"
+          description="Compare and manage your saved listings"
+          className="mb-8"
+        />
 
         {wishlistItems.length === 0 ? (
           <Card className="text-center py-16">
@@ -396,7 +393,6 @@ export default function WishlistPage() {
             </div>
           </div>
         )}
-      </div>
 
       {/* Remove Confirmation Dialog */}
       <DeleteConfirmationDialog
@@ -408,6 +404,6 @@ export default function WishlistPage() {
         confirmLabel="Remove"
         isLoading={isRemoving}
       />
-    </div>
+    </PageLayout>
   )
 }

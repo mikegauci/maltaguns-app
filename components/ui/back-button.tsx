@@ -25,10 +25,10 @@ export function BackButton({
   className = '',
 }: BackButtonProps) {
   return (
-    <div className={className}>
+    <div className="absolute md:top-0 top-[-42px] md:right-auto right-0 left-0 flex justify-center">
       <Link href={href}>
         <Button
-          variant="ghost"
+          variant="outline"
           className="flex items-center text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />

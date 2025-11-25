@@ -9,6 +9,7 @@ import { Package, ArrowLeft, Star } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
+import { PageLayout } from '@/components/ui/page-layout'
 
 interface Listing {
   id: string
@@ -260,8 +261,7 @@ export default function SearchResults() {
   )
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
+    <PageLayout containerSize="lg" padding="md">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-2">
@@ -344,7 +344,6 @@ export default function SearchResults() {
             </div>
           </>
         )}
-      </div>
-    </div>
+    </PageLayout>
   )
 }

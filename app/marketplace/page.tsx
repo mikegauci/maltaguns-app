@@ -19,6 +19,7 @@ import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
 import { PageHeader } from '@/components/ui/page-header'
+import { PageLayout } from '@/components/ui/page-layout'
 
 interface Listing {
   id: string
@@ -285,15 +286,14 @@ export default function Marketplace() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <LoadingState />
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto px-4">
+    <PageLayout>
         <PageHeader
           title="Marketplace"
           description="Browse firearms, accessories, and related items from verified sellers across Malta. Buy and sell with confidence in a secure, legally compliant platform dedicated to responsible firearm ownership."
@@ -415,7 +415,6 @@ export default function Marketplace() {
             )}
           </div>
         )}
-      </div>
-    </div>
+    </PageLayout>
   )
 }

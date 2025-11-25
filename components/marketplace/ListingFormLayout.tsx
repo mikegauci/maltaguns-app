@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { BackButton } from '@/components/ui/back-button'
+import { PageLayout } from '@/components/ui/page-layout'
 
 interface ListingFormLayoutProps {
   title: string
@@ -24,8 +25,7 @@ export function ListingFormLayout({
   showCredits = false,
 }: ListingFormLayoutProps) {
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto">
+    <PageLayout containerSize="sm" padding="md">
         <div
           className={`mb-6 ${showCredits ? 'flex items-center justify-between' : ''}`}
         >
@@ -49,7 +49,6 @@ export function ListingFormLayout({
           </CardHeader>
           <CardContent>{children}</CardContent>
         </Card>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

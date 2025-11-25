@@ -48,6 +48,7 @@ import {
 } from '@/utils/document-upload-handlers'
 import { DocumentUploadButton } from '@/components/DocumentUploadButton'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
+import { PageLayout } from '@/components/ui/page-layout'
 
 const phoneRegex = /^(356|)(\d{8})$/
 
@@ -292,7 +293,7 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+    <PageLayout centered className="p-6">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create an Account</CardTitle>
@@ -921,6 +922,6 @@ export default function Register() {
           </Form>
         </CardContent>
       </Card>
-    </div>
+    </PageLayout>
   )
 }

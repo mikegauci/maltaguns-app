@@ -8,6 +8,7 @@ import { Pencil, Store, Users, MapPin, Wrench } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import ViewTracker from '@/components/blog/ViewTracker'
 import { BackButton } from '@/components/ui/back-button'
+import { PageLayout } from '@/components/ui/page-layout'
 
 interface BlogPostType {
   id: string
@@ -268,9 +269,8 @@ export default async function BlogPost({
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
+    <PageLayout innerClassName="max-w-screen-lg">
       <ViewTracker postId={post.id} />
-      <div className="container max-w-screen-lg mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
           <BackButton label="Back to blog" href="/blog" />
           {canEdit && (
@@ -335,7 +335,6 @@ export default async function BlogPost({
 
           <div dangerouslySetInnerHTML={{ __html: post.content }} />
         </article>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

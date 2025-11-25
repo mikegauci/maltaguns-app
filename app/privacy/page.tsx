@@ -1,4 +1,6 @@
 import { Metadata } from 'next'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy | MaltaGuns',
@@ -8,8 +10,11 @@ export const metadata: Metadata = {
 
 export default function PrivacyPolicy() {
   return (
-    <div className="container max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
+    <PageLayout innerClassName="max-w-4xl">
+      <PageHeader
+        title="Privacy Policy"
+        className="mb-4"
+      />
 
       <p className="text-muted-foreground mb-8">Effective Date: 15/04/2025</p>
 
@@ -179,6 +184,6 @@ export default function PrivacyPolicy() {
           </li>
         </ul>
       </div>
-    </div>
+    </PageLayout>
   )
 }

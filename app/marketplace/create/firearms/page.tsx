@@ -39,6 +39,7 @@ import {
   ImageUploadField,
 } from '../../../../components/marketplace/FormFields'
 import { getAllowedCategories, LicenseTypes } from '@/lib/license-utils'
+import { PageLayout } from '@/components/ui/page-layout'
 
 export default function CreateFirearmsListing() {
   const router = useRouter()
@@ -148,16 +149,16 @@ export default function CreateFirearmsListing() {
 
   if (isLoading || isLoadingLicenses) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </PageLayout>
     )
   }
 
   // Check if user has no allowed categories
   if (allowedCategories.length === 0) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <PageLayout centered className="p-6">
         <div className="max-w-md text-center space-y-4">
           <h2 className="text-2xl font-bold">No License Detected</h2>
           <p className="text-muted-foreground">
@@ -166,7 +167,7 @@ export default function CreateFirearmsListing() {
           </p>
           <Button onClick={() => router.push('/profile')}>Go to Profile</Button>
         </div>
-      </div>
+      </PageLayout>
     )
   }
 

@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageHeader } from '@/components/ui/page-header'
+import { PageLayout } from '@/components/ui/page-layout'
 interface Club {
   id: string
   business_name: string
@@ -54,35 +55,34 @@ export default function ClubsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <LoadingState message="Loading clubs..." />
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto px-4">
-        {/* Back Button */}
-        <BackButton label="Back to Establishments" href="/establishments" />
-        <PageHeader
-          title="Shooting Clubs"
-          description="Find shooting clubs and ranges across Malta"
-        />
-        {/* Actions - Only show if authenticated */}
-        {isAuthenticated && (
-          <div className="flex justify-end">
-            <Link href="/establishments/create">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your Club
-              </Button>
-            </Link>
-          </div>
-        )}
+    <PageLayout>
+      {/* Back Button */}
+      <BackButton label="Back to Establishments" href="/establishments" />
+      <PageHeader
+        title="Shooting Clubs"
+        description="Find shooting clubs and ranges across Malta"
+      />
+      {/* Actions - Only show if authenticated */}
+      {isAuthenticated && (
+        <div className="flex justify-end">
+          <Link href="/establishments/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Your Club
+            </Button>
+          </Link>
+        </div>
+      )}
 
-        {/* Clubs Grid */}
-        {clubs.length === 0 ? (
+      {/* Clubs Grid */}
+      {clubs.length === 0 ? (
           <Card className="p-6 text-center">
             <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">No clubs listed yet.</p>
@@ -151,7 +151,6 @@ export default function ClubsPage() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </PageLayout>
   )
 }

@@ -8,6 +8,8 @@ import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Servicing {
   id: string
@@ -54,26 +56,22 @@ export default function ServicingPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout containerSize="lg" padding="md" withSpacing>
         <LoadingState message="Loading servicing providers..." />
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <PageLayout containerSize="lg" padding="md" withSpacing>
         {/* Back Button */}
         <BackButton label="Back to Establishments" href="/establishments" />
 
         {/* Hero Section */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Firearms Servicing</h1>
-          <p className="text-muted-foreground">
-            Find firearms repair, servicing and maintenance providers across
-            Malta
-          </p>
-        </div>
+        <PageHeader
+          title="Firearms Servicing"
+          description="Find firearms repair, servicing and maintenance providers across Malta"
+        />
 
         {/* Actions - Only show if authenticated */}
         {isAuthenticated && (
@@ -159,7 +157,6 @@ export default function ServicingPage() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </PageLayout>
   )
 }

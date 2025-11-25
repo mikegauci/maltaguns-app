@@ -5,6 +5,8 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import BlogPostCard from '@/components/blog/BlogPostCard'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 // Force dynamic rendering for this page
 export const dynamic = 'force-dynamic'
@@ -45,23 +47,23 @@ export default async function CategoryArchive({
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold capitalize">{category} Articles</h1>
-          <div className="flex gap-4">
-            <Link href="/blog">
-              <Button variant="outline">All Posts</Button>
-            </Link>
-            {validCategories.map(cat => (
-              <Link key={cat} href={`/blog/${cat}`}>
-                <Button variant={cat === category ? 'default' : 'outline'}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                </Button>
-              </Link>
-            ))}
-          </div>
-        </div>
+    <PageLayout>
+      <PageHeader
+        title={`${category.charAt(0).toUpperCase() + category.slice(1)} Articles`}
+      />
+      
+      <div className="flex gap-4 justify-center mb-8">
+        <Link href="/blog">
+          <Button variant="outline">All Posts</Button>
+        </Link>
+        {validCategories.map(cat => (
+          <Link key={cat} href={`/blog/${cat}`}>
+            <Button variant={cat === category ? 'default' : 'outline'}>
+              {cat.charAt(0).toUpperCase() + cat.slice(1)}
+            </Button>
+          </Link>
+        ))}
+      </div>
 
         {!posts || posts.length === 0 ? (
           <p className="text-muted-foreground text-lg">
@@ -74,7 +76,6 @@ export default async function CategoryArchive({
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </PageLayout>
   )
 }

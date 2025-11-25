@@ -8,6 +8,8 @@ import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Range {
   id: string
@@ -54,40 +56,37 @@ export default function RangesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <LoadingState message="Loading shooting ranges..." />
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Back Button */}
-        <BackButton label="Back to Establishments" href="/establishments" />
+    <PageLayout containerSize="lg" padding="md" withSpacing>
+      {/* Back Button */}
+      <BackButton label="Back to Establishments" href="/establishments" />
 
-        {/* Hero Section */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Shooting Ranges</h1>
-          <p className="text-muted-foreground">
-            Find shooting ranges and facilities across Malta
-          </p>
+      {/* Hero Section */}
+      <PageHeader
+        title="Shooting Ranges"
+        description="Find shooting ranges and facilities across Malta"
+      />
+
+      {/* Actions - Only show if authenticated */}
+      {isAuthenticated && (
+        <div className="flex justify-end">
+          <Link href="/establishments/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Your Range
+            </Button>
+          </Link>
         </div>
+      )}
 
-        {/* Actions - Only show if authenticated */}
-        {isAuthenticated && (
-          <div className="flex justify-end">
-            <Link href="/establishments/create">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your Range
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        {/* Ranges Grid */}
-        {ranges.length === 0 ? (
+      {/* Ranges Grid */}
+      {ranges.length === 0 ? (
           <Card className="p-6 text-center">
             <MapPin className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground">
@@ -158,7 +157,6 @@ export default function RangesPage() {
             ))}
           </div>
         )}
-      </div>
-    </div>
+    </PageLayout>
   )
 }

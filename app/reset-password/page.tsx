@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
+import { PageLayout } from '@/components/ui/page-layout'
 
 const resetPasswordSchema = z
   .object({
@@ -172,7 +173,7 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+      <PageLayout centered className="p-6">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Password Reset Complete</CardTitle>
@@ -196,12 +197,12 @@ export default function ResetPassword() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
+    <PageLayout centered className="p-6">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Reset Your Password</CardTitle>
@@ -309,6 +310,6 @@ export default function ResetPassword() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageLayout>
   )
 }

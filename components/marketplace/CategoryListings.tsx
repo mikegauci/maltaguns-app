@@ -15,6 +15,8 @@ import { Package, Star, ArrowLeft, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Listing {
   id: string
@@ -249,31 +251,28 @@ export default function CategoryListings({
   )
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col space-y-4 mb-8">
-          <div className="flex items-center">
-            <Link href="/marketplace">
-              <Button variant="outline" size="sm" className="mr-4">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Marketplace
-              </Button>
-            </Link>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">{title}</h1>
-              {description && (
-                <p className="text-muted-foreground">{description}</p>
-              )}
-            </div>
-            <Link href="/marketplace/create">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Listing
-              </Button>
-            </Link>
-          </div>
+    <PageLayout containerSize="lg" padding="md">
+        <div className="mb-6">
+          <Link href="/marketplace">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Marketplace
+            </Button>
+          </Link>
+        </div>
+
+        <PageHeader
+          title={title}
+          description={description}
+        />
+
+        <div className="mb-8 flex justify-center">
+          <Link href="/marketplace/create">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Listing
+            </Button>
+          </Link>
         </div>
 
         {isLoading ? (
@@ -332,7 +331,6 @@ export default function CategoryListings({
             )}
           </div>
         )}
-      </div>
-    </div>
+    </PageLayout>
   )
 }

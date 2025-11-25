@@ -33,6 +33,7 @@ import {
   getRequiredLicenses,
   LicenseTypes,
 } from '@/lib/license-utils'
+import { PageLayout } from '@/components/ui/page-layout'
 
 // Default image to use when no images are provided
 const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
@@ -466,9 +467,9 @@ export default function ListingClient({
 
   if (isLoading && !sessionChecked) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <LoadingState message="Loading listing details..." />
-      </div>
+      </PageLayout>
     )
   }
 
@@ -741,8 +742,7 @@ export default function ListingClient({
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-7xl mx-auto">
+    <PageLayout containerSize="lg" padding="md">
         <div className="mb-6 flex items-center justify-between">
           <BackButton label="Back to marketplace" href="/marketplace" />
 
@@ -931,10 +931,9 @@ export default function ListingClient({
             </Card>
           </div>
         </div>
-      </div>
 
       {/* Add the AutoFeatureHandler with the specific listing ID */}
       <AutoFeatureHandler listingId={listing.id} />
-    </div>
+    </PageLayout>
   )
 }

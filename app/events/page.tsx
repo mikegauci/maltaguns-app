@@ -24,6 +24,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { format, addMonths, subMonths, isBefore, startOfDay } from 'date-fns'
 import { PageHeader } from '@/components/ui/page-header'
+import { PageLayout } from '@/components/ui/page-layout'
 
 interface Event {
   id: string
@@ -117,9 +118,8 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto px-4">
-        <PageHeader
+    <PageLayout>
+      <PageHeader
           title="Calendar of Events"
           description="Discover upcoming shooting tournaments, training sessions, club activities, and international trips. Connect with Malta's firearms community and participate in events suited for all skill levels."
         />
@@ -357,7 +357,6 @@ export default function EventsPage() {
             ))}
           </div>
         </div>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

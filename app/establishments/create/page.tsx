@@ -36,6 +36,7 @@ import { Store, Users, Wrench, MapPin } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import { Database } from '@/lib/database.types'
 import Link from 'next/link'
+import { PageLayout } from '@/components/ui/page-layout'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -310,37 +311,34 @@ export default function CreateEstablishmentPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </PageLayout>
     )
   }
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-background p-6">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Access Denied</CardTitle>
-              <CardDescription>
-                You don't have permission to create an establishment.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/">
-                <Button>Return to Homepage</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <PageLayout containerSize="sm" padding="md">
+        <Card>
+          <CardHeader>
+            <CardTitle>Access Denied</CardTitle>
+            <CardDescription>
+              You don't have permission to create an establishment.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/">
+              <Button>Return to Homepage</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto">
+    <PageLayout containerSize="sm" padding="md">
         <BackButton label="Back to Home" href="/" className="mb-6" />
 
         <Card>
@@ -566,7 +564,6 @@ export default function CreateEstablishmentPage() {
             </Form>
           </CardContent>
         </Card>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

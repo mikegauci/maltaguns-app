@@ -36,6 +36,7 @@ import { Database } from '@/lib/database.types'
 import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
+import { PageLayout } from '@/components/ui/page-layout'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
@@ -662,9 +663,9 @@ export default function EditListing({ params }: { params: { slug: string } }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </PageLayout>
     )
   }
 
@@ -673,7 +674,7 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <PageLayout containerSize="md" padding="md">
       <BackButton
         label="Back to listing"
         href={`/marketplace/listing/${params.slug}`}
@@ -1020,6 +1021,6 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         onConfirm={handleDeleteListing}
         confirmLabel="Delete Listing"
       />
-    </div>
+    </PageLayout>
   )
 }

@@ -36,6 +36,7 @@ import { EventCreditDialog } from '@/components/dialogs'
 import { BackButton } from '@/components/ui/back-button'
 import { Loader2 } from 'lucide-react'
 import { Database } from '@/lib/database.types'
+import { PageLayout } from '@/components/ui/page-layout'
 
 // Force dynamic rendering to avoid hydration issues
 export const dynamic = 'force-dynamic'
@@ -469,16 +470,16 @@ export default function CreateEventPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </PageLayout>
     )
   }
 
   // Show only the credit dialog if credits are 0
   if (!hasCredits) {
     return (
-      <div className="min-h-screen bg-background">
+      <PageLayout>
         {userId && (
           <EventCreditDialog
             open={showCreditDialog}
@@ -490,16 +491,15 @@ export default function CreateEventPage() {
             }}
           />
         )}
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto">
+    <PageLayout containerSize="sm" padding="md">
         <div className="mb-6 flex items-center justify-between">
           <BackButton label="Back to events" href="/events" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full justify-end">
             <div className="bg-muted px-4 py-2 rounded-md">
               <span className="text-sm text-muted-foreground">
                 Event Credits remaining:
@@ -810,7 +810,6 @@ export default function CreateEventPage() {
             </Form>
           </CardContent>
         </Card>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
 import { Database } from '@/lib/database.types'
+import { PageLayout } from '@/components/ui/page-layout'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -328,9 +329,9 @@ export default function EditClubPage({ params }: { params: { slug: string } }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </PageLayout>
     )
   }
 
@@ -339,8 +340,7 @@ export default function EditClubPage({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-2xl mx-auto">
+    <PageLayout containerSize="sm" padding="md">
         <BackButton
           label="Back to club profile"
           href={`/establishments/clubs/${params.slug}`}
@@ -508,7 +508,6 @@ export default function EditClubPage({ params }: { params: { slug: string } }) {
             </Form>
           </CardContent>
         </Card>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

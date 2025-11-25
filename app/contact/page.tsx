@@ -24,6 +24,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { Mail, Phone } from 'lucide-react'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 const contactFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -89,16 +91,12 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background py-16">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold tracking-tight">Contact Us</h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Have a question or feedback? We'd love to hear from you. Fill out
-            the form below and our team will get back to you as soon as
-            possible.
-          </p>
-        </div>
+    <PageLayout className="py-16">
+      <PageHeader
+        title="Contact Us"
+        description="Have a question or feedback? We'd love to hear from you. Fill out the form below and our team will get back to you as soon as possible."
+        className="mb-12"
+      />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           <div className="md:col-span-1 space-y-6">
@@ -228,7 +226,6 @@ export default function ContactPage() {
             </Card>
           </div>
         </div>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

@@ -35,6 +35,7 @@ import {
   PriceField,
   ImageUploadField,
 } from '../../../../components/marketplace/FormFields'
+import { PageLayout } from '@/components/ui/page-layout'
 
 export default function CreateNonFirearmsListing() {
   const router = useRouter()
@@ -75,9 +76,9 @@ export default function CreateNonFirearmsListing() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </PageLayout>
     )
   }
 

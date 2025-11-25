@@ -18,17 +18,17 @@ import { Button } from '@/components/ui/button'
 import { BookOpen, HelpCircle, AlertCircle, FileText } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
+import { PageLayout } from '@/components/ui/page-layout'
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-background py-12">
-      <div className="container mx-auto px-4">
-        <PageHeader
-          title="Help Center"
-          description="Find guides, tutorials, FAQs, and support resources to help you get the most out of MaltaGuns."
-        />
+    <PageLayout>
+      <PageHeader
+        title="Help Center"
+        description="Find guides, tutorials, FAQs, and support resources to help you get the most out of MaltaGuns."
+      />
 
-        <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto">
           <Tabs defaultValue="getting-started" className="mb-12">
             <TabsList className="flex flex-col sm:grid sm:grid-cols-5 w-full h-full sm:h-auto gap-2 sm:gap-0">
               <TabsTrigger className="w-full" value="getting-started">
@@ -602,7 +602,6 @@ export default function HelpPage() {
             </Link>
           </div>
         </div>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

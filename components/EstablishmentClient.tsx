@@ -14,6 +14,7 @@ import {
   EstablishmentType,
 } from '@/app/establishments/types'
 import { getEstablishmentConfig } from '@/app/establishments/config'
+import { PageLayout } from '@/components/ui/page-layout'
 
 interface EstablishmentClientProps {
   establishment: EstablishmentWithDetails
@@ -111,8 +112,7 @@ export default function EstablishmentClient({
   }, [establishment.id, refreshTrigger, config.label, config.blogForeignKey])
 
   return (
-    <div className="min-h-screen bg-background p-4 sm:p-6">
-      <div className="max-w-7xl mx-auto space-y-6 sm:space-y-8">
+    <PageLayout containerSize="lg" padding="md" withSpacing>
         <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <BackButton
             label={`Back to ${config.labelPlural}`}
@@ -285,7 +285,6 @@ export default function EstablishmentClient({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

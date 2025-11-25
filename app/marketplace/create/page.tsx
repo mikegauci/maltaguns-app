@@ -25,6 +25,8 @@ import Image from 'next/image'
 // Import custom hooks and handlers
 import { useSellerStatus } from './hooks/useSellerStatus'
 import { createNavigationHandlers } from './handlers/navigationHandlers'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 export default function CreateListing() {
   const router = useRouter()
@@ -60,19 +62,19 @@ export default function CreateListing() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-2">Create Listing</h1>
-        <p className="text-muted-foreground mb-8">
-          Choose the type of listing you want to create
-        </p>
+    <PageLayout containerSize="md" padding="md">
+        <PageHeader
+          title="Create Listing"
+          description="Choose the type of listing you want to create"
+          className="mb-8"
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card
@@ -142,7 +144,6 @@ export default function CreateListing() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
-    </div>
+    </PageLayout>
   )
 }

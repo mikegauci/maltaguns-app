@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
+import { PageLayout } from '@/components/ui/page-layout'
 import {
   Bold,
   Italic,
@@ -726,15 +727,14 @@ export default function EditBlogPost({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-4xl mx-auto">
+    <PageLayout containerSize="md" padding="md">
         <BackButton
           label="Back to post"
           href={`/blog/${params.category}/${params.slug}`}
@@ -907,7 +907,6 @@ export default function EditBlogPost({
             setIsEditingExistingImage(false)
           }}
         />
-      </div>
-    </div>
+    </PageLayout>
   )
 }
