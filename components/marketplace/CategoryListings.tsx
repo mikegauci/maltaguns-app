@@ -252,85 +252,82 @@ export default function CategoryListings({
 
   return (
     <PageLayout containerSize="lg" padding="md">
-        <div className="mb-6">
-          <Link href="/marketplace">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Marketplace
-            </Button>
-          </Link>
+      <div className="mb-6">
+        <Link href="/marketplace">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Marketplace
+          </Button>
+        </Link>
+      </div>
+
+      <PageHeader title={title} description={description} />
+
+      <div className="mb-8 flex justify-center">
+        <Link href="/marketplace/create">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Listing
+          </Button>
+        </Link>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <div className="h-48 bg-muted rounded-t-lg" />
+              <CardContent className="p-6">
+                <div className="h-6 bg-muted rounded mb-4" />
+                <div className="h-4 bg-muted rounded w-3/4 mb-2" />
+                <div className="h-4 bg-muted rounded w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
+      ) : featuredListings.length === 0 && regularListings.length === 0 ? (
+        <Card className="p-6 text-center">
+          <CardHeader>
+            <CardTitle>No Listings Found</CardTitle>
+            <CardDescription>
+              Be the first to post a listing in this category!
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="justify-center">
+            <Link href="/marketplace/create">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Create Listing
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      ) : (
+        <div className="space-y-8">
+          {featuredListings.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4 flex items-center">
+                <Star className="h-5 w-5 mr-2 text-red-500" />
+                Featured Listings
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {featuredListings.map(renderListingCard)}
+              </div>
+            </div>
+          )}
 
-        <PageHeader
-          title={title}
-          description={description}
-        />
-
-        <div className="mb-8 flex justify-center">
-          <Link href="/marketplace/create">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Listing
-            </Button>
-          </Link>
+          {regularListings.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">
+                {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {regularListings.map(renderListingCard)}
+              </div>
+            </div>
+          )}
         </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <div className="h-48 bg-muted rounded-t-lg" />
-                <CardContent className="p-6">
-                  <div className="h-6 bg-muted rounded mb-4" />
-                  <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                  <div className="h-4 bg-muted rounded w-1/2" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : featuredListings.length === 0 && regularListings.length === 0 ? (
-          <Card className="p-6 text-center">
-            <CardHeader>
-              <CardTitle>No Listings Found</CardTitle>
-              <CardDescription>
-                Be the first to post a listing in this category!
-              </CardDescription>
-            </CardHeader>
-            <CardFooter className="justify-center">
-              <Link href="/marketplace/create">
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Listing
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        ) : (
-          <div className="space-y-8">
-            {featuredListings.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold mb-4 flex items-center">
-                  <Star className="h-5 w-5 mr-2 text-red-500" />
-                  Featured Listings
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                  {featuredListings.map(renderListingCard)}
-                </div>
-              </div>
-            )}
-
-            {regularListings.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold mb-4">
-                  {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                  {regularListings.map(renderListingCard)}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+      )}
     </PageLayout>
   )
 }

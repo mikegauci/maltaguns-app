@@ -743,194 +743,191 @@ export default function ListingClient({
 
   return (
     <PageLayout containerSize="lg" padding="md">
-        <div className="mb-6 flex items-center justify-between">
-          <BackButton label="Back to marketplace" href="/marketplace" />
+      <div className="mb-6 flex items-center justify-between">
+        <BackButton label="Back to marketplace" href="/marketplace" />
 
-          {isOwner && (
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-2"
-                onClick={() =>
-                  router.push(
-                    `/marketplace/listing/${slugify(listing.title)}/edit`
-                  )
-                }
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit
+        {isOwner && (
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-2"
+              onClick={() =>
+                router.push(
+                  `/marketplace/listing/${slugify(listing.title)}/edit`
+                )
+              }
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+
+            {!isFeatured && (
+              <Button variant="default" onClick={handleFeatureListing}>
+                <Star className="h-4 w-4 mr-2" />
+                Feature Listing
               </Button>
+            )}
 
-              {!isFeatured && (
-                <Button variant="default" onClick={handleFeatureListing}>
-                  <Star className="h-4 w-4 mr-2" />
-                  Feature Listing
-                </Button>
-              )}
-
-              {isFeatured && (
-                <Badge className="flex items-center px-3 py-1 bg-red-500 text-white hover:bg-red-600">
-                  <Star className="h-4 w-4 mr-2" />
-                  Featured
-                </Badge>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Feature Credit Dialog */}
-        {userId && (
-          <FeatureCreditDialog
-            open={showFeatureDialog}
-            onOpenChange={setShowFeatureDialog}
-            userId={userId}
-            listingId={listing.id}
-            onSuccess={() => {
-              setIsFeatured(true)
-            }}
-          />
+            {isFeatured && (
+              <Badge className="flex items-center px-3 py-1 bg-red-500 text-white hover:bg-red-600">
+                <Star className="h-4 w-4 mr-2" />
+                Featured
+              </Badge>
+            )}
+          </div>
         )}
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Content Section (3 columns) */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Images Section */}
-            <Card>
-              <CardContent className="p-2">
-                <div className="relative h-[500px] flex items-center justify-center">
-                  <img
-                    src={images[currentImageIndex]}
-                    alt={listing.title}
-                    className="object-contain w-full h-full max-h-[500px]"
-                  />
-                  {listing.status === 'sold' && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute top-2 right-2"
-                    >
-                      Sold
-                    </Badge>
-                  )}
-                  {images.length > 1 && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90"
-                        onClick={prevImage}
-                      >
-                        <ChevronLeft className="h-6 w-6" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90"
-                        onClick={nextImage}
-                      >
-                        <ChevronRight className="h-6 w-6" />
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+      {/* Feature Credit Dialog */}
+      {userId && (
+        <FeatureCreditDialog
+          open={showFeatureDialog}
+          onOpenChange={setShowFeatureDialog}
+          userId={userId}
+          listingId={listing.id}
+          onSuccess={() => {
+            setIsFeatured(true)
+          }}
+        />
+      )}
 
-            <div className="grid grid-cols-6 gap-4">
-              {images.map((image, index) => (
-                <div
-                  key={index}
-                  className={`aspect-video cursor-pointer overflow-hidden rounded-lg border-2 ${
-                    index === currentImageIndex
-                      ? 'border-primary'
-                      : 'border-transparent'
-                  }`}
-                  onClick={() => setCurrentImageIndex(index)}
-                >
-                  <img
-                    src={image}
-                    alt={`${listing.title} - Image ${index + 1}`}
-                    className="object-cover w-full h-full"
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* Details Section */}
-            <Card>
-              <CardContent className="p-6 space-y-6">
-                <div className="flex items-center gap-2 mb-4">
-                  {listing.type === 'firearms' ? (
-                    <Image
-                      src="/images/pistol-gun-icon.svg"
-                      alt="Firearms"
-                      width={20}
-                      height={20}
-                      className="mr-2"
-                    />
-                  ) : (
-                    <Package className="h-5 w-5 mr-2" />
-                  )}
-                  <span className="text-sm text-muted-foreground">
-                    {listing.type === 'firearms' ? 'Firearms' : 'Non-Firearms'}{' '}
-                    Listing
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">
-                    {getCategoryLabel(listing.category, listing.type)}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content Section (3 columns) */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Images Section */}
+          <Card>
+            <CardContent className="p-2">
+              <div className="relative h-[500px] flex items-center justify-center">
+                <img
+                  src={images[currentImageIndex]}
+                  alt={listing.title}
+                  className="object-contain w-full h-full max-h-[500px]"
+                />
+                {listing.status === 'sold' && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute top-2 right-2"
+                  >
+                    Sold
                   </Badge>
-                  {listing.subcategory && (
-                    <Badge variant="outline">
-                      {getSubcategoryLabel(
-                        listing.category,
-                        listing.subcategory
-                      )}
-                    </Badge>
-                  )}
-                  {listing.type === 'firearms' && listing.calibre && (
-                    <Badge variant="secondary">{listing.calibre}</Badge>
-                  )}
-                </div>
+                )}
+                {images.length > 1 && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90"
+                      onClick={prevImage}
+                    >
+                      <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90"
+                      onClick={nextImage}
+                    >
+                      <ChevronRight className="h-6 w-6" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
 
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">{listing.title}</h1>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatPrice(listing.price)}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    Listed on {format(new Date(listing.created_at), 'PPP')}
-                  </span>
-                </div>
-
-                {/* Description Section */}
-                <div className="border-t pt-4">
-                  <h2 className="text-xl font-semibold mb-3">Description</h2>
-                  <p className="text-gray-700 whitespace-pre-line">
-                    {listing.description}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="grid grid-cols-6 gap-4">
+            {images.map((image, index) => (
+              <div
+                key={index}
+                className={`aspect-video cursor-pointer overflow-hidden rounded-lg border-2 ${
+                  index === currentImageIndex
+                    ? 'border-primary'
+                    : 'border-transparent'
+                }`}
+                onClick={() => setCurrentImageIndex(index)}
+              >
+                <img
+                  src={image}
+                  alt={`${listing.title} - Image ${index + 1}`}
+                  className="object-cover w-full h-full"
+                />
+              </div>
+            ))}
           </div>
 
-          {/* Seller Information Section (1 column) */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Seller Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {renderSellerInfo()}
-              </CardContent>
-            </Card>
-          </div>
+          {/* Details Section */}
+          <Card>
+            <CardContent className="p-6 space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                {listing.type === 'firearms' ? (
+                  <Image
+                    src="/images/pistol-gun-icon.svg"
+                    alt="Firearms"
+                    width={20}
+                    height={20}
+                    className="mr-2"
+                  />
+                ) : (
+                  <Package className="h-5 w-5 mr-2" />
+                )}
+                <span className="text-sm text-muted-foreground">
+                  {listing.type === 'firearms' ? 'Firearms' : 'Non-Firearms'}{' '}
+                  Listing
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {getCategoryLabel(listing.category, listing.type)}
+                </Badge>
+                {listing.subcategory && (
+                  <Badge variant="outline">
+                    {getSubcategoryLabel(listing.category, listing.subcategory)}
+                  </Badge>
+                )}
+                {listing.type === 'firearms' && listing.calibre && (
+                  <Badge variant="secondary">{listing.calibre}</Badge>
+                )}
+              </div>
+
+              <div>
+                <h1 className="text-3xl font-bold mb-2">{listing.title}</h1>
+                <p className="text-2xl font-bold text-primary">
+                  {formatPrice(listing.price)}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+                <Calendar className="h-4 w-4" />
+                <span>
+                  Listed on {format(new Date(listing.created_at), 'PPP')}
+                </span>
+              </div>
+
+              {/* Description Section */}
+              <div className="border-t pt-4">
+                <h2 className="text-xl font-semibold mb-3">Description</h2>
+                <p className="text-gray-700 whitespace-pre-line">
+                  {listing.description}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Seller Information Section (1 column) */}
+        <div className="lg:col-span-1">
+          <Card>
+            <CardHeader>
+              <CardTitle>Seller Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {renderSellerInfo()}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Add the AutoFeatureHandler with the specific listing ID */}
       <AutoFeatureHandler listingId={listing.id} />

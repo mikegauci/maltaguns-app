@@ -196,113 +196,112 @@ export default function ProfilePage() {
 
   return (
     <PageLayout>
-        <PageHeader
-          title="My Profile"
-          description="Manage your account and content"
-        />
+      <PageHeader
+        title="My Profile"
+        description="Manage your account and content"
+      />
 
-        <ProfileTabs
-          profile={profile}
-          listings={listings}
-          listingCredits={listingCredits}
-          blogPosts={blogPosts}
-          events={events}
-          eventCredits={eventCredits}
-          stores={stores}
-          clubs={clubs}
-          servicing={servicing}
-          ranges={ranges}
-          creditTransactions={creditTransactions}
-          listingIdToTitleMap={listingIdToTitleMap}
-          form={form}
-          isEditing={isEditing}
-          setIsEditing={setIsEditing}
-          uploadingLicense={uploadingLicense}
-          uploadingIdCard={uploadingIdCard}
-          licenseUploadProgress={licenseUploadProgress}
-          idCardUploadProgress={idCardUploadProgress}
-          establishmentInfoOpen={establishmentInfoOpen}
-          setEstablishmentInfoOpen={setEstablishmentInfoOpen}
-          onSubmit={onSubmit}
-          handleLicenseUpload={handleLicenseUpload}
-          handleIdCardUpload={handleIdCardUpload}
-          handleRemoveLicense={profileHandlers.handleRemoveLicense}
-          handleRemoveIdCard={profileHandlers.handleRemoveIdCard}
-          handleListingStatusChange={profileHandlers.handleListingStatusChange}
-          handleRenewListing={profileHandlers.handleRenewListing}
-          confirmDeleteListing={confirmDeleteListing}
-          handleDeletePost={contentHandlers.handleDeletePost}
-          handleDeleteEvent={contentHandlers.handleDeleteEvent}
-          handleDeleteStore={contentHandlers.handleDeleteStore}
-          setListingToFeature={setListingToFeature}
-          setFeatureDialogOpen={setFeatureDialogOpen}
-          setListingToRemoveFeature={setListingToRemoveFeature}
-          setRemoveFeatureDialogOpen={setRemoveFeatureDialogOpen}
-          setShowCreditDialog={setShowCreditDialog}
-          setShowEventCreditDialog={setShowEventCreditDialog}
-        />
+      <ProfileTabs
+        profile={profile}
+        listings={listings}
+        listingCredits={listingCredits}
+        blogPosts={blogPosts}
+        events={events}
+        eventCredits={eventCredits}
+        stores={stores}
+        clubs={clubs}
+        servicing={servicing}
+        ranges={ranges}
+        creditTransactions={creditTransactions}
+        listingIdToTitleMap={listingIdToTitleMap}
+        form={form}
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
+        uploadingLicense={uploadingLicense}
+        uploadingIdCard={uploadingIdCard}
+        licenseUploadProgress={licenseUploadProgress}
+        idCardUploadProgress={idCardUploadProgress}
+        establishmentInfoOpen={establishmentInfoOpen}
+        setEstablishmentInfoOpen={setEstablishmentInfoOpen}
+        onSubmit={onSubmit}
+        handleLicenseUpload={handleLicenseUpload}
+        handleIdCardUpload={handleIdCardUpload}
+        handleRemoveLicense={profileHandlers.handleRemoveLicense}
+        handleRemoveIdCard={profileHandlers.handleRemoveIdCard}
+        handleListingStatusChange={profileHandlers.handleListingStatusChange}
+        handleRenewListing={profileHandlers.handleRenewListing}
+        confirmDeleteListing={confirmDeleteListing}
+        handleDeletePost={contentHandlers.handleDeletePost}
+        handleDeleteEvent={contentHandlers.handleDeleteEvent}
+        handleDeleteStore={contentHandlers.handleDeleteStore}
+        setListingToFeature={setListingToFeature}
+        setFeatureDialogOpen={setFeatureDialogOpen}
+        setListingToRemoveFeature={setListingToRemoveFeature}
+        setRemoveFeatureDialogOpen={setRemoveFeatureDialogOpen}
+        setShowCreditDialog={setShowCreditDialog}
+        setShowEventCreditDialog={setShowEventCreditDialog}
+      />
 
-        {/* Dialogs */}
-        <DeleteConfirmationDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          title="Delete Listing"
-          description="Are you sure you want to delete this listing? This action cannot be undone."
-          onConfirm={() =>
-            listingToDelete && handleDeleteListing(listingToDelete)
+      {/* Dialogs */}
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Listing"
+        description="Are you sure you want to delete this listing? This action cannot be undone."
+        onConfirm={() =>
+          listingToDelete && handleDeleteListing(listingToDelete)
+        }
+        confirmLabel="Delete Listing"
+      />
+
+      {listingToFeature && (
+        <FeatureCreditDialog
+          open={featureDialogOpen}
+          onOpenChange={setFeatureDialogOpen}
+          userId={profile?.id ?? ''}
+          listingId={listingToFeature ?? ''}
+          onSuccess={handleRenewalSuccess}
+        />
+      )}
+
+      <RemoveFeatureDialog
+        open={removeFeatureDialogOpen}
+        onOpenChange={setRemoveFeatureDialogOpen}
+        onConfirm={() => {
+          if (listingToRemoveFeature) {
+            profileHandlers.handleRemoveFeature(listingToRemoveFeature)
+            setRemoveFeatureDialogOpen(false)
+            setListingToRemoveFeature(null)
           }
-          confirmLabel="Delete Listing"
-        />
+        }}
+      />
 
-        {listingToFeature && (
-          <FeatureCreditDialog
-            open={featureDialogOpen}
-            onOpenChange={setFeatureDialogOpen}
-            userId={profile?.id ?? ''}
-            listingId={listingToFeature ?? ''}
-            onSuccess={handleRenewalSuccess}
-          />
-        )}
+      <CreditDialog
+        open={showCreditDialog}
+        onOpenChange={setShowCreditDialog}
+        userId={profile?.id || ''}
+        source="profile"
+        onSuccess={() => {
+          refreshCredits()
+          toast({
+            title: 'Credits purchased',
+            description: 'Your credits have been added to your account.',
+          })
+        }}
+      />
 
-        <RemoveFeatureDialog
-          open={removeFeatureDialogOpen}
-          onOpenChange={setRemoveFeatureDialogOpen}
-          onConfirm={() => {
-            if (listingToRemoveFeature) {
-              profileHandlers.handleRemoveFeature(listingToRemoveFeature)
-              setRemoveFeatureDialogOpen(false)
-              setListingToRemoveFeature(null)
-            }
-          }}
-        />
-
-        <CreditDialog
-          open={showCreditDialog}
-          onOpenChange={setShowCreditDialog}
-          userId={profile?.id || ''}
-          source="profile"
-          onSuccess={() => {
-            refreshCredits()
-            toast({
-              title: 'Credits purchased',
-              description: 'Your credits have been added to your account.',
-            })
-          }}
-        />
-
-        <EventCreditDialog
-          open={showEventCreditDialog}
-          onOpenChange={setShowEventCreditDialog}
-          userId={profile?.id || ''}
-          onSuccess={() => {
-            refreshCredits()
-            toast({
-              title: 'Event credits purchased',
-              description:
-                'Your event credits have been added to your account.',
-            })
-          }}
-        />
+      <EventCreditDialog
+        open={showEventCreditDialog}
+        onOpenChange={setShowEventCreditDialog}
+        userId={profile?.id || ''}
+        onSuccess={() => {
+          refreshCredits()
+          toast({
+            title: 'Event credits purchased',
+            description: 'Your event credits have been added to your account.',
+          })
+        }}
+      />
     </PageLayout>
   )
 }

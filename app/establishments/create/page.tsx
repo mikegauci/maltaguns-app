@@ -339,231 +339,228 @@ export default function CreateEstablishmentPage() {
 
   return (
     <PageLayout containerSize="sm" padding="md">
-        <BackButton label="Back to Home" href="/" className="mb-6" />
+      <BackButton label="Back to Home" href="/" className="mb-6" />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Create a New Establishment</CardTitle>
-            <CardDescription>
-              Add your firearms-related business to the MaltaGuns directory
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
+      <Card>
+        <CardHeader>
+          <CardTitle>Create a New Establishment</CardTitle>
+          <CardDescription>
+            Add your firearms-related business to the MaltaGuns directory
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="establishmentType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Establishment Type</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select establishment type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem
+                          value="store"
+                          className="flex items-center gap-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Store className="h-4 w-4" /> Store
+                          </div>
+                        </SelectItem>
+                        <SelectItem
+                          value="club"
+                          className="flex items-center gap-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4" /> Club
+                          </div>
+                        </SelectItem>
+                        <SelectItem
+                          value="servicing"
+                          className="flex items-center gap-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Wrench className="h-4 w-4" /> Servicing
+                          </div>
+                        </SelectItem>
+                        <SelectItem
+                          value="range"
+                          className="flex items-center gap-2"
+                        >
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" /> Range
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="businessName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Name</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter your business name"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="logoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Logo</FormLabel>
+                    <FormControl>
+                      <div className="space-y-4">
+                        {field.value && (
+                          <img
+                            src={field.value}
+                            alt="Business logo preview"
+                            className="w-32 h-32 object-contain rounded-lg"
+                          />
+                        )}
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          disabled={uploadingLogo}
+                        />
+                        <Input type="hidden" {...field} />
+                        {uploadingLogo && (
+                          <p className="text-sm text-muted-foreground">
+                            Uploading logo...
+                          </p>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter your business address"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="+356 1234 5678"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="info@example.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Business Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe your business and services"
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        placeholder="https://example.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || uploadingLogo}
               >
-                <FormField
-                  control={form.control}
-                  name="establishmentType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Establishment Type</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select establishment type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem
-                            value="store"
-                            className="flex items-center gap-2"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Store className="h-4 w-4" /> Store
-                            </div>
-                          </SelectItem>
-                          <SelectItem
-                            value="club"
-                            className="flex items-center gap-2"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4" /> Club
-                            </div>
-                          </SelectItem>
-                          <SelectItem
-                            value="servicing"
-                            className="flex items-center gap-2"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Wrench className="h-4 w-4" /> Servicing
-                            </div>
-                          </SelectItem>
-                          <SelectItem
-                            value="range"
-                            className="flex items-center gap-2"
-                          >
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4" /> Range
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="businessName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Business Name</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your business name"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="logoUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Business Logo</FormLabel>
-                      <FormControl>
-                        <div className="space-y-4">
-                          {field.value && (
-                            <img
-                              src={field.value}
-                              alt="Business logo preview"
-                              className="w-32 h-32 object-contain rounded-lg"
-                            />
-                          )}
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLogoUpload}
-                            disabled={uploadingLogo}
-                          />
-                          <Input type="hidden" {...field} />
-                          {uploadingLogo && (
-                            <p className="text-sm text-muted-foreground">
-                              Uploading logo...
-                            </p>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your business address"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="tel"
-                            placeholder="+356 1234 5678"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="info@example.com"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Business Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe your business and services"
-                          className="min-h-[100px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder="https://example.com"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading || uploadingLogo}
-                >
-                  {isLoading
-                    ? 'Creating establishment...'
-                    : 'Create Establishment'}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                {isLoading
+                  ? 'Creating establishment...'
+                  : 'Create Establishment'}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </PageLayout>
   )
 }

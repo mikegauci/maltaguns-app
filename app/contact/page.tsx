@@ -98,95 +98,77 @@ export default function ContactPage() {
         className="mb-12"
       />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <div className="md:col-span-1 space-y-6">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold text-lg mb-4">
-                  Contact Information
-                </h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <Mail className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Email</p>
-                      <p className="font-medium">info@maltaguns.com</p>
-                    </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="md:col-span-1 space-y-6">
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="font-semibold text-lg mb-4">
+                Contact Information
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <Mail className="h-5 w-5 text-primary" />
                   </div>
-
-                  <div className="flex items-center gap-3">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <Phone className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Phone</p>
-                      <p className="font-medium">+356 1234 5678</p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Email</p>
+                    <p className="font-medium">info@maltaguns.com</p>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          <div className="md:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Send a Message</CardTitle>
-                <CardDescription>
-                  Fill out the form below to get in touch with us
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(onSubmit)}
-                    className="space-y-4"
-                  >
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Your name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-2 rounded-full">
+                    <Phone className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone</p>
+                    <p className="font-medium">+356 1234 5678</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email</FormLabel>
-                            <FormControl>
-                              <Input
-                                type="email"
-                                placeholder="your@email.com"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+        <div className="md:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Send a Message</CardTitle>
+              <CardDescription>
+                Fill out the form below to get in touch with us
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4"
+                >
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Your name" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}
-                      name="subject"
+                      name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Subject</FormLabel>
+                          <FormLabel>Email</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="What's this about?"
+                              type="email"
+                              placeholder="your@email.com"
                               {...field}
                             />
                           </FormControl>
@@ -194,38 +176,53 @@ export default function ContactPage() {
                         </FormItem>
                       )}
                     />
+                  </div>
 
-                    <FormField
-                      control={form.control}
-                      name="message"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Message</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Your message..."
-                              className="min-h-[150px]"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input placeholder="What's this about?" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? 'Sending...' : 'Send Message'}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-          </div>
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Your message..."
+                            className="min-h-[150px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
         </div>
+      </div>
     </PageLayout>
   )
 }

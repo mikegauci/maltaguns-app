@@ -11,10 +11,7 @@ export const metadata: Metadata = {
 export default function PrivacyPolicy() {
   return (
     <PageLayout innerClassName="max-w-4xl">
-      <PageHeader
-        title="Privacy Policy"
-        className="mb-4"
-      />
+      <PageHeader title="Privacy Policy" className="mb-4" />
 
       <p className="text-muted-foreground mb-8">Effective Date: 15/04/2025</p>
 

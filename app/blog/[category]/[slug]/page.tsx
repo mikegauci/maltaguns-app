@@ -271,70 +271,70 @@ export default async function BlogPost({
   return (
     <PageLayout innerClassName="max-w-screen-lg">
       <ViewTracker postId={post.id} />
-        <div className="flex justify-between items-center mb-8">
-          <BackButton label="Back to blog" href="/blog" />
-          {canEdit && (
-            <Link href={`/blog/${params.category}/${params.slug}/edit`}>
-              <Button>
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit Post
-              </Button>
+      <div className="flex justify-between items-center mb-8">
+        <BackButton label="Back to blog" href="/blog" />
+        {canEdit && (
+          <Link href={`/blog/${params.category}/${params.slug}/edit`}>
+            <Button>
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit Post
+            </Button>
+          </Link>
+        )}
+      </div>
+
+      <article className="prose prose-neutral dark:prose-invert prose-strong:text-[#0a0a0a] prose-b:text-[#0a0a0a] mx-auto">
+        {post.featured_image && (
+          <div className="mb-8">
+            <img
+              src={post.featured_image}
+              alt={post.title}
+              className="w-full h-[550px] object-cover rounded-lg"
+            />
+          </div>
+        )}
+
+        <div className="mb-8">
+          <h1 className="mb-4">{blogPost.title}</h1>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span>By {blogPost.author.username}</span>
+            <span>•</span>
+            <span>
+              {new Date(post.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </span>
+            <span>•</span>
+            <Link
+              href={`/blog/${params.category}`}
+              className="text-primary hover:text-primary/80"
+            >
+              {params.category.charAt(0).toUpperCase() +
+                params.category.slice(1)}
             </Link>
-          )}
+
+            {establishment && (
+              <>
+                <span>•</span>
+                <Link
+                  href={getEstablishmentLink(establishment)}
+                  className="inline-flex items-center"
+                  prefetch={false}
+                >
+                  <Badge variant="outline" className="flex items-center">
+                    {getEstablishmentIcon()}
+                    {establishment.name}
+                  </Badge>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
-        <article className="prose prose-neutral dark:prose-invert prose-strong:text-[#0a0a0a] prose-b:text-[#0a0a0a] mx-auto">
-          {post.featured_image && (
-            <div className="mb-8">
-              <img
-                src={post.featured_image}
-                alt={post.title}
-                className="w-full h-[550px] object-cover rounded-lg"
-              />
-            </div>
-          )}
-
-          <div className="mb-8">
-            <h1 className="mb-4">{blogPost.title}</h1>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-              <span>By {blogPost.author.username}</span>
-              <span>•</span>
-              <span>
-                {new Date(post.created_at).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </span>
-              <span>•</span>
-              <Link
-                href={`/blog/${params.category}`}
-                className="text-primary hover:text-primary/80"
-              >
-                {params.category.charAt(0).toUpperCase() +
-                  params.category.slice(1)}
-              </Link>
-
-              {establishment && (
-                <>
-                  <span>•</span>
-                  <Link
-                    href={getEstablishmentLink(establishment)}
-                    className="inline-flex items-center"
-                    prefetch={false}
-                  >
-                    <Badge variant="outline" className="flex items-center">
-                      {getEstablishmentIcon()}
-                      {establishment.name}
-                    </Badge>
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-
-          <div dangerouslySetInnerHTML={{ __html: post.content }} />
-        </article>
+        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+      </article>
     </PageLayout>
   )
 }

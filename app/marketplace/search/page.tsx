@@ -262,88 +262,88 @@ export default function SearchResults() {
 
   return (
     <PageLayout containerSize="lg" padding="md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Link href="/marketplace">
-                <Button variant="ghost" size="sm" className="h-8">
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Back
-                </Button>
-              </Link>
-            </div>
-            <h1 className="text-2xl mb-4 font-bold">
-              {isLoading
-                ? 'Loading...'
-                : query
-                  ? 'Search Results'
-                  : category
-                    ? `${getCategoryLabel(category, type as 'firearms' | 'non_firearms')}`
-                    : type
-                      ? type === 'firearms'
-                        ? 'Firearms'
-                        : 'Non-Firearms'
-                      : 'All Listings'}
-            </h1>
-            <p className="text-muted-foreground">
-              {isLoading
-                ? 'Searching...'
-                : query
-                  ? `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"`
-                  : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`}
-            </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Link href="/marketplace">
+              <Button variant="ghost" size="sm" className="h-8">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </Button>
+            </Link>
           </div>
+          <h1 className="text-2xl mb-4 font-bold">
+            {isLoading
+              ? 'Loading...'
+              : query
+                ? 'Search Results'
+                : category
+                  ? `${getCategoryLabel(category, type as 'firearms' | 'non_firearms')}`
+                  : type
+                    ? type === 'firearms'
+                      ? 'Firearms'
+                      : 'Non-Firearms'
+                    : 'All Listings'}
+          </h1>
+          <p className="text-muted-foreground">
+            {isLoading
+              ? 'Searching...'
+              : query
+                ? `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"`
+                : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`}
+          </p>
         </div>
+      </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <div className="h-48 bg-muted rounded-t-lg" />
-                <CardContent className="p-6">
-                  <div className="h-6 bg-muted rounded mb-4" />
-                  <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                  <div className="h-4 bg-muted rounded w-1/2" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : listings.length === 0 && featuredListings.length === 0 ? (
-          <Card className="p-6 text-center">
-            <CardContent className="pt-6">
-              <h3 className="text-lg font-semibold mb-2">No listings found</h3>
-              <p className="text-muted-foreground mb-4">
-                Try adjusting your search terms or category filters.
-              </p>
-              <Link href="/marketplace">
-                <Button>Browse All Listings</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            {featuredListings.length > 0 && (
-              <div className="mb-10">
-                <div className="flex items-center gap-2 mb-6">
-                  <Star className="h-5 w-5 text-red-500" />
-                  <h2 className="text-xl font-bold">Featured Listings</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                  {featuredListings.map(renderListingCard)}
-                </div>
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <div className="h-48 bg-muted rounded-t-lg" />
+              <CardContent className="p-6">
+                <div className="h-6 bg-muted rounded mb-4" />
+                <div className="h-4 bg-muted rounded w-3/4 mb-2" />
+                <div className="h-4 bg-muted rounded w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : listings.length === 0 && featuredListings.length === 0 ? (
+        <Card className="p-6 text-center">
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-semibold mb-2">No listings found</h3>
+            <p className="text-muted-foreground mb-4">
+              Try adjusting your search terms or category filters.
+            </p>
+            <Link href="/marketplace">
+              <Button>Browse All Listings</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {featuredListings.length > 0 && (
+            <div className="mb-10">
+              <div className="flex items-center gap-2 mb-6">
+                <Star className="h-5 w-5 text-red-500" />
+                <h2 className="text-xl font-bold">Featured Listings</h2>
               </div>
-            )}
-
-            <div>
-              <h2 className="text-2xl font-bold mb-4">
-                {featuredListings.length > 0 ? 'All Results' : 'Search Results'}
-              </h2>
               <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                {listings.map(renderListingCard)}
+                {featuredListings.map(renderListingCard)}
               </div>
             </div>
-          </>
-        )}
+          )}
+
+          <div>
+            <h2 className="text-2xl font-bold mb-4">
+              {featuredListings.length > 0 ? 'All Results' : 'Search Results'}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {listings.map(renderListingCard)}
+            </div>
+          </div>
+        </>
+      )}
     </PageLayout>
   )
 }

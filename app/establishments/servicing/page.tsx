@@ -64,99 +64,99 @@ export default function ServicingPage() {
 
   return (
     <PageLayout containerSize="lg" padding="md" withSpacing>
-        {/* Back Button */}
-        <BackButton label="Back to Establishments" href="/establishments" />
+      {/* Back Button */}
+      <BackButton label="Back to Establishments" href="/establishments" />
 
-        {/* Hero Section */}
-        <PageHeader
-          title="Firearms Servicing"
-          description="Find firearms repair, servicing and maintenance providers across Malta"
-        />
+      {/* Hero Section */}
+      <PageHeader
+        title="Firearms Servicing"
+        description="Find firearms repair, servicing and maintenance providers across Malta"
+      />
 
-        {/* Actions - Only show if authenticated */}
-        {isAuthenticated && (
-          <div className="flex justify-end">
-            <Link href="/establishments/create">
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Your Business
-              </Button>
-            </Link>
-          </div>
-        )}
+      {/* Actions - Only show if authenticated */}
+      {isAuthenticated && (
+        <div className="flex justify-end">
+          <Link href="/establishments/create">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Your Business
+            </Button>
+          </Link>
+        </div>
+      )}
 
-        {/* Servicing Grid */}
-        {servicingProviders.length === 0 ? (
-          <Card className="p-6 text-center">
-            <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">
-              No servicing providers listed yet.
-            </p>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {servicingProviders.map(provider => (
-              <Link
-                key={provider.id}
-                href={`/establishments/servicing/${provider.slug || provider.id}`}
-              >
-                <Card className="h-full hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4 mb-4">
-                      {provider.logo_url ? (
-                        <img
-                          src={provider.logo_url}
-                          alt={provider.business_name}
-                          className="w-16 h-16 object-contain rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                          <Wrench className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          {provider.business_name}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          <span>{provider.location}</span>
-                        </div>
+      {/* Servicing Grid */}
+      {servicingProviders.length === 0 ? (
+        <Card className="p-6 text-center">
+          <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+          <p className="text-muted-foreground">
+            No servicing providers listed yet.
+          </p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {servicingProviders.map(provider => (
+            <Link
+              key={provider.id}
+              href={`/establishments/servicing/${provider.slug || provider.id}`}
+            >
+              <Card className="h-full hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    {provider.logo_url ? (
+                      <img
+                        src={provider.logo_url}
+                        alt={provider.business_name}
+                        className="w-16 h-16 object-contain rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                        <Wrench className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div>
+                      <h3 className="font-semibold text-lg">
+                        {provider.business_name}
+                      </h3>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <MapPin className="h-4 w-4" />
+                        <span>{provider.location}</span>
                       </div>
                     </div>
+                  </div>
 
-                    {provider.description && (
-                      <p className="text-muted-foreground mb-4 line-clamp-2">
-                        {provider.description}
-                      </p>
+                  {provider.description && (
+                    <p className="text-muted-foreground mb-4 line-clamp-2">
+                      {provider.description}
+                    </p>
+                  )}
+
+                  <div className="space-y-2 text-sm">
+                    {provider.phone && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        <span>{provider.phone}</span>
+                      </div>
                     )}
-
-                    <div className="space-y-2 text-sm">
-                      {provider.phone && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Phone className="h-4 w-4" />
-                          <span>{provider.phone}</span>
-                        </div>
-                      )}
-                      {provider.email && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Mail className="h-4 w-4" />
-                          <span>{provider.email}</span>
-                        </div>
-                      )}
-                      {provider.website && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Globe className="h-4 w-4" />
-                          <span>{provider.website}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
+                    {provider.email && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Mail className="h-4 w-4" />
+                        <span>{provider.email}</span>
+                      </div>
+                    )}
+                    {provider.website && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Globe className="h-4 w-4" />
+                        <span>{provider.website}</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </PageLayout>
   )
 }

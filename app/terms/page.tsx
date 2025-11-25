@@ -11,10 +11,7 @@ export const metadata: Metadata = {
 export default function TermsAndConditions() {
   return (
     <PageLayout innerClassName="max-w-4xl">
-      <PageHeader
-        title="Terms and Conditions"
-        className="mb-6"
-      />
+      <PageHeader title="Terms and Conditions" className="mb-6" />
 
       <div className="prose prose-sm max-w-none text-foreground">
         <h2 className="text-xl font-semibold mt-8 mb-4">

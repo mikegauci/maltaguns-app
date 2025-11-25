@@ -735,178 +735,175 @@ export default function EditBlogPost({
 
   return (
     <PageLayout containerSize="md" padding="md">
-        <BackButton
-          label="Back to post"
-          href={`/blog/${params.category}/${params.slug}`}
-          className="mb-6"
-        />
+      <BackButton
+        label="Back to post"
+        href={`/blog/${params.category}/${params.slug}`}
+        className="mb-6"
+      />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Edit Blog Post</CardTitle>
-            <CardDescription>
-              Update your blog post content and settings
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Title</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter post title" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+      <Card>
+        <CardHeader>
+          <CardTitle>Edit Blog Post</CardTitle>
+          <CardDescription>
+            Update your blog post content and settings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter post title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="featuredImage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Featured Image</FormLabel>
-                      <FormControl>
-                        <div className="space-y-4">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            disabled={uploadingImage}
+              <FormField
+                control={form.control}
+                name="featuredImage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Featured Image</FormLabel>
+                    <FormControl>
+                      <div className="space-y-4">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          disabled={uploadingImage}
+                        />
+                        <Input type="hidden" {...field} />
+                        {uploadingImage && (
+                          <p className="text-sm text-muted-foreground">
+                            Uploading image...
+                          </p>
+                        )}
+                        {field.value && (
+                          <img
+                            src={field.value}
+                            alt="Featured image preview"
+                            className="w-full max-h-[300px] object-cover rounded-lg"
                           />
-                          <Input type="hidden" {...field} />
-                          {uploadingImage && (
-                            <p className="text-sm text-muted-foreground">
-                              Uploading image...
-                            </p>
-                          )}
-                          {field.value && (
-                            <img
-                              src={field.value}
-                              alt="Featured image preview"
-                              className="w-full max-h-[300px] object-cover rounded-lg"
-                            />
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Category</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="news">News</SelectItem>
-                          <SelectItem value="guides">Guides</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="content"
-                  render={() => (
-                    <FormItem>
-                      <FormLabel>Content</FormLabel>
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <div className="min-h-[400px] border rounded-lg">
-                          <MenuBar />
-                          <div className="p-4">
-                            <EditorContent editor={editor} />
-                          </div>
-                        </div>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        <SelectItem value="news">News</SelectItem>
+                        <SelectItem value="guides">Guides</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={
-                    isSubmitting || uploadingImage || uploadingContentImage
-                  }
-                >
-                  {isSubmitting || uploadingImage || uploadingContentImage ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {uploadingImage
-                        ? 'Uploading Image...'
-                        : uploadingContentImage
-                          ? 'Adding Image...'
-                          : 'Saving Changes...'}
-                    </>
-                  ) : (
-                    'Save Changes'
-                  )}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+              <FormField
+                control={form.control}
+                name="content"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Content</FormLabel>
+                    <FormControl>
+                      <div className="min-h-[400px] border rounded-lg">
+                        <MenuBar />
+                        <div className="p-4">
+                          <EditorContent editor={editor} />
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        {/* Add Link Dialog */}
-        <LinkDialog
-          open={linkDialogOpen}
-          onOpenChange={setLinkDialogOpen}
-          linkUrl={linkUrl}
-          setLinkUrl={setLinkUrl}
-          openInNewTab={openInNewTab}
-          setOpenInNewTab={setOpenInNewTab}
-          onApply={applyLink}
-        />
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={
+                  isSubmitting || uploadingImage || uploadingContentImage
+                }
+              >
+                {isSubmitting || uploadingImage || uploadingContentImage ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {uploadingImage
+                      ? 'Uploading Image...'
+                      : uploadingContentImage
+                        ? 'Adding Image...'
+                        : 'Saving Changes...'}
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
 
-        {/* Add Image Alt Text Dialog */}
-        <ImageAltDialog
-          open={imageAltDialogOpen}
-          onOpenChange={open => {
-            if (!open) {
-              setImageAltDialogOpen(false)
-              setImageAltText('')
-              setPendingImageFile(null)
-              setSelectedImage(null)
-              setIsEditingExistingImage(false)
-            }
-          }}
-          imageAltText={imageAltText}
-          setImageAltText={setImageAltText}
-          isEditingExistingImage={isEditingExistingImage}
-          selectedImage={selectedImage}
-          uploadingContentImage={uploadingContentImage}
-          onInsert={handleImageInsert}
-          onCancel={() => {
-            setPendingImageFile(null)
+      {/* Add Link Dialog */}
+      <LinkDialog
+        open={linkDialogOpen}
+        onOpenChange={setLinkDialogOpen}
+        linkUrl={linkUrl}
+        setLinkUrl={setLinkUrl}
+        openInNewTab={openInNewTab}
+        setOpenInNewTab={setOpenInNewTab}
+        onApply={applyLink}
+      />
+
+      {/* Add Image Alt Text Dialog */}
+      <ImageAltDialog
+        open={imageAltDialogOpen}
+        onOpenChange={open => {
+          if (!open) {
+            setImageAltDialogOpen(false)
             setImageAltText('')
+            setPendingImageFile(null)
             setSelectedImage(null)
             setIsEditingExistingImage(false)
-          }}
-        />
+          }
+        }}
+        imageAltText={imageAltText}
+        setImageAltText={setImageAltText}
+        isEditingExistingImage={isEditingExistingImage}
+        selectedImage={selectedImage}
+        uploadingContentImage={uploadingContentImage}
+        onInsert={handleImageInsert}
+        onCancel={() => {
+          setPendingImageFile(null)
+          setImageAltText('')
+          setSelectedImage(null)
+          setIsEditingExistingImage(false)
+        }}
+      />
     </PageLayout>
   )
 }

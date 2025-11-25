@@ -160,30 +160,30 @@ export default async function BlogPage() {
         description="Read the latest news, guides, and insights from Malta's firearms community. Stay informed about industry updates, safety practices, and expert advice from local dealers and enthusiasts."
       />
       <div className="flex gap-4 justify-center mb-8">
-          {canCreate && (
-            <Link href="/blog/create">
-              <Button className="bg-primary">
-                <Plus className="h-4 w-4 mr-2" />
-                Write Post
-              </Button>
-            </Link>
-          )}
-          <Link href="/blog/news">
-            <Button variant="outline">News</Button>
+        {canCreate && (
+          <Link href="/blog/create">
+            <Button className="bg-primary">
+              <Plus className="h-4 w-4 mr-2" />
+              Write Post
+            </Button>
           </Link>
-          <Link href="/blog/guides">
-            <Button variant="outline">Guides</Button>
-          </Link>
-        </div>
-        {posts.length === 0 ? (
-          <p className="text-muted-foreground text-lg">No blog posts found.</p>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map(post => (
-              <BlogPostCard key={post.id} post={post} />
-            ))}
-          </div>
         )}
+        <Link href="/blog/news">
+          <Button variant="outline">News</Button>
+        </Link>
+        <Link href="/blog/guides">
+          <Button variant="outline">Guides</Button>
+        </Link>
+      </div>
+      {posts.length === 0 ? (
+        <p className="text-muted-foreground text-lg">No blog posts found.</p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {posts.map(post => (
+            <BlogPostCard key={post.id} post={post} />
+          ))}
+        </div>
+      )}
     </PageLayout>
   )
 }

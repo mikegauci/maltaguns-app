@@ -348,175 +348,172 @@ export default function EditRangePage({
 
   return (
     <PageLayout containerSize="sm" padding="md">
-        <BackButton
-          label="Back to range profile"
-          href={`/establishments/ranges/${params.slug}`}
-          className="mb-6"
-        />
+      <BackButton
+        label="Back to range profile"
+        href={`/establishments/ranges/${params.slug}`}
+        className="mb-6"
+      />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Edit Range Profile</CardTitle>
-            <CardDescription>
-              Update your shooting range information
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
+      <Card>
+        <CardHeader>
+          <CardTitle>Edit Range Profile</CardTitle>
+          <CardDescription>
+            Update your shooting range information
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="businessName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Range Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your range name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="logoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Range Logo</FormLabel>
+                    <FormControl>
+                      <div className="space-y-4">
+                        {field.value && (
+                          <img
+                            src={field.value}
+                            alt="Range logo preview"
+                            className="w-32 h-32 object-contain rounded-lg"
+                          />
+                        )}
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          disabled={uploadingLogo}
+                        />
+                        <Input type="hidden" {...field} />
+                        {uploadingLogo && (
+                          <p className="text-sm text-muted-foreground">
+                            Uploading logo...
+                          </p>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter your range address"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="+356 1234 5678"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="info@example.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Range Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe your shooting range, facilities, and operations"
+                        className="min-h-[100px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="url"
+                        placeholder="https://example.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={isLoading || uploadingLogo}
               >
-                <FormField
-                  control={form.control}
-                  name="businessName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Range Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter your range name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="logoUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Range Logo</FormLabel>
-                      <FormControl>
-                        <div className="space-y-4">
-                          {field.value && (
-                            <img
-                              src={field.value}
-                              alt="Range logo preview"
-                              className="w-32 h-32 object-contain rounded-lg"
-                            />
-                          )}
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleLogoUpload}
-                            disabled={uploadingLogo}
-                          />
-                          <Input type="hidden" {...field} />
-                          {uploadingLogo && (
-                            <p className="text-sm text-muted-foreground">
-                              Uploading logo...
-                            </p>
-                          )}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Location</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter your range address"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Phone Number</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="tel"
-                            placeholder="+356 1234 5678"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Email Address</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="email"
-                            placeholder="info@example.com"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Range Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe your shooting range, facilities, and operations"
-                          className="min-h-[100px]"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="website"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Website (Optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="url"
-                          placeholder="https://example.com"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={isLoading || uploadingLogo}
-                >
-                  {isLoading ? 'Updating profile...' : 'Update Profile'}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                {isLoading ? 'Updating profile...' : 'Update Profile'}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
     </PageLayout>
   )
 }

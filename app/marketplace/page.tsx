@@ -294,127 +294,127 @@ export default function Marketplace() {
 
   return (
     <PageLayout>
-        <PageHeader
-          title="Marketplace"
-          description="Browse firearms, accessories, and related items from verified sellers across Malta. Buy and sell with confidence in a secure, legally compliant platform dedicated to responsible firearm ownership."
-        />
-        <div className="flex flex-row gap-4 mb-6 justify-center">
-          <Link href="/marketplace/create">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Listing
-            </Button>
-          </Link>
-          <Link href="/wishlist">
-            <Button variant="outline">
-              <Heart className="mr-2 h-4 w-4" />
-              My Wishlist
-            </Button>
-          </Link>
-        </div>
+      <PageHeader
+        title="Marketplace"
+        description="Browse firearms, accessories, and related items from verified sellers across Malta. Buy and sell with confidence in a secure, legally compliant platform dedicated to responsible firearm ownership."
+      />
+      <div className="flex flex-row gap-4 mb-6 justify-center">
+        <Link href="/marketplace/create">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Listing
+          </Button>
+        </Link>
+        <Link href="/wishlist">
+          <Button variant="outline">
+            <Heart className="mr-2 h-4 w-4" />
+            My Wishlist
+          </Button>
+        </Link>
+      </div>
 
-        {/* Add the AutoFeatureHandler with no specific listingId */}
-        <AutoFeatureHandler />
+      {/* Add the AutoFeatureHandler with no specific listingId */}
+      <AutoFeatureHandler />
 
-        {/* Category Navigation */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-          {categories.map(category => (
-            <Card key={category.title} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  {category.icon}
-                  <Link href={category.href} className="hover:underline">
-                    {category.title}
+      {/* Category Navigation */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        {categories.map(category => (
+          <Card key={category.title} className="overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2">
+                {category.icon}
+                <Link href={category.href} className="hover:underline">
+                  {category.title}
+                </Link>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                {category.subcategories.map(subcategory => (
+                  <Link
+                    key={subcategory.name}
+                    href={subcategory.href}
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    {subcategory.name}
                   </Link>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2">
-                  {category.subcategories.map(subcategory => (
-                    <Link
-                      key={subcategory.name}
-                      href={subcategory.href}
-                      className="text-sm text-muted-foreground hover:text-primary hover:underline"
-                    >
-                      {subcategory.name}
-                    </Link>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {error ? (
+        <Card className="p-6 text-center">
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardFooter className="justify-center">
+            <Link href="/marketplace/create">
+              <Button>
+                <Image
+                  src="/images/pistol-gun-icon.svg"
+                  alt="Firearms"
+                  width={16}
+                  height={16}
+                  className="mr-2"
+                />
+                Create Listing
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      ) : featuredListings.length === 0 && regularListings.length === 0 ? (
+        <Card className="p-6 text-center">
+          <CardHeader>
+            <CardTitle>No Listings Found</CardTitle>
+            <CardDescription>
+              Be the first to post a listing in the marketplace!
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="justify-center">
+            <Link href="/marketplace/create">
+              <Button>
+                <Image
+                  src="/images/pistol-gun-icon.svg"
+                  alt="Firearms"
+                  width={16}
+                  height={16}
+                  className="mr-2"
+                />
+                Create Listing
+              </Button>
+            </Link>
+          </CardFooter>
+        </Card>
+      ) : (
+        <div className="space-y-8">
+          {featuredListings.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4 flex items-center">
+                <Star className="h-5 w-5 mr-2 text-red-500" />
+                Featured Listings
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {featuredListings.map(renderListingCard)}
+              </div>
+            </div>
+          )}
+
+          {regularListings.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold mb-4">
+                {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                {regularListings.map(renderListingCard)}
+              </div>
+            </div>
+          )}
         </div>
-
-        {error ? (
-          <Card className="p-6 text-center">
-            <CardHeader>
-              <CardTitle>Error</CardTitle>
-              <CardDescription>{error}</CardDescription>
-            </CardHeader>
-            <CardFooter className="justify-center">
-              <Link href="/marketplace/create">
-                <Button>
-                  <Image
-                    src="/images/pistol-gun-icon.svg"
-                    alt="Firearms"
-                    width={16}
-                    height={16}
-                    className="mr-2"
-                  />
-                  Create Listing
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        ) : featuredListings.length === 0 && regularListings.length === 0 ? (
-          <Card className="p-6 text-center">
-            <CardHeader>
-              <CardTitle>No Listings Found</CardTitle>
-              <CardDescription>
-                Be the first to post a listing in the marketplace!
-              </CardDescription>
-            </CardHeader>
-            <CardFooter className="justify-center">
-              <Link href="/marketplace/create">
-                <Button>
-                  <Image
-                    src="/images/pistol-gun-icon.svg"
-                    alt="Firearms"
-                    width={16}
-                    height={16}
-                    className="mr-2"
-                  />
-                  Create Listing
-                </Button>
-              </Link>
-            </CardFooter>
-          </Card>
-        ) : (
-          <div className="space-y-8">
-            {featuredListings.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold mb-4 flex items-center">
-                  <Star className="h-5 w-5 mr-2 text-red-500" />
-                  Featured Listings
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                  {featuredListings.map(renderListingCard)}
-                </div>
-              </div>
-            )}
-
-            {regularListings.length > 0 && (
-              <div>
-                <h2 className="text-2xl font-bold mb-4">
-                  {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                  {regularListings.map(renderListingCard)}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+      )}
     </PageLayout>
   )
 }

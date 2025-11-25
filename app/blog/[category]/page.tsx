@@ -51,7 +51,7 @@ export default async function CategoryArchive({
       <PageHeader
         title={`${category.charAt(0).toUpperCase() + category.slice(1)} Articles`}
       />
-      
+
       <div className="flex gap-4 justify-center mb-8">
         <Link href="/blog">
           <Button variant="outline">All Posts</Button>
@@ -65,17 +65,17 @@ export default async function CategoryArchive({
         ))}
       </div>
 
-        {!posts || posts.length === 0 ? (
-          <p className="text-muted-foreground text-lg">
-            No {category} articles found.
-          </p>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {posts.map(post => (
-              <BlogPostCard key={post.id} post={post} />
-            ))}
-          </div>
-        )}
+      {!posts || posts.length === 0 ? (
+        <p className="text-muted-foreground text-lg">
+          No {category} articles found.
+        </p>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {posts.map(post => (
+            <BlogPostCard key={post.id} post={post} />
+          ))}
+        </div>
+      )}
     </PageLayout>
   )
 }
