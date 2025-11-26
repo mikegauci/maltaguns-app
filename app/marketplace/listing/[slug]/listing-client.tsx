@@ -10,7 +10,6 @@ import {
   Mail,
   Phone,
   Lock,
-  Pencil,
   Calendar,
   User,
   ChevronRight,
@@ -745,7 +744,11 @@ export default function ListingClient({
   return (
     <PageLayout containerSize="lg" padding="md">
       <div className="mb-6 flex items-center justify-between">
-        <BackButton label="Back to marketplace" href="/marketplace" hideLabelOnMobile={false} />
+        <BackButton
+          label="Back to marketplace"
+          href="/marketplace"
+          hideLabelOnMobile={false}
+        />
 
         {isOwner && (
           <div className="flex gap-2">

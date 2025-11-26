@@ -284,13 +284,13 @@ export default function SearchResults() {
               : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`}
         </p>
         <div className="mb-6">
-        <Link href="/marketplace">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Marketplace
-          </Button>
-        </Link>
-      </div>
+          <Link href="/marketplace">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Marketplace
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {isLoading ? (

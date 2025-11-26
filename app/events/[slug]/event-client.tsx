@@ -100,7 +100,12 @@ export default function EventClient({ event }: EventClientProps) {
 
   return (
     <PageLayout className="py-8">
-      <BackButton label="Back to events" href="/events" className="mb-6" hideLabelOnMobile={false} />
+      <BackButton
+        label="Back to events"
+        href="/events"
+        className="mb-6"
+        hideLabelOnMobile={false}
+      />
 
       <div className="bg-card rounded-lg shadow-md overflow-hidden">
         {/* Event Header */}

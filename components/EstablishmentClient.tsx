@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Phone, Mail, Globe, BookOpen } from 'lucide-react'
+import { Phone, Mail, Globe, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import BlogPostCard from '@/components/blog/BlogPostCard'
@@ -109,7 +109,6 @@ export default function EstablishmentClient({
 
   return (
     <PageLayout>
-
       <PageHeader
         title={establishment.business_name}
         description={establishment.location}

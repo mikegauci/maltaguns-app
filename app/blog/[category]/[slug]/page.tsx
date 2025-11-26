@@ -272,9 +272,17 @@ export default async function BlogPost({
     <PageLayout innerClassName="max-w-screen-lg">
       <ViewTracker postId={post.id} />
       <div className="flex justify-between items-center mb-8">
-        <BackButton label="Back to blog" href="/blog" hideLabelOnMobile={false} />
+        <BackButton
+          label="Back to blog"
+          href="/blog"
+          hideLabelOnMobile={false}
+        />
         {canEdit && (
-          <EditButton label="Edit Post" href={`/blog/${params.category}/${params.slug}/edit`} hideLabelOnMobile={false} />
+          <EditButton
+            label="Edit Post"
+            href={`/blog/${params.category}/${params.slug}/edit`}
+            hideLabelOnMobile={false}
+          />
         )}
       </div>
 

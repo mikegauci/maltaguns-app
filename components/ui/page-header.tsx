@@ -14,7 +14,9 @@ export function PageHeader({ title, description, className }: PageHeaderProps) {
         className
       )}
     >
-      <h1 className="md:text-4xl text-2xl font-bold mb-2 w-full md:w-[75%]">{title}</h1>
+      <h1 className="md:text-4xl text-2xl font-bold mb-2 w-full md:w-[75%]">
+        {title}
+      </h1>
       {description && <p className="text-muted-foreground">{description}</p>}
     </div>
   )
