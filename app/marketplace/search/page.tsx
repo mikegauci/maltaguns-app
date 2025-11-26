@@ -262,37 +262,35 @@ export default function SearchResults() {
 
   return (
     <PageLayout containerSize="lg" padding="md">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Link href="/marketplace">
-              <Button variant="ghost" size="sm" className="h-8">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back
-              </Button>
-            </Link>
-          </div>
-          <h1 className="text-2xl mb-4 font-bold">
-            {isLoading
-              ? 'Loading...'
-              : query
-                ? 'Search Results'
-                : category
-                  ? `${getCategoryLabel(category, type as 'firearms' | 'non_firearms')}`
-                  : type
-                    ? type === 'firearms'
-                      ? 'Firearms'
-                      : 'Non-Firearms'
-                    : 'All Listings'}
-          </h1>
-          <p className="text-muted-foreground">
-            {isLoading
-              ? 'Searching...'
-              : query
-                ? `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"`
-                : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`}
-          </p>
-        </div>
+      <div className="space-y-2 mb-8 text-center">
+        <h1 className="text-4xl font-bold tracking-tight">
+          {isLoading
+            ? 'Loading...'
+            : query
+              ? 'Search Results'
+              : category
+                ? `${getCategoryLabel(category, type as 'firearms' | 'non_firearms')}`
+                : type
+                  ? type === 'firearms'
+                    ? 'Firearms'
+                    : 'Non-Firearms'
+                  : 'All Listings'}
+        </h1>
+        <p className="text-lg text-muted-foreground">
+          {isLoading
+            ? 'Searching...'
+            : query
+              ? `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"`
+              : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`}
+        </p>
+        <div className="mb-6">
+        <Link href="/marketplace">
+          <Button variant="outline" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Marketplace
+          </Button>
+        </Link>
+      </div>
       </div>
 
       {isLoading ? (

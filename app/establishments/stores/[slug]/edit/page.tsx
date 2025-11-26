@@ -349,6 +349,7 @@ export default function EditStorePage({
         label="Back to store profile"
         href={`/establishments/stores/${params.slug}`}
         className="mb-6"
+        hideLabelOnMobile={false}
       />
 
       <Card>

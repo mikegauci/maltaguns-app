@@ -293,14 +293,6 @@ export default function CategoryListings({
               Be the first to post a listing in this category!
             </CardDescription>
           </CardHeader>
-          <CardFooter className="justify-center">
-            <Link href="/marketplace/create">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Listing
-              </Button>
-            </Link>
-          </CardFooter>
         </Card>
       ) : (
         <div className="space-y-8">

@@ -29,7 +29,7 @@ export function ListingFormLayout({
       <div
         className={`mb-6 ${showCredits ? 'flex items-center justify-between' : ''}`}
       >
-        <BackButton label="Back to listing types" href="/marketplace/create" />
+        <BackButton label="Back to listing types" href="/marketplace/create" hideLabelOnMobile={false} />
         {showCredits && (
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">

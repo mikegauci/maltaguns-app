@@ -3,12 +3,12 @@ import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import { Database } from '@/lib/database.types'
 import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Pencil, Store, Users, MapPin, Wrench } from 'lucide-react'
+import { Store, Users, MapPin, Wrench } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import ViewTracker from '@/components/blog/ViewTracker'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
+import { EditButton } from '@/components/ui/edit-button'
 
 interface BlogPostType {
   id: string
@@ -272,14 +272,9 @@ export default async function BlogPost({
     <PageLayout innerClassName="max-w-screen-lg">
       <ViewTracker postId={post.id} />
       <div className="flex justify-between items-center mb-8">
-        <BackButton label="Back to blog" href="/blog" />
+        <BackButton label="Back to blog" href="/blog" hideLabelOnMobile={false} />
         {canEdit && (
-          <Link href={`/blog/${params.category}/${params.slug}/edit`}>
-            <Button>
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit Post
-            </Button>
-          </Link>
+          <EditButton label="Edit Post" href={`/blog/${params.category}/${params.slug}/edit`} hideLabelOnMobile={false} />
         )}
       </div>
 

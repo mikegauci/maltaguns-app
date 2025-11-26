@@ -3,18 +3,20 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { MapPin, Phone, Mail, Globe, BookOpen, Pencil } from 'lucide-react'
+import { MapPin, Phone, Mail, Globe, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
 import BlogPostCard from '@/components/blog/BlogPostCard'
 import { BackButton } from '@/components/ui/back-button'
+import { EditButton } from '@/components/ui/edit-button'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   EstablishmentWithDetails,
   EstablishmentType,
 } from '@/app/establishments/types'
 import { getEstablishmentConfig } from '@/app/establishments/config'
 import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface EstablishmentClientProps {
   establishment: EstablishmentWithDetails
@@ -40,6 +42,7 @@ export default function EstablishmentClient({
   establishment,
   type,
 }: EstablishmentClientProps) {
+  const { supabase, session } = useSupabase()
   const [isOwner, setIsOwner] = useState(false)
   const [blogPosts, setBlogPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,12 +52,11 @@ export default function EstablishmentClient({
   const Icon = config.icon
 
   useEffect(() => {
-    // Check if current user is the owner
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setIsOwner(session.user.id === establishment.owner_id)
-      }
-    })
+    if (session?.user?.id) {
+      setIsOwner(session.user.id === establishment.owner_id)
+    } else {
+      setIsOwner(false)
+    }
 
     // Update blog posts if they change
     if (Array.isArray(establishment.blogPosts)) {
@@ -64,15 +66,12 @@ export default function EstablishmentClient({
     }
 
     setLoading(false)
-  }, [establishment.owner_id, establishment.blogPosts])
+  }, [session, establishment.owner_id, establishment.blogPosts])
 
   // Fetch blog posts directly from the client side as a fallback
   useEffect(() => {
     const fetchBlogPosts = async () => {
       try {
-        console.log(
-          `Fetching blog posts for ${config.label} ID: ${establishment.id}`
-        )
         setLoading(true)
 
         const { data, error } = await supabase
@@ -95,11 +94,8 @@ export default function EstablishmentClient({
 
         if (error) {
           console.error('Error fetching blog posts from client:', error)
-        } else if (data && data.length > 0) {
-          console.log(`Found ${data.length} blog posts:`, data)
+        } else if (data) {
           setBlogPosts(data)
-        } else {
-          console.log(`No blog posts found for this ${config.label}`)
         }
       } catch (error) {
         console.error('Error in client-side fetch:', error)
@@ -112,27 +108,24 @@ export default function EstablishmentClient({
   }, [establishment.id, refreshTrigger, config.label, config.blogForeignKey])
 
   return (
-    <PageLayout containerSize="lg" padding="md" withSpacing>
-      <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <BackButton
-          label={`Back to ${config.labelPlural}`}
-          href={config.baseUrl}
-        />
+    <PageLayout>
 
-        {isOwner && (
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Link
-              href={`/blog/create?${config.createQueryParam}=${establishment.id}`}
-              className="w-full sm:w-auto"
-            >
-              <Button className="bg-primary w-full sm:w-auto">
-                <Pencil className="h-4 w-4 mr-2" />
-                Create New Post
-              </Button>
-            </Link>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title={establishment.business_name}
+        description={establishment.location}
+      />
+
+      <BackButton
+        label={`Back to ${config.labelPlural}`}
+        href={config.baseUrl}
+      />
+
+      {isOwner && (
+        <EditButton
+          label="Edit Profile"
+          href={`${config.baseUrl}/${establishment.slug || establishment.id}/edit`}
+        />
+      )}
 
       {/* Establishment Profile */}
       <Card>
@@ -151,17 +144,7 @@ export default function EstablishmentClient({
             )}
 
             <div className="flex-1 w-full">
-              <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4 text-center sm:text-left">
-                {establishment.business_name}
-              </h1>
-
               <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
-                  <span className="text-sm sm:text-base">
-                    {establishment.location}
-                  </span>
-                </div>
                 {establishment.phone && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />

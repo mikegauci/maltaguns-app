@@ -91,7 +91,7 @@ export default function ContactPage() {
   }
 
   return (
-    <PageLayout className="py-16">
+    <PageLayout>
       <PageHeader
         title="Contact Us"
         description="Have a question or feedback? We'd love to hear from you. Fill out the form below and our team will get back to you as soon as possible."

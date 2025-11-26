@@ -34,6 +34,7 @@ import {
   LicenseTypes,
 } from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
+import { EditButton } from '@/components/ui/edit-button'
 
 // Default image to use when no images are provided
 const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
@@ -744,26 +745,18 @@ export default function ListingClient({
   return (
     <PageLayout containerSize="lg" padding="md">
       <div className="mb-6 flex items-center justify-between">
-        <BackButton label="Back to marketplace" href="/marketplace" />
+        <BackButton label="Back to marketplace" href="/marketplace" hideLabelOnMobile={false} />
 
         {isOwner && (
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-2"
-              onClick={() =>
-                router.push(
-                  `/marketplace/listing/${slugify(listing.title)}/edit`
-                )
-              }
-            >
-              <Pencil className="h-4 w-4 mr-2" />
-              Edit
-            </Button>
+            <EditButton
+              label="Edit Listing"
+              href={`/marketplace/listing/${slugify(listing.title)}/edit`}
+              hideLabelOnMobile={false}
+            />
 
             {!isFeatured && (
-              <Button variant="default" onClick={handleFeatureListing}>
+              <Button variant="secondary" onClick={handleFeatureListing}>
                 <Star className="h-4 w-4 mr-2" />
                 Feature Listing
               </Button>

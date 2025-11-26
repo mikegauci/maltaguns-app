@@ -71,14 +71,13 @@ export default function StoresPage() {
   }
 
   return (
-    <PageLayout containerSize="lg" padding="md" withSpacing>
-      <BackButton label="Back to Establishments" href="/establishments" />
-
+    <PageLayout>
       {/* Hero Section */}
       <PageHeader
         title="Firearms Stores"
         description="Find licensed firearms dealers and stores across Malta"
       />
+      <BackButton label="Back to Establishments" href="/establishments" />
 
       {/* Actions - Only show if authorized */}
       {isAuthorized && (

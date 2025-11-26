@@ -3,12 +3,10 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface BackButtonProps {
-  /** The text to display after the arrow. Default: "Back" */
   label?: string
-  /** The href to navigate to */
   href: string
-  /** Optional className for additional styling */
   className?: string
+  hideLabelOnMobile?: boolean
 }
 
 /**
@@ -17,22 +15,35 @@ interface BackButtonProps {
  *
  * @example
  * <BackButton label="Back to blog" href="/blog" />
- * <BackButton label="Back to post" href="/blog/news/my-post" />
+ * <BackButton label="Back to post" href="/blog/news/my-post" hideLabelOnMobile={false} />
  */
 export function BackButton({
   label = 'Back',
   href,
-  className = '',
+  className,
+  hideLabelOnMobile = true,
 }: BackButtonProps) {
+  const wrapperClasses = hideLabelOnMobile
+    ? 'absolute md:top-0.5 top-[-2px] right-auto left-auto'
+    : ''
+
+  const labelClasses = hideLabelOnMobile ? 'hidden md:inline' : ''
+
+  const buttonClasses = hideLabelOnMobile
+    ? 'w-[32px] h-[32px] md:w-auto md:h-auto flex items-center justify-center text-muted-foreground hover:text-foreground md:p-2 p-0'
+    : 'flex items-center justify-center text-muted-foreground hover:text-foreground'
+
+  const iconClasses = hideLabelOnMobile ? 'h-4 w-4 md:mr-2' : 'h-4 w-4 mr-2'
+
   return (
-    <div className="absolute md:top-0 top-[-42px] md:right-auto right-0 left-0 flex justify-center">
+    <div className={wrapperClasses}>
       <Link href={href}>
         <Button
           variant="outline"
-          className="flex items-center text-muted-foreground hover:text-foreground"
+          className={`${buttonClasses} ${className || ''}`}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          {label}
+          <ArrowLeft className={iconClasses} />
+          <span className={labelClasses}>{label}</span>
         </Button>
       </Link>
     </div>

@@ -201,17 +201,13 @@ export default function WishlistPage() {
   }
 
   return (
-    <PageLayout containerSize="lg" padding="md">
-      <div className="mb-6 flex items-center justify-between">
-        <BackButton label="Back to marketplace" href="/marketplace" />
-      </div>
-
+    <PageLayout containerSize="lg" padding="md" withSpacing>
+      <BackButton label="Back to marketplace" href="/marketplace" />
       <PageHeader
         title="My Wishlist"
         description="Compare and manage your saved listings"
-        className="mb-8"
+        className="mb-4"
       />
-
       {wishlistItems.length === 0 ? (
         <Card className="text-center py-16">
           <CardContent className="space-y-6">
