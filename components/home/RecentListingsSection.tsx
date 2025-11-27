@@ -41,7 +41,9 @@ export const RecentListingsSection = ({
               <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="aspect-video relative overflow-hidden">
                   <img
-                    src={listing.thumbnail}
+                    src={
+                      listing.thumbnail || '/images/maltaguns-default-img.jpg'
+                    }
                     alt={listing.title}
                     className="object-cover w-full h-full"
                   />
