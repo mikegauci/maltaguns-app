@@ -11,7 +11,7 @@ export interface UploadDependencies {
   toast: (options: {
     title: string
     description?: string | React.ReactElement
-    variant?: 'default' | 'destructive'
+    variant?: 'default' | 'destructive' | 'warning' | 'success'
     className?: string
     duration?: number
   }) => void
@@ -235,6 +235,7 @@ export async function uploadAndVerifyLicense(
     if (!hasVerificationIssues) {
       if (isVerified) {
         toast({
+          variant: 'success',
           title: 'License uploaded and verified',
           description: React.createElement(
             'div',
@@ -243,10 +244,10 @@ export async function uploadAndVerifyLicense(
               React.createElement('div', {}, `Valid until ${expiryDate}.`),
             React.createElement('div', { className: 'mt-1' }, licensesMessage)
           ),
-          className: 'bg-green-600 text-white border-green-600',
         })
       } else {
         toast({
+          variant: 'warning',
           title: 'License uploaded',
           description: React.createElement(
             'div',
@@ -263,13 +264,13 @@ export async function uploadAndVerifyLicense(
               'Your license will be reviewed by an administrator.'
             )
           ),
-          className: 'bg-amber-100 text-amber-800 border-amber-200',
           duration: 20000,
         })
       }
     } else {
       // Show verification issues
       toast({
+        variant: 'warning',
         title: 'License uploaded - manual verification required',
         description: React.createElement(
           'div',
@@ -284,7 +285,6 @@ export async function uploadAndVerifyLicense(
             'Your license will require manual verification by an administrator.'
           )
         ),
-        className: 'bg-amber-100 text-amber-800 border-amber-200',
         duration: 20000,
       })
     }
@@ -362,7 +362,8 @@ export async function uploadAndVerifyIdCard(
     const { isVerified, nameMatch, extractedName } = await verifyIdCardImage(
       convertedFile,
       userFirstName,
-      userLastName
+      userLastName,
+      setProgress
     )
 
     setProgress?.(70)
@@ -408,12 +409,13 @@ export async function uploadAndVerifyIdCard(
     // Show appropriate toast based on verification status
     if (isVerified) {
       toast({
+        variant: 'success',
         title: 'ID card verified & uploaded',
         description: 'Your ID card has been verified successfully.',
-        className: 'bg-green-600 text-white border-green-600',
       })
     } else {
       toast({
+        variant: 'warning',
         title: 'ID card uploaded - manual verification required',
         description: React.createElement(
           'div',
@@ -431,7 +433,6 @@ export async function uploadAndVerifyIdCard(
             'Your ID card will require manual verification by an administrator.'
           )
         ),
-        className: 'bg-amber-100 text-amber-800 border-amber-200',
         duration: 20000,
       })
     }

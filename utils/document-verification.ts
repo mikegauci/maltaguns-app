@@ -196,6 +196,93 @@ async function findBestOrientation(file: File): Promise<{
 }
 
 /**
+ * Attempts to find the best orientation for an image with progress updates
+ * @param file The image file to process
+ * @param setProgress Optional callback to update progress
+ * @returns The best orientation and processed image
+ */
+async function findBestOrientationWithProgress(
+  file: File,
+  setProgress?: (progress: number) => void
+): Promise<{
+  bestImage: string
+  bestRotation: number
+  bestConfidence: number
+  bestText: string
+}> {
+  try {
+    // Convert file to base64 for processing
+    const originalImageBase64 = await fileToBase64(file)
+
+    // Try each rotation angle
+    const rotationAngles = [0, 90, 180, 270]
+    let bestRotation = 0
+    let bestConfidence = 0
+    let bestText = ''
+    let bestImage = originalImageBase64
+
+    // Create a Tesseract worker once and reuse for all rotations
+    const worker = await createWorker('eng')
+
+    // Try each rotation and find the one with highest confidence
+    for (let i = 0; i < rotationAngles.length; i++) {
+      const angle = rotationAngles[i]
+
+      // Update progress: 48%, 53%, 58%, 63% for each rotation
+      setProgress?.(48 + i * 5)
+
+      // Only rotate if not 0 degrees
+      const imageToProcess =
+        angle === 0
+          ? originalImageBase64
+          : await rotateImage(originalImageBase64, angle)
+
+      // Perform OCR on this rotation
+      const result = await worker.recognize(imageToProcess)
+      const { confidence, text } = result.data
+
+      // Check for keywords that might indicate this is the correct orientation
+      const keywords = [
+        'police',
+        'valid',
+        'headquarters',
+        'license',
+        'firearms',
+        'malta',
+      ]
+      const keywordMatches = keywords.filter(keyword =>
+        text.toLowerCase().includes(keyword.toLowerCase())
+      ).length
+
+      // Create a combined score that considers both confidence and keyword matches
+      const combinedScore = confidence + keywordMatches * 5
+
+      // If this rotation produced better results, save it
+      if (combinedScore > bestConfidence) {
+        bestRotation = angle
+        bestConfidence = combinedScore
+        bestText = text
+        bestImage = imageToProcess
+      }
+    }
+
+    // Clean up
+    await worker.terminate()
+    setProgress?.(68)
+
+    return { bestImage, bestRotation, bestConfidence, bestText }
+  } catch (error) {
+    console.error('Error finding best orientation:', error)
+    return {
+      bestImage: await fileToBase64(file),
+      bestRotation: 0,
+      bestConfidence: 0,
+      bestText: '',
+    }
+  }
+}
+
+/**
  * Rotates an image by the specified angle
  * @param base64Image Base64 encoded image
  * @param angle Rotation angle in degrees
@@ -904,12 +991,14 @@ async function preprocessIdCardImage(file: File): Promise<File> {
  * @param file The image file to verify
  * @param userFirstName User's first name from profile
  * @param userLastName User's last name from profile
+ * @param setProgress Optional callback to update progress during verification
  * @returns A Promise that resolves to an object containing verification results
  */
 export async function verifyIdCardImage(
   file: File,
   userFirstName: string,
-  userLastName: string
+  userLastName: string,
+  setProgress?: (progress: number) => void
 ): Promise<{
   isVerified: boolean
   text: string
@@ -929,11 +1018,13 @@ export async function verifyIdCardImage(
     console.log('Starting ID card verification...')
 
     // Preprocess the image for better OCR results (especially for ID cards with holograms)
+    setProgress?.(42)
     const preprocessedFile = await preprocessIdCardImage(file)
 
     // Auto-rotate the image for best OCR results
+    setProgress?.(45)
     const { bestImage, bestRotation, bestConfidence, bestText } =
-      await findBestOrientation(preprocessedFile)
+      await findBestOrientationWithProgress(preprocessedFile, setProgress)
 
     console.log(
       `Best orientation: ${bestRotation}°, Confidence: ${bestConfidence}%`
