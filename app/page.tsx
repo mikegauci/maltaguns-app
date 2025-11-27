@@ -94,17 +94,18 @@ export default function Home() {
                 className="w-[80%] sm:w-auto"
               >
                 <Button
+                  variant="secondary"
                   size="lg"
-                  className="bg-white text-black border-white hover:bg-white/20 w-full"
+                  className="border-white w-full"
                 >
                   {isAuthenticated ? 'Post Listing' : 'Join the Community'}
                 </Button>
               </Link>
               <Link href="/marketplace" className="w-[80%] sm:w-auto">
                 <Button
-                  variant="outline"
+                  variant="default"
                   size="lg"
-                  className="bg-white/10 text-white border-white hover:bg-white/20 w-full"
+                  className="border border-white w-full"
                 >
                   Browse Marketplace
                 </Button>
