@@ -54,4 +54,3 @@ export const HeroSection = ({ isAuthenticated }: HeroSectionProps) => {
     </section>
   )
 }
-

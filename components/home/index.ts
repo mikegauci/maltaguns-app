@@ -7,4 +7,3 @@ export { FeaturesGrid } from './FeaturesGrid'
 export { FeaturedEstablishmentsSection } from './FeaturedEstablishmentsSection'
 export { ResourcesSection } from './ResourcesSection'
 export { CTASection } from './CTASection'
-

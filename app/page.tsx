@@ -82,9 +82,7 @@ export default function Home() {
 
       <FeaturesGrid />
 
-      <FeaturedEstablishmentsSection
-        establishments={featuredEstablishments}
-      />
+      <FeaturedEstablishmentsSection establishments={featuredEstablishments} />
 
       <ResourcesSection />
 

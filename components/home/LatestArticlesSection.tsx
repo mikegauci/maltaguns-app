@@ -20,15 +20,17 @@ interface LatestArticlesSectionProps {
   posts: BlogPost[]
 }
 
-export const LatestArticlesSection = ({ posts }: LatestArticlesSectionProps) => {
+export const LatestArticlesSection = ({
+  posts,
+}: LatestArticlesSectionProps) => {
   return (
     <section className="py-16 bg-accent/50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-2">Latest Articles</h2>
           <p className="text-lg text-muted-foreground">
-            Stay informed and get expert advice on firearm maintenance,
-            safety, and more.
+            Stay informed and get expert advice on firearm maintenance, safety,
+            and more.
           </p>
         </div>
 
@@ -73,4 +75,3 @@ export const LatestArticlesSection = ({ posts }: LatestArticlesSectionProps) => 
     </section>
   )
 }
-

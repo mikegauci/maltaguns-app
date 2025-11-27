@@ -17,7 +17,9 @@ interface UpcomingEventsSectionProps {
   events: Event[]
 }
 
-export const UpcomingEventsSection = ({ events }: UpcomingEventsSectionProps) => {
+export const UpcomingEventsSection = ({
+  events,
+}: UpcomingEventsSectionProps) => {
   return (
     <section className="py-16">
       <div className="container mx-auto px-6">
@@ -76,4 +78,3 @@ export const UpcomingEventsSection = ({ events }: UpcomingEventsSectionProps) =>
     </section>
   )
 }
-

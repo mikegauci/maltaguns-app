@@ -27,9 +27,8 @@ export const ResourcesSection = () => {
                   Guides & Resources
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  Access comprehensive guides on licensing, safety
-                  regulations, and maintenance tips for firearm owners in
-                  Malta.
+                  Access comprehensive guides on licensing, safety regulations,
+                  and maintenance tips for firearm owners in Malta.
                 </p>
                 <div className="flex items-center text-sm text-primary">
                   <span className="mr-2">Browse guides</span>
@@ -92,4 +91,3 @@ export const ResourcesSection = () => {
     </section>
   )
 }
-

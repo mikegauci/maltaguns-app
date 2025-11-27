@@ -11,8 +11,8 @@ export const FeaturesGrid = () => {
             Go-To Platform for Firearms Enthusiasts
           </h2>
           <p className="text-lg text-muted-foreground">
-            MaltaGuns is your <strong>one-stop platform</strong> for
-            everything related to firearms.
+            MaltaGuns is your <strong>one-stop platform</strong> for everything
+            related to firearms.
           </p>
         </div>
 
@@ -45,8 +45,8 @@ export const FeaturesGrid = () => {
               </div>
               <h3 className="font-semibold text-lg mb-2">Verified Sellers</h3>
               <p className="text-muted-foreground">
-                Only trusted and licensed sellers can list items, ensuring
-                safe and reliable buyer transactions.
+                Only trusted and licensed sellers can list items, ensuring safe
+                and reliable buyer transactions.
               </p>
             </CardContent>
           </Card>
@@ -82,4 +82,3 @@ export const FeaturesGrid = () => {
     </section>
   )
 }
-
