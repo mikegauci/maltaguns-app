@@ -29,7 +29,10 @@ export default function AdminDashboard() {
 function AdminDashboardComponent() {
   return (
     <PageLayout withSpacing>
-      <PageHeader title="Admin Dashboard" description="Manage the admin dashboard" />
+      <PageHeader
+        title="Admin Dashboard"
+        description="Manage the admin dashboard"
+      />
       <BackButton label="Back to Site" href="/" />
 
       <Tabs defaultValue="overview" className="space-y-4">

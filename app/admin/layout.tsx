@@ -1,5 +1,4 @@
 import { Metadata } from 'next'
-import { ClientAdminLayout } from './client-layout'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard - MaltaGuns',
@@ -15,5 +14,5 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <ClientAdminLayout>{children}</ClientAdminLayout>
+  return <>{children}</>
 }

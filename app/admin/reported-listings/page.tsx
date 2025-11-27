@@ -380,7 +380,10 @@ function ReportedListingsPageComponent() {
 
   return (
     <PageLayout withSpacing>
-      <PageHeader title="Reported Listings" description="View all reported listings" />
+      <PageHeader
+        title="Reported Listings"
+        description="View all reported listings"
+      />
       <BackButton label="Back to Dashboard" href="/admin" />
 
       <DataTable

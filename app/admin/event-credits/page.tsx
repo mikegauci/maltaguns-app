@@ -222,7 +222,10 @@ function EventCreditsPageComponent() {
 
   return (
     <PageLayout withSpacing>
-      <PageHeader title="Event Credit Management" description="Manage event credits" />
+      <PageHeader
+        title="Event Credit Management"
+        description="Manage event credits"
+      />
       <div className="flex justify-center">
         <Button onClick={handleAddEventCredit}>
           <Plus className="h-4 w-4 mr-2" />

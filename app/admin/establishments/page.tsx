@@ -592,7 +592,10 @@ function EstablishmentsPageComponent() {
 
   return (
     <PageLayout withSpacing>
-      <PageHeader title="Establishment Management" description="Manage establishments" />
+      <PageHeader
+        title="Establishment Management"
+        description="Manage establishments"
+      />
       <BackButton label="Back to Dashboard" href="/admin" />
 
       <div className="grid grid-cols-4 gap-4">

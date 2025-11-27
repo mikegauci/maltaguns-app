@@ -385,23 +385,23 @@ function UsersPageComponent() {
               },
               ...(user.is_seller
                 ? [
-                  {
-                    label: user.is_verified
-                      ? 'Unverify License'
-                      : 'Verify License',
-                    onClick: () => handleToggleVerification(user),
-                    variant: user.is_verified ? 'destructive' : 'default',
-                  },
-                  {
-                    label: user.id_card_verified
-                      ? 'Unverify ID Card'
-                      : 'Verify ID Card',
-                    onClick: () => handleToggleIdCardVerification(user),
-                    variant: user.id_card_verified
-                      ? 'destructive'
-                      : 'default',
-                  },
-                ]
+                    {
+                      label: user.is_verified
+                        ? 'Unverify License'
+                        : 'Verify License',
+                      onClick: () => handleToggleVerification(user),
+                      variant: user.is_verified ? 'destructive' : 'default',
+                    },
+                    {
+                      label: user.id_card_verified
+                        ? 'Unverify ID Card'
+                        : 'Verify ID Card',
+                      onClick: () => handleToggleIdCardVerification(user),
+                      variant: user.id_card_verified
+                        ? 'destructive'
+                        : 'default',
+                    },
+                  ]
                 : []),
             ]}
           />
@@ -778,7 +778,7 @@ function UsersPageComponent() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-          `Failed to ${user.is_disabled ? 'enable' : 'disable'} user`
+            `Failed to ${user.is_disabled ? 'enable' : 'disable'} user`
         )
       }
 
@@ -822,7 +822,7 @@ function UsersPageComponent() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-          `Failed to ${user.is_verified ? 'unverify' : 'verify'} user`
+            `Failed to ${user.is_verified ? 'unverify' : 'verify'} user`
         )
       }
 
@@ -866,7 +866,7 @@ function UsersPageComponent() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-          `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} ID card`
+            `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} ID card`
         )
       }
 

@@ -7,7 +7,7 @@ import { DataTable } from '@/app/admin'
 import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ExternalLink, Copy, Plus } from 'lucide-react'
+import { ExternalLink, Copy } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -234,7 +234,10 @@ function PaymentsReceivedPageComponent() {
 
   return (
     <PageLayout withSpacing>
-      <PageHeader title="Payments Received" description="View all payment transactions and their status" />
+      <PageHeader
+        title="Payments Received"
+        description="View all payment transactions and their status"
+      />
       <BackButton label="Back to Dashboard" href="/admin" />
 
       {isLoading ? (

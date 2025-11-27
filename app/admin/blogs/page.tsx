@@ -461,16 +461,16 @@ export default function AdminBlogsPage() {
       <PageHeader title="Blog Management" description="Manage blog posts" />
       <BackButton label="Back to Dashboard" href="/admin" />
       <div className="flex justify-center items-center gap-3">
-          <Link href="/admin/blogs/analytics">
-            <Button variant="outline">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Analytics
-            </Button>
-          </Link>
-          <Link href="/blog/create">
-            <Button>Create New Post</Button>
-          </Link>
-        </div>
+        <Link href="/admin/blogs/analytics">
+          <Button variant="outline">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Analytics
+          </Button>
+        </Link>
+        <Link href="/blog/create">
+          <Button>Create New Post</Button>
+        </Link>
+      </div>
 
       {/* Filters */}
       <Card>

@@ -342,7 +342,10 @@ export default function BlogAnalyticsPage() {
   if (!isAuthorized) {
     return (
       <PageLayout withSpacing>
-        <PageHeader title="Blog Analytics" description="Track blog performance and engagement metrics" />
+        <PageHeader
+          title="Blog Analytics"
+          description="Track blog performance and engagement metrics"
+        />
         <BackButton label="Back to Blog Management" href="/admin/blogs" />
         <div className="text-center py-8">Checking authorization...</div>
       </PageLayout>
@@ -352,7 +355,10 @@ export default function BlogAnalyticsPage() {
   if (loading) {
     return (
       <PageLayout withSpacing>
-        <PageHeader title="Blog Analytics" description="Track blog performance and engagement metrics" />
+        <PageHeader
+          title="Blog Analytics"
+          description="Track blog performance and engagement metrics"
+        />
         <BackButton label="Back to Blog Management" href="/admin/blogs" />
         <div className="text-center py-8">Loading analytics...</div>
       </PageLayout>
@@ -362,7 +368,10 @@ export default function BlogAnalyticsPage() {
   if (!analytics) {
     return (
       <PageLayout withSpacing>
-        <PageHeader title="Blog Analytics" description="Track blog performance and engagement metrics" />
+        <PageHeader
+          title="Blog Analytics"
+          description="Track blog performance and engagement metrics"
+        />
         <BackButton label="Back to Blog Management" href="/admin/blogs" />
         <div className="text-center py-8">No data available</div>
       </PageLayout>
@@ -371,7 +380,10 @@ export default function BlogAnalyticsPage() {
 
   return (
     <PageLayout withSpacing>
-      <PageHeader title="Blog Analytics" description="Track blog performance and engagement metrics" />
+      <PageHeader
+        title="Blog Analytics"
+        description="Track blog performance and engagement metrics"
+      />
       <BackButton label="Back to Blog Management" href="/admin/blogs" />
 
       {/* Overview Stats */}

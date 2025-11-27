@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
 import {
   DataTable,
-  AdminPageLayout,
   AdminLoadingState,
   AdminErrorState,
   AdminDataCount,
@@ -245,7 +244,7 @@ function CreditsPageComponent() {
         profiles={profiles}
         onSuccess={fetchData}
       />
-      </PageLayout>
+    </PageLayout>
   )
 }
 
