@@ -17,9 +17,11 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { BackButton } from '@/components/ui/back-button'
 import dynamic from 'next/dynamic'
 import { Store, Building, Wrench, Target, Upload, X } from 'lucide-react'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
+import { BackButton } from '@/components/ui/back-button'
 
 interface Establishment {
   id: string
@@ -589,11 +591,9 @@ function EstablishmentsPageComponent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Establishment Management</h1>
-        <BackButton label="Back to Dashboard" href="/admin" />
-      </div>
+    <PageLayout withSpacing>
+      <PageHeader title="Establishment Management" description="Manage establishments" />
+      <BackButton label="Back to Dashboard" href="/admin" />
 
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-blue-50 p-4 rounded-lg">
@@ -979,7 +979,7 @@ function EstablishmentsPageComponent() {
         confirmLabel="Delete"
         variant="destructive"
       />
-    </div>
+    </PageLayout>
   )
 }
 

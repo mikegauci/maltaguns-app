@@ -55,6 +55,9 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
+import { BackButton } from '@/components/ui/back-button'
 
 // Remove hardcoded admin list - use database is_admin field instead
 
@@ -454,15 +457,10 @@ export default function AdminBlogsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Blog Management</h1>
-          <p className="text-muted-foreground">
-            Manage all blog posts across the platform
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
+    <PageLayout withSpacing>
+      <PageHeader title="Blog Management" description="Manage blog posts" />
+      <BackButton label="Back to Dashboard" href="/admin" />
+      <div className="flex justify-center items-center gap-3">
           <Link href="/admin/blogs/analytics">
             <Button variant="outline">
               <BarChart3 className="h-4 w-4 mr-2" />
@@ -473,7 +471,6 @@ export default function AdminBlogsPage() {
             <Button>Create New Post</Button>
           </Link>
         </div>
-      </div>
 
       {/* Filters */}
       <Card>
@@ -731,6 +728,6 @@ export default function AdminBlogsPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageLayout>
   )
 }

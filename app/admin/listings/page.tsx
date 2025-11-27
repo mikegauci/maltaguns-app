@@ -29,6 +29,8 @@ import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Listing {
   id: string
@@ -475,11 +477,9 @@ function ListingsPageComponent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Listing Management</h1>
-        <BackButton label="Back to Dashboard" href="/admin" />
-      </div>
+    <PageLayout withSpacing>
+      <PageHeader title="Listing Management" description="Manage listings" />
+      <BackButton label="Back to Dashboard" href="/admin" />
 
       <DataTable
         columns={columns}
@@ -675,6 +675,6 @@ function ListingsPageComponent() {
         confirmLabel="Delete"
         variant="destructive"
       />
-    </div>
+    </PageLayout>
   )
 }

@@ -22,6 +22,8 @@ import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Event {
   id: string
@@ -371,11 +373,9 @@ function EventsPageComponent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Event Management</h1>
-        <BackButton label="Back to Dashboard" href="/admin" />
-      </div>
+    <PageLayout withSpacing>
+      <PageHeader title="Event Management" description="Manage events" />
+      <BackButton label="Back to Dashboard" href="/admin" />
 
       <DataTable
         columns={columns}
@@ -613,6 +613,6 @@ function EventsPageComponent() {
         confirmLabel="Delete"
         variant="destructive"
       />
-    </div>
+    </PageLayout>
   )
 }

@@ -19,7 +19,7 @@ export function ClientAdminLayout({ children }: ClientAdminLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto py-6">{children}</div>
+      {children}
     </div>
   )
 }

@@ -7,9 +7,11 @@ import { DataTable } from '@/app/admin'
 import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ExternalLink, Copy } from 'lucide-react'
+import { ExternalLink, Copy, Plus } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { BackButton } from '@/components/ui/back-button'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface Payment {
   id: string
@@ -231,16 +233,9 @@ function PaymentsReceivedPageComponent() {
   }, [fetchPayments])
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Payments Received</h1>
-          <p className="text-muted-foreground">
-            View all payment transactions and their status
-          </p>
-          <BackButton label="Back to Dashboard" href="/admin" />
-        </div>
-      </div>
+    <PageLayout withSpacing>
+      <PageHeader title="Payments Received" description="View all payment transactions and their status" />
+      <BackButton label="Back to Dashboard" href="/admin" />
 
       {isLoading ? (
         <div className="rounded-md border">
@@ -260,6 +255,6 @@ function PaymentsReceivedPageComponent() {
           searchPlaceholder="Search by username..."
         />
       )}
-    </div>
+    </PageLayout>
   )
 }

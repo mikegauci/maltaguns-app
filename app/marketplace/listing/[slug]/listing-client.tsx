@@ -742,7 +742,7 @@ export default function ListingClient({
   }
 
   return (
-    <PageLayout containerSize="lg" padding="md">
+    <PageLayout padding="md">
       <div className="mb-6 flex items-center justify-between">
         <BackButton
           label="Back to marketplace"

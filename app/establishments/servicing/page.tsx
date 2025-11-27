@@ -56,18 +56,15 @@ export default function ServicingPage() {
 
   if (isLoading) {
     return (
-      <PageLayout containerSize="lg" padding="md" withSpacing>
+      <PageLayout padding="md" withSpacing>
         <LoadingState message="Loading servicing providers..." />
       </PageLayout>
     )
   }
 
   return (
-    <PageLayout containerSize="lg" padding="md" withSpacing>
-      {/* Back Button */}
+    <PageLayout padding="md" withSpacing>
       <BackButton label="Back to Establishments" href="/establishments" />
-
-      {/* Hero Section */}
       <PageHeader
         title="Firearms Servicing"
         description="Find firearms repair, servicing and maintenance providers across Malta"

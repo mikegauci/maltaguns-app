@@ -20,6 +20,8 @@ import dynamic from 'next/dynamic'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface ReportedListing {
   id: string
@@ -377,11 +379,9 @@ function ReportedListingsPageComponent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Reported Listings</h1>
-        <BackButton label="Back to Dashboard" href="/admin" />
-      </div>
+    <PageLayout withSpacing>
+      <PageHeader title="Reported Listings" description="View all reported listings" />
+      <BackButton label="Back to Dashboard" href="/admin" />
 
       <DataTable
         columns={columns}
@@ -433,6 +433,6 @@ function ReportedListingsPageComponent() {
         isLoading={isSubmitting}
         variant="destructive"
       />
-    </div>
+    </PageLayout>
   )
 }

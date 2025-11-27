@@ -26,6 +26,8 @@ import {
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 // Remove hardcoded admin list - use database is_admin field instead
 
@@ -338,38 +340,39 @@ export default function BlogAnalyticsPage() {
   }, [isAuthorized, supabase, toast])
 
   if (!isAuthorized) {
-    return <div>Checking authorization...</div>
+    return (
+      <PageLayout withSpacing>
+        <PageHeader title="Blog Analytics" description="Track blog performance and engagement metrics" />
+        <BackButton label="Back to Blog Management" href="/admin/blogs" />
+        <div className="text-center py-8">Checking authorization...</div>
+      </PageLayout>
+    )
   }
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Blog Analytics</h1>
+      <PageLayout withSpacing>
+        <PageHeader title="Blog Analytics" description="Track blog performance and engagement metrics" />
+        <BackButton label="Back to Blog Management" href="/admin/blogs" />
         <div className="text-center py-8">Loading analytics...</div>
-      </div>
+      </PageLayout>
     )
   }
 
   if (!analytics) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Blog Analytics</h1>
+      <PageLayout withSpacing>
+        <PageHeader title="Blog Analytics" description="Track blog performance and engagement metrics" />
+        <BackButton label="Back to Blog Management" href="/admin/blogs" />
         <div className="text-center py-8">No data available</div>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Blog Analytics</h1>
-          <p className="text-muted-foreground">
-            Track blog performance and engagement metrics
-          </p>
-        </div>
-        <BackButton label="Back to Blog Management" href="/admin/blogs" />
-      </div>
+    <PageLayout withSpacing>
+      <PageHeader title="Blog Analytics" description="Track blog performance and engagement metrics" />
+      <BackButton label="Back to Blog Management" href="/admin/blogs" />
 
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -585,6 +588,6 @@ export default function BlogAnalyticsPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageLayout>
   )
 }

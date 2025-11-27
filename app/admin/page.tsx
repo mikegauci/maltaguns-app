@@ -10,6 +10,9 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
 import dynamic from 'next/dynamic'
+import { PageHeader } from '@/components/ui/page-header'
+import { BackButton } from '@/components/ui/back-button'
+import { PageLayout } from '@/components/ui/page-layout'
 
 // Use dynamic import with SSR disabled to prevent hydration issues
 const AdminDashboardContent = dynamic(
@@ -25,13 +28,9 @@ export default function AdminDashboard() {
 
 function AdminDashboardComponent() {
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <Link href="/" className="text-blue-500 hover:underline">
-          Return to Site
-        </Link>
-      </div>
+    <PageLayout withSpacing>
+      <PageHeader title="Admin Dashboard" description="Manage the admin dashboard" />
+      <BackButton label="Back to Site" href="/" />
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsContent value="overview" className="space-y-4">
@@ -222,7 +221,7 @@ function AdminDashboardComponent() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageLayout>
   )
 }
 

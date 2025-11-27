@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import { BackButton } from '../ui/back-button'
 
 interface Listing {
   id: string
@@ -250,17 +251,9 @@ export default function CategoryListings({
   )
 
   return (
-    <PageLayout containerSize="lg" padding="md">
-      <div className="mb-6">
-        <Link href="/marketplace">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Marketplace
-          </Button>
-        </Link>
-      </div>
-
+    <PageLayout>
       <PageHeader title={title} description={description} />
+      <BackButton label="Back to marketplace" href="/marketplace" />
 
       <div className="mb-8 flex justify-center">
         <Link href="/marketplace/create">

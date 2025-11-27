@@ -17,6 +17,9 @@ import {
   EditCreditDialog,
   AddCreditDialog,
 } from '@/app/admin'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
+import { BackButton } from '@/components/ui/back-button'
 
 interface Credit {
   id: string
@@ -204,14 +207,16 @@ function CreditsPageComponent() {
   }
 
   return (
-    <AdminPageLayout
-      title="Credit Management"
-      actionButton={{
-        label: 'Add Credits',
-        icon: Plus,
-        onClick: handleAddCredit,
-      }}
-    >
+    <PageLayout withSpacing>
+      <PageHeader title="Credit Management" description="Manage user credits" />
+      <div className="flex justify-center">
+        <Button onClick={handleAddCredit}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Credit
+        </Button>
+      </div>
+      <BackButton label="Back to Dashboard" href="/admin" />
+
       <AdminDataCount
         count={credits.length}
         singularLabel="credit record"
@@ -240,11 +245,10 @@ function CreditsPageComponent() {
         profiles={profiles}
         onSuccess={fetchData}
       />
-    </AdminPageLayout>
+      </PageLayout>
   )
 }
 
-// Wrap the component to handle auth
 export default function CreditsPage() {
   return <CreditsPageComponent />
 }

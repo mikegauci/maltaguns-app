@@ -63,7 +63,7 @@ export default function RangesPage() {
   }
 
   return (
-    <PageLayout containerSize="lg" padding="md" withSpacing>
+    <PageLayout padding="md" withSpacing>
       {/* Back Button */}
       <BackButton label="Back to Establishments" href="/establishments" />
 

@@ -14,6 +14,8 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import dynamic from 'next/dynamic'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageLayout } from '@/components/ui/page-layout'
 
 interface Establishment {
   type: 'store' | 'club' | 'servicing' | 'range'
@@ -383,23 +385,23 @@ function UsersPageComponent() {
               },
               ...(user.is_seller
                 ? [
-                    {
-                      label: user.is_verified
-                        ? 'Unverify License'
-                        : 'Verify License',
-                      onClick: () => handleToggleVerification(user),
-                      variant: user.is_verified ? 'destructive' : 'default',
-                    },
-                    {
-                      label: user.id_card_verified
-                        ? 'Unverify ID Card'
-                        : 'Verify ID Card',
-                      onClick: () => handleToggleIdCardVerification(user),
-                      variant: user.id_card_verified
-                        ? 'destructive'
-                        : 'default',
-                    },
-                  ]
+                  {
+                    label: user.is_verified
+                      ? 'Unverify License'
+                      : 'Verify License',
+                    onClick: () => handleToggleVerification(user),
+                    variant: user.is_verified ? 'destructive' : 'default',
+                  },
+                  {
+                    label: user.id_card_verified
+                      ? 'Unverify ID Card'
+                      : 'Verify ID Card',
+                    onClick: () => handleToggleIdCardVerification(user),
+                    variant: user.id_card_verified
+                      ? 'destructive'
+                      : 'default',
+                  },
+                ]
                 : []),
             ]}
           />
@@ -776,7 +778,7 @@ function UsersPageComponent() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-            `Failed to ${user.is_disabled ? 'enable' : 'disable'} user`
+          `Failed to ${user.is_disabled ? 'enable' : 'disable'} user`
         )
       }
 
@@ -820,7 +822,7 @@ function UsersPageComponent() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-            `Failed to ${user.is_verified ? 'unverify' : 'verify'} user`
+          `Failed to ${user.is_verified ? 'unverify' : 'verify'} user`
         )
       }
 
@@ -864,7 +866,7 @@ function UsersPageComponent() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-            `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} ID card`
+          `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} ID card`
         )
       }
 
@@ -931,11 +933,9 @@ function UsersPageComponent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">User Management</h1>
-        <BackButton label="Back to Dashboard" href="/admin" />
-      </div>
+    <PageLayout withSpacing>
+      <PageHeader title="User Management" description="Manage user accounts" />
+      <BackButton label="Back to Dashboard" href="/admin" />
 
       <DataTable
         columns={columns}
@@ -1304,6 +1304,6 @@ function UsersPageComponent() {
           </div>
         </div>
       </FormDialog>
-    </div>
+    </PageLayout>
   )
 }

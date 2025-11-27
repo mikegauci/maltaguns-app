@@ -14,6 +14,8 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
+import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 
 interface EventCredit {
   id: string
@@ -219,17 +221,15 @@ function EventCreditsPageComponent() {
   }
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Event Credit Management</h1>
-        <div className="flex items-center gap-6">
-          <BackButton label="Back to Dashboard" href="/admin" />
-          <Button onClick={handleAddEventCredit}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Event Credits
-          </Button>
-        </div>
+    <PageLayout withSpacing>
+      <PageHeader title="Event Credit Management" description="Manage event credits" />
+      <div className="flex justify-center">
+        <Button onClick={handleAddEventCredit}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Credit
+        </Button>
       </div>
+      <BackButton label="Back to Dashboard" href="/admin" />
 
       <p className="text-muted-foreground mb-6">
         {eventCredits.length === 0
@@ -259,7 +259,7 @@ function EventCreditsPageComponent() {
         profiles={profiles}
         onSuccess={fetchData}
       />
-    </div>
+    </PageLayout>
   )
 }
 
