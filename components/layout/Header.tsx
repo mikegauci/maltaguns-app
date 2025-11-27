@@ -37,6 +37,14 @@ export function Header() {
     setEstablishmentsOpen(false)
   }, [pathname])
 
+  // Check if current path matches the menu item
+  const isActive = (path: string) => {
+    if (path === '/') {
+      return pathname === '/'
+    }
+    return pathname.startsWith(path)
+  }
+
   // More reliable logout that ensures complete session cleanup
   const handleLogout = async () => {
     try {
@@ -84,7 +92,10 @@ export function Header() {
             {/* Establishments Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-1">
+                <Button 
+                  variant="ghost" 
+                  className={`flex items-center gap-1 ${isActive('/establishments') ? 'bg-accent' : ''}`}
+                >
                   Establishments <ChevronDown className="h-4 w-4 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
@@ -133,17 +144,37 @@ export function Header() {
             </DropdownMenu>
 
             <Link href="/marketplace">
-              <Button variant="ghost">Marketplace</Button>
+              <Button 
+                variant="ghost" 
+                className={isActive('/marketplace') ? 'bg-accent' : ''}
+              >
+                Marketplace
+              </Button>
             </Link>
 
             <Link href="/events">
-              <Button variant="ghost">Events</Button>
+              <Button 
+                variant="ghost"
+                className={isActive('/events') ? 'bg-accent' : ''}
+              >
+                Events
+              </Button>
             </Link>
             <Link href="/blog">
-              <Button variant="ghost">Blog</Button>
+              <Button 
+                variant="ghost"
+                className={isActive('/blog') ? 'bg-accent' : ''}
+              >
+                Blog
+              </Button>
             </Link>
             <Link href="/help">
-              <Button variant="ghost">Help</Button>
+              <Button 
+                variant="ghost"
+                className={isActive('/help') ? 'bg-accent' : ''}
+              >
+                Help
+              </Button>
             </Link>
 
             {/* Profile Dropdown */}
@@ -202,7 +233,11 @@ export function Header() {
         <nav className="lg:hidden bg-background border-b">
           <div className="container mx-auto px-4 py-3 flex flex-col gap-4">
             <Link href="/marketplace">
-              <Button variant="ghost" onClick={() => setMenuOpen(false)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => setMenuOpen(false)}
+                className={isActive('/marketplace') ? 'bg-accent' : ''}
+              >
                 Marketplace
               </Button>
             </Link>
@@ -211,7 +246,7 @@ export function Header() {
             <div>
               <Button
                 variant="ghost"
-                className="w-full justify-start"
+                className={`w-full justify-start ${isActive('/establishments') ? 'bg-accent' : ''}`}
                 onClick={e => {
                   e.preventDefault()
                   if (pathname === '/establishments' && establishmentsOpen) {
@@ -277,22 +312,38 @@ export function Header() {
             </div>
 
             <Link href="/events">
-              <Button variant="ghost" onClick={() => setMenuOpen(false)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => setMenuOpen(false)}
+                className={isActive('/events') ? 'bg-accent' : ''}
+              >
                 Events
               </Button>
             </Link>
             <Link href="/blog">
-              <Button variant="ghost" onClick={() => setMenuOpen(false)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => setMenuOpen(false)}
+                className={isActive('/blog') ? 'bg-accent' : ''}
+              >
                 Blog
               </Button>
             </Link>
             <Link href="/help">
-              <Button variant="ghost" onClick={() => setMenuOpen(false)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => setMenuOpen(false)}
+                className={isActive('/help') ? 'bg-accent' : ''}
+              >
                 Help
               </Button>
             </Link>
             <Link href="/contact">
-              <Button variant="ghost" onClick={() => setMenuOpen(false)}>
+              <Button 
+                variant="ghost" 
+                onClick={() => setMenuOpen(false)}
+                className={isActive('/contact') ? 'bg-accent' : ''}
+              >
                 Contact
               </Button>
             </Link>
