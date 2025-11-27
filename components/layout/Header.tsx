@@ -92,8 +92,8 @@ export function Header() {
             {/* Establishments Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className={`flex items-center gap-1 ${isActive('/establishments') ? 'bg-accent' : ''}`}
                 >
                   Establishments <ChevronDown className="h-4 w-4 ml-1" />
@@ -144,8 +144,8 @@ export function Header() {
             </DropdownMenu>
 
             <Link href="/marketplace">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className={isActive('/marketplace') ? 'bg-accent' : ''}
               >
                 Marketplace
@@ -153,7 +153,7 @@ export function Header() {
             </Link>
 
             <Link href="/events">
-              <Button 
+              <Button
                 variant="ghost"
                 className={isActive('/events') ? 'bg-accent' : ''}
               >
@@ -161,7 +161,7 @@ export function Header() {
               </Button>
             </Link>
             <Link href="/blog">
-              <Button 
+              <Button
                 variant="ghost"
                 className={isActive('/blog') ? 'bg-accent' : ''}
               >
@@ -169,7 +169,7 @@ export function Header() {
               </Button>
             </Link>
             <Link href="/help">
-              <Button 
+              <Button
                 variant="ghost"
                 className={isActive('/help') ? 'bg-accent' : ''}
               >
@@ -233,8 +233,8 @@ export function Header() {
         <nav className="lg:hidden bg-background border-b">
           <div className="container mx-auto px-4 py-3 flex flex-col gap-4">
             <Link href="/marketplace">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => setMenuOpen(false)}
                 className={isActive('/marketplace') ? 'bg-accent' : ''}
               >
@@ -312,8 +312,8 @@ export function Header() {
             </div>
 
             <Link href="/events">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => setMenuOpen(false)}
                 className={isActive('/events') ? 'bg-accent' : ''}
               >
@@ -321,8 +321,8 @@ export function Header() {
               </Button>
             </Link>
             <Link href="/blog">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => setMenuOpen(false)}
                 className={isActive('/blog') ? 'bg-accent' : ''}
               >
@@ -330,8 +330,8 @@ export function Header() {
               </Button>
             </Link>
             <Link href="/help">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => setMenuOpen(false)}
                 className={isActive('/help') ? 'bg-accent' : ''}
               >
@@ -339,8 +339,8 @@ export function Header() {
               </Button>
             </Link>
             <Link href="/contact">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => setMenuOpen(false)}
                 className={isActive('/contact') ? 'bg-accent' : ''}
               >
