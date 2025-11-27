@@ -63,11 +63,11 @@ export function Header() {
           </Link>
 
           {/* Mobile search bar - visible only on mobile */}
-          <div className="flex-1 mx-4 md:hidden">
+          <div className="flex-1 mx-4 lg:hidden">
             <SearchBar disableShortcut={true} />
           </div>
 
-          <button className="md:hidden" onClick={() => setMenuOpen(!menuOpen)}>
+          <button className="lg:hidden" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? (
               <X className="h-6 w-6" />
             ) : (
@@ -75,9 +75,9 @@ export function Header() {
             )}
           </button>
 
-          <nav className="hidden md:flex items-center gap-4">
+          <nav className="hidden lg:flex items-center gap-3">
             {/* Desktop search bar - now before Marketplace */}
-            <div className="hidden md:block w-[400px] w-full">
+            <div className="hidden lg:block w-[400px] w-full">
               <SearchBar disableShortcut={false} />
             </div>
 
@@ -199,7 +199,7 @@ export function Header() {
       </header>
 
       {menuOpen && (
-        <nav className="md:hidden bg-background border-b">
+        <nav className="lg:hidden bg-background border-b">
           <div className="container mx-auto px-4 py-3 flex flex-col gap-4">
             <Link href="/marketplace">
               <Button variant="ghost" onClick={() => setMenuOpen(false)}>
