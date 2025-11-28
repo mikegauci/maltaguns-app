@@ -85,7 +85,7 @@ function PaymentsReceivedPageComponent() {
       enableSorting: true,
       cell: ({ row }) => {
         const status = row.getValue('status') as string | null
-        
+
         // If status is null, treat it as pending
         const displayStatus = status || 'pending'
 
@@ -103,9 +103,7 @@ function PaymentsReceivedPageComponent() {
         }
 
         return (
-          <Badge variant={getVariant(displayStatus)}>
-            {displayStatus}
-          </Badge>
+          <Badge variant={getVariant(displayStatus)}>{displayStatus}</Badge>
         )
       },
     },
