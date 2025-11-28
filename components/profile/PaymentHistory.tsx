@@ -66,10 +66,13 @@ export const PaymentHistory = ({
                     )
                   : '—'
 
+                // Check if this is a feature listing purchase (vs regular credit purchase)
+                const isFeaturePurchase = description.includes(
+                  'Feature listing purchase for listing'
+                )
+
                 // Replace listing IDs with titles if available
-                if (
-                  description.includes('Feature listing purchase for listing')
-                ) {
+                if (isFeaturePurchase) {
                   const match = description.match(
                     /Feature listing purchase for listing ([0-9a-f-]+)/
                   )
@@ -103,7 +106,9 @@ export const PaymentHistory = ({
                         {transaction.credit_type && (
                           <Badge variant="outline">
                             {transaction.credit_type === 'featured'
-                              ? 'Feature'
+                              ? isFeaturePurchase
+                                ? 'Feature'
+                                : 'Listing'
                               : 'Event'}
                           </Badge>
                         )}
@@ -123,21 +128,17 @@ export const PaymentHistory = ({
                     </td>
                     <td className="py-4 px-4 text-sm">{description}</td>
                     <td className="py-4 px-4 text-sm text-right">
-                      {transaction.status ? (
-                        <Badge
-                          variant={
-                            transaction.status === 'completed'
-                              ? 'default'
-                              : transaction.status === 'pending'
-                                ? 'outline'
-                                : 'secondary'
-                          }
-                        >
-                          {transaction.status}
-                        </Badge>
-                      ) : (
-                        '—'
-                      )}
+                      <Badge
+                        variant={
+                          (transaction.status || 'pending') === 'completed'
+                            ? 'default'
+                            : (transaction.status || 'pending') === 'pending'
+                              ? 'outline'
+                              : 'secondary'
+                        }
+                      >
+                        {transaction.status || 'pending'}
+                      </Badge>
                     </td>
                   </tr>
                 )

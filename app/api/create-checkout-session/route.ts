@@ -100,6 +100,7 @@ export async function POST(request: Request) {
         .insert({
           user_id: userId,
           amount: plan.credits,
+          status: 'pending',
           type: 'credit',
           credit_type: 'featured',
           description: `Purchase of ${plan.credits} credits (${priceId})`,

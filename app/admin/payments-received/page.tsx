@@ -85,8 +85,9 @@ function PaymentsReceivedPageComponent() {
       enableSorting: true,
       cell: ({ row }) => {
         const status = row.getValue('status') as string | null
-        if (!status)
-          return <span className="text-muted-foreground">Completed</span>
+        
+        // If status is null, treat it as pending
+        const displayStatus = status || 'pending'
 
         const getVariant = (status: string) => {
           switch (status) {
@@ -101,7 +102,11 @@ function PaymentsReceivedPageComponent() {
           }
         }
 
-        return <Badge variant={getVariant(status)}>{status}</Badge>
+        return (
+          <Badge variant={getVariant(displayStatus)}>
+            {displayStatus}
+          </Badge>
+        )
       },
     },
     {
