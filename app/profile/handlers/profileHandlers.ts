@@ -75,6 +75,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
             is_seller: true,
             is_verified: result.isVerified,
             license_types: result.licenseTypes as any,
+            license_expiry_date: result.expiryDate,
           })
           .eq('id', profile?.id)
 
@@ -88,6 +89,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
                 is_seller: true,
                 is_verified: result.isVerified,
                 license_types: result.licenseTypes as any,
+                license_expiry_date: result.expiryDate,
               }
             : null
         )
@@ -170,6 +172,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
           is_seller: false,
           is_verified: false,
           license_types: null,
+          license_expiry_date: null,
         })
         .eq('id', profile.id)
 
@@ -183,6 +186,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
               is_seller: false,
               is_verified: false,
               license_types: null,
+              license_expiry_date: null,
             }
           : null
       )

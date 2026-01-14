@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useSupabase } from '../providers/SupabaseProvider'
 import { forceLogout } from '@/lib/auth-utils'
+import { NotificationsBell } from '@/components/notifications/NotificationsBell'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -75,13 +76,16 @@ export function Header() {
             <SearchBar disableShortcut={true} />
           </div>
 
-          <button className="lg:hidden" onClick={() => setMenuOpen(!menuOpen)}>
-            {menuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
+          <div className="lg:hidden flex items-center gap-2">
+            {session?.user && <NotificationsBell />}
+            <button onClick={() => setMenuOpen(!menuOpen)}>
+              {menuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
+          </div>
 
           <nav className="hidden lg:flex items-center gap-3">
             {/* Desktop search bar - now before Marketplace */}
@@ -177,6 +181,8 @@ export function Header() {
               </Button>
             </Link>
 
+            {session?.user && <NotificationsBell />}
+
             {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -186,7 +192,7 @@ export function Header() {
                   <User className="h-5 w-5" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-40 p-2 mt-2">
+              <DropdownMenuContent className="w-40 p-2 mt-2" align="end">
                 {session?.user ? (
                   <>
                     <DropdownMenuItem className="cursor-pointer">

@@ -99,6 +99,7 @@ const registerSchema = z
     idCardImage: z.any().optional(),
     idCardVerified: z.boolean().default(false),
     licenseImage: z.any().optional(),
+    licenseExpiryDate: z.string().nullable().optional(),
     isVerified: z.boolean().default(false),
     contactPreference: z.enum(['email', 'phone', 'both']).default('both'),
     acceptTerms: z.boolean().refine(val => val === true, {
@@ -156,6 +157,7 @@ export default function Register() {
       },
       contactPreference: 'both',
       acceptTerms: false,
+      licenseExpiryDate: null,
     },
   })
 
@@ -186,6 +188,7 @@ export default function Register() {
         form.setValue('licenseImage', result.publicUrl)
         form.setValue('isVerified', result.isVerified)
         form.setValue('licenseTypes', result.licenseTypes)
+        form.setValue('licenseExpiryDate', result.expiryDate)
       }
     } catch (error) {
       // Error handling is done in the shared function
@@ -262,6 +265,7 @@ export default function Register() {
         is_seller: data.interestedInSelling,
         is_verified: data.isVerified,
         license_image: data.interestedInSelling ? data.licenseImage : null,
+        license_expiry_date: data.interestedInSelling ? data.licenseExpiryDate : null,
         id_card_image: data.interestedInSelling ? data.idCardImage : null,
         id_card_verified: data.interestedInSelling
           ? data.idCardVerified
@@ -847,6 +851,8 @@ export default function Register() {
                                     className="text-xs"
                                     onClick={() => {
                                       form.setValue('licenseImage', '')
+                                      form.setValue('licenseExpiryDate', null)
+                                      form.setValue('isVerified', false)
                                       form.trigger('licenseImage')
                                     }}
                                   >

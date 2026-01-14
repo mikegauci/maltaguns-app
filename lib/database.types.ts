@@ -25,6 +25,7 @@ export interface Database {
           id_card_verified: boolean
           license_types: Json | null
           contact_preference: string | null
+          license_expiry_date: string | null
           created_at: string
           email: string | null
         }
@@ -43,6 +44,7 @@ export interface Database {
           id_card_verified?: boolean
           license_types?: Json | null
           contact_preference?: string | null
+          license_expiry_date?: string | null
           created_at?: string
           email?: string | null
         }
@@ -61,8 +63,53 @@ export interface Database {
           id_card_verified?: boolean
           license_types?: Json | null
           contact_preference?: string | null
+          license_expiry_date?: string | null
           created_at?: string
           email?: string | null
+        }
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          type: string
+          title: string
+          body: string
+          link_url: string | null
+          created_at: string
+          read_at: string | null
+          email_status: string
+          email_sent_at: string | null
+          email_error: string | null
+          dedupe_key: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          type: string
+          title: string
+          body: string
+          link_url?: string | null
+          created_at?: string
+          read_at?: string | null
+          email_status?: string
+          email_sent_at?: string | null
+          email_error?: string | null
+          dedupe_key: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          type?: string
+          title?: string
+          body?: string
+          link_url?: string | null
+          created_at?: string
+          read_at?: string | null
+          email_status?: string
+          email_sent_at?: string | null
+          email_error?: string | null
+          dedupe_key?: string
         }
       }
       licenses: {
