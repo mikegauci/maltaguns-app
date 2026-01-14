@@ -51,7 +51,8 @@ export default function AdminNotificationsPage() {
   const descRemaining = 100 - description.length
 
   const canSend = useMemo(() => {
-    if (sendToAll) return title.trim().length > 0 && description.trim().length > 0
+    if (sendToAll)
+      return title.trim().length > 0 && description.trim().length > 0
     return (
       selectedCount > 0 &&
       title.trim().length > 0 &&
@@ -102,7 +103,9 @@ export default function AdminNotificationsPage() {
       const params = new URLSearchParams()
       if (query.trim().length > 0) params.set('q', query.trim())
 
-      const res = await fetch(`/api/admin/notifications/users?${params.toString()}`)
+      const res = await fetch(
+        `/api/admin/notifications/users?${params.toString()}`
+      )
       const data = await res.json()
 
       if (!res.ok) {
@@ -114,7 +117,8 @@ export default function AdminNotificationsPage() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to load users',
+        description:
+          error instanceof Error ? error.message : 'Failed to load users',
       })
     } finally {
       setLoading(false)
@@ -196,7 +200,16 @@ export default function AdminNotificationsPage() {
     } finally {
       setIsSending(false)
     }
-  }, [canSend, clearSelected, description, linkUrl, selected, sendToAll, title, toast])
+  }, [
+    canSend,
+    clearSelected,
+    description,
+    linkUrl,
+    selected,
+    sendToAll,
+    title,
+    toast,
+  ])
 
   if (!isAuthorized) {
     return (
@@ -375,4 +388,3 @@ export default function AdminNotificationsPage() {
     </PageLayout>
   )
 }
-

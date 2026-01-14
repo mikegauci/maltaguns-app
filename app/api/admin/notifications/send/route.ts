@@ -51,11 +51,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { data: currentUserProfile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', session.user.id)
-      .single()
+    const { data: currentUserProfile, error: profileError } =
+      await supabaseAdmin
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', session.user.id)
+        .single()
 
     if (profileError || !currentUserProfile?.is_admin) {
       return NextResponse.json(
@@ -110,10 +111,12 @@ export async function POST(request: Request) {
     console.error('[ADMIN NOTIFICATIONS SEND] Unexpected error:', error)
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'An unexpected error occurred',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
       },
       { status: 500 }
     )
   }
 }
-
