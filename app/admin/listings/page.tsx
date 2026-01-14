@@ -98,6 +98,13 @@ function ListingsPageComponent() {
       .replace(/--+/g, '-')
   }
 
+  function isListingExpired(expiresAt: string | null | undefined): boolean {
+    if (!expiresAt) return false
+    const ts = Date.parse(expiresAt)
+    if (Number.isNaN(ts)) return false
+    return ts < Date.now()
+  }
+
   const columns: ColumnDef<Listing>[] = [
     {
       id: 'select',
@@ -182,17 +189,22 @@ function ListingsPageComponent() {
       enableSorting: true,
       cell: ({ row }) => {
         const status = row.getValue('status') as string
+        const expired = isListingExpired(row.original.expires_at)
+        const displayStatus = expired ? 'expired' : status
+
         return (
           <div
             className={`px-2 py-1 rounded-full text-xs inline-block ${
-              status === 'active'
+              displayStatus === 'active'
                 ? 'bg-green-100 text-green-800'
-                : status === 'pending'
+                : displayStatus === 'pending'
                   ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-red-100 text-red-800'
+                  : displayStatus === 'expired'
+                    ? 'bg-gray-100 text-gray-800'
+                    : 'bg-red-100 text-red-800'
             }`}
           >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
           </div>
         )
       },
@@ -370,10 +382,14 @@ function ListingsPageComponent() {
     try {
       setIsSubmitting(true)
 
-      // Update listing
-      const { error: listingError } = await supabase
-        .from('listings')
-        .update({
+      // Use admin update API route (bypasses RLS for admin users)
+      const response = await fetch('/api/admin/listings/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          listingId: selectedListing.id,
           title: formData.title,
           description: formData.description,
           price: formData.price,
@@ -382,38 +398,14 @@ function ListingsPageComponent() {
           subcategory: formData.subcategory || null,
           calibre: formData.calibre || null,
           status: formData.status,
-          updated_at: new Date().toISOString(),
-          ...(formData.expires_at && {
-            expires_at: formData.expires_at.toISOString(),
-          }),
-        })
-        .eq('id', selectedListing.id)
+          expires_at: formData.expires_at ? formData.expires_at.toISOString() : undefined,
+          featured: formData.featured,
+        }),
+      })
 
-      if (listingError) throw listingError
-
-      // Handle featured status
-      if (formData.featured && !selectedListing.featured) {
-        // Add to featured_listings if not already featured
-        const { error: featureError } = await supabase
-          .from('featured_listings')
-          .insert({
-            listing_id: selectedListing.id,
-            user_id: selectedListing.seller_id,
-            start_date: new Date().toISOString(),
-            end_date: new Date(
-              Date.now() + 30 * 24 * 60 * 60 * 1000
-            ).toISOString(), // 30 days from now
-          })
-
-        if (featureError) throw featureError
-      } else if (!formData.featured && selectedListing.featured) {
-        // Remove from featured_listings if currently featured
-        const { error: unfeatureError } = await supabase
-          .from('featured_listings')
-          .delete()
-          .eq('listing_id', selectedListing.id)
-
-        if (unfeatureError) throw unfeatureError
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || 'Failed to update listing')
       }
 
       toast({
@@ -510,7 +502,7 @@ function ListingsPageComponent() {
               id="edit-title"
               value={formData.title}
               onChange={e =>
-                setFormData({ ...formData, title: e.target.value })
+                setFormData(prev => ({ ...prev, title: e.target.value }))
               }
               required
             />
@@ -522,7 +514,7 @@ function ListingsPageComponent() {
               id="edit-description"
               value={formData.description}
               onChange={e =>
-                setFormData({ ...formData, description: e.target.value })
+                setFormData(prev => ({ ...prev, description: e.target.value }))
               }
               required
               rows={4}
@@ -536,7 +528,7 @@ function ListingsPageComponent() {
                 id="edit-price"
                 value={formData.price}
                 onChange={e =>
-                  setFormData({ ...formData, price: e.target.value })
+                  setFormData(prev => ({ ...prev, price: e.target.value }))
                 }
                 required
               />
@@ -547,7 +539,7 @@ function ListingsPageComponent() {
               <Select
                 value={formData.status}
                 onValueChange={value =>
-                  setFormData({ ...formData, status: value })
+                  setFormData(prev => ({ ...prev, status: value }))
                 }
               >
                 <SelectTrigger>
@@ -568,7 +560,7 @@ function ListingsPageComponent() {
               <Select
                 value={formData.type}
                 onValueChange={value =>
-                  setFormData({ ...formData, type: value })
+                  setFormData(prev => ({ ...prev, type: value }))
                 }
               >
                 <SelectTrigger>
@@ -587,7 +579,7 @@ function ListingsPageComponent() {
                 id="edit-category"
                 value={formData.category}
                 onChange={e =>
-                  setFormData({ ...formData, category: e.target.value })
+                  setFormData(prev => ({ ...prev, category: e.target.value }))
                 }
                 required
               />
@@ -601,7 +593,7 @@ function ListingsPageComponent() {
                 id="edit-subcategory"
                 value={formData.subcategory}
                 onChange={e =>
-                  setFormData({ ...formData, subcategory: e.target.value })
+                  setFormData(prev => ({ ...prev, subcategory: e.target.value }))
                 }
               />
             </div>
@@ -612,7 +604,7 @@ function ListingsPageComponent() {
                 id="edit-calibre"
                 value={formData.calibre}
                 onChange={e =>
-                  setFormData({ ...formData, calibre: e.target.value })
+                  setFormData(prev => ({ ...prev, calibre: e.target.value }))
                 }
               />
             </div>
@@ -623,7 +615,7 @@ function ListingsPageComponent() {
               id="edit-featured"
               checked={formData.featured}
               onCheckedChange={checked =>
-                setFormData({ ...formData, featured: checked })
+                setFormData(prev => ({ ...prev, featured: checked }))
               }
             />
             <Label htmlFor="edit-featured">Featured Listing</Label>
@@ -653,7 +645,7 @@ function ListingsPageComponent() {
                   mode="single"
                   selected={formData.expires_at || undefined}
                   onSelect={date =>
-                    setFormData({ ...formData, expires_at: date || null })
+                    setFormData(prev => ({ ...prev, expires_at: date || null }))
                   }
                   initialFocus
                   disabled={date => date < new Date()}
