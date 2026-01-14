@@ -29,6 +29,26 @@ function getCronSecret(req: NextRequest): string | null {
   return req.headers.get('x-cron-secret')
 }
 
+function getAuthBearer(req: NextRequest): string | null {
+  const value = req.headers.get('authorization')
+  if (!value) return null
+  const match = value.match(/^Bearer\s+(.+)$/i)
+  return match?.[1] ?? null
+}
+
+function isAuthorizedCron(req: NextRequest): boolean {
+  const expected = process.env.NOTIFICATIONS_CRON_SECRET
+  if (!expected) return true
+
+  const viaHeader = getCronSecret(req)
+  if (viaHeader && viaHeader === expected) return true
+
+  const viaBearer = getAuthBearer(req)
+  if (viaBearer && viaBearer === expected) return true
+
+  return false
+}
+
 function getResend(): Resend {
   if (!process.env.RESEND_API_KEY) {
     throw new Error('Missing env.RESEND_API_KEY')
@@ -236,12 +256,8 @@ async function sendPendingEmails(): Promise<{ attempted: number; sent: number; f
 
 export async function POST(req: NextRequest) {
   try {
-    const expected = process.env.NOTIFICATIONS_CRON_SECRET
-    if (expected) {
-      const provided = getCronSecret(req)
-      if (!provided || provided !== expected) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-      }
+    if (!isAuthorizedCron(req)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const created = await createTimeBasedNotifications()
@@ -257,3 +273,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function GET(req: NextRequest) {
+  // Vercel Cron triggers use GET requests; reuse the same logic.
+  return POST(req)
+}
