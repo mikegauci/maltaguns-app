@@ -92,6 +92,12 @@ function AdminDashboardComponent() {
               href="/admin/reported-listings"
               icon="🚨"
             />
+            <AdminCard
+              title="Notifications"
+              description="Send manual notifications"
+              href="/admin/notifications"
+              icon="🔔"
+            />
           </div>
         </TabsContent>
 
