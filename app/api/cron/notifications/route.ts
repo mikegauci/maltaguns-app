@@ -57,7 +57,9 @@ function getResend(): Resend {
 }
 
 function notificationEmailHtml(n: PendingNotification): string {
-  const link = n.link_url ? `<p><a href="${n.link_url}">${n.link_url}</a></p>` : ''
+  const link = n.link_url
+    ? `<p><a href="${n.link_url}">${n.link_url}</a></p>`
+    : ''
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #111; margin: 0 0 12px 0;">${n.title}</h2>
@@ -172,7 +174,11 @@ async function createTimeBasedNotifications(): Promise<{
   }
 }
 
-async function sendPendingEmails(): Promise<{ attempted: number; sent: number; failed: number }> {
+async function sendPendingEmails(): Promise<{
+  attempted: number
+  sent: number
+  failed: number
+}> {
   const { data: pending, error: pendingErr } = await supabaseAdmin
     .from('notifications')
     .select('id, user_id, title, body, link_url, created_at')
@@ -267,7 +273,9 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Cron notifications error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      {
+        error: error instanceof Error ? error.message : 'Internal server error',
+      },
       { status: 500 }
     )
   }

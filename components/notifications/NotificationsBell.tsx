@@ -125,7 +125,9 @@ export function NotificationsBell() {
         .eq('id', id)
         .eq('user_id', userId)
 
-      setItems(prev => prev.map(n => (n.id === id ? { ...n, read_at: now } : n)))
+      setItems(prev =>
+        prev.map(n => (n.id === id ? { ...n, read_at: now } : n))
+      )
       setUnreadCount(prev => Math.max(0, prev - 1))
     },
     [supabase, userId]
@@ -243,4 +245,3 @@ export function NotificationsBell() {
     </DropdownMenu>
   )
 }
-

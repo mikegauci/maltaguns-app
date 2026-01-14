@@ -64,7 +64,9 @@ export default function NotificationsPage() {
         .eq('id', id)
         .eq('user_id', userId)
 
-      setItems(prev => prev.map(n => (n.id === id ? { ...n, read_at: now } : n)))
+      setItems(prev =>
+        prev.map(n => (n.id === id ? { ...n, read_at: now } : n))
+      )
     },
     [supabase, userId]
   )
@@ -87,7 +89,11 @@ export default function NotificationsPage() {
         <Card className="p-6">
           <div className="text-lg font-semibold">Notifications</div>
           <div className="text-sm text-muted-foreground mt-2">
-            Please <Link className="underline" href="/login">log in</Link> to view notifications.
+            Please{' '}
+            <Link className="underline" href="/login">
+              log in
+            </Link>{' '}
+            to view notifications.
           </div>
         </Card>
       </div>
@@ -163,4 +169,3 @@ export default function NotificationsPage() {
     </div>
   )
 }
-

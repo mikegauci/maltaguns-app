@@ -265,7 +265,9 @@ export default function Register() {
         is_seller: data.interestedInSelling,
         is_verified: data.isVerified,
         license_image: data.interestedInSelling ? data.licenseImage : null,
-        license_expiry_date: data.interestedInSelling ? data.licenseExpiryDate : null,
+        license_expiry_date: data.interestedInSelling
+          ? data.licenseExpiryDate
+          : null,
         id_card_image: data.interestedInSelling ? data.idCardImage : null,
         id_card_verified: data.interestedInSelling
           ? data.idCardVerified
