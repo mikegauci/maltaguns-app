@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
 import dynamic from 'next/dynamic'
 import {
@@ -87,7 +86,6 @@ function ListingsPageComponent() {
     featured: false,
     expires_at: null as Date | null,
   })
-  const supabase = createClientComponentClient()
 
   // Helper function to create URL-friendly slugs from titles
   function slugify(text: string): string {
@@ -267,74 +265,15 @@ function ListingsPageComponent() {
   const fetchListings = useCallback(async () => {
     try {
       setIsLoading(true)
+      // Fetch via admin API (bypasses RLS so expired listings remain visible in admin)
+      const response = await fetch('/api/admin/listings', { method: 'GET' })
+      const json = await response.json().catch(() => null)
 
-      // First check if we have a valid session
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (sessionError) {
-        console.error('Session error:', sessionError)
-        throw new Error('Failed to get session')
+      if (!response.ok) {
+        throw new Error(json?.error || 'Failed to fetch listings')
       }
 
-      if (!session) {
-        console.error('No session found')
-        throw new Error('No active session')
-      }
-
-      // Fetch featured listings
-      const { data: featuredData, error: featuredError } = await supabase
-        .from('featured_listings')
-        .select('listing_id')
-
-      if (featuredError) {
-        console.error('Fetch featured listings error:', featuredError)
-      }
-
-      const featuredListingIds = new Set(
-        featuredData?.map(item => item.listing_id) || []
-      )
-
-      // Fetch listings with seller information
-      const { data, error } = await supabase
-        .from('listings')
-        .select(
-          `
-          *,
-          seller:seller_id(username, email)
-        `
-        )
-        .order('created_at', { ascending: false })
-
-      if (error) {
-        console.error('Fetch listings error:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        })
-        throw error
-      }
-
-      if (!data) {
-        console.error('No data returned from listings query')
-        throw new Error('No data returned from listings query')
-      }
-
-      console.log('Successfully fetched listings:', {
-        count: data.length,
-        firstListing: data[0],
-      })
-
-      // Add featured flag to listings
-      const listingsWithFeaturedStatus = data.map(listing => ({
-        ...listing,
-        featured: featuredListingIds.has(listing.id),
-      }))
-
-      setListings(listingsWithFeaturedStatus)
+      setListings((json?.listings || []) as Listing[])
     } catch (error) {
       console.error('Error in fetchListings:', error)
       toast({
@@ -348,7 +287,7 @@ function ListingsPageComponent() {
     } finally {
       setIsLoading(false)
     }
-  }, [supabase, toast])
+  }, [toast])
 
   useEffect(() => {
     fetchListings()
@@ -398,7 +337,9 @@ function ListingsPageComponent() {
           subcategory: formData.subcategory || null,
           calibre: formData.calibre || null,
           status: formData.status,
-          expires_at: formData.expires_at ? formData.expires_at.toISOString() : undefined,
+          expires_at: formData.expires_at
+            ? formData.expires_at.toISOString()
+            : undefined,
           featured: formData.featured,
         }),
       })
@@ -593,7 +534,10 @@ function ListingsPageComponent() {
                 id="edit-subcategory"
                 value={formData.subcategory}
                 onChange={e =>
-                  setFormData(prev => ({ ...prev, subcategory: e.target.value }))
+                  setFormData(prev => ({
+                    ...prev,
+                    subcategory: e.target.value,
+                  }))
                 }
               />
             </div>

@@ -144,7 +144,9 @@ export async function POST(request: Request) {
 
           if (featureError) {
             return NextResponse.json(
-              { error: `Listing updated, but failed to feature: ${featureError.message}` },
+              {
+                error: `Listing updated, but failed to feature: ${featureError.message}`,
+              },
               { status: 500 }
             )
           }
@@ -157,7 +159,9 @@ export async function POST(request: Request) {
 
         if (unfeatureError) {
           return NextResponse.json(
-            { error: `Listing updated, but failed to unfeature: ${unfeatureError.message}` },
+            {
+              error: `Listing updated, but failed to unfeature: ${unfeatureError.message}`,
+            },
             { status: 500 }
           )
         }
@@ -173,4 +177,3 @@ export async function POST(request: Request) {
     )
   }
 }
-
