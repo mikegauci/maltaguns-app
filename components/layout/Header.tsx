@@ -196,7 +196,7 @@ export function Header() {
                 {session?.user ? (
                   <>
                     <DropdownMenuItem className="cursor-pointer">
-                      <Link href="/profile" className="w-full">
+                      <Link href="/profile" prefetch={false} className="w-full">
                         Account
                       </Link>
                     </DropdownMenuItem>
@@ -357,7 +357,7 @@ export function Header() {
             {/* Mobile Profile Dropdown */}
             {session?.user ? (
               <>
-                <Link href="/profile">
+                <Link href="/profile" prefetch={false}>
                   <Button variant="ghost" onClick={() => setMenuOpen(false)}>
                     Profile
                   </Button>

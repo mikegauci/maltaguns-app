@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Bell } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
@@ -40,11 +40,14 @@ export function NotificationsBell() {
   const { supabase, session } = useSupabase()
   const userId = session?.user?.id
 
+  const POLL_INTERVAL_MS = 60_000
+
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [items, setItems] = useState<NotificationRow[]>([])
   const [shakeToken, setShakeToken] = useState(0)
+  const lastUnreadRef = useRef(0)
 
   const hasUnread = unreadCount > 0
   const badgeText = useMemo(() => {
@@ -78,9 +81,8 @@ export function NotificationsBell() {
       setUnreadCount(nextUnread)
       setItems((itemsRes.data as NotificationRow[]) || [])
 
-      // Shake on every refresh while there are unread notifications.
-      // Since we poll every 30s, this will re-trigger every 30s too.
-      if (nextUnread > 0) triggerShake()
+      if (nextUnread > lastUnreadRef.current) triggerShake()
+      lastUnreadRef.current = nextUnread
     } finally {
       setLoading(false)
     }
@@ -95,8 +97,12 @@ export function NotificationsBell() {
     if (!userId) return
 
     const interval = window.setInterval(() => {
+      // Avoid polling in background tabs.
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+        return
+      }
       void refresh()
-    }, 30_000)
+    }, POLL_INTERVAL_MS)
 
     const onFocus = () => {
       void refresh()
@@ -108,7 +114,7 @@ export function NotificationsBell() {
       window.clearInterval(interval)
       window.removeEventListener('focus', onFocus)
     }
-  }, [refresh, userId])
+  }, [POLL_INTERVAL_MS, refresh, userId])
 
   useEffect(() => {
     if (!open) return

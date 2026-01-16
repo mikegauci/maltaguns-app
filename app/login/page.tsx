@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -45,7 +45,8 @@ type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 export default function Login() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClientComponentClient()
+  const [supabase] = useState(() => createClientComponentClient())
+  const loginInFlightRef = useRef(false)
 
   // Custom hook for auth state management
   const {
@@ -80,6 +81,10 @@ export default function Login() {
   })
 
   async function onSubmit(data: LoginForm) {
+    // Guard against duplicate submits (double-click, Enter spam, browser extensions, etc.)
+    if (loginInFlightRef.current) return
+    loginInFlightRef.current = true
+
     try {
       setIsLoading(true)
       setError(null)
@@ -95,6 +100,8 @@ export default function Login() {
       console.error('Login error:', error)
       setError(error instanceof Error ? error.message : 'Invalid credentials')
       setIsLoading(false)
+    } finally {
+      loginInFlightRef.current = false
     }
   }
 

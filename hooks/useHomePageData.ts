@@ -58,7 +58,7 @@ interface HomePageData {
 }
 
 export function useHomePageData() {
-  const supabase = createClientComponentClient<Database>()
+  const [supabase] = useState(() => createClientComponentClient<Database>())
   const [data, setData] = useState<HomePageData>({
     recentListings: [],
     featuredListings: [],
