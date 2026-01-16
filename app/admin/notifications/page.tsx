@@ -369,7 +369,7 @@ export default function AdminNotificationsPage() {
               id="notif-link"
               value={linkUrl}
               onChange={e => setLinkUrl(e.target.value)}
-              placeholder="e.g. /blog or https://maltaguns.com/blog"
+              placeholder="e.g. https://maltaguns.com/blog"
             />
             <div className="text-xs text-muted-foreground">
               If provided, the notification will show a “View” link.

@@ -36,11 +36,18 @@ function formatRelativeTime(iso: string): string {
   return `${diffDay}d ago`
 }
 
+function isDocumentVisible() {
+  return (
+    typeof document === 'undefined' || document.visibilityState === 'visible'
+  )
+}
+
 export function NotificationsBell() {
   const { supabase, session } = useSupabase()
   const userId = session?.user?.id
 
-  const POLL_INTERVAL_MS = 60_000
+  // Prefer push updates via Supabase Realtime; keep a slow polling fallback.
+  const POLL_INTERVAL_MS = 300_000 // 5 minutes
 
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -48,6 +55,8 @@ export function NotificationsBell() {
   const [items, setItems] = useState<NotificationRow[]>([])
   const [shakeToken, setShakeToken] = useState(0)
   const lastUnreadRef = useRef(0)
+  const refreshInFlightRef = useRef(false)
+  const refreshQueuedRef = useRef(false)
 
   const hasUnread = unreadCount > 0
   const badgeText = useMemo(() => {
@@ -61,6 +70,12 @@ export function NotificationsBell() {
 
   const refresh = useCallback(async () => {
     if (!userId) return
+    if (refreshInFlightRef.current) {
+      refreshQueuedRef.current = true
+      return
+    }
+
+    refreshInFlightRef.current = true
     setLoading(true)
     try {
       const [countRes, itemsRes] = await Promise.all([
@@ -85,23 +100,59 @@ export function NotificationsBell() {
       lastUnreadRef.current = nextUnread
     } finally {
       setLoading(false)
+      refreshInFlightRef.current = false
+
+      if (refreshQueuedRef.current) {
+        refreshQueuedRef.current = false
+        void refresh()
+      }
     }
   }, [supabase, triggerShake, userId])
 
   useEffect(() => {
     if (!userId) return
-    refresh()
-  }, [refresh, userId])
+
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          if (!isDocumentVisible()) return
+          void refresh()
+          triggerShake()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          if (!isDocumentVisible()) return
+          void refresh()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [refresh, supabase, triggerShake, userId])
 
   useEffect(() => {
     if (!userId) return
 
     const interval = window.setInterval(() => {
-      // Avoid polling in background tabs.
-      if (
-        typeof document !== 'undefined' &&
-        document.visibilityState !== 'visible'
-      ) {
+      if (!isDocumentVisible()) {
         return
       }
       void refresh()
@@ -112,6 +163,7 @@ export function NotificationsBell() {
     }
 
     window.addEventListener('focus', onFocus)
+    void refresh()
 
     return () => {
       window.clearInterval(interval)
@@ -121,7 +173,7 @@ export function NotificationsBell() {
 
   useEffect(() => {
     if (!open) return
-    refresh()
+    void refresh()
   }, [open, refresh])
 
   const markRead = useCallback(
@@ -138,6 +190,7 @@ export function NotificationsBell() {
         prev.map(n => (n.id === id ? { ...n, read_at: now } : n))
       )
       setUnreadCount(prev => Math.max(0, prev - 1))
+      lastUnreadRef.current = Math.max(0, lastUnreadRef.current - 1)
     },
     [supabase, userId]
   )
@@ -153,6 +206,7 @@ export function NotificationsBell() {
 
     setItems(prev => prev.map(n => ({ ...n, read_at: n.read_at ?? now })))
     setUnreadCount(0)
+    lastUnreadRef.current = 0
   }, [supabase, userId])
 
   if (!userId) return null
