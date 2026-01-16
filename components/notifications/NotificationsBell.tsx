@@ -98,7 +98,10 @@ export function NotificationsBell() {
 
     const interval = window.setInterval(() => {
       // Avoid polling in background tabs.
-      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+      if (
+        typeof document !== 'undefined' &&
+        document.visibilityState !== 'visible'
+      ) {
         return
       }
       void refresh()
