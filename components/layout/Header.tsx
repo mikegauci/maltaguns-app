@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { SearchBar } from '@/components/marketplace/Search'
 import {
@@ -30,8 +31,20 @@ export function Header() {
   const router = useRouter()
   const pathname = usePathname()
   const { supabase, session } = useSupabase()
+  const queryClient = useQueryClient()
   const [menuOpen, setMenuOpen] = useState(false)
   const [establishmentsOpen, setEstablishmentsOpen] = useState(false)
+
+  const prefetchPublic = (queryKey: string, url: string) => {
+    void queryClient.prefetchQuery({
+      queryKey: [queryKey],
+      queryFn: async () => {
+        const res = await fetch(url)
+        if (!res.ok) throw new Error('Prefetch failed')
+        return res.json()
+      },
+    })
+  }
 
   // Close establishments submenu when route changes
   useEffect(() => {
@@ -108,6 +121,18 @@ export function Header() {
                   <Link
                     href="/establishments"
                     className="w-full flex items-center"
+                    onMouseEnter={() =>
+                      prefetchPublic(
+                        'public-establishments',
+                        '/api/public/establishments'
+                      )
+                    }
+                    onFocus={() =>
+                      prefetchPublic(
+                        'public-establishments',
+                        '/api/public/establishments'
+                      )
+                    }
                   >
                     <Boxes className="h-4 w-4 mr-2" /> All
                   </Link>
@@ -147,7 +172,15 @@ export function Header() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Link href="/marketplace">
+            <Link
+              href="/marketplace"
+              onMouseEnter={() =>
+                prefetchPublic('public-marketplace', '/api/public/marketplace')
+              }
+              onFocus={() =>
+                prefetchPublic('public-marketplace', '/api/public/marketplace')
+              }
+            >
               <Button
                 variant="ghost"
                 className={isActive('/marketplace') ? 'bg-accent' : ''}
@@ -156,7 +189,15 @@ export function Header() {
               </Button>
             </Link>
 
-            <Link href="/events">
+            <Link
+              href="/events"
+              onMouseEnter={() =>
+                prefetchPublic('public-events', '/api/public/events')
+              }
+              onFocus={() =>
+                prefetchPublic('public-events', '/api/public/events')
+              }
+            >
               <Button
                 variant="ghost"
                 className={isActive('/events') ? 'bg-accent' : ''}
@@ -164,7 +205,13 @@ export function Header() {
                 Events
               </Button>
             </Link>
-            <Link href="/blog">
+            <Link
+              href="/blog"
+              onMouseEnter={() =>
+                prefetchPublic('public-blog', '/api/public/blog')
+              }
+              onFocus={() => prefetchPublic('public-blog', '/api/public/blog')}
+            >
               <Button
                 variant="ghost"
                 className={isActive('/blog') ? 'bg-accent' : ''}

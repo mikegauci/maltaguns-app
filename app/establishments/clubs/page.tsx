@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Users, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 interface Club {
   id: string
   business_name: string
@@ -22,38 +23,24 @@ interface Club {
   slug: string
 }
 
+async function fetchClubs(): Promise<{ clubs: Club[] }> {
+  const res = await fetch('/api/public/establishments/clubs')
+  if (!res.ok) throw new Error('Failed to load clubs')
+  return res.json()
+}
+
 export default function ClubsPage() {
-  const [clubs, setClubs] = useState<Club[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { session } = useSupabase()
+  const isAuthenticated = useMemo(() => !!session?.user, [session?.user])
 
-  useEffect(() => {
-    async function fetchClubs() {
-      try {
-        // Check if user is authenticated
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        setIsAuthenticated(!!session)
+  const query = useQuery({
+    queryKey: ['public-establishments-clubs'],
+    queryFn: fetchClubs,
+  })
 
-        const { data, error } = await supabase
-          .from('clubs')
-          .select('*')
-          .order('business_name', { ascending: true })
+  const clubs = query.data?.clubs ?? []
 
-        if (error) throw error
-        setClubs(data || [])
-      } catch (error) {
-        console.error('Error fetching clubs:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchClubs()
-  }, [])
-
-  if (isLoading) {
+  if (query.isLoading) {
     return (
       <PageLayout centered>
         <LoadingState message="Loading clubs..." />

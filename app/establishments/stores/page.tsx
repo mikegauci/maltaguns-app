@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Store, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LoadingState } from '@/components/ui/loading-state'
 import { BackButton } from '@/components/ui/back-button'
 import { PageHeader } from '@/components/ui/page-header'
@@ -29,40 +30,34 @@ interface Store {
   slug: string
 }
 
+async function fetchStores(): Promise<{ stores: Store[] }> {
+  const res = await fetch('/api/public/establishments/stores')
+  if (!res.ok) throw new Error('Failed to load stores')
+  return res.json()
+}
+
 export default function StoresPage() {
-  const [stores, setStores] = useState<Store[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { supabase, session } = useSupabase()
   const [isAuthorized, setIsAuthorized] = useState(false)
 
+  const query = useQuery({
+    queryKey: ['public-establishments-stores'],
+    queryFn: fetchStores,
+  })
+
+  const stores = query.data?.stores ?? []
+
+  const isAuthorizedUser = useMemo(
+    () =>
+      !!session?.user && AUTHORIZED_STORE_CREATORS.includes(session.user.id),
+    [session?.user]
+  )
+
   useEffect(() => {
-    async function fetchStores() {
-      try {
-        // Check authorization
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        if (session?.user) {
-          setIsAuthorized(AUTHORIZED_STORE_CREATORS.includes(session.user.id))
-        }
+    setIsAuthorized(isAuthorizedUser)
+  }, [isAuthorizedUser])
 
-        const { data, error } = await supabase
-          .from('stores')
-          .select('*')
-          .order('business_name', { ascending: true })
-
-        if (error) throw error
-        setStores(data || [])
-      } catch (error) {
-        console.error('Error fetching stores:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchStores()
-  }, [])
-
-  if (isLoading) {
+  if (query.isLoading) {
     return (
       <PageLayout centered>
         <LoadingState message="Loading stores..." />

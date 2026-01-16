@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Bell } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -50,34 +51,21 @@ export function NotificationsBell() {
   const POLL_INTERVAL_MS = 300_000 // 5 minutes
 
   const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [items, setItems] = useState<NotificationRow[]>([])
+  const queryClient = useQueryClient()
   const [shakeToken, setShakeToken] = useState(0)
   const lastUnreadRef = useRef(0)
-  const refreshInFlightRef = useRef(false)
-  const refreshQueuedRef = useRef(false)
+  const inFlightMutationRef = useRef(false)
 
-  const hasUnread = unreadCount > 0
-  const badgeText = useMemo(() => {
-    if (!hasUnread) return null
-    return unreadCount > 99 ? '99+' : String(unreadCount)
-  }, [hasUnread, unreadCount])
-
-  const triggerShake = useCallback(() => {
-    setShakeToken(t => t + 1)
-  }, [])
-
-  const refresh = useCallback(async () => {
-    if (!userId) return
-    if (refreshInFlightRef.current) {
-      refreshQueuedRef.current = true
-      return
-    }
-
-    refreshInFlightRef.current = true
-    setLoading(true)
-    try {
+  const notificationsQuery = useQuery({
+    queryKey: ['notifications-bell', userId],
+    enabled: !!userId,
+    // Fetch once per session; refresh only when we explicitly invalidate (Realtime INSERT / mark read).
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    queryFn: async () => {
+      if (!userId) return { unreadCount: 0, items: [] as NotificationRow[] }
       const [countRes, itemsRes] = await Promise.all([
         supabase
           .from('notifications')
@@ -92,22 +80,33 @@ export function NotificationsBell() {
           .limit(10),
       ])
 
-      const nextUnread = countRes.count ?? 0
-      setUnreadCount(nextUnread)
-      setItems((itemsRes.data as NotificationRow[]) || [])
-
-      if (nextUnread > lastUnreadRef.current) triggerShake()
-      lastUnreadRef.current = nextUnread
-    } finally {
-      setLoading(false)
-      refreshInFlightRef.current = false
-
-      if (refreshQueuedRef.current) {
-        refreshQueuedRef.current = false
-        void refresh()
+      return {
+        unreadCount: countRes.count ?? 0,
+        items: ((itemsRes.data as NotificationRow[]) ||
+          []) as NotificationRow[],
       }
-    }
-  }, [supabase, triggerShake, userId])
+    },
+  })
+
+  const unreadCount = notificationsQuery.data?.unreadCount ?? 0
+  const items = notificationsQuery.data?.items ?? []
+  const loading = notificationsQuery.isFetching || inFlightMutationRef.current
+
+  const hasUnread = unreadCount > 0
+  const badgeText = useMemo(() => {
+    if (!hasUnread) return null
+    return unreadCount > 99 ? '99+' : String(unreadCount)
+  }, [hasUnread, unreadCount])
+
+  const triggerShake = useCallback(() => {
+    setShakeToken(t => t + 1)
+  }, [])
+
+  // Shake only when unread increases (new notifications), not on every render/navigation.
+  useEffect(() => {
+    if (unreadCount > lastUnreadRef.current) triggerShake()
+    lastUnreadRef.current = unreadCount
+  }, [triggerShake, unreadCount])
 
   useEffect(() => {
     if (!userId) return
@@ -124,7 +123,9 @@ export function NotificationsBell() {
         },
         () => {
           if (!isDocumentVisible()) return
-          void refresh()
+          void queryClient.invalidateQueries({
+            queryKey: ['notifications-bell', userId],
+          })
           triggerShake()
         }
       )
@@ -138,7 +139,9 @@ export function NotificationsBell() {
         },
         () => {
           if (!isDocumentVisible()) return
-          void refresh()
+          void queryClient.invalidateQueries({
+            queryKey: ['notifications-bell', userId],
+          })
         }
       )
       .subscribe()
@@ -146,68 +149,44 @@ export function NotificationsBell() {
     return () => {
       void supabase.removeChannel(channel)
     }
-  }, [refresh, supabase, triggerShake, userId])
+  }, [queryClient, supabase, triggerShake, userId])
 
-  useEffect(() => {
-    if (!userId) return
-
-    const interval = window.setInterval(() => {
-      if (!isDocumentVisible()) {
-        return
-      }
-      void refresh()
-    }, POLL_INTERVAL_MS)
-
-    const onFocus = () => {
-      void refresh()
-    }
-
-    window.addEventListener('focus', onFocus)
-    void refresh()
-
-    return () => {
-      window.clearInterval(interval)
-      window.removeEventListener('focus', onFocus)
-    }
-  }, [POLL_INTERVAL_MS, refresh, userId])
-
-  useEffect(() => {
-    if (!open) return
-    void refresh()
-  }, [open, refresh])
+  // No "refetch on open" — the dropdown should not cause network traffic by itself.
 
   const markRead = useCallback(
     async (id: string) => {
       if (!userId) return
+      inFlightMutationRef.current = true
       const now = new Date().toISOString()
       await supabase
         .from('notifications')
         .update({ read_at: now })
         .eq('id', id)
         .eq('user_id', userId)
+      inFlightMutationRef.current = false
 
-      setItems(prev =>
-        prev.map(n => (n.id === id ? { ...n, read_at: now } : n))
-      )
-      setUnreadCount(prev => Math.max(0, prev - 1))
-      lastUnreadRef.current = Math.max(0, lastUnreadRef.current - 1)
+      void queryClient.invalidateQueries({
+        queryKey: ['notifications-bell', userId],
+      })
     },
-    [supabase, userId]
+    [queryClient, supabase, userId]
   )
 
   const markAllRead = useCallback(async () => {
     if (!userId) return
+    inFlightMutationRef.current = true
     const now = new Date().toISOString()
     await supabase
       .from('notifications')
       .update({ read_at: now })
       .eq('user_id', userId)
       .is('read_at', null)
+    inFlightMutationRef.current = false
 
-    setItems(prev => prev.map(n => ({ ...n, read_at: n.read_at ?? now })))
-    setUnreadCount(0)
-    lastUnreadRef.current = 0
-  }, [supabase, userId])
+    void queryClient.invalidateQueries({
+      queryKey: ['notifications-bell', userId],
+    })
+  }, [queryClient, supabase, userId])
 
   if (!userId) return null
 

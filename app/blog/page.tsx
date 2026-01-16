@@ -1,117 +1,77 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/lib/database.types'
+'use client'
+
+import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import BlogPostCard from '../../components/blog/BlogPostCard'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
-export const dynamic = 'force-dynamic'
+async function fetchBlogPosts() {
+  const res = await fetch('/api/public/blog')
+  if (!res.ok) throw new Error('Failed to fetch posts')
+  return res.json() as Promise<{ posts: any[] }>
+}
 
-export default async function BlogPage() {
-  const supabase = createServerComponentClient<Database>({ cookies })
+export default function BlogPage() {
+  const { supabase, session } = useSupabase()
+  const userId = session?.user?.id
 
-  const { data: posts, error } = await supabase
-    .from('blog_posts')
-    .select(
-      `
-      *,
-      author:profiles(username),
-      store:stores(id, business_name, slug),
-      club:clubs(id, business_name, slug),
-      range:ranges(id, business_name, slug),
-      servicing:servicing(id, business_name, slug)
-    `
-    )
-    .eq('published', true)
-    .order('created_at', { ascending: false })
+  const postsQuery = useQuery({
+    queryKey: ['public-blog'],
+    queryFn: fetchBlogPosts,
+  })
 
-  if (error) {
-    console.error('Error fetching posts:', error)
-    throw new Error('Failed to fetch posts')
-  }
+  const canCreateQuery = useQuery({
+    queryKey: ['blog-can-create', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      if (!userId) return false
 
-  let canCreate = false
-  let userId = null
-  let userEstablishment = null
-  let debugInfo = {
-    userId: '',
-    isAdmin: false,
-    hasStore: false,
-    hasClub: false,
-    hasRange: false,
-    hasServicing: false,
-  }
+      const [profileRes, storeRes, clubRes, rangeRes, servicingRes] =
+        await Promise.all([
+          supabase
+            .from('profiles')
+            .select('is_admin')
+            .eq('id', userId)
+            .single(),
+          supabase
+            .from('stores')
+            .select('id')
+            .eq('owner_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('clubs')
+            .select('id')
+            .eq('owner_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('ranges')
+            .select('id')
+            .eq('owner_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('servicing')
+            .select('id')
+            .eq('owner_id', userId)
+            .maybeSingle(),
+        ])
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (session?.user) {
-    userId = session.user.id
-    debugInfo.userId = userId
+      const isAdmin = !!profileRes.data?.is_admin
+      const hasEstablishment =
+        !!storeRes.data ||
+        !!clubRes.data ||
+        !!rangeRes.data ||
+        !!servicingRes.data
 
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', userId)
-      .single()
+      return isAdmin || hasEstablishment
+    },
+  })
 
-    if (!profileError && profile && profile.is_admin) {
-      canCreate = true
-      debugInfo.isAdmin = true
-    }
-
-    const { data: store, error: storeError } = await supabase
-      .from('stores')
-      .select('id')
-      .eq('owner_id', userId)
-      .maybeSingle()
-
-    if (storeError) console.error('Store query error:', storeError)
-    if (store) {
-      canCreate = true
-      userEstablishment = { ...store, type: 'store' }
-      debugInfo.hasStore = true
-    }
-
-    const { data: club } = await supabase
-      .from('clubs')
-      .select('id')
-      .eq('owner_id', userId)
-      .maybeSingle()
-
-    if (club) {
-      canCreate = true
-      userEstablishment = { ...club, type: 'club' }
-      debugInfo.hasClub = true
-    }
-
-    const { data: range } = await supabase
-      .from('ranges')
-      .select('id')
-      .eq('owner_id', userId)
-      .maybeSingle()
-
-    if (range) {
-      canCreate = true
-      userEstablishment = { ...range, type: 'range' }
-      debugInfo.hasRange = true
-    }
-
-    const { data: servicing } = await supabase
-      .from('servicing')
-      .select('id')
-      .eq('owner_id', userId)
-      .maybeSingle()
-
-    if (servicing) {
-      canCreate = true
-      userEstablishment = { ...servicing, type: 'servicing' }
-      debugInfo.hasServicing = true
-    }
-  }
+  const canCreate = !!canCreateQuery.data
+  const posts = postsQuery.data?.posts ?? []
 
   return (
     <PageLayout>
@@ -135,7 +95,11 @@ export default async function BlogPage() {
           <Button variant="outline">Guides</Button>
         </Link>
       </div>
-      {posts.length === 0 ? (
+      {postsQuery.isLoading ? (
+        <p className="text-muted-foreground text-lg">Loading blog posts…</p>
+      ) : postsQuery.error ? (
+        <p className="text-destructive text-lg">Failed to load blog posts.</p>
+      ) : posts.length === 0 ? (
         <p className="text-muted-foreground text-lg">No blog posts found.</p>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
 import {
   Store,
@@ -13,7 +13,6 @@ import {
   Boxes,
 } from 'lucide-react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -31,75 +30,21 @@ interface Establishment {
   type: 'stores' | 'club' | 'servicing' | 'range'
 }
 
+async function fetchEstablishments(): Promise<{
+  establishments: Establishment[]
+}> {
+  const res = await fetch('/api/public/establishments')
+  if (!res.ok) throw new Error('Failed to load establishments')
+  return res.json()
+}
+
 export default function EstablishmentsPage() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [establishments, setEstablishments] = useState<Establishment[]>([])
+  const query = useQuery({
+    queryKey: ['public-establishments'],
+    queryFn: fetchEstablishments,
+  })
 
-  useEffect(() => {
-    async function fetchAllEstablishments() {
-      try {
-        setIsLoading(true)
-
-        // Fetch stores
-        const { data: stores, error: storesError } = await supabase
-          .from('stores')
-          .select('*')
-
-        if (storesError) throw storesError
-
-        // Fetch clubs
-        const { data: clubs, error: clubsError } = await supabase
-          .from('clubs')
-          .select('*')
-
-        if (clubsError) throw clubsError
-
-        // Fetch servicing
-        const { data: servicing, error: servicingError } = await supabase
-          .from('servicing')
-          .select('*')
-
-        if (servicingError) throw servicingError
-
-        // Fetch ranges
-        const { data: ranges, error: rangesError } = await supabase
-          .from('ranges')
-          .select('*')
-
-        if (rangesError) throw rangesError
-
-        // Combine all results and add type field
-        const allEstablishments = [
-          ...(stores || []).map(store => ({
-            ...store,
-            type: 'stores' as const,
-          })),
-          ...(clubs || []).map(club => ({ ...club, type: 'clubs' as const })),
-          ...(servicing || []).map(service => ({
-            ...service,
-            type: 'servicing' as const,
-          })),
-          ...(ranges || []).map(range => ({
-            ...range,
-            type: 'range' as const,
-          })),
-        ]
-
-        // Sort by business name
-        allEstablishments.sort((a, b) =>
-          a.business_name.localeCompare(b.business_name)
-        )
-
-        setEstablishments(allEstablishments)
-      } catch (error) {
-        console.error('Error fetching establishments:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchAllEstablishments()
-  }, [])
+  const establishments = query.data?.establishments ?? []
 
   // Icon component based on establishment type
   const getEstablishmentIcon = (type: string) => {
@@ -203,7 +148,7 @@ export default function EstablishmentsPage() {
       <div className="mt-12">
         <h2 className="text-2xl font-bold mb-6">All Establishments</h2>
 
-        {isLoading ? (
+        {query.isLoading ? (
           <div className="flex items-center justify-center py-12">
             <LoadingState message="Loading establishments..." />
           </div>

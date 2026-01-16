@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Wrench, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 interface Servicing {
   id: string
@@ -23,38 +24,24 @@ interface Servicing {
   slug: string
 }
 
+async function fetchServicingProviders(): Promise<{ servicing: Servicing[] }> {
+  const res = await fetch('/api/public/establishments/servicing')
+  if (!res.ok) throw new Error('Failed to load servicing providers')
+  return res.json()
+}
+
 export default function ServicingPage() {
-  const [servicingProviders, setServicingProviders] = useState<Servicing[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { session } = useSupabase()
+  const isAuthenticated = useMemo(() => !!session?.user, [session?.user])
 
-  useEffect(() => {
-    async function fetchServicingProviders() {
-      try {
-        // Check if user is authenticated
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        setIsAuthenticated(!!session)
+  const query = useQuery({
+    queryKey: ['public-establishments-servicing'],
+    queryFn: fetchServicingProviders,
+  })
 
-        const { data, error } = await supabase
-          .from('servicing')
-          .select('*')
-          .order('business_name', { ascending: true })
+  const servicingProviders = query.data?.servicing ?? []
 
-        if (error) throw error
-        setServicingProviders(data || [])
-      } catch (error) {
-        console.error('Error fetching servicing providers:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchServicingProviders()
-  }, [])
-
-  if (isLoading) {
+  if (query.isLoading) {
     return (
       <PageLayout padding="md" withSpacing>
         <LoadingState message="Loading servicing providers..." />

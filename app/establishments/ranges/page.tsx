@@ -1,15 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 interface Range {
   id: string
@@ -23,38 +24,24 @@ interface Range {
   slug: string
 }
 
+async function fetchRanges(): Promise<{ ranges: Range[] }> {
+  const res = await fetch('/api/public/establishments/ranges')
+  if (!res.ok) throw new Error('Failed to load ranges')
+  return res.json()
+}
+
 export default function RangesPage() {
-  const [ranges, setRanges] = useState<Range[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const { session } = useSupabase()
+  const isAuthenticated = useMemo(() => !!session?.user, [session?.user])
 
-  useEffect(() => {
-    async function fetchRanges() {
-      try {
-        // Check if user is authenticated
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        setIsAuthenticated(!!session)
+  const query = useQuery({
+    queryKey: ['public-establishments-ranges'],
+    queryFn: fetchRanges,
+  })
 
-        const { data, error } = await supabase
-          .from('ranges')
-          .select('*')
-          .order('business_name', { ascending: true })
+  const ranges = query.data?.ranges ?? []
 
-        if (error) throw error
-        setRanges(data || [])
-      } catch (error) {
-        console.error('Error fetching ranges:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchRanges()
-  }, [])
-
-  if (isLoading) {
+  if (query.isLoading) {
     return (
       <PageLayout centered>
         <LoadingState message="Loading shooting ranges..." />

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Calendar } from '@/components/ui/calendar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -21,7 +22,6 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { format, addMonths, subMonths, isBefore, startOfDay } from 'date-fns'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -42,65 +42,47 @@ interface Event {
   slug: string | null
 }
 
+async function fetchEventsBase(): Promise<{
+  upcomingEvents: Event[]
+  pastEvents: Event[]
+}> {
+  const res = await fetch('/api/public/events')
+  if (!res.ok) throw new Error('Failed to load events')
+  return res.json()
+}
+
+async function fetchEventsForMonth(
+  month: string
+): Promise<{ calendarEvents: Event[] }> {
+  const res = await fetch(
+    `/api/public/events?month=${encodeURIComponent(month)}`
+  )
+  if (!res.ok) throw new Error('Failed to load calendar events')
+  return res.json()
+}
+
 export default function EventsPage() {
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([])
-  const [pastEvents, setPastEvents] = useState<Event[]>([])
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date())
-  const [calendarEvents, setCalendarEvents] = useState<Event[]>([])
 
-  useEffect(() => {
-    async function fetchEvents() {
-      const today = new Date().toISOString().split('T')[0]
+  const baseQuery = useQuery({
+    queryKey: ['public-events'],
+    queryFn: fetchEventsBase,
+  })
 
-      // Fetch upcoming events
-      const { data: upcoming } = await supabase
-        .from('events')
-        .select('*')
-        .gte('start_date', today)
-        .order('start_date', { ascending: true })
-        .limit(10)
+  const monthKey = useMemo(
+    () => format(currentMonth, 'yyyy-MM'),
+    [currentMonth]
+  )
 
-      // Fetch past events
-      const { data: past } = await supabase
-        .from('events')
-        .select('*')
-        .lt('start_date', today)
-        .order('start_date', { ascending: false })
-        .limit(6)
+  const calendarQuery = useQuery({
+    queryKey: ['public-events-calendar', monthKey],
+    queryFn: () => fetchEventsForMonth(monthKey),
+  })
 
-      if (upcoming) setUpcomingEvents(upcoming)
-      if (past) setPastEvents(past)
-    }
-
-    fetchEvents()
-  }, [])
-
-  useEffect(() => {
-    // Fetch events for the selected month
-    async function fetchCalendarEvents() {
-      const startOfMonth = new Date(
-        currentMonth.getFullYear(),
-        currentMonth.getMonth(),
-        1
-      )
-      const endOfMonth = new Date(
-        currentMonth.getFullYear(),
-        currentMonth.getMonth() + 1,
-        0
-      )
-
-      const { data } = await supabase
-        .from('events')
-        .select('*')
-        .gte('start_date', startOfMonth.toISOString())
-        .lte('start_date', endOfMonth.toISOString())
-
-      if (data) setCalendarEvents(data)
-    }
-
-    fetchCalendarEvents()
-  }, [currentMonth])
+  const upcomingEvents = baseQuery.data?.upcomingEvents ?? []
+  const pastEvents = baseQuery.data?.pastEvents ?? []
+  const calendarEvents = calendarQuery.data?.calendarEvents ?? []
 
   function getDayEvents(date: Date) {
     return calendarEvents.filter(
@@ -123,7 +105,7 @@ export default function EventsPage() {
         title="Calendar of Events"
         description="Discover upcoming shooting tournaments, training sessions, club activities, and international trips. Connect with Malta's firearms community and participate in events suited for all skill levels."
       />
-      {upcomingEvents.length > 0 && (
+      {!baseQuery.isLoading && upcomingEvents.length > 0 && (
         <Carousel className="w-full">
           <CarouselContent>
             {upcomingEvents.map(event => (
@@ -286,25 +268,26 @@ export default function EventsPage() {
                 Events on {format(selectedDate, 'PPP')}
               </h3>
               <div className="space-y-4">
-                {getDayEvents(selectedDate).map(event => (
-                  <Link
-                    key={event.id}
-                    href={`/events/${event.slug || event.id}`}
-                  >
-                    <div className="p-3 rounded-lg border hover:bg-accent transition-colors">
-                      <Badge className="mb-2">{event.type}</Badge>
-                      <h4 className="font-medium">{event.title}</h4>
-                      <div className="text-sm text-muted-foreground mt-2">
-                        {event.start_time && (
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            <span>{event.start_time}</span>
-                          </div>
-                        )}
+                {!calendarQuery.isLoading &&
+                  getDayEvents(selectedDate).map(event => (
+                    <Link
+                      key={event.id}
+                      href={`/events/${event.slug || event.id}`}
+                    >
+                      <div className="p-3 rounded-lg border hover:bg-accent transition-colors">
+                        <Badge className="mb-2">{event.type}</Badge>
+                        <h4 className="font-medium">{event.title}</h4>
+                        <div className="text-sm text-muted-foreground mt-2">
+                          {event.start_time && (
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              <span>{event.start_time}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))}
               </div>
             </CardContent>
           </Card>
@@ -321,37 +304,40 @@ export default function EventsPage() {
       <div>
         <h2 className="text-2xl font-bold mb-6">Past Events</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {pastEvents.map(event => (
-            <Link key={event.id} href={`/events/${event.slug || event.id}`}>
-              <Card className="hover:shadow-lg transition-shadow">
-                {event.poster_url && (
-                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                    <img
-                      src={event.poster_url}
-                      alt={event.title}
-                      className="object-cover w-full h-full"
-                    />
-                  </div>
-                )}
-                <CardContent className="p-4">
-                  <Badge variant="secondary" className="mb-2">
-                    {event.type}
-                  </Badge>
-                  <h3 className="font-semibold text-lg mb-2">{event.title}</h3>
-                  <div className="space-y-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4" />
-                      <span>{format(new Date(event.start_date), 'PPP')}</span>
+          {!baseQuery.isLoading &&
+            pastEvents.map(event => (
+              <Link key={event.id} href={`/events/${event.slug || event.id}`}>
+                <Card className="hover:shadow-lg transition-shadow">
+                  {event.poster_url && (
+                    <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                      <img
+                        src={event.poster_url}
+                        alt={event.title}
+                        className="object-cover w-full h-full"
+                      />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
-                      <span>{event.location}</span>
+                  )}
+                  <CardContent className="p-4">
+                    <Badge variant="secondary" className="mb-2">
+                      {event.type}
+                    </Badge>
+                    <h3 className="font-semibold text-lg mb-2">
+                      {event.title}
+                    </h3>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4" />
+                        <span>{format(new Date(event.start_date), 'PPP')}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        <span>{event.location}</span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
         </div>
       </div>
     </PageLayout>

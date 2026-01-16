@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -13,7 +13,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Package, Star, Plus, Heart } from 'lucide-react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { AutoFeatureHandler } from './auto-feature-handler'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
@@ -35,6 +34,15 @@ interface Listing {
   status: string
   updated_at: string
   is_featured?: boolean
+}
+
+async function fetchMarketplaceData(): Promise<{
+  featuredListings: Listing[]
+  regularListings: Listing[]
+}> {
+  const res = await fetch('/api/public/marketplace')
+  if (!res.ok) throw new Error('Failed to load listings')
+  return res.json()
 }
 
 function slugify(text: string) {
@@ -80,79 +88,14 @@ function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
 }
 
 export default function Marketplace() {
-  const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
-  const [regularListings, setRegularListings] = useState<Listing[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const query = useQuery({
+    queryKey: ['public-marketplace'],
+    queryFn: fetchMarketplaceData,
+  })
 
-  useEffect(() => {
-    async function fetchListings() {
-      try {
-        setIsLoading(true)
-        setError(null)
-
-        // Fetch listings from Supabase - only show active and non-expired listings
-        const { data: listingsData, error: listingsError } = await supabase
-          .from('listings')
-          .select('*')
-          .eq('status', 'active')
-          .gt('expires_at', new Date().toISOString())
-          .order('created_at', { ascending: false })
-          .limit(50)
-
-        if (listingsError) {
-          console.error('Error fetching listings:', listingsError)
-          setError('Failed to load listings')
-          return
-        }
-
-        // Get current date for featured check
-        const now = new Date().toISOString()
-
-        // Fetch all active featured listings
-        const { data: featuredListings, error: featuredError } = await supabase
-          .from('featured_listings')
-          .select('listing_id')
-          .gt('end_date', now)
-
-        if (featuredError) {
-          console.error('Error fetching featured listings:', featuredError)
-          // Continue without featured data
-        }
-
-        // Create a set of featured listing IDs for easy lookup
-        const featuredSet = new Set(
-          featuredListings?.map(item => item.listing_id) || []
-        )
-
-        // Mark listings as featured if they're in the featured set
-        const processedListings = (listingsData || []).map(listing => ({
-          ...listing,
-          is_featured: featuredSet.has(listing.id),
-        }))
-
-        // Sort listings: featured first, then by created date (newest first)
-        const sortedListings = [...processedListings].sort((a, b) => {
-          // Featured listings come before non-featured
-          if (a.is_featured && !b.is_featured) return -1
-          if (!a.is_featured && b.is_featured) return 1
-
-          // Otherwise maintain default sort order (by created_at, newest first)
-          return 0
-        })
-
-        setFeaturedListings(sortedListings.filter(l => l.is_featured))
-        setRegularListings(sortedListings.filter(l => !l.is_featured))
-      } catch (error) {
-        console.error('Unexpected error fetching listings:', error)
-        setError('An unexpected error occurred')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchListings()
-  }, [])
+  const featuredListings = query.data?.featuredListings ?? []
+  const regularListings = query.data?.regularListings ?? []
+  const error = query.error ? 'Failed to load listings' : null
 
   // Function to render a listing card
   const renderListingCard = (listing: Listing) => (
@@ -284,7 +227,7 @@ export default function Marketplace() {
     },
   ]
 
-  if (isLoading) {
+  if (query.isLoading) {
     return (
       <PageLayout centered>
         <LoadingState />

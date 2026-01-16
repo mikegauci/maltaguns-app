@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Package, ArrowLeft, Star } from 'lucide-react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 import { PageLayout } from '@/components/ui/page-layout'
 
@@ -80,131 +80,61 @@ function singularize(word: string): string {
   return word
 }
 
+async function fetchSearchResults(q: string, categoryParam: string) {
+  const params = new URLSearchParams()
+  if (q) params.set('q', q)
+  if (categoryParam) params.set('category', categoryParam)
+
+  if (q) {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean)
+    const singulars = words
+      .map(word => singularize(word))
+      .filter(s => s && !words.includes(s))
+    if (singulars.length > 0) {
+      params.set('q', [q, ...singulars].join(' '))
+    }
+  }
+
+  const res = await fetch(`/api/public/marketplace/search?${params.toString()}`)
+  if (!res.ok) throw new Error('Failed to search listings')
+  return res.json() as Promise<{
+    featuredListings: Listing[]
+    listings: Listing[]
+  }>
+}
+
 export default function SearchResults() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q') || ''
   const categoryParam = searchParams.get('category') || 'all'
 
-  const [listings, setListings] = useState<Listing[]>([])
-  const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [type, setType] = useState<string | null>(null)
-  const [category, setCategory] = useState<string | null>(null)
+  const { type, category } = useMemo(() => {
+    let typeValue: string | null = null
+    let categoryValue: string | null = null
 
-  useEffect(() => {
-    async function fetchSearchResults() {
-      setIsLoading(true)
-
-      try {
-        // Parse the category parameter
-        let typeValue: string | null = null
-        let categoryValue: string | null = null
-
-        if (categoryParam !== 'all') {
-          if (
-            categoryParam === 'firearms' ||
-            categoryParam === 'non_firearms'
-          ) {
-            typeValue = categoryParam
-          } else if (categoryParam.startsWith('firearms-')) {
-            typeValue = 'firearms'
-            categoryValue = categoryParam.replace('firearms-', '')
-          } else if (categoryParam.startsWith('non_firearms-')) {
-            typeValue = 'non_firearms'
-            categoryValue = categoryParam.replace('non_firearms-', '')
-          }
-        }
-
-        setType(typeValue)
-        setCategory(categoryValue)
-
-        // Build the query - only show active and non-expired listings
-        let supabaseQuery = supabase
-          .from('listings')
-          .select('*')
-          .eq('status', 'active')
-          .gt('expires_at', new Date().toISOString())
-
-        // Add type filter if specified
-        if (typeValue) {
-          supabaseQuery = supabaseQuery.eq('type', typeValue)
-        }
-
-        // Add category filter if specified
-        if (categoryValue) {
-          supabaseQuery = supabaseQuery.eq('category', categoryValue)
-        }
-
-        // Create search terms including singular/plural forms if query exists
-        let searchTerms: string[] = []
-        if (query) {
-          searchTerms = [query.toLowerCase()]
-          const words = query.toLowerCase().split(/\s+/)
-
-          // Add singular forms of plural words
-          words.forEach(word => {
-            const singular = singularize(word)
-            if (singular !== word) {
-              searchTerms.push(singular)
-            }
-          })
-        }
-
-        // Only add search conditions if query is not empty
-        if (query) {
-          // Add search terms for title and description
-          const searchConditions = searchTerms
-            .map(term => `title.ilike.%${term}%,description.ilike.%${term}%`)
-            .join(',')
-
-          supabaseQuery = supabaseQuery.or(searchConditions)
-        }
-
-        // Execute the query
-        const { data, error } = await supabaseQuery
-
-        if (error) throw error
-
-        // Fetch featured listings
-        const { data: featuredData, error: featuredError } = await supabase
-          .from('featured_listings')
-          .select('listing_id')
-          .gt('end_date', new Date().toISOString())
-
-        if (featuredError) throw featuredError
-
-        // Create a set of featured listing IDs for quick lookup
-        const featuredIds = new Set(
-          featuredData?.map(item => item.listing_id) || []
-        )
-
-        // Filter and mark featured listings
-        const featured: Listing[] = []
-        const regular: Listing[] = []
-
-        ;(data || []).forEach(listing => {
-          if (featuredIds.has(listing.id)) {
-            featured.push({
-              ...listing,
-              is_featured: true,
-            })
-          }
-          regular.push(listing)
-        })
-
-        setFeaturedListings(featured)
-        setListings(regular)
-      } catch (error) {
-        console.error('Error searching listings:', error)
-        setListings([])
-        setFeaturedListings([])
-      } finally {
-        setIsLoading(false)
+    if (categoryParam !== 'all') {
+      if (categoryParam === 'firearms' || categoryParam === 'non_firearms') {
+        typeValue = categoryParam
+      } else if (categoryParam.startsWith('firearms-')) {
+        typeValue = 'firearms'
+        categoryValue = categoryParam.replace('firearms-', '')
+      } else if (categoryParam.startsWith('non_firearms-')) {
+        typeValue = 'non_firearms'
+        categoryValue = categoryParam.replace('non_firearms-', '')
       }
     }
 
-    fetchSearchResults()
-  }, [query, categoryParam])
+    return { type: typeValue, category: categoryValue }
+  }, [categoryParam])
+
+  const searchQuery = useQuery({
+    queryKey: ['public-marketplace-search', query, categoryParam],
+    queryFn: () => fetchSearchResults(query, categoryParam),
+  })
+
+  const listings = searchQuery.data?.listings ?? []
+  const featuredListings = searchQuery.data?.featuredListings ?? []
+  const isLoading = searchQuery.isLoading
 
   const renderListingCard = (listing: Listing) => (
     <Link

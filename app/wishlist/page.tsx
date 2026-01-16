@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -102,8 +103,8 @@ function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
 export default function WishlistPage() {
   const router = useRouter()
   const { session } = useSupabase()
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const queryClient = useQueryClient()
+  const userId = session?.user?.id
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
   const [itemToRemove, setItemToRemove] = useState<string | null>(null)
   const [isRemoving, setIsRemoving] = useState(false)
@@ -113,55 +114,52 @@ export default function WishlistPage() {
       router.push('/login')
       return
     }
-    fetchWishlistItems()
   }, [session, router])
 
-  async function fetchWishlistItems() {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/wishlist')
+  const wishlistQuery = useQuery({
+    queryKey: ['wishlist', userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const response = await fetch('/api/wishlist', { cache: 'no-store' })
+      if (!response.ok) throw new Error('Failed to load wishlist items')
+      const data = await response.json()
+      return (data.wishlistItems || []) as WishlistItem[]
+    },
+  })
 
-      if (response.ok) {
-        const data = await response.json()
-        setWishlistItems(data.wishlistItems || [])
-      } else {
-        toast.error('Failed to load wishlist items')
-      }
-    } catch (error) {
-      console.error('Error fetching wishlist:', error)
-      toast.error('Something went wrong')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const wishlistItems = useMemo(
+    () => wishlistQuery.data ?? [],
+    [wishlistQuery.data]
+  )
 
-  async function handleRemoveItem(listingId: string) {
-    setIsRemoving(true)
-    try {
+  const removeMutation = useMutation({
+    mutationFn: async (listingId: string) => {
       const response = await fetch(
         `/api/wishlist/remove?listingId=${listingId}`,
-        {
-          method: 'DELETE',
-        }
+        { method: 'DELETE' }
       )
-
-      if (response.ok) {
-        setWishlistItems(prev =>
-          prev.filter(item => item.listing_id !== listingId)
-        )
-        toast.success('Removed from wishlist')
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to remove item')
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || 'Failed to remove item')
       }
-    } catch (error) {
-      console.error('Error removing item:', error)
-      toast.error('Something went wrong')
-    } finally {
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['wishlist', userId] })
+      toast.success('Removed from wishlist')
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to remove item')
+    },
+    onSettled: () => {
       setIsRemoving(false)
       setRemoveDialogOpen(false)
       setItemToRemove(null)
-    }
+    },
+  })
+
+  async function handleRemoveItem(listingId: string) {
+    setIsRemoving(true)
+    removeMutation.mutate(listingId)
   }
 
   function confirmRemoveItem(listingId: string) {
@@ -169,7 +167,7 @@ export default function WishlistPage() {
     setRemoveDialogOpen(true)
   }
 
-  if (isLoading) {
+  if (wishlistQuery.isLoading) {
     return (
       <PageLayout centered>
         <LoadingState message="Loading your wishlist..." />
@@ -208,7 +206,14 @@ export default function WishlistPage() {
         description="Compare and manage your saved listings"
         className="mb-4"
       />
-      {wishlistItems.length === 0 ? (
+      {wishlistQuery.error ? (
+        <Card className="text-center py-16">
+          <CardContent className="space-y-2">
+            <CardTitle className="text-2xl">Failed to load wishlist</CardTitle>
+            <CardDescription>Please refresh and try again.</CardDescription>
+          </CardContent>
+        </Card>
+      ) : wishlistItems.length === 0 ? (
         <Card className="text-center py-16">
           <CardContent className="space-y-6">
             <Heart className="h-20 w-20 mx-auto text-muted-foreground/50" />
