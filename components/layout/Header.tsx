@@ -236,7 +236,11 @@ export function Header() {
                   {session?.user ? (
                     <>
                       <DropdownMenuItem className="cursor-pointer">
-                        <Link href="/profile" prefetch={false} className="w-full">
+                        <Link
+                          href="/profile"
+                          prefetch={false}
+                          className="w-full"
+                        >
                           Account
                         </Link>
                       </DropdownMenuItem>
@@ -260,7 +264,9 @@ export function Header() {
                         </Link>
                       </DropdownMenuItem>
                       <div className="px-2 py-1.5">
-                        <span className="text-sm text-muted-foreground">Or</span>
+                        <span className="text-sm text-muted-foreground">
+                          Or
+                        </span>
                       </div>
                       <DropdownMenuItem className="cursor-pointer">
                         <Link href="/register" className="w-full">
@@ -279,7 +285,11 @@ export function Header() {
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Menu"
             >
-              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {menuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
