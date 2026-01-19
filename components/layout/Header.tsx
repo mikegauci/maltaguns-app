@@ -89,17 +89,6 @@ export function Header() {
             <SearchBar disableShortcut={true} />
           </div>
 
-          <div className="lg:hidden flex items-center gap-2">
-            {session?.user && <NotificationsBell />}
-            <button onClick={() => setMenuOpen(!menuOpen)}>
-              {menuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
-          </div>
-
           <nav className="hidden lg:flex items-center gap-3">
             {/* Desktop search bar - now before Marketplace */}
             <div className="hidden lg:block w-[400px] w-full">
@@ -227,58 +216,72 @@ export function Header() {
                 Help
               </Button>
             </Link>
+          </nav>
 
+          {/* Right-side controls (single bell mount for both mobile + desktop) */}
+          <div className="flex items-center gap-2">
             {session?.user && <NotificationsBell />}
 
-            {/* Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className={`aspect-square rounded-full w-10 flex items-center justify-center bg-background focus:outline-none p-2 ${session?.user ? 'border-green-500 border-2 focus:border-green-500' : 'border'}`}
-                >
-                  <User className="h-5 w-5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-40 p-2 mt-2" align="end">
-                {session?.user ? (
-                  <>
-                    <DropdownMenuItem className="cursor-pointer">
-                      <Link href="/profile" prefetch={false} className="w-full">
-                        Account
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer">
-                      <Link href="/wishlist" className="w-full">
-                        Wishlist
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="cursor-pointer text-destructive"
-                      onClick={handleLogout}
-                    >
-                      Log Out
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <>
-                    <DropdownMenuItem className="cursor-pointer">
-                      <Link href="/login" className="w-full">
-                        Login
-                      </Link>
-                    </DropdownMenuItem>
-                    <div className="px-2 py-1.5">
-                      <span className="text-sm text-muted-foreground">Or</span>
-                    </div>
-                    <DropdownMenuItem className="cursor-pointer">
-                      <Link href="/register" className="w-full">
-                        Register
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </nav>
+            {/* Desktop Profile Dropdown */}
+            <div className="hidden lg:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className={`aspect-square rounded-full w-10 flex items-center justify-center bg-background focus:outline-none p-2 ${session?.user ? 'border-green-500 border-2 focus:border-green-500' : 'border'}`}
+                  >
+                    <User className="h-5 w-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-40 p-2 mt-2" align="end">
+                  {session?.user ? (
+                    <>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Link href="/profile" prefetch={false} className="w-full">
+                          Account
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Link href="/wishlist" className="w-full">
+                          Wishlist
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer text-destructive"
+                        onClick={handleLogout}
+                      >
+                        Log Out
+                      </DropdownMenuItem>
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Link href="/login" className="w-full">
+                          Login
+                        </Link>
+                      </DropdownMenuItem>
+                      <div className="px-2 py-1.5">
+                        <span className="text-sm text-muted-foreground">Or</span>
+                      </div>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Link href="/register" className="w-full">
+                          Register
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Mobile hamburger */}
+            <button
+              className="lg:hidden"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Menu"
+            >
+              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
       </header>
 

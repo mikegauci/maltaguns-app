@@ -47,9 +47,6 @@ export function NotificationsBell() {
   const { supabase, session } = useSupabase()
   const userId = session?.user?.id
 
-  // Prefer push updates via Supabase Realtime; keep a slow polling fallback.
-  const POLL_INTERVAL_MS = 300_000 // 5 minutes
-
   const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
   const [shakeToken, setShakeToken] = useState(0)
@@ -126,7 +123,6 @@ export function NotificationsBell() {
           void queryClient.invalidateQueries({
             queryKey: ['notifications-bell', userId],
           })
-          triggerShake()
         }
       )
       .on(
@@ -146,7 +142,16 @@ export function NotificationsBell() {
       )
       .subscribe()
 
+    const onVisibilityChange = () => {
+      if (!isDocumentVisible()) return
+      void queryClient.invalidateQueries({
+        queryKey: ['notifications-bell', userId],
+      })
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
     return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
       void supabase.removeChannel(channel)
     }
   }, [queryClient, supabase, triggerShake, userId])
