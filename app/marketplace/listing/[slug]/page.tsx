@@ -14,6 +14,7 @@ interface Listing {
   thumbnail: string
   seller_id: string
   created_at: string
+  editable_until: string | null
 }
 
 interface ListingDetails extends Listing {

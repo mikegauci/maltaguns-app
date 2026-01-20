@@ -30,6 +30,8 @@ export interface Listing {
   status: string
   created_at: string
   expires_at: string
+  editable_until?: string | null
+  relisted_at?: string | null
   is_near_expiration?: boolean
   is_featured?: boolean
   days_until_expiration?: number

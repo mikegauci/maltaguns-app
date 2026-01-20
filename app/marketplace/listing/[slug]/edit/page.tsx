@@ -283,6 +283,32 @@ export default function EditListing({ params }: { params: { slug: string } }) {
           return
         }
 
+        const editableUntilIso = (listing as any).editable_until as
+          | string
+          | null
+          | undefined
+        const editableUntilMs = (() => {
+          if (editableUntilIso) {
+            const ts = Date.parse(editableUntilIso)
+            return Number.isNaN(ts) ? null : ts
+          }
+          const createdTs = Date.parse((listing as any).created_at)
+          return Number.isNaN(createdTs)
+            ? null
+            : createdTs + 48 * 60 * 60 * 1000
+        })()
+
+        if (editableUntilMs !== null && Date.now() > editableUntilMs) {
+          toast({
+            title: 'Editing locked',
+            description:
+              'This listing can no longer be edited (48-hour edit window has ended). Contact an admin if you need changes.',
+            variant: 'destructive',
+          })
+          router.push(`/marketplace/listing/${params.slug}`)
+          return
+        }
+
         if (mounted) {
           setListingId(listing.id)
           setSelectedType(listing.type)

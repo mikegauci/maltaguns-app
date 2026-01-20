@@ -47,6 +47,8 @@ interface Listing {
   created_at: string
   updated_at: string
   expires_at: string
+  editable_until: string | null
+  relisted_at: string | null
   featured: boolean
   seller?: {
     username: string
@@ -226,6 +228,23 @@ function ListingsPageComponent() {
       },
     },
     {
+      accessorKey: 'editable_until',
+      header: 'Editable until',
+      enableSorting: true,
+      cell: ({ row }) => {
+        const raw = row.getValue('editable_until') as string | null
+        if (!raw) return 'N/A'
+        const ts = Date.parse(raw)
+        if (Number.isNaN(ts)) return 'N/A'
+        const isLocked = ts < Date.now()
+        return (
+          <span className={isLocked ? 'text-red-600' : 'text-green-700'}>
+            {format(new Date(ts), 'dd MMM yyyy HH:mm')}
+          </span>
+        )
+      },
+    },
+    {
       accessorKey: 'thumbnail',
       header: 'Thumbnail',
       enableSorting: false,
@@ -256,6 +275,12 @@ function ListingsPageComponent() {
                 '_blank'
               )
             }
+            customActions={[
+              {
+                label: 'Refresh edit window (48h)',
+                onClick: () => handleRefreshEditWindow(listing.id),
+              },
+            ]}
           />
         )
       },
@@ -403,6 +428,42 @@ function ListingsPageComponent() {
         title: 'Error',
         description:
           error instanceof Error ? error.message : 'Failed to delete listing',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleRefreshEditWindow(listingId: string) {
+    try {
+      setIsSubmitting(true)
+      const response = await fetch('/api/admin/listings/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingId,
+          refresh_edit_window: true,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || 'Failed to refresh edit window')
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Edit window refreshed for 48 hours.',
+      })
+      fetchListings()
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to refresh edit window',
       })
     } finally {
       setIsSubmitting(false)

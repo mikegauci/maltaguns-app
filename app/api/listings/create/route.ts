@@ -97,6 +97,8 @@ export async function POST(request: Request) {
       status: 'active',
       is_featured: false,
       expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+      // Sellers can edit freely for 48 hours after publish
+      editable_until: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
     }
 
     console.log('Creating listing with data:', listingData)
@@ -105,7 +107,7 @@ export async function POST(request: Request) {
     const { data: listing, error: listingError } = await supabase
       .from('listings')
       .insert(listingData)
-      .select('id, title')
+      .select('id, title, editable_until')
       .single()
 
     if (listingError) {

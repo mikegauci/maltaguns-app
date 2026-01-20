@@ -194,14 +194,14 @@ export function useProfileData({
             }
           )
 
-          const activeListings = listingsWithFeatures.filter(l => !l.is_expired)
-          setListings(activeListings)
-
           const titleMap: Record<string, string> = {}
-          activeListings.forEach((l: any) => {
+          listingsWithFeatures.forEach((l: any) => {
             titleMap[l.id] = l.title
           })
           setListingIdToTitleMap(titleMap)
+
+          // Keep expired listings too (UI will separate them)
+          setListings(listingsWithFeatures)
         }
 
         // Set all other data

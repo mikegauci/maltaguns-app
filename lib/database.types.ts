@@ -163,6 +163,8 @@ export interface Database {
           status: string
           created_at: string
           updated_at: string
+          editable_until: string | null
+          relisted_at: string | null
           is_featured: boolean
           featured_at: string | null
           expires_at: string
@@ -182,6 +184,8 @@ export interface Database {
           status?: string
           created_at?: string
           updated_at?: string
+          editable_until?: string | null
+          relisted_at?: string | null
           is_featured?: boolean
           featured_at?: string | null
           expires_at?: string
@@ -201,6 +205,8 @@ export interface Database {
           status?: string
           created_at?: string
           updated_at?: string
+          editable_until?: string | null
+          relisted_at?: string | null
           is_featured?: boolean
           featured_at?: string | null
           expires_at?: string

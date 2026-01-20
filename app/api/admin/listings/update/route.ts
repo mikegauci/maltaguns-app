@@ -15,6 +15,8 @@ type UpdateListingBody = {
   status?: string
   expires_at?: string | null
   featured?: boolean
+  editable_until?: string | null
+  refresh_edit_window?: boolean
 }
 
 function parsePrice(price: string | number | undefined): number | undefined {
@@ -104,6 +106,25 @@ export async function POST(request: Request) {
           )
         }
         updatePayload.expires_at = new Date(ts).toISOString()
+      }
+    }
+
+    if (body.refresh_edit_window) {
+      updatePayload.editable_until = new Date(
+        Date.now() + 48 * 60 * 60 * 1000
+      ).toISOString()
+    } else if (body.editable_until !== undefined) {
+      if (body.editable_until === null) {
+        updatePayload.editable_until = null
+      } else {
+        const ts = Date.parse(body.editable_until)
+        if (Number.isNaN(ts)) {
+          return NextResponse.json(
+            { error: 'Invalid editable_until. Must be an ISO date string.' },
+            { status: 400 }
+          )
+        }
+        updatePayload.editable_until = new Date(ts).toISOString()
       }
     }
 

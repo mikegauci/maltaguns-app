@@ -50,6 +50,7 @@ interface ListingDetails {
   thumbnail: string
   seller_id: string
   created_at: string
+  editable_until: string | null
   seller: {
     username: string
     email: string | null
@@ -180,6 +181,18 @@ export default function ListingClient({
   // Use the first image from the listing, or the default if none are available
   const images =
     listing.images.length > 0 ? listing.images : [DEFAULT_LISTING_IMAGE]
+
+  const editableUntilMs = (() => {
+    if (listing.editable_until) {
+      const ts = Date.parse(listing.editable_until)
+      return Number.isNaN(ts) ? null : ts
+    }
+    const createdTs = Date.parse(listing.created_at)
+    return Number.isNaN(createdTs) ? null : createdTs + 48 * 60 * 60 * 1000
+  })()
+
+  const canEditNow =
+    isOwner && editableUntilMs !== null && Date.now() <= editableUntilMs
 
   // Function to check if the current user is the owner of the listing
   const checkOwnership = useCallback(async () => {
@@ -752,11 +765,13 @@ export default function ListingClient({
 
         {isOwner && (
           <div className="flex gap-2">
-            <EditButton
-              label="Edit Listing"
-              href={`/marketplace/listing/${slugify(listing.title)}/edit`}
-              hideLabelOnMobile={false}
-            />
+            {canEditNow && (
+              <EditButton
+                label="Edit Listing"
+                href={`/marketplace/listing/${slugify(listing.title)}/edit`}
+                hideLabelOnMobile={false}
+              />
+            )}
 
             {!isFeatured && (
               <Button variant="secondary" onClick={handleFeatureListing}>
