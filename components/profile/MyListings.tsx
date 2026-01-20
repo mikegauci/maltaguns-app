@@ -223,6 +223,18 @@ export const MyListings = ({
                                 </span>
                               </div>
                             )}
+
+                          {/* Reason when Edit is disabled */}
+                          {(listing.status === 'sold' || isEditLocked) && (
+                            <div className="flex items-center gap-2">
+                              <Pencil className="h-4 w-4" />
+                              <span className="text-medium text-red-500">
+                                {listing.status === 'sold'
+                                  ? 'Sold listings cannot be edited.'
+                                  : 'Editing locked (48-hour window ended). Contact an admin to re-enable edits.'}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Move the extend expiry button here */}
