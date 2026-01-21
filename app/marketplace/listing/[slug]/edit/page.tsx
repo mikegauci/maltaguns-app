@@ -727,301 +727,299 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="grid gap-6 sm:grid-cols-1">
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Title
-                        </FormLabel>
+              <div className="grid gap-6 sm:grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Title
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter listing title"
+                          className="h-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Description
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe your item in detail"
+                          className="min-h-32 resize-y"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Price (€)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="h-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Type
+                      </FormLabel>
+                      <Select
+                        disabled={isUploading}
+                        onValueChange={(value: 'firearms' | 'non_firearms') => {
+                          field.onChange(value)
+                          setSelectedType(value)
+                          form.setValue('category', '')
+                          form.setValue('subcategory', '')
+                        }}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
-                          <Input
-                            placeholder="Enter listing title"
-                            className="h-10"
-                            {...field}
-                          />
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        <SelectContent>
+                          <SelectItem value="firearms">Firearms</SelectItem>
+                          <SelectItem value="non_firearms">
+                            Non-Firearms
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                <div className="grid gap-6 sm:grid-cols-1">
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Description
-                        </FormLabel>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Category
+                      </FormLabel>
+                      <Select
+                        disabled={!selectedType || isUploading}
+                        onValueChange={value => {
+                          field.onChange(value)
+                          setSelectedCategory(value)
+                          form.setValue('subcategory', '')
+                        }}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
-                          <Textarea
-                            placeholder="Describe your item in detail"
-                            className="min-h-32 resize-y"
-                            {...field}
-                          />
+                          <SelectTrigger className="h-10">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Price (€)
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
-                            className="h-10"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Type
-                        </FormLabel>
-                        <Select
-                          disabled={isUploading}
-                          onValueChange={(
-                            value: 'firearms' | 'non_firearms'
-                          ) => {
-                            field.onChange(value)
-                            setSelectedType(value)
-                            form.setValue('category', '')
-                            form.setValue('subcategory', '')
-                          }}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="h-10">
-                              <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="firearms">Firearms</SelectItem>
-                            <SelectItem value="non_firearms">
-                              Non-Firearms
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Category
-                        </FormLabel>
-                        <Select
-                          disabled={!selectedType || isUploading}
-                          onValueChange={value => {
-                            field.onChange(value)
-                            setSelectedCategory(value)
-                            form.setValue('subcategory', '')
-                          }}
-                          defaultValue={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="h-10">
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {selectedType === 'firearms'
-                              ? Object.entries(firearmsCategories).map(
+                        <SelectContent>
+                          {selectedType === 'firearms'
+                            ? Object.entries(firearmsCategories).map(
+                                ([value, label]) => (
+                                  <SelectItem key={value} value={value}>
+                                    {label}
+                                  </SelectItem>
+                                )
+                              )
+                            : selectedType === 'non_firearms'
+                              ? Object.entries(nonFirearmsCategories).map(
                                   ([value, label]) => (
                                     <SelectItem key={value} value={value}>
                                       {label}
                                     </SelectItem>
                                   )
                                 )
-                              : selectedType === 'non_firearms'
-                                ? Object.entries(nonFirearmsCategories).map(
-                                    ([value, label]) => (
-                                      <SelectItem key={value} value={value}>
-                                        {label}
-                                      </SelectItem>
-                                    )
-                                  )
-                                : null}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                              : null}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  {selectedType === 'non_firearms' &&
-                    selectedCategory &&
-                    subcategories[
-                      selectedCategory as keyof typeof subcategories
-                    ] && (
-                      <FormField
-                        control={form.control}
-                        name="subcategory"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-base font-medium">
-                              Subcategory
-                            </FormLabel>
-                            <Select
-                              disabled={isUploading}
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="h-10">
-                                  <SelectValue placeholder="Select subcategory" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {Object.entries(
-                                  subcategories[
-                                    selectedCategory as keyof typeof subcategories
-                                  ]
-                                ).map(([value, label]) => (
-                                  <SelectItem key={value} value={value}>
-                                    {label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    )}
-
-                  {selectedType === 'firearms' && (
+                {selectedType === 'non_firearms' &&
+                  selectedCategory &&
+                  subcategories[
+                    selectedCategory as keyof typeof subcategories
+                  ] && (
                     <FormField
                       control={form.control}
-                      name="calibre"
+                      name="subcategory"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-base font-medium">
-                            Calibre
+                            Subcategory
                           </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g. 9mm, .22LR, 12 gauge"
-                              className="h-10"
-                              {...field}
-                              value={field.value || ''}
-                            />
-                          </FormControl>
+                          <Select
+                            disabled={isUploading}
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-10">
+                                <SelectValue placeholder="Select subcategory" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {Object.entries(
+                                subcategories[
+                                  selectedCategory as keyof typeof subcategories
+                                ]
+                              ).map(([value, label]) => (
+                                <SelectItem key={value} value={value}>
+                                  {label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   )}
-                </div>
 
-                <div className="space-y-4 pt-4 border-t">
-                  <div>
-                    <FormLabel className="text-base font-medium">
-                      Images
-                    </FormLabel>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Upload up to {MAX_FILES} images. First image will be used
-                      as thumbnail.
-                    </p>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-                      {previewUrls.map((url, index) => (
-                        <div
-                          key={index}
-                          className="relative aspect-square rounded-md overflow-hidden border shadow-sm"
-                        >
-                          <img
-                            src={url}
-                            alt={`Preview ${index}`}
-                            className="w-full h-full object-cover"
+                {selectedType === 'firearms' && (
+                  <FormField
+                    control={form.control}
+                    name="calibre"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-base font-medium">
+                          Calibre
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="e.g. 9mm, .22LR, 12 gauge"
+                            className="h-10"
+                            {...field}
+                            value={field.value || ''}
                           />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 right-2 h-7 w-7 p-0 rounded-full shadow-md"
-                            onClick={() => handleRemoveImage(index)}
-                            disabled={isUploading}
-                          >
-                            ✕
-                          </Button>
-                          {index === 0 && (
-                            <span className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded shadow-md">
-                              Thumbnail
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
 
-                      {previewUrls.length < MAX_FILES && (
-                        <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-square hover:bg-muted/50 transition-colors">
-                          <span className="text-3xl mb-1">+</span>
-                          <span className="text-sm text-center text-muted-foreground px-2">
-                            Add Image
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleImageUpload}
-                            disabled={isUploading}
-                          />
-                        </label>
-                      )}
-                    </div>
-                  </div>
+              <div className="space-y-4 pt-4 border-t">
+                <div>
+                  <FormLabel className="text-base font-medium">
+                    Images
+                  </FormLabel>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Upload up to {MAX_FILES} images. First image will be used as
+                    thumbnail.
+                  </p>
 
-                  {isUploading && (
-                    <div className="w-full bg-muted rounded-full h-3 mb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+                    {previewUrls.map((url, index) => (
                       <div
-                        className="bg-primary h-3 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      ></div>
-                    </div>
-                  )}
+                        key={index}
+                        className="relative aspect-square rounded-md overflow-hidden border shadow-sm"
+                      >
+                        <img
+                          src={url}
+                          alt={`Preview ${index}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2 h-7 w-7 p-0 rounded-full shadow-md"
+                          onClick={() => handleRemoveImage(index)}
+                          disabled={isUploading}
+                        >
+                          ✕
+                        </Button>
+                        {index === 0 && (
+                          <span className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded shadow-md">
+                            Thumbnail
+                          </span>
+                        )}
+                      </div>
+                    ))}
 
-                  <div className="pt-4">
-                    <Button
-                      type="submit"
-                      className="w-full h-12 text-base font-medium"
-                      disabled={isUploading}
-                    >
-                      {isUploading ? 'Updating...' : 'Update Listing'}
-                    </Button>
+                    {previewUrls.length < MAX_FILES && (
+                      <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-square hover:bg-muted/50 transition-colors">
+                        <span className="text-3xl mb-1">+</span>
+                        <span className="text-sm text-center text-muted-foreground px-2">
+                          Add Image
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageUpload}
+                          disabled={isUploading}
+                        />
+                      </label>
+                    )}
                   </div>
                 </div>
+
+                {isUploading && (
+                  <div className="w-full bg-muted rounded-full h-3 mb-6">
+                    <div
+                      className="bg-primary h-3 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                )}
+
+                <div className="pt-4">
+                  <Button
+                    type="submit"
+                    className="w-full h-12 text-base font-medium"
+                    disabled={isUploading}
+                  >
+                    {isUploading ? 'Updating...' : 'Update Listing'}
+                  </Button>
+                </div>
+              </div>
             </form>
           </Form>
         </CardContent>

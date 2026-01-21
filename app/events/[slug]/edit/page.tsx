@@ -514,21 +514,105 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="grid gap-6 sm:grid-cols-1">
+              <div className="grid gap-6 sm:grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Event Title
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter event title"
+                          className="h-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Event Type
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g. Competition, Training, International Trip"
+                          className="h-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="organizer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Organizer
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter organizer name"
+                          className="h-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Description
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe your event in detail"
+                          className="min-h-32 resize-y"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
                   <FormField
                     control={form.control}
-                    name="title"
+                    name="start_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Event Title
+                        <FormLabel className="text-base font-medium flex items-center">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          Start Date
                         </FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder="Enter event title"
-                            className="h-10"
-                            {...field}
-                          />
+                          <Input type="date" className="h-10" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -536,208 +620,19 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                   />
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div>
                   <FormField
                     control={form.control}
-                    name="type"
+                    name="end_date"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Event Type
+                        <FormLabel className="text-base font-medium flex items-center">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          End Date (optional)
                         </FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g. Competition, Training, International Trip"
-                            className="h-10"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="organizer"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Organizer
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter organizer name"
-                            className="h-10"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-1">
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Description
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Describe your event in detail"
-                            className="min-h-32 resize-y"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name="start_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium flex items-center">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            Start Date
-                          </FormLabel>
-                          <FormControl>
-                            <Input type="date" className="h-10" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name="end_date"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium flex items-center">
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            End Date (optional)
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="date"
-                              className="h-10"
-                              {...field}
-                              value={field.value || ''}
-                              onChange={e =>
-                                field.onChange(e.target.value || null)
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name="start_time"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium flex items-center">
-                            <Clock className="mr-2 h-4 w-4" />
-                            Start Time (optional)
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="time"
-                              className="h-10"
-                              {...field}
-                              value={field.value || ''}
-                              onChange={e =>
-                                field.onChange(e.target.value || null)
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name="end_time"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-base font-medium flex items-center">
-                            <Clock className="mr-2 h-4 w-4" />
-                            End Time (optional)
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="time"
-                              className="h-10"
-                              {...field}
-                              value={field.value || ''}
-                              onChange={e =>
-                                field.onChange(e.target.value || null)
-                              }
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-1">
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Location
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Enter event location"
-                            className="h-10"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Contact Phone (optional)
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Contact phone number"
+                            type="date"
                             className="h-10"
                             {...field}
                             value={field.value || ''}
@@ -750,19 +645,23 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                       </FormItem>
                     )}
                   />
+                </div>
+              </div>
 
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
                   <FormField
                     control={form.control}
-                    name="email"
+                    name="start_time"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Contact Email (optional)
+                        <FormLabel className="text-base font-medium flex items-center">
+                          <Clock className="mr-2 h-4 w-4" />
+                          Start Time (optional)
                         </FormLabel>
                         <FormControl>
                           <Input
-                            type="email"
-                            placeholder="Contact email address"
+                            type="time"
                             className="h-10"
                             {...field}
                             value={field.value || ''}
@@ -777,30 +676,24 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                   />
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2">
+                <div>
                   <FormField
                     control={form.control}
-                    name="price"
+                    name="end_time"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Price (€) (optional)
+                        <FormLabel className="text-base font-medium flex items-center">
+                          <Clock className="mr-2 h-4 w-4" />
+                          End Time (optional)
                         </FormLabel>
                         <FormControl>
                           <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            placeholder="0.00"
+                            type="time"
                             className="h-10"
                             {...field}
-                            value={field.value === null ? '' : field.value}
+                            value={field.value || ''}
                             onChange={e =>
-                              field.onChange(
-                                e.target.value === ''
-                                  ? null
-                                  : parseFloat(e.target.value)
-                              )
+                              field.onChange(e.target.value || null)
                             }
                           />
                         </FormControl>
@@ -808,68 +701,171 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
                       </FormItem>
                     )}
                   />
+                </div>
+              </div>
 
-                  <div>
-                    <FormLabel className="text-base font-medium">
-                      Event Poster (optional)
-                    </FormLabel>
+              <div className="grid gap-6 sm:grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Location
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter event location"
+                          className="h-10"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                    <div className="mt-2">
-                      {posterPreview ? (
-                        <div className="relative rounded-md overflow-hidden border shadow-sm w-full aspect-[3/2]">
-                          <img
-                            src={posterPreview}
-                            alt="Event poster preview"
-                            className="w-full h-full object-cover"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-2 right-2 h-7 w-7 p-0 rounded-full shadow-md"
-                            onClick={handleRemovePoster}
-                            disabled={isUploading}
-                          >
-                            ✕
-                          </Button>
-                        </div>
-                      ) : (
-                        <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-[3/2] hover:bg-muted/50 transition-colors">
-                          <span className="text-3xl mb-1">+</span>
-                          <span className="text-sm text-center text-muted-foreground px-2">
-                            Add Poster
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handlePosterUpload}
-                            disabled={isUploading}
-                          />
-                        </label>
-                      )}
-                    </div>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Contact Phone (optional)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Contact phone number"
+                          className="h-10"
+                          {...field}
+                          value={field.value || ''}
+                          onChange={e => field.onChange(e.target.value || null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Contact Email (optional)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="Contact email address"
+                          className="h-10"
+                          {...field}
+                          value={field.value || ''}
+                          onChange={e => field.onChange(e.target.value || null)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-medium">
+                        Price (€) (optional)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="h-10"
+                          {...field}
+                          value={field.value === null ? '' : field.value}
+                          onChange={e =>
+                            field.onChange(
+                              e.target.value === ''
+                                ? null
+                                : parseFloat(e.target.value)
+                            )
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div>
+                  <FormLabel className="text-base font-medium">
+                    Event Poster (optional)
+                  </FormLabel>
+
+                  <div className="mt-2">
+                    {posterPreview ? (
+                      <div className="relative rounded-md overflow-hidden border shadow-sm w-full aspect-[3/2]">
+                        <img
+                          src={posterPreview}
+                          alt="Event poster preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="absolute top-2 right-2 h-7 w-7 p-0 rounded-full shadow-md"
+                          onClick={handleRemovePoster}
+                          disabled={isUploading}
+                        >
+                          ✕
+                        </Button>
+                      </div>
+                    ) : (
+                      <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-[3/2] hover:bg-muted/50 transition-colors">
+                        <span className="text-3xl mb-1">+</span>
+                        <span className="text-sm text-center text-muted-foreground px-2">
+                          Add Poster
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handlePosterUpload}
+                          disabled={isUploading}
+                        />
+                      </label>
+                    )}
                   </div>
                 </div>
+              </div>
 
-                {isUploading && (
-                  <div className="w-full bg-muted rounded-full h-3 mb-6">
-                    <div
-                      className="bg-primary h-3 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
-                )}
-
-                <div className="pt-4">
-                  <Button
-                    type="submit"
-                    className="w-full h-12 text-base font-medium"
-                    disabled={isUploading}
-                  >
-                    {isUploading ? 'Updating...' : 'Update Event'}
-                  </Button>
+              {isUploading && (
+                <div className="w-full bg-muted rounded-full h-3 mb-6">
+                  <div
+                    className="bg-primary h-3 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  ></div>
                 </div>
+              )}
+
+              <div className="pt-4">
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-medium"
+                  disabled={isUploading}
+                >
+                  {isUploading ? 'Updating...' : 'Update Event'}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>

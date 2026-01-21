@@ -74,18 +74,6 @@ export default function StoresPage() {
       />
       <BackButton label="Back to Establishments" href="/establishments" />
 
-      {/* Actions - Only show if authorized */}
-      {isAuthorized && (
-        <div className="flex justify-end">
-          <Link href="/establishments/stores/create">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your Business
-            </Button>
-          </Link>
-        </div>
-      )}
-
       {/* Stores Grid */}
       {stores.length === 0 ? (
         <Card className="p-6 text-center">

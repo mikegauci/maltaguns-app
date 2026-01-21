@@ -60,18 +60,6 @@ export default function RangesPage() {
         description="Find shooting ranges and facilities across Malta"
       />
 
-      {/* Actions - Only show if authenticated */}
-      {isAuthenticated && (
-        <div className="flex justify-end">
-          <Link href="/establishments/create">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your Range
-            </Button>
-          </Link>
-        </div>
-      )}
-
       {/* Ranges Grid */}
       {ranges.length === 0 ? (
         <Card className="p-6 text-center">

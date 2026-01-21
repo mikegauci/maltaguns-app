@@ -56,17 +56,6 @@ export default function ClubsPage() {
         title="Shooting Clubs"
         description="Find shooting clubs and ranges across Malta"
       />
-      {/* Actions - Only show if authenticated */}
-      {isAuthenticated && (
-        <div className="flex justify-end">
-          <Link href="/establishments/create">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your Club
-            </Button>
-          </Link>
-        </div>
-      )}
 
       {/* Clubs Grid */}
       {clubs.length === 0 ? (

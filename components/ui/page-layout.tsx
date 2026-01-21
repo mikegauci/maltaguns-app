@@ -55,7 +55,7 @@ export function PageLayout({
     sm: 'max-w-2xl mx-auto',
     md: 'max-w-4xl mx-auto',
     lg: 'max-w-7xl mx-auto',
-    xl: 'container mx-auto px-4',
+    xl: 'container mx-auto md:px-4 px-0',
     full: 'w-full',
   }
 

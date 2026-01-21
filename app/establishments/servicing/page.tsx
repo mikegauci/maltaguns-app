@@ -57,18 +57,6 @@ export default function ServicingPage() {
         description="Find firearms repair, servicing and maintenance providers across Malta"
       />
 
-      {/* Actions - Only show if authenticated */}
-      {isAuthenticated && (
-        <div className="flex justify-end">
-          <Link href="/establishments/create">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your Business
-            </Button>
-          </Link>
-        </div>
-      )}
-
       {/* Servicing Grid */}
       {servicingProviders.length === 0 ? (
         <Card className="p-6 text-center">
