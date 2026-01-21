@@ -422,6 +422,11 @@ export function Header() {
                     Profile
                   </Button>
                 </Link>
+                <Link href="/wishlist" prefetch={false}>
+                  <Button variant="ghost" onClick={() => setMenuOpen(false)}>
+                    Wishlist
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   onClick={() => {
