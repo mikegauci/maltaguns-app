@@ -133,6 +133,8 @@ export default function EditBlogPost({
         openOnClick: false,
       }),
     ],
+    // Prevent SSR/hydration mismatch warnings in Next.js (App Router)
+    immediatelyRender: false,
     content: '',
     onUpdate: ({ editor }) => {
       form.setValue('content', editor.getHTML())
@@ -727,19 +729,21 @@ export default function EditBlogPost({
 
   if (isLoading) {
     return (
-      <PageLayout>
+      <PageLayout centered>
         <p className="text-muted-foreground">Loading...</p>
       </PageLayout>
     )
   }
 
   return (
-    <PageLayout containerSize="md" padding="md">
-      <BackButton
-        label="Back to post"
-        href={`/blog/${params.category}/${params.slug}`}
-        className="mb-6"
-      />
+    <PageLayout containerSize="sm" padding="md">
+      <div className="mb-6">
+        <BackButton
+          label="Back to post"
+          href={`/blog/${params.category}/${params.slug}`}
+          hideLabelOnMobile={false}
+        />
+      </div>
 
       <Card>
         <CardHeader>

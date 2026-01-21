@@ -700,43 +700,33 @@ export default function EditListing({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <PageLayout containerSize="md" padding="md">
-      <BackButton
-        label="Back to listing"
-        href={`/marketplace/listing/${params.slug}`}
-        className="mb-6"
-      />
+    <PageLayout containerSize="sm" padding="md">
+      <div className="mb-6 flex items-center justify-between">
+        <BackButton
+          label="Back to listing"
+          href={`/marketplace/listing/${params.slug}`}
+          hideLabelOnMobile={false}
+        />
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setDeleteDialogOpen(true)}
+          className="flex items-center gap-2"
+          disabled={isUploading}
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete Listing
+        </Button>
+      </div>
 
-      <Card className="shadow-md">
-        <CardHeader className="border-b bg-muted/50">
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-2xl">Edit Listing</CardTitle>
-              <CardDescription>Update your listing information</CardDescription>
-            </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setDeleteDialogOpen(true)}
-              className="flex items-center gap-2"
-              disabled={isLoading || isUploading}
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete Listing
-            </Button>
-          </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Edit Listing</CardTitle>
+          <CardDescription>Update your listing information</CardDescription>
         </CardHeader>
-        <CardContent className="pt-6">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-            </div>
-          ) : (
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-8"
-              >
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 <div className="grid gap-6 sm:grid-cols-1">
                   <FormField
                     control={form.control}
@@ -1032,9 +1022,8 @@ export default function EditListing({ params }: { params: { slug: string } }) {
                     </Button>
                   </div>
                 </div>
-              </form>
-            </Form>
-          )}
+            </form>
+          </Form>
         </CardContent>
       </Card>
 

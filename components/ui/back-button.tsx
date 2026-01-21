@@ -24,7 +24,7 @@ export function BackButton({
   hideLabelOnMobile = true,
 }: BackButtonProps) {
   const wrapperClasses = hideLabelOnMobile
-    ? 'absolute md:top-0.5 top-[-2px] right-auto left-auto'
+    ? 'absolute md:top-0.5 top-0 right-auto left-auto'
     : ''
 
   const labelClasses = hideLabelOnMobile ? 'hidden md:inline' : ''

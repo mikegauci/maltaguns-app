@@ -422,6 +422,8 @@ export default function CreateBlogPost() {
         openOnClick: false,
       }),
     ],
+    // Prevent SSR/hydration mismatch warnings in Next.js (App Router)
+    immediatelyRender: false,
     content: '',
     onUpdate: ({ editor }) => {
       form.setValue('content', editor.getHTML())

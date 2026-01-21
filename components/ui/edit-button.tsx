@@ -24,7 +24,7 @@ export function EditButton({
   hideLabelOnMobile = true,
 }: EditButtonProps) {
   const wrapperClasses = hideLabelOnMobile
-    ? 'absolute md:top-0.5 top-[-2px] right-4 left-auto !mt-0'
+    ? 'absolute md:top-0.5 top-0 right-4 left-auto !mt-0'
     : ''
 
   const labelClasses = hideLabelOnMobile ? 'hidden md:inline' : ''
