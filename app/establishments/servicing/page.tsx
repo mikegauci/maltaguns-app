@@ -1,16 +1,13 @@
 'use client'
 
-import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Wrench, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
+import { Wrench, MapPin, Phone, Mail, Globe } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 interface Servicing {
   id: string
@@ -31,9 +28,6 @@ async function fetchServicingProviders(): Promise<{ servicing: Servicing[] }> {
 }
 
 export default function ServicingPage() {
-  const { session } = useSupabase()
-  const isAuthenticated = useMemo(() => !!session?.user, [session?.user])
-
   const query = useQuery({
     queryKey: ['public-establishments-servicing'],
     queryFn: fetchServicingProviders,

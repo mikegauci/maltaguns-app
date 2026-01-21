@@ -108,15 +108,15 @@ export default function EstablishmentClient({
   }, [establishment.id, refreshTrigger, config.label, config.blogForeignKey])
 
   return (
-    <PageLayout>
-      <PageHeader
-        title={establishment.business_name}
-        description={establishment.location}
-      />
-
+    <PageLayout padding="md" withSpacing>
       <BackButton
         label={`Back to ${config.labelPlural}`}
         href={config.baseUrl}
+      />
+
+      <PageHeader
+        title={establishment.business_name}
+        description={establishment.location}
       />
 
       {isOwner && (
@@ -127,7 +127,7 @@ export default function EstablishmentClient({
       )}
 
       {/* Establishment Profile */}
-      <Card>
+      <Card className="mb-6">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
             {establishment.logo_url ? (
@@ -192,8 +192,8 @@ export default function EstablishmentClient({
       </Card>
 
       {/* Listings Section */}
-      <div>
-        <h2 className="text-2xl font-bold mb-6">Available Listings</h2>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold mb-2">Available Listings</h2>
 
         {establishment.listings.length === 0 ? (
           <Card className="p-6 text-center">
@@ -238,8 +238,8 @@ export default function EstablishmentClient({
 
       {/* Blog Posts Section */}
       <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">Latest Posts</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold mb-2">Latest Posts</h2>
 
           {isOwner && (
             <Link

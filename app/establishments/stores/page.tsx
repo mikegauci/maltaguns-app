@@ -1,22 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Store, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
+import { Store, MapPin, Phone, Mail, Globe } from 'lucide-react'
 import Link from 'next/link'
-import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LoadingState } from '@/components/ui/loading-state'
 import { BackButton } from '@/components/ui/back-button'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
-
-// List of authorized user IDs
-const AUTHORIZED_STORE_CREATORS = [
-  'e22da8c7-c6af-43b7-8ba0-5bc8946edcda',
-  '1a95bbf9-3bca-414d-a99f-1f9c72c15588',
-]
 
 interface Store {
   id: string
@@ -37,25 +28,12 @@ async function fetchStores(): Promise<{ stores: Store[] }> {
 }
 
 export default function StoresPage() {
-  const { supabase, session } = useSupabase()
-  const [isAuthorized, setIsAuthorized] = useState(false)
-
   const query = useQuery({
     queryKey: ['public-establishments-stores'],
     queryFn: fetchStores,
   })
 
   const stores = query.data?.stores ?? []
-
-  const isAuthorizedUser = useMemo(
-    () =>
-      !!session?.user && AUTHORIZED_STORE_CREATORS.includes(session.user.id),
-    [session?.user]
-  )
-
-  useEffect(() => {
-    setIsAuthorized(isAuthorizedUser)
-  }, [isAuthorizedUser])
 
   if (query.isLoading) {
     return (

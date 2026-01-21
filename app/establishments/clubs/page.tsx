@@ -1,16 +1,13 @@
 'use client'
 
-import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Users, MapPin, Phone, Mail, Globe, Plus } from 'lucide-react'
+import { Users, MapPin, Phone, Mail, Globe } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
-import { useSupabase } from '@/components/providers/SupabaseProvider'
 interface Club {
   id: string
   business_name: string
@@ -30,9 +27,6 @@ async function fetchClubs(): Promise<{ clubs: Club[] }> {
 }
 
 export default function ClubsPage() {
-  const { session } = useSupabase()
-  const isAuthenticated = useMemo(() => !!session?.user, [session?.user])
-
   const query = useQuery({
     queryKey: ['public-establishments-clubs'],
     queryFn: fetchClubs,
