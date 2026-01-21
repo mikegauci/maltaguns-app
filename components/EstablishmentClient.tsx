@@ -109,10 +109,7 @@ export default function EstablishmentClient({
 
   return (
     <PageLayout padding="md" withSpacing>
-      <BackButton
-        label={`Back to ${config.labelPlural}`}
-        href={config.baseUrl}
-      />
+      <BackButton label="Back" href={config.baseUrl} />
 
       <PageHeader
         title={establishment.business_name}

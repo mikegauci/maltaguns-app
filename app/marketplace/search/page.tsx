@@ -217,7 +217,7 @@ export default function SearchResults() {
           <Link href="/marketplace">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Marketplace
+              Back
             </Button>
           </Link>
         </div>

@@ -490,7 +490,7 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
     <PageLayout containerSize="sm" padding="md">
       <div className="mb-6 flex items-center justify-between">
         <BackButton
-          label="Back to event"
+          label="Back"
           href={`/events/${params.slug}`}
           hideLabelOnMobile={false}
         />

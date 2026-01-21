@@ -703,7 +703,7 @@ export default function EditListing({ params }: { params: { slug: string } }) {
     <PageLayout containerSize="sm" padding="md">
       <div className="mb-6 flex items-center justify-between">
         <BackButton
-          label="Back to listing"
+          label="Back"
           href={`/marketplace/listing/${params.slug}`}
           hideLabelOnMobile={false}
         />

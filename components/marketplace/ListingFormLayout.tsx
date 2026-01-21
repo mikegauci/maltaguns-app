@@ -25,12 +25,12 @@ export function ListingFormLayout({
   showCredits = false,
 }: ListingFormLayoutProps) {
   return (
-    <PageLayout containerSize="sm" padding="md">
+    <PageLayout>
       <div
         className={`mb-6 ${showCredits ? 'flex items-center justify-between' : ''}`}
       >
         <BackButton
-          label="Back to listing types"
+          label="Back"
           href="/marketplace/create"
           hideLabelOnMobile={false}
         />

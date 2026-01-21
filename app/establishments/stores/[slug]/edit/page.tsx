@@ -346,7 +346,7 @@ export default function EditStorePage({
   return (
     <PageLayout containerSize="sm" padding="md">
       <BackButton
-        label="Back to store profile"
+        label="Back"
         href={`/establishments/stores/${params.slug}`}
         className="mb-6"
         hideLabelOnMobile={false}

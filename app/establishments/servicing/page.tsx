@@ -45,7 +45,7 @@ export default function ServicingPage() {
 
   return (
     <PageLayout padding="md" withSpacing>
-      <BackButton label="Back to Establishments" href="/establishments" />
+      <BackButton label="Back" href="/establishments" />
       <PageHeader
         title="Firearms Servicing"
         description="Find firearms repair, servicing and maintenance providers across Malta"

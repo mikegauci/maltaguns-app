@@ -101,7 +101,7 @@ export default function EventClient({ event }: EventClientProps) {
   return (
     <PageLayout className="py-8">
       <BackButton
-        label="Back to events"
+        label="Back"
         href="/events"
         className="mb-6"
         hideLabelOnMobile={false}

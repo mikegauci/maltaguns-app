@@ -914,7 +914,7 @@ export default function CreateBlogPost() {
   return (
     <PageLayout containerSize="md" padding="md">
       <BackButton
-        label="Back to blog"
+        label="Back"
         href="/blog"
         className="mb-6"
         hideLabelOnMobile={false}

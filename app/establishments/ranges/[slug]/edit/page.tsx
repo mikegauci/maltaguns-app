@@ -349,7 +349,7 @@ export default function EditRangePage({
   return (
     <PageLayout containerSize="sm" padding="md">
       <BackButton
-        label="Back to range profile"
+        label="Back"
         href={`/establishments/ranges/${params.slug}`}
         className="mb-6"
       />

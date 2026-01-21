@@ -339,7 +339,7 @@ export default function CreateEstablishmentPage() {
 
   return (
     <PageLayout containerSize="sm" padding="md">
-      <BackButton label="Back to Home" href="/" className="mb-6" />
+      <BackButton label="Back" href="/" className="mb-6" />
 
       <Card>
         <CardHeader>

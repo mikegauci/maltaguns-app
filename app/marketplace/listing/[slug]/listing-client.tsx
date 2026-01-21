@@ -758,7 +758,7 @@ export default function ListingClient({
     <PageLayout padding="md">
       <div className="mb-6 flex items-center justify-between">
         <BackButton
-          label="Back to marketplace"
+          label="Back"
           href="/marketplace"
           hideLabelOnMobile={false}
         />
@@ -767,7 +767,7 @@ export default function ListingClient({
           <div className="flex gap-2">
             {canEditNow && (
               <EditButton
-                label="Edit Listing"
+                label="Edit"
                 href={`/marketplace/listing/${slugify(listing.title)}/edit`}
                 hideLabelOnMobile={false}
               />
@@ -776,7 +776,7 @@ export default function ListingClient({
             {!isFeatured && (
               <Button variant="secondary" onClick={handleFeatureListing}>
                 <Star className="h-4 w-4 mr-2" />
-                Feature Listing
+                Feature
               </Button>
             )}
 

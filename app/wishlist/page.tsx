@@ -200,7 +200,7 @@ export default function WishlistPage() {
 
   return (
     <PageLayout padding="md" withSpacing>
-      <BackButton label="Back to marketplace" href="/marketplace" />
+      <BackButton label="Back" href="/marketplace" />
       <PageHeader
         title="My Wishlist"
         description="Compare and manage your saved listings"

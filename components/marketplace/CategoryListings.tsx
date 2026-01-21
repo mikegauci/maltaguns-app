@@ -253,7 +253,7 @@ export default function CategoryListings({
   return (
     <PageLayout>
       <PageHeader title={title} description={description} />
-      <BackButton label="Back to marketplace" href="/marketplace" />
+      <BackButton label="Back" href="/marketplace" />
 
       <div className="mb-8 flex justify-center">
         <Link href="/marketplace/create">

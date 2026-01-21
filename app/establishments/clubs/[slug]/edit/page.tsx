@@ -342,7 +342,7 @@ export default function EditClubPage({ params }: { params: { slug: string } }) {
   return (
     <PageLayout containerSize="sm" padding="md">
       <BackButton
-        label="Back to club profile"
+        label="Back"
         href={`/establishments/clubs/${params.slug}`}
         className="mb-6"
       />

@@ -50,7 +50,7 @@ export default function StoresPage() {
         title="Firearms Stores"
         description="Find licensed firearms dealers and stores across Malta"
       />
-      <BackButton label="Back to Establishments" href="/establishments" />
+      <BackButton label="Back" href="/establishments" />
 
       {/* Stores Grid */}
       {stores.length === 0 ? (

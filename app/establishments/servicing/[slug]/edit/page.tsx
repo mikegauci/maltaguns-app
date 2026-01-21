@@ -348,7 +348,7 @@ export default function EditServicingPage({
   return (
     <PageLayout containerSize="sm" padding="md">
       <BackButton
-        label="Back to servicing profile"
+        label="Back"
         href={`/establishments/servicing/${params.slug}`}
         className="mb-6"
       />

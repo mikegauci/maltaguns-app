@@ -45,7 +45,7 @@ export default function ClubsPage() {
   return (
     <PageLayout>
       {/* Back Button */}
-      <BackButton label="Back to Establishments" href="/establishments" />
+      <BackButton label="Back" href="/establishments" />
       <PageHeader
         title="Shooting Clubs"
         description="Find shooting clubs and ranges across Malta"

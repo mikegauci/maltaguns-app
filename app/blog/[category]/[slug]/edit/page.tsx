@@ -739,7 +739,7 @@ export default function EditBlogPost({
     <PageLayout containerSize="sm" padding="md">
       <div className="mb-6">
         <BackButton
-          label="Back to post"
+          label="Back"
           href={`/blog/${params.category}/${params.slug}`}
           hideLabelOnMobile={false}
         />

@@ -198,7 +198,7 @@ export function FeatureCreditDialog({
               onClick={() => router.push('/marketplace')}
               className="w-full"
             >
-              Back to Marketplace
+              Back
             </Button>
           )}
         </DialogFooter>

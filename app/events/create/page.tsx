@@ -498,11 +498,7 @@ export default function CreateEventPage() {
   return (
     <PageLayout containerSize="sm" padding="md">
       <div className="mb-6 flex gap-6 items-center justify-between">
-        <BackButton
-          label="Back to events"
-          href="/events"
-          hideLabelOnMobile={false}
-        />
+        <BackButton label="Back" href="/events" hideLabelOnMobile={false} />
         <div className="flex items-center gap-2 w-full justify-end">
           <div className="bg-muted px-4 py-2 rounded-md">
             <span className="text-sm text-muted-foreground">
