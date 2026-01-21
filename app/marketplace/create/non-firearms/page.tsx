@@ -76,7 +76,7 @@ export default function CreateNonFirearmsListing() {
 
   if (isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <p className="text-muted-foreground">Loading...</p>
       </PageLayout>
     )

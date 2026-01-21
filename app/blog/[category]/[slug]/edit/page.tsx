@@ -729,14 +729,14 @@ export default function EditBlogPost({
 
   if (isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <p className="text-muted-foreground">Loading...</p>
       </PageLayout>
     )
   }
 
   return (
-    <PageLayout containerSize="sm" padding="md">
+    <PageLayout>
       <div className="mb-6">
         <BackButton
           label="Back"

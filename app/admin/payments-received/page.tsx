@@ -236,7 +236,7 @@ function PaymentsReceivedPageComponent() {
   }, [fetchPayments])
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader
         title="Payments Received"
         description="View all payment transactions and their status"

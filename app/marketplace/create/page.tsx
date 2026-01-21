@@ -62,14 +62,14 @@ export default function CreateListing() {
 
   if (isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <p className="text-muted-foreground">Loading...</p>
       </PageLayout>
     )
   }
 
   return (
-    <PageLayout containerSize="md" padding="md">
+    <PageLayout>
       <PageHeader
         title="Create Listing"
         description="Choose the type of listing you want to create"

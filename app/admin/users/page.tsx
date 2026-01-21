@@ -933,7 +933,7 @@ function UsersPageComponent() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader title="User Management" description="Manage user accounts" />
       <BackButton label="Back to Dashboard" href="/admin" />
 

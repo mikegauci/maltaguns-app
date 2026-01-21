@@ -37,14 +37,14 @@ export default function ServicingPage() {
 
   if (query.isLoading) {
     return (
-      <PageLayout padding="md" withSpacing>
+      <PageLayout>
         <LoadingState message="Loading servicing providers..." />
       </PageLayout>
     )
   }
 
   return (
-    <PageLayout padding="md" withSpacing>
+    <PageLayout>
       <BackButton label="Back" href="/establishments" />
       <PageHeader
         title="Firearms Servicing"

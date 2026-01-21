@@ -149,7 +149,7 @@ export default function CreateFirearmsListing() {
 
   if (isLoading || isLoadingLicenses) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <p className="text-muted-foreground">Loading...</p>
       </PageLayout>
     )
@@ -158,7 +158,7 @@ export default function CreateFirearmsListing() {
   // Check if user has no allowed categories
   if (allowedCategories.length === 0) {
     return (
-      <PageLayout centered className="p-6">
+      <PageLayout>
         <div className="max-w-md text-center space-y-4">
           <h2 className="text-2xl font-bold">No License Detected</h2>
           <p className="text-muted-foreground">

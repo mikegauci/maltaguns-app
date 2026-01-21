@@ -221,7 +221,7 @@ function EventCreditsPageComponent() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader
         title="Event Credit Management"
         description="Manage event credits"

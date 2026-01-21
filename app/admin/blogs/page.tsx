@@ -457,7 +457,7 @@ export default function AdminBlogsPage() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader title="Blog Management" description="Manage blog posts" />
       <BackButton label="Back to Dashboard" href="/admin" />
       <div className="flex justify-center items-center gap-3">

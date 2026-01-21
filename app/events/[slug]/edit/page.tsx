@@ -476,7 +476,7 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
 
   if (isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <p className="text-muted-foreground">Loading...</p>
       </PageLayout>
     )
@@ -487,7 +487,7 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <PageLayout containerSize="sm" padding="md">
+    <PageLayout>
       <div className="mb-6 flex items-center justify-between">
         <BackButton
           label="Back"

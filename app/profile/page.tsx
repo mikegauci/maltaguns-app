@@ -157,7 +157,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <LoadingState message="Loading profile..." />
       </PageLayout>
     )
@@ -165,7 +165,7 @@ export default function ProfilePage() {
 
   if (!session?.user) {
     return (
-      <PageLayout centered className="p-6">
+      <PageLayout>
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Profile Access</CardTitle>
@@ -188,7 +188,7 @@ export default function ProfilePage() {
 
   if (!profile) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <LoadingState message="Loading profile data..." />
       </PageLayout>
     )

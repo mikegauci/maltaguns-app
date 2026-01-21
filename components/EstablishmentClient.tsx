@@ -108,7 +108,7 @@ export default function EstablishmentClient({
   }, [establishment.id, refreshTrigger, config.label, config.blogForeignKey])
 
   return (
-    <PageLayout padding="md" withSpacing>
+    <PageLayout>
       <BackButton label="Back" href={config.baseUrl} />
 
       <PageHeader

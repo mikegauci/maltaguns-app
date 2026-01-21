@@ -269,7 +269,7 @@ export default async function BlogPost({
   }
 
   return (
-    <PageLayout innerClassName="max-w-screen-lg">
+    <PageLayout>
       <ViewTracker postId={post.id} />
       <div className="flex justify-between items-center mb-8">
         <BackButton label="Back" href="/blog" hideLabelOnMobile={false} />

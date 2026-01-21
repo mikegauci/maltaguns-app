@@ -336,7 +336,7 @@ export default function EditRangePage({
 
   if (isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <p className="text-muted-foreground">Loading...</p>
       </PageLayout>
     )
@@ -347,7 +347,7 @@ export default function EditRangePage({
   }
 
   return (
-    <PageLayout containerSize="sm" padding="md">
+    <PageLayout>
       <BackButton
         label="Back"
         href={`/establishments/ranges/${params.slug}`}

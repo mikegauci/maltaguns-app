@@ -206,7 +206,7 @@ function CreditsPageComponent() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader title="Credit Management" description="Manage user credits" />
       <div className="flex justify-center">
         <Button onClick={handleAddCredit}>

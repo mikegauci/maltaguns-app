@@ -99,7 +99,7 @@ export default function EventClient({ event }: EventClientProps) {
   }
 
   return (
-    <PageLayout className="py-8">
+    <PageLayout>
       <BackButton
         label="Back"
         href="/events"

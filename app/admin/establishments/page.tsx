@@ -591,7 +591,7 @@ function EstablishmentsPageComponent() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader
         title="Establishment Management"
         description="Manage establishments"

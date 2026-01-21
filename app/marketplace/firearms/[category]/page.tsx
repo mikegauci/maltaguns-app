@@ -103,7 +103,7 @@ export default function FirearmsCategoryPage({
 
   if (isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <p className="text-muted-foreground">Loading...</p>
       </PageLayout>
     )

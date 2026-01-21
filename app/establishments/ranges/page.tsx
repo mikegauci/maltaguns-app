@@ -37,14 +37,14 @@ export default function RangesPage() {
 
   if (query.isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <LoadingState message="Loading shooting ranges..." />
       </PageLayout>
     )
   }
 
   return (
-    <PageLayout padding="md" withSpacing>
+    <PageLayout>
       {/* Back Button */}
       <BackButton label="Back" href="/establishments" />
 

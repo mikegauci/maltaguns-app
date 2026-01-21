@@ -37,7 +37,7 @@ export default function StoresPage() {
 
   if (query.isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <LoadingState message="Loading stores..." />
       </PageLayout>
     )

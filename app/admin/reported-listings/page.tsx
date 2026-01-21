@@ -379,7 +379,7 @@ function ReportedListingsPageComponent() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader
         title="Reported Listings"
         description="View all reported listings"

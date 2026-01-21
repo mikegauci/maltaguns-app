@@ -229,7 +229,7 @@ export default function Marketplace() {
 
   if (query.isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <LoadingState />
       </PageLayout>
     )

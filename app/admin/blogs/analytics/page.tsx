@@ -341,7 +341,7 @@ export default function BlogAnalyticsPage() {
 
   if (!isAuthorized) {
     return (
-      <PageLayout withSpacing>
+      <PageLayout>
         <PageHeader
           title="Blog Analytics"
           description="Track blog performance and engagement metrics"
@@ -354,7 +354,7 @@ export default function BlogAnalyticsPage() {
 
   if (loading) {
     return (
-      <PageLayout withSpacing>
+      <PageLayout>
         <PageHeader
           title="Blog Analytics"
           description="Track blog performance and engagement metrics"
@@ -367,7 +367,7 @@ export default function BlogAnalyticsPage() {
 
   if (!analytics) {
     return (
-      <PageLayout withSpacing>
+      <PageLayout>
         <PageHeader
           title="Blog Analytics"
           description="Track blog performance and engagement metrics"
@@ -379,7 +379,7 @@ export default function BlogAnalyticsPage() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader
         title="Blog Analytics"
         description="Track blog performance and engagement metrics"

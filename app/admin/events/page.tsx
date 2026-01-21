@@ -373,7 +373,7 @@ function EventsPageComponent() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader title="Event Management" description="Manage events" />
       <BackButton label="Back to Dashboard" href="/admin" />
 

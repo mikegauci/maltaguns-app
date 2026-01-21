@@ -470,7 +470,7 @@ export default function CreateEventPage() {
 
   if (isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <p className="text-muted-foreground">Loading...</p>
       </PageLayout>
     )
@@ -496,7 +496,7 @@ export default function CreateEventPage() {
   }
 
   return (
-    <PageLayout containerSize="sm" padding="md">
+    <PageLayout>
       <div className="mb-6 flex gap-6 items-center justify-between">
         <BackButton label="Back" href="/events" hideLabelOnMobile={false} />
         <div className="flex items-center gap-2 w-full justify-end">

@@ -169,7 +169,7 @@ export default function WishlistPage() {
 
   if (wishlistQuery.isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <LoadingState message="Loading your wishlist..." />
       </PageLayout>
     )
@@ -177,7 +177,7 @@ export default function WishlistPage() {
 
   if (!session?.user) {
     return (
-      <PageLayout centered className="p-6">
+      <PageLayout>
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Wishlist Access</CardTitle>
@@ -199,7 +199,7 @@ export default function WishlistPage() {
   }
 
   return (
-    <PageLayout padding="md" withSpacing>
+    <PageLayout>
       <BackButton label="Back" href="/marketplace" />
       <PageHeader
         title="My Wishlist"

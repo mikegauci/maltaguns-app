@@ -173,7 +173,7 @@ export default function ResetPassword() {
 
   if (success) {
     return (
-      <PageLayout centered className="p-6">
+      <PageLayout>
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Password Reset Complete</CardTitle>
@@ -202,7 +202,7 @@ export default function ResetPassword() {
   }
 
   return (
-    <PageLayout centered className="p-6">
+    <PageLayout>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Reset Your Password</CardTitle>

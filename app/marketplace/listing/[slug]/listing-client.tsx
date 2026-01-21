@@ -480,7 +480,7 @@ export default function ListingClient({
 
   if (isLoading && !sessionChecked) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <LoadingState message="Loading listing details..." />
       </PageLayout>
     )
@@ -755,7 +755,7 @@ export default function ListingClient({
   }
 
   return (
-    <PageLayout padding="md">
+    <PageLayout>
       <div className="mb-6 flex items-center justify-between">
         <BackButton
           label="Back"

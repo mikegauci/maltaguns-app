@@ -213,7 +213,7 @@ export default function AdminNotificationsPage() {
 
   if (!isAuthorized) {
     return (
-      <PageLayout withSpacing>
+      <PageLayout>
         <PageHeader title="Notifications" description="Send notifications" />
         <BackButton label="Back to Dashboard" href="/admin" />
         <Card className="p-6 text-sm text-muted-foreground">
@@ -224,7 +224,7 @@ export default function AdminNotificationsPage() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader
         title="Notifications"
         description="Send manual notifications to all users or selected users"

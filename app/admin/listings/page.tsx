@@ -471,7 +471,7 @@ function ListingsPageComponent() {
   }
 
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader title="Listing Management" description="Manage listings" />
       <BackButton label="Back to Dashboard" href="/admin" />
 

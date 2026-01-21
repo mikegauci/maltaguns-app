@@ -191,7 +191,7 @@ export default function SearchResults() {
   )
 
   return (
-    <PageLayout padding="md">
+    <PageLayout>
       <div className="space-y-2 mb-8 text-center">
         <h1 className="text-4xl font-bold tracking-tight">
           {isLoading

@@ -299,7 +299,7 @@ export default function Register() {
   }
 
   return (
-    <PageLayout centered className="p-6">
+    <PageLayout>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Create an Account</CardTitle>

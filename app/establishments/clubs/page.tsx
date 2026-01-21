@@ -36,7 +36,7 @@ export default function ClubsPage() {
 
   if (query.isLoading) {
     return (
-      <PageLayout centered>
+      <PageLayout>
         <LoadingState message="Loading clubs..." />
       </PageLayout>
     )

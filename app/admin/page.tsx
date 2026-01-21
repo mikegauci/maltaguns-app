@@ -28,7 +28,7 @@ export default function AdminDashboard() {
 
 function AdminDashboardComponent() {
   return (
-    <PageLayout withSpacing>
+    <PageLayout>
       <PageHeader
         title="Admin Dashboard"
         description="Manage the admin dashboard"
