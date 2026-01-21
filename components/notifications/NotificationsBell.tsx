@@ -229,65 +229,67 @@ export function NotificationsBell() {
         </div>
         <DropdownMenuSeparator />
 
-        {items.length === 0 ? (
-          <div className="px-2 py-6 text-sm text-muted-foreground text-center">
-            {loading ? 'Loading…' : 'No notifications yet.'}
-          </div>
-        ) : (
-          <>
-            {items.map(n => {
-              const href = n.link_url || '/notifications'
-              const isUnread = !n.read_at
-              return (
-                <DropdownMenuItem key={n.id} className="cursor-pointer p-0">
-                  <div className="w-full px-2 py-2">
-                    <div className="flex items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="text-sm font-medium truncate">
-                            {n.title}
+        <div className="md:max-h-[350px] max-h-[250px] overflow-y-auto">
+          {items.length === 0 ? (
+            <div className="px-2 py-6 text-sm text-muted-foreground text-center">
+              {loading ? 'Loading…' : 'No notifications yet.'}
+            </div>
+          ) : (
+            <>
+              {items.map(n => {
+                const href = n.link_url || '/notifications'
+                const isUnread = !n.read_at
+                return (
+                  <DropdownMenuItem key={n.id} className="cursor-pointer p-0">
+                    <div className="w-full px-2 py-2">
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="text-sm font-medium truncate">
+                              {n.title}
+                            </div>
+                            <div className="text-xs text-muted-foreground shrink-0">
+                              {formatRelativeTime(n.created_at)}
+                            </div>
                           </div>
-                          <div className="text-xs text-muted-foreground shrink-0">
-                            {formatRelativeTime(n.created_at)}
+                          <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                            {n.body}
                           </div>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                          {n.body}
-                        </div>
-                        <div className="mt-2 flex items-center gap-2">
-                          <Link
-                            href={href}
-                            className="text-xs underline"
-                            onClick={() => {
-                              if (isUnread) void markRead(n.id)
-                            }}
-                          >
-                            View
-                          </Link>
-                          {isUnread && (
-                            <button
-                              className="text-xs underline text-muted-foreground"
-                              onClick={e => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                                void markRead(n.id)
+                          <div className="mt-2 flex items-center gap-2">
+                            <Link
+                              href={href}
+                              className="text-xs underline"
+                              onClick={() => {
+                                if (isUnread) void markRead(n.id)
                               }}
                             >
-                              Mark read
-                            </button>
-                          )}
+                              View
+                            </Link>
+                            {isUnread && (
+                              <button
+                                className="text-xs underline text-muted-foreground"
+                                onClick={e => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  void markRead(n.id)
+                                }}
+                              >
+                                Mark read
+                              </button>
+                            )}
+                          </div>
                         </div>
+                        {isUnread && (
+                          <span className="mt-1 w-2 h-2 rounded-full bg-destructive shrink-0" />
+                        )}
                       </div>
-                      {isUnread && (
-                        <span className="mt-1 w-2 h-2 rounded-full bg-destructive shrink-0" />
-                      )}
                     </div>
-                  </div>
-                </DropdownMenuItem>
-              )
-            })}
-          </>
-        )}
+                  </DropdownMenuItem>
+                )
+              })}
+            </>
+          )}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   )
