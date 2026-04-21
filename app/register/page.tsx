@@ -300,7 +300,7 @@ export default function Register() {
 
   return (
     <PageLayout>
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md mx-auto">
         <CardHeader>
           <CardTitle>Create an Account</CardTitle>
           <CardDescription>Join the MaltaGuns community</CardDescription>
@@ -666,14 +666,14 @@ export default function Register() {
                     name="idCardImage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>ID Card</FormLabel>
+                        <FormLabel>ID Card or Passport</FormLabel>
                         <FormControl>
                           <div className="space-y-4">
                             {!field.value && (
                               <DocumentUploadButton
                                 id="id-card-upload"
-                                label="Upload ID Card"
-                                replaceLabel="Replace ID Card"
+                                label="Upload ID Card or Passport"
+                                replaceLabel="Replace ID Card or Passport"
                                 isUploading={uploadingIdCard}
                                 uploadProgress={idCardUploadProgress}
                                 hasExistingDocument={false}
