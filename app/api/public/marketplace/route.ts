@@ -35,7 +35,8 @@ export async function GET() {
     { featuredListings, regularListings },
     {
       headers: {
-        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=50',
+        'Cache-Control':
+          'public, max-age=0, must-revalidate, s-maxage=10, stale-while-revalidate=50',
       },
     }
   )
