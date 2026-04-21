@@ -165,7 +165,7 @@ export default function ProfilePage() {
 
   if (!session?.user) {
     return (
-      <PageLayout>
+      <div className="min-h-[calc(100vh-64px)] bg-background flex items-center justify-center px-4 py-8">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Profile Access</CardTitle>
@@ -178,11 +178,15 @@ export default function ProfilePage() {
               <Link href="/login">
                 <Button className="w-full">Log In</Button>
               </Link>
-              <BackButton label="Back to Home" href="/" />
+              <BackButton
+                label="Back to Home"
+                href="/"
+                hideLabelOnMobile={false}
+              />
             </div>
           </CardContent>
         </Card>
-      </PageLayout>
+      </div>
     )
   }
 

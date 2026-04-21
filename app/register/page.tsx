@@ -115,7 +115,7 @@ const registerSchema = z
       !data.interestedInSelling ||
       (data.interestedInSelling && data.idCardImage && data.licenseImage),
     {
-      message: 'ID card and license images are required for sellers',
+      message: 'Identification and license images are required for sellers',
       path: ['licenseImage'],
     }
   )

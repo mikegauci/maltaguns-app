@@ -29,9 +29,9 @@ export const FeaturedEstablishmentsSection = ({
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-2">Featured Establishments</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Looking for trusted dealers or shooting ranges in Malta?
-            Check out these featured establishments that provide reliable and
-            top-quality services.
+            Looking for trusted dealers or shooting ranges in Malta? Check out
+            these featured establishments that provide reliable and top-quality
+            services.
           </p>
         </div>
 
