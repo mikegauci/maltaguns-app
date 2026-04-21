@@ -162,8 +162,14 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t text-center text-sm text-muted-foreground">
-          <p>© {currentYear} MaltaGuns. All rights reserved.</p>
+        <div className="mt-8 pt-6 border-t text-center text-sm text-muted-foreground space-y-3">
+          <p className="max-w-4xl mx-auto text-xs leading-relaxed">
+          © {currentYear} MaltaGuns. All rights reserved. <br/> Maltaguns.com operates under Licence No. SB/WO/03521/2010 issued by
+            the competent Maltese authorities, in accordance with the Arms Act
+            (Chapter 480 of the Laws of Malta). The platform strictly adheres
+            to all applicable legal and regulatory requirements governing
+            firearms.
+          </p>
         </div>
       </div>
     </footer>
