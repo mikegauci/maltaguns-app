@@ -659,15 +659,16 @@ export default function ListingClient({
               <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
                 <Lock className="h-8 w-8 text-muted-foreground mb-2" />
                 <p className="text-sm text-center text-muted-foreground mb-2 font-semibold">
-                  ID Card Verification Required
+                  Identification Verification Required
                 </p>
                 <p className="text-xs text-center text-muted-foreground mb-4">
-                  You have the required license for this category, but your ID
-                  card needs to be verified to view seller information.
+                  You have the required license for this category, but your
+                  identification needs to be verified to view seller
+                  information.
                 </p>
                 <Link href="/profile" className="w-full">
                   <Button variant="outline" className="w-full" size="sm">
-                    Verify ID Card
+                    Verify Identification
                   </Button>
                 </Link>
               </div>
@@ -694,11 +695,12 @@ export default function ListingClient({
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
               <Lock className="h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-sm text-center text-muted-foreground mb-2 font-semibold">
-                License & ID Card Required
+                License & Identification Required
               </p>
               <p className="text-xs text-center text-muted-foreground mb-4">
-                You need one of the following licenses and a verified ID card to
-                view seller information for this category ({categoryLabel}):
+                You need one of the following licenses and a verified
+                identification to view seller information for this category (
+                {categoryLabel}):
               </p>
               <div className="text-xs text-center text-muted-foreground mb-4 space-y-1">
                 {requiredLicenses.map((license, index) => (

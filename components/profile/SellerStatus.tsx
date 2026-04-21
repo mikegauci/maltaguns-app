@@ -103,12 +103,12 @@ export const SellerStatus = ({
         <CardContent className="space-y-6">
           {/* Document Upload Sections */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* ID Card Section */}
+            {/* Identification Section */}
             <div className="space-y-3 border rounded-lg p-4">
               <h3 className="text-base font-semibold flex items-center gap-2">
-                <span>ID Card</span>
+                <span>Identification</span>
               </h3>
-              {/* ID Card Status */}
+              {/* Identification Status */}
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
@@ -134,14 +134,14 @@ export const SellerStatus = ({
                     <img
                       id="profile-id-card-preview"
                       src={profile.id_card_image}
-                      alt="ID Card"
+                      alt="Identification"
                       className="w-[100%] h-[220px] object-cover rounded-md border"
                     />
                     <button
                       onClick={() =>
                         setFullscreenImage({
                           url: profile.id_card_image!,
-                          title: 'ID Card',
+                          title: 'Identification',
                         })
                       }
                       className="absolute top-2 left-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
@@ -152,7 +152,7 @@ export const SellerStatus = ({
                     <button
                       onClick={handleRemoveIdCard}
                       className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
-                      title="Remove ID card"
+                      title="Remove identification"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -162,16 +162,16 @@ export const SellerStatus = ({
 
               <DocumentUploadButton
                 id="id-card-upload"
-                label="Upload ID Card"
-                replaceLabel="Replace ID Card"
+                label="Upload ID Card or Passport"
+                replaceLabel="Replace ID Card or Passport"
                 isUploading={uploadingIdCard}
                 uploadProgress={idCardUploadProgress}
                 hasExistingDocument={!!profile.id_card_image}
                 onChange={handleIdCardUpload}
               />
               <p className="text-xs text-muted-foreground">
-                Upload your Maltese ID card. Verification is automatic based on
-                your profile name.
+                Upload your Maltese ID card or passport. Verification is
+                automatic based on your profile name.
               </p>
             </div>
 

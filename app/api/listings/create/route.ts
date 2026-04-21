@@ -63,12 +63,12 @@ export async function POST(request: Request) {
         )
       }
 
-      // Check if user has verified ID card
+      // Check if user has verified identification
       if (!profile.id_card_verified || !profile.id_card_image) {
         return NextResponse.json(
           {
             error:
-              'You must have a verified ID card to create a firearms listing. Please upload your ID card in your profile.',
+              'You must have a verified identification to create a firearms listing. Please upload your identification in your profile.',
           },
           { status: 403 }
         )

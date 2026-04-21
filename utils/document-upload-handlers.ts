@@ -373,11 +373,11 @@ export async function uploadAndVerifyIdCard(
     if (!isVerified) {
       if (!nameMatch && extractedName) {
         verificationIssues.push(
-          `Name mismatch: ID card shows a different name comapred to your first and last name which shows "${userFirstName} ${userLastName}"`
+          `Name mismatch: Identification shows a different name compared to your first and last name which shows "${userFirstName} ${userLastName}"`
         )
       } else {
         verificationIssues.push(
-          'Not recognized as a valid Malta ID card - missing required text or format'
+          'Not recognized as a valid Malta identification - missing required text or format'
         )
       }
     }
@@ -410,13 +410,13 @@ export async function uploadAndVerifyIdCard(
     if (isVerified) {
       toast({
         variant: 'success',
-        title: 'ID card verified & uploaded',
-        description: 'Your ID card has been verified successfully.',
+        title: 'Identification verified & uploaded',
+        description: 'Your identification has been verified successfully.',
       })
     } else {
       toast({
         variant: 'warning',
-        title: 'ID card uploaded - manual verification required',
+        title: 'Identification uploaded - manual verification required',
         description: React.createElement(
           'div',
           {},
@@ -430,7 +430,7 @@ export async function uploadAndVerifyIdCard(
           React.createElement(
             'div',
             { className: 'mt-2' },
-            'Your ID card will require manual verification by an administrator.'
+            'Your identification will require manual verification by an administrator.'
           )
         ),
         duration: 20000,
@@ -447,7 +447,9 @@ export async function uploadAndVerifyIdCard(
       variant: 'destructive',
       title: 'Upload failed',
       description:
-        error instanceof Error ? error.message : 'Failed to upload ID card.',
+        error instanceof Error
+          ? error.message
+          : 'Failed to upload identification.',
     })
     return { success: false, isVerified: false }
   } finally {

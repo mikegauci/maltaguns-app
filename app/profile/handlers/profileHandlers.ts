@@ -154,7 +154,9 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         variant: 'destructive',
         title: 'Upload failed',
         description:
-          error instanceof Error ? error.message : 'Failed to upload ID card.',
+          error instanceof Error
+            ? error.message
+            : 'Failed to upload identification.',
       })
     } finally {
       setUploadingIdCard(false)
@@ -230,15 +232,17 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       )
 
       toast({
-        title: 'ID card removed',
-        description: 'Your ID card has been removed successfully.',
+        title: 'Identification removed',
+        description: 'Your identification has been removed successfully.',
       })
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Remove failed',
         description:
-          error instanceof Error ? error.message : 'Failed to remove ID card.',
+          error instanceof Error
+            ? error.message
+            : 'Failed to remove identification.',
       })
     }
   }

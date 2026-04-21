@@ -253,7 +253,7 @@ function UsersPageComponent() {
             pendingItems.push('License')
           }
           if (user.id_card_image && !user.id_card_verified) {
-            pendingItems.push('ID Card')
+            pendingItems.push('Identification')
           }
           if (pendingItems.length > 0) {
             pendingText = `Pending Approval: ${pendingItems.join(' & ')}`
@@ -307,7 +307,7 @@ function UsersPageComponent() {
     },
     {
       accessorKey: 'id_card_image',
-      header: 'ID Card',
+      header: 'Identification',
       enableSorting: true,
       cell: ({ row }) => {
         const idCardUrl = row.getValue('id_card_image') as string | null
@@ -320,10 +320,10 @@ function UsersPageComponent() {
                 rel="noopener noreferrer"
                 className="text-blue-500 hover:underline"
               >
-                View ID
+                View Identification
               </a>
             ) : (
-              'No ID'
+              'No Identification'
             )}
           </div>
         )
@@ -409,8 +409,8 @@ function UsersPageComponent() {
                 ? [
                     {
                       label: user.id_card_verified
-                        ? 'Unverify ID Card'
-                        : 'Verify ID Card',
+                        ? 'Unverify Identification'
+                        : 'Verify Identification',
                       onClick: () => handleToggleIdCardVerification(user),
                       variant: user.id_card_verified
                         ? 'destructive'
@@ -706,7 +706,7 @@ function UsersPageComponent() {
 
       toast({
         title: 'Success',
-        description: 'ID card image uploaded successfully',
+        description: 'Identification image uploaded successfully',
       })
 
       fetchUsers()
@@ -717,7 +717,7 @@ function UsersPageComponent() {
         description:
           error instanceof Error
             ? error.message
-            : 'Failed to upload ID card image',
+            : 'Failed to upload identification image',
       })
     } finally {
       setIsUploadingIdCard(false)
@@ -785,7 +785,7 @@ function UsersPageComponent() {
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete ID card image')
+        throw new Error(result.error || 'Failed to delete identification image')
       }
 
       // Update local state
@@ -796,7 +796,7 @@ function UsersPageComponent() {
 
       toast({
         title: 'Success',
-        description: 'ID card image deleted successfully',
+        description: 'Identification image deleted successfully',
       })
 
       // Close the edit dialog and refresh the users list
@@ -809,7 +809,7 @@ function UsersPageComponent() {
         description:
           error instanceof Error
             ? error.message
-            : 'Failed to delete ID card image',
+            : 'Failed to delete identification image',
       })
     } finally {
       setIsSubmitting(false)
@@ -1015,13 +1015,13 @@ function UsersPageComponent() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-            `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} ID card`
+            `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} identification`
         )
       }
 
       toast({
         title: 'Success',
-        description: `ID card ${user.id_card_verified ? 'unverified' : 'verified'} successfully`,
+        description: `Identification ${user.id_card_verified ? 'unverified' : 'verified'} successfully`,
       })
 
       fetchUsers()
@@ -1032,7 +1032,7 @@ function UsersPageComponent() {
         description:
           error instanceof Error
             ? error.message
-            : `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} ID card`,
+            : `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} identification`,
       })
     } finally {
       setIsSubmitting(false)
@@ -1334,7 +1334,7 @@ function UsersPageComponent() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>ID Card Image</Label>
+            <Label>Identification Image</Label>
             <div className="border p-2 rounded-md">
               {formData.id_card_image ? (
                 <div className="flex flex-col gap-2">
@@ -1346,7 +1346,7 @@ function UsersPageComponent() {
                   >
                     <img
                       src={formData.id_card_image}
-                      alt="ID Card"
+                      alt="Identification"
                       className="w-20 h-20 object-cover border rounded"
                     />
                     <span>View Full Size</span>
@@ -1371,13 +1371,13 @@ function UsersPageComponent() {
                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                       />
                     </svg>
-                    Delete ID Card Image
+                    Delete Identification Image
                   </button>
                 </div>
               ) : (
                 <div className="flex flex-col gap-2">
                   <p className="text-sm text-muted-foreground">
-                    No ID card image uploaded.
+                    No identification image uploaded.
                   </p>
                   <Input
                     id="admin-id-card-upload"
