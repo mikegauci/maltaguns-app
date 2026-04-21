@@ -90,6 +90,8 @@ function UsersPageComponent() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploadingLicense, setIsUploadingLicense] = useState(false)
+  const [isUploadingIdCard, setIsUploadingIdCard] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [notesFormData, setNotesFormData] = useState('')
   const [formData, setFormData] = useState({
@@ -99,6 +101,7 @@ function UsersPageComponent() {
     is_admin: false,
     is_seller: false,
     is_verified: false,
+    id_card_verified: false,
     license_image: null as string | null,
     id_card_image: null as string | null,
     is_disabled: false,
@@ -237,17 +240,25 @@ function UsersPageComponent() {
       enableSorting: true,
       cell: ({ row }) => {
         const user = row.original
-        const isFullyVerified =
-          user.is_verified && user.id_card_verified && user.is_seller
+        // Admin can mark a user as verified even without documents / seller
+        // status, so only check the two verification flags.
+        const isFullyVerified = user.is_verified && user.id_card_verified
 
-        // Determine what's pending
+        // Only count documents as "Pending Approval" when the image is
+        // uploaded but not yet verified. Otherwise show "Awaiting Upload".
         let pendingText = 'Pending'
         if (user.is_seller && !isFullyVerified) {
           const pendingItems: string[] = []
-          if (!user.is_verified) pendingItems.push('License')
-          if (!user.id_card_verified) pendingItems.push('ID Card')
+          if (user.license_image && !user.is_verified) {
+            pendingItems.push('License')
+          }
+          if (user.id_card_image && !user.id_card_verified) {
+            pendingItems.push('ID Card')
+          }
           if (pendingItems.length > 0) {
-            pendingText = `Pending: ${pendingItems.join(' & ')}`
+            pendingText = `Pending Approval: ${pendingItems.join(' & ')}`
+          } else {
+            pendingText = 'Awaiting Upload'
           }
         }
 
@@ -383,7 +394,7 @@ function UsersPageComponent() {
                 onClick: () => handleToggleDisabled(user),
                 variant: user.is_disabled ? 'default' : 'destructive',
               },
-              ...(user.is_seller
+              ...(user.is_seller && user.license_image
                 ? [
                     {
                       label: user.is_verified
@@ -392,6 +403,10 @@ function UsersPageComponent() {
                       onClick: () => handleToggleVerification(user),
                       variant: user.is_verified ? 'destructive' : 'default',
                     },
+                  ]
+                : []),
+              ...(user.is_seller && user.id_card_image
+                ? [
                     {
                       label: user.id_card_verified
                         ? 'Unverify ID Card'
@@ -484,6 +499,7 @@ function UsersPageComponent() {
       is_admin: false,
       is_seller: false,
       is_verified: false,
+      id_card_verified: false,
       license_image: null,
       id_card_image: null,
       is_disabled: false,
@@ -503,6 +519,7 @@ function UsersPageComponent() {
       is_admin: user.is_admin,
       is_seller: user.is_seller,
       is_verified: user.is_verified,
+      id_card_verified: user.id_card_verified,
       license_image: user.license_image,
       id_card_image: user.id_card_image,
       is_disabled: user.is_disabled,
@@ -575,6 +592,136 @@ function UsersPageComponent() {
       })
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Admin upload: pushes file to Supabase Storage then saves URL via PATCH.
+  // Skips OCR verification - admins upload on behalf of the user.
+  async function handleAdminLicenseUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0]
+    if (!file || !selectedUser) return
+
+    try {
+      setIsUploadingLicense(true)
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `license-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const filePath = `licenses/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('licenses')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (uploadError) throw uploadError
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('licenses').getPublicUrl(filePath)
+
+      const response = await fetch(`/api/users/${selectedUser.id}/license`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: publicUrl }),
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save license image')
+      }
+
+      setFormData({
+        ...formData,
+        license_image: publicUrl,
+        is_seller: true,
+      })
+
+      toast({
+        title: 'Success',
+        description: 'License image uploaded successfully',
+      })
+
+      fetchUsers()
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to upload license image',
+      })
+    } finally {
+      setIsUploadingLicense(false)
+      event.target.value = ''
+    }
+  }
+
+  // Admin upload: pushes ID card to Supabase Storage then saves URL via PATCH.
+  async function handleAdminIdCardUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file = event.target.files?.[0]
+    if (!file || !selectedUser) return
+
+    try {
+      setIsUploadingIdCard(true)
+
+      const fileExt = file.name.split('.').pop()
+      const fileName = `id-card-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
+      const filePath = `id-cards/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('licenses')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+        })
+
+      if (uploadError) throw uploadError
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('licenses').getPublicUrl(filePath)
+
+      const response = await fetch(`/api/users/${selectedUser.id}/id-card`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: publicUrl }),
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save ID card image')
+      }
+
+      setFormData({
+        ...formData,
+        id_card_image: publicUrl,
+      })
+
+      toast({
+        title: 'Success',
+        description: 'ID card image uploaded successfully',
+      })
+
+      fetchUsers()
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to upload ID card image',
+      })
+    } finally {
+      setIsUploadingIdCard(false)
+      event.target.value = ''
     }
   }
 
@@ -686,7 +833,9 @@ function UsersPageComponent() {
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
           is_verified: formData.is_verified,
+          id_card_verified: formData.id_card_verified,
           license_image: formData.license_image,
+          id_card_image: formData.id_card_image,
           is_disabled: formData.is_disabled,
           notes: formData.notes,
         })
@@ -1124,10 +1273,10 @@ function UsersPageComponent() {
               }
             />
           </div>
-          {formData.license_image && (
-            <div className="space-y-2">
-              <Label>License Image</Label>
-              <div className="border p-2 rounded-md">
+          <div className="space-y-2">
+            <Label>License Image</Label>
+            <div className="border p-2 rounded-md">
+              {formData.license_image ? (
                 <div className="flex flex-col gap-2">
                   <a
                     href={formData.license_image}
@@ -1165,13 +1314,29 @@ function UsersPageComponent() {
                     Delete License Image
                   </button>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    No license image uploaded.
+                  </p>
+                  <Input
+                    id="admin-license-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAdminLicenseUpload}
+                    disabled={isUploadingLicense}
+                  />
+                  {isUploadingLicense && (
+                    <p className="text-xs text-muted-foreground">Uploading…</p>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-          {formData.id_card_image && (
-            <div className="space-y-2">
-              <Label>ID Card Image</Label>
-              <div className="border p-2 rounded-md">
+          </div>
+          <div className="space-y-2">
+            <Label>ID Card Image</Label>
+            <div className="border p-2 rounded-md">
+              {formData.id_card_image ? (
                 <div className="flex flex-col gap-2">
                   <a
                     href={formData.id_card_image}
@@ -1209,9 +1374,25 @@ function UsersPageComponent() {
                     Delete ID Card Image
                   </button>
                 </div>
-              </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-muted-foreground">
+                    No ID card image uploaded.
+                  </p>
+                  <Input
+                    id="admin-id-card-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAdminIdCardUpload}
+                    disabled={isUploadingIdCard}
+                  />
+                  {isUploadingIdCard && (
+                    <p className="text-xs text-muted-foreground">Uploading…</p>
+                  )}
+                </div>
+              )}
             </div>
-          )}
+          </div>
           <div className="space-y-2">
             <Label htmlFor="edit-notes">Notes</Label>
             <Textarea
@@ -1248,9 +1429,13 @@ function UsersPageComponent() {
             <div className="flex items-center space-x-2">
               <Switch
                 id="edit-is_verified"
-                checked={formData.is_verified}
+                checked={formData.is_verified && formData.id_card_verified}
                 onCheckedChange={checked =>
-                  setFormData({ ...formData, is_verified: checked })
+                  setFormData({
+                    ...formData,
+                    is_verified: checked,
+                    id_card_verified: checked,
+                  })
                 }
               />
               <Label htmlFor="edit-is_verified">Verified</Label>
