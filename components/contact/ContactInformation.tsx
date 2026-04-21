@@ -22,7 +22,7 @@ export function ContactInformation() {
               <Phone className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Phone</p>
+              <p className="text-sm text-muted-foreground">Phone / WhatsApp</p>
               <p className="font-medium">+356 7723 3193</p>
             </div>
           </div>

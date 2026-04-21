@@ -8,9 +8,8 @@ export const ResourcesSection = () => {
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-2">Need Help?</h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Need help? Check out our comprehensive <strong>guides</strong> and
-            <br />
             stay updated with the latest <strong>news</strong> and regulations
             for firearm owners in Malta.
           </p>

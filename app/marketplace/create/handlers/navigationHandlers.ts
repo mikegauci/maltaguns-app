@@ -27,9 +27,9 @@ export function createNavigationHandlers(deps: NavigationHandlerDependencies) {
     // Check if user has uploaded neither ID card nor license
     if (!hasIdCard && !hasLicense) {
       setDialogMessage({
-        title: 'ID Card & License Required',
+        title: 'Identification & License Required',
         description:
-          'To sell firearms, you must upload both your ID card and firearms license. Please go to your profile and upload both documents in the Seller Status section.',
+          'To sell firearms, you must upload both your identification and firearms license. Please go to your profile and upload both documents in the Seller Status section.',
       })
       setShowLicenseDialog(true)
       return
