@@ -106,10 +106,10 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-48 p-2 mt-2">
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem asChild className="cursor-pointer">
                   <Link
                     href="/establishments"
-                    className="w-full flex items-center"
+                    className="flex items-center"
                     onMouseEnter={() =>
                       prefetchPublic(
                         'public-establishments',
@@ -126,34 +126,34 @@ export function Header() {
                     <Boxes className="h-4 w-4 mr-2" /> All
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem asChild className="cursor-pointer">
                   <Link
                     href="/establishments/stores"
-                    className="w-full flex items-center"
+                    className="flex items-center"
                   >
                     <Store className="h-4 w-4 mr-2" /> Stores
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem asChild className="cursor-pointer">
                   <Link
                     href="/establishments/clubs"
-                    className="w-full flex items-center"
+                    className="flex items-center"
                   >
                     <Users className="h-4 w-4 mr-2" /> Clubs
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem asChild className="cursor-pointer">
                   <Link
                     href="/establishments/servicing"
-                    className="w-full flex items-center"
+                    className="flex items-center"
                   >
                     <Wrench className="h-4 w-4 mr-2" /> Servicing
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer">
+                <DropdownMenuItem asChild className="cursor-pointer">
                   <Link
                     href="/establishments/ranges"
-                    className="w-full flex items-center"
+                    className="flex items-center"
                   >
                     <MapPin className="h-4 w-4 mr-2" /> Ranges
                   </Link>
@@ -235,19 +235,13 @@ export function Header() {
                 <DropdownMenuContent className="w-40 p-2 mt-2" align="end">
                   {session?.user ? (
                     <>
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Link
-                          href="/profile"
-                          prefetch={false}
-                          className="w-full"
-                        >
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link href="/profile" prefetch={false}>
                           Account
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Link href="/wishlist" className="w-full">
-                          Wishlist
-                        </Link>
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link href="/wishlist">Wishlist</Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="cursor-pointer text-destructive"
@@ -258,20 +252,16 @@ export function Header() {
                     </>
                   ) : (
                     <>
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Link href="/login" className="w-full">
-                          Login
-                        </Link>
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link href="/login">Login</Link>
                       </DropdownMenuItem>
                       <div className="px-2 py-1.5">
                         <span className="text-sm text-muted-foreground">
                           Or
                         </span>
                       </div>
-                      <DropdownMenuItem className="cursor-pointer">
-                        <Link href="/register" className="w-full">
-                          Register
-                        </Link>
+                      <DropdownMenuItem asChild className="cursor-pointer">
+                        <Link href="/register">Register</Link>
                       </DropdownMenuItem>
                     </>
                   )}
