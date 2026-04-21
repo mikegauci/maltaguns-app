@@ -56,9 +56,22 @@ function getResend(): Resend {
   return new Resend(process.env.RESEND_API_KEY)
 }
 
+function getSiteBaseUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_APP_URL || 'https://maltaguns.com'
+  return raw.replace(/\/$/, '')
+}
+
+function toAbsoluteUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) return url
+  const base = getSiteBaseUrl()
+  const path = url.startsWith('/') ? url : `/${url}`
+  return `${base}${path}`
+}
+
 function notificationEmailHtml(n: PendingNotification): string {
-  const link = n.link_url
-    ? `<p><a href="${n.link_url}">${n.link_url}</a></p>`
+  const absoluteUrl = n.link_url ? toAbsoluteUrl(n.link_url) : ''
+  const link = absoluteUrl
+    ? `<p><a href="${absoluteUrl}">${absoluteUrl}</a></p>`
     : ''
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
