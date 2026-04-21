@@ -297,13 +297,7 @@ export default function Marketplace() {
           <CardFooter className="justify-center">
             <Link href="/marketplace/create">
               <Button>
-                <Image
-                  src="/images/pistol-gun-icon.svg"
-                  alt="Firearms"
-                  width={16}
-                  height={16}
-                  className="mr-2"
-                />
+                <Plus className="mr-2 h-4 w-4" />
                 Create Listing
               </Button>
             </Link>
@@ -320,13 +314,7 @@ export default function Marketplace() {
           <CardFooter className="justify-center">
             <Link href="/marketplace/create">
               <Button>
-                <Image
-                  src="/images/pistol-gun-icon.svg"
-                  alt="Firearms"
-                  width={16}
-                  height={16}
-                  className="mr-2"
-                />
+                <Plus className="mr-2 h-4 w-4" />
                 Create Listing
               </Button>
             </Link>

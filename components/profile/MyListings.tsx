@@ -27,6 +27,7 @@ import {
   Star,
   Calendar,
   X,
+  Plus,
 } from 'lucide-react'
 import { Listing } from '../../app/profile/types'
 import { formatPrice, slugify } from '../../app/profile/utils'
@@ -107,8 +108,8 @@ export const MyListings = ({
             </Button>
           </div>
           <Link href="/marketplace/create" className="sm:ml-auto">
-            <Button className="bg-black text-white hover:bg-gray-800 w-full">
-              <Package className="mr-2 h-4 w-4" />
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
               Create Listing
             </Button>
           </Link>
