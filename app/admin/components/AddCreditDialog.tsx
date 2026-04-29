@@ -23,14 +23,21 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { Check, ChevronsUpDown, Loader2 } from 'lucide-react'
 
 // Define the form schema
 const formSchema = z.object({
@@ -60,6 +67,7 @@ export function AddCreditDialog({
 }: AddCreditDialogProps) {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [userPickerOpen, setUserPickerOpen] = useState(false)
 
   // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -137,32 +145,84 @@ export function AddCreditDialog({
             <FormField
               control={form.control}
               name="user_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>User</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a user" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {profiles.map(profile => (
-                        <SelectItem key={profile.id} value={profile.id}>
-                          {profile.username || profile.email || profile.id}
-                          {profile.email && profile.username
-                            ? ` (${profile.email})`
-                            : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const selectedProfile = profiles.find(p => p.id === field.value)
+                const formatProfileLabel = (profile: Profile) => {
+                  const name = profile.username || profile.email || profile.id
+                  const suffix =
+                    profile.email && profile.username
+                      ? ` (${profile.email})`
+                      : ''
+                  return `${name}${suffix}`
+                }
+
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>User</FormLabel>
+                    <Popover
+                      open={userPickerOpen}
+                      onOpenChange={setUserPickerOpen}
+                    >
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={userPickerOpen}
+                            className={cn(
+                              'w-full justify-between font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
+                          >
+                            {selectedProfile
+                              ? formatProfileLabel(selectedProfile)
+                              : 'Select a user'}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[--radix-popover-trigger-width] p-0"
+                        align="start"
+                      >
+                        <Command>
+                          <CommandInput placeholder="Search user..." />
+                          <CommandList>
+                            <CommandEmpty>No user found.</CommandEmpty>
+                            <CommandGroup>
+                              {profiles.map(profile => {
+                                const label = formatProfileLabel(profile)
+                                return (
+                                  <CommandItem
+                                    key={profile.id}
+                                    value={`${profile.username ?? ''} ${profile.email ?? ''} ${profile.full_name ?? ''} ${profile.id}`}
+                                    onSelect={() => {
+                                      field.onChange(profile.id)
+                                      setUserPickerOpen(false)
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        field.value === profile.id
+                                          ? 'opacity-100'
+                                          : 'opacity-0'
+                                      )}
+                                    />
+                                    {label}
+                                  </CommandItem>
+                                )
+                              })}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
 
             <FormField
