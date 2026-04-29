@@ -47,16 +47,60 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 })
     }
 
-    // Insert new credit record
-    const { data, error } = await supabaseAdmin
-      .from('credits')
-      .insert({
-        user_id,
-        amount: Number(amount),
-      })
-      .select()
+    const amountToAdd = Number(amount)
 
-    console.log('Insert result:', { data, error })
+    // Each user can only have one row in `credits` (unique constraint on user_id).
+    // If a row already exists, increment its amount; otherwise insert a new row.
+    const { data: existingCredit, error: existingError } = await supabaseAdmin
+      .from('credits')
+      .select('id, amount')
+      .eq('user_id', user_id)
+      .maybeSingle()
+
+    console.log('Existing credit lookup result:', {
+      existingCredit,
+      existingError,
+    })
+
+    if (existingError) {
+      console.error('Error looking up existing credits:', existingError)
+      return NextResponse.json(
+        { message: 'Failed to add credits', error: existingError.message },
+        { status: 500 }
+      )
+    }
+
+    let data
+    let error
+
+    if (existingCredit) {
+      const newAmount = Number(existingCredit.amount) + amountToAdd
+
+      const updateResult = await supabaseAdmin
+        .from('credits')
+        .update({
+          amount: newAmount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingCredit.id)
+        .select()
+
+      data = updateResult.data
+      error = updateResult.error
+      console.log('Update result:', { data, error })
+    } else {
+      const insertResult = await supabaseAdmin
+        .from('credits')
+        .insert({
+          user_id,
+          amount: amountToAdd,
+        })
+        .select()
+
+      data = insertResult.data
+      error = insertResult.error
+      console.log('Insert result:', { data, error })
+    }
 
     if (error) {
       console.error('Error adding credits:', error)
