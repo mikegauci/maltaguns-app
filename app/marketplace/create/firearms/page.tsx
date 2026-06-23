@@ -24,7 +24,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Loader2 } from 'lucide-react'
-import { CreditDialog } from '@/components/dialogs'
+import { CreditDialog, LegalWarningDialog } from '@/components/dialogs'
 import { firearmsCategories } from '../constants'
 import { firearmsSchema, FirearmsForm } from '../schemas'
 import { useImageUpload } from '../hooks/useImageUpload'
@@ -46,6 +46,8 @@ export default function CreateFirearmsListing() {
   const { toast } = useToast()
   const supabase = createClientComponentClient()
   const [showCreditDialog, setShowCreditDialog] = useState(false)
+  const [showLegalDialog, setShowLegalDialog] = useState(false)
+  const [pendingData, setPendingData] = useState<FirearmsForm | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [allowedCategories, setAllowedCategories] = useState<string[]>([])
   const [isLoadingLicenses, setIsLoadingLicenses] = useState(true)
@@ -140,11 +142,19 @@ export default function CreateFirearmsListing() {
       return
     }
 
+    setPendingData(data)
+    setShowLegalDialog(true)
+  }
+
+  async function handleConfirmPublish() {
+    if (!pendingData) return
+
     await createFirearmsListing({
-      ...data,
+      ...pendingData,
       credits,
       setCredits,
     })
+    setShowLegalDialog(false)
   }
 
   if (isLoading || isLoadingLicenses) {
@@ -263,6 +273,13 @@ export default function CreateFirearmsListing() {
           </form>
         </Form>
       </ListingFormLayout>
+
+      <LegalWarningDialog
+        open={showLegalDialog}
+        onOpenChange={setShowLegalDialog}
+        onConfirm={handleConfirmPublish}
+        isLoading={isSubmitting}
+      />
 
       {userId && (
         <CreditDialog
