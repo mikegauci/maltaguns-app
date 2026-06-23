@@ -676,10 +676,7 @@ export default function ListingClient({
                     at Police Headquarters, in line with the Arms Act.
                   </p>
                 </div>
-                <Button
-
-                  onClick={handleRevealContact}
-                >
+                <Button onClick={handleRevealContact}>
                   Reveal Contact Details
                 </Button>
               </div>
