@@ -17,6 +17,7 @@ import {
   Star,
   Store,
   CheckCircle,
+  ShieldAlert,
 } from 'lucide-react'
 import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
@@ -178,6 +179,7 @@ export default function ListingClient({
   const [hasRequiredLicense, setHasRequiredLicense] = useState(false)
   const [userIdCardVerified, setUserIdCardVerified] = useState(false)
   const [userLicenseVerified, setUserLicenseVerified] = useState(false)
+  const [contactRevealed, setContactRevealed] = useState(false)
 
   // Use the first image from the listing, or the default if none are available
   const images =
@@ -359,6 +361,23 @@ export default function ListingClient({
     },
     [supabase, listing.category, listing.type]
   )
+
+  // Reveal the seller's contact details and log the reveal to the database.
+  async function handleRevealContact() {
+    // Reveal immediately — logging is fire-and-forget and must never block a
+    // verified user from seeing contact details they're entitled to.
+    setContactRevealed(true)
+
+    if (!session?.user?.id) return
+    const { error } = await supabase.from('contact_reveal_logs').insert({
+      listing_id: listing.id,
+      user_id: session.user.id,
+      // created_at is set by the DB default (now())
+    })
+    if (error) {
+      console.error('Failed to log contact reveal:', error)
+    }
+  }
 
   useEffect(() => {
     let mounted = true
@@ -591,34 +610,81 @@ export default function ListingClient({
             )}
           </div>
 
-          {listing.seller.email &&
-            (listing.seller.contact_preference === 'email' ||
-              listing.seller.contact_preference === 'both' ||
-              !listing.seller.contact_preference) && (
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <a
-                  href={`mailto:${listing.seller.email}`}
-                  className="text-primary hover:underline"
-                >
-                  {listing.seller.email}
-                </a>
+          {contactRevealed ? (
+            <>
+              {listing.seller.email &&
+                (listing.seller.contact_preference === 'email' ||
+                  listing.seller.contact_preference === 'both' ||
+                  !listing.seller.contact_preference) && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <a
+                      href={`mailto:${listing.seller.email}`}
+                      className="text-primary hover:underline"
+                    >
+                      {listing.seller.email}
+                    </a>
+                  </div>
+                )}
+              {listing.seller.phone &&
+                (listing.seller.contact_preference === 'phone' ||
+                  listing.seller.contact_preference === 'both' ||
+                  !listing.seller.contact_preference) && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <a
+                      href={`tel:${listing.seller.phone}`}
+                      className="text-primary hover:underline"
+                    >
+                      {listing.seller.phone}
+                    </a>
+                  </div>
+                )}
+            </>
+          ) : (
+            <div className="relative min-h-[300px]">
+              <div className="blur-sm" aria-hidden="true">
+                <div className="flex items-center gap-2 mt-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span>••••••@••••.com</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>+356 •••• ••••</span>
+                </div>
               </div>
-            )}
-          {listing.seller.phone &&
-            (listing.seller.contact_preference === 'phone' ||
-              listing.seller.contact_preference === 'both' ||
-              !listing.seller.contact_preference) && (
-              <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <a
-                  href={`tel:${listing.seller.phone}`}
-                  className="text-primary hover:underline"
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4 text-center">
+                <ShieldAlert className="h-7 w-7 text-muted-foreground mb-2" />
+                <p className="text-sm font-semibold mb-2">
+                  Before you contact this seller
+                </p>
+                <div className="text-xs text-muted-foreground space-y-2 mb-4">
+                  <p>
+                    Maltaguns only passes on the seller's contact details. We're
+                    not involved in any sale and hold no responsibility for what
+                    follows.
+                  </p>
+                  <p>
+                    Take care when arranging to view a firearm and meet safely.
+                    Sellers have every right to double check that you are
+                    licensed and we encourage them to do so before arranging a
+                    viewing. Always ensure the firearm is cleared and safe
+                    before inspecting it.
+                  </p>
+                  <p>
+                    All transfers must go through the official Police procedure
+                    at Police Headquarters, in line with the Arms Act.
+                  </p>
+                </div>
+                <Button
+
+                  onClick={handleRevealContact}
                 >
-                  {listing.seller.phone}
-                </a>
+                  Reveal Contact Details
+                </Button>
               </div>
-            )}
+            </div>
+          )}
 
           {/* Add Wishlist Button for non-owners */}
           {!isOwner && (
