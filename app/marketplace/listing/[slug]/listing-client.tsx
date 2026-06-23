@@ -177,6 +177,7 @@ export default function ListingClient({
   )
   const [hasRequiredLicense, setHasRequiredLicense] = useState(false)
   const [userIdCardVerified, setUserIdCardVerified] = useState(false)
+  const [userLicenseVerified, setUserLicenseVerified] = useState(false)
 
   // Use the first image from the listing, or the default if none are available
   const images =
@@ -316,7 +317,7 @@ export default function ListingClient({
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('license_types, id_card_verified')
+          .select('license_types, id_card_verified, is_verified')
           .eq('id', userIdToCheck)
           .single()
 
@@ -328,18 +329,22 @@ export default function ListingClient({
 
         const licenses = data?.license_types as LicenseTypes | null
         const idCardVerified = data?.id_card_verified ?? false
+        const isLicenseVerified = data?.is_verified ?? false
         setUserLicenseTypes(licenses)
         setUserIdCardVerified(idCardVerified)
+        setUserLicenseVerified(isLicenseVerified)
 
-        // Check if user has required license AND verified ID card for this listing category
+        // Check if user has required license AND verified ID card AND an
+        // admin-approved license for this listing category
         const categoryLabel = getCategoryLabel(listing.category, listing.type)
         const hasLicenseAccess = canViewSellerInfo(licenses, categoryLabel)
-        const hasAccess = hasLicenseAccess && idCardVerified
+        const hasAccess = hasLicenseAccess && idCardVerified && isLicenseVerified
 
         console.log('License and ID card check result:', {
           userIdToCheck,
           licenses,
           idCardVerified,
+          isLicenseVerified,
           categoryLabel,
           hasLicenseAccess,
           hasAccess,
@@ -677,7 +682,45 @@ export default function ListingClient({
         )
       }
 
-      // Case 2: User doesn't have the required license
+      // Case 2: User has the license type + verified ID, but the license is
+      // still awaiting verification by an administrator
+      if (hasLicenseAccess && userIdCardVerified && !userLicenseVerified) {
+        return (
+          <div className="space-y-4">
+            <div className="relative min-h-[200px]">
+              <div className="blur-sm">
+                <p className="font-semibold">••••••••••</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span>••••••@••••.com</span>
+                </div>
+                <div className="flex items-center gap-2 mt-2">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>+356 •••• ••••</span>
+                </div>
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
+                <Lock className="h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-center text-muted-foreground mb-2 font-semibold">
+                  License Pending Verification
+                </p>
+                <p className="text-xs text-center text-muted-foreground mb-4">
+                  Your license has been uploaded and is awaiting verification by
+                  an administrator. You'll be able to view seller information
+                  once it's approved.
+                </p>
+                <Link href="/profile" className="w-full">
+                  <Button variant="outline" className="w-full" size="sm">
+                    View License Status
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+      // Case 3: User doesn't have the required license
       return (
         <div className="space-y-4">
           <div className="relative min-h-[200px]">
