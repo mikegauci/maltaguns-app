@@ -338,7 +338,8 @@ export default function ListingClient({
         // admin-approved license for this listing category
         const categoryLabel = getCategoryLabel(listing.category, listing.type)
         const hasLicenseAccess = canViewSellerInfo(licenses, categoryLabel)
-        const hasAccess = hasLicenseAccess && idCardVerified && isLicenseVerified
+        const hasAccess =
+          hasLicenseAccess && idCardVerified && isLicenseVerified
 
         console.log('License and ID card check result:', {
           userIdToCheck,
