@@ -50,7 +50,10 @@ import { DocumentUploadButton } from '@/components/DocumentUploadButton'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
 import { PageLayout } from '@/components/ui/page-layout'
 
-const phoneRegex = /^(356|)(\d{8})$/
+function isValidPhone(value: string) {
+  const digits = value.replace(/[\s()+-]/g, '')
+  return /^\d{7,15}$/.test(digits)
+}
 
 const registerSchema = z
   .object({
@@ -83,7 +86,7 @@ const registerSchema = z
         message: 'You must be at least 18 years old',
       }
     ),
-    phone: z.string().regex(phoneRegex, 'Invalid phone number format'),
+    phone: z.string().refine(isValidPhone, 'Invalid phone number format'),
     address: z.string().min(5, 'Address must be at least 5 characters'),
     interestedInSelling: z.boolean().default(false),
     licenseTypes: z
@@ -235,48 +238,19 @@ export default function Register() {
     try {
       setIsLoading(true)
 
-      // Sign up the user with email confirmation required
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
-          data: {
-            username: data.username,
-          },
-        },
+      // Submit to the server so the real client IP can be captured from
+      // request headers and saved with the new profile.
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       })
 
-      if (authError) throw authError
+      const result = await response.json()
 
-      const userId = authData?.user?.id
-      if (!userId) throw new Error('User ID not found after signup.')
-
-      // Create the user profile
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: userId,
-        username: data.username,
-        email: data.email,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        birthday: data.birthday,
-        phone: data.phone,
-        address: data.address,
-        is_seller: data.interestedInSelling,
-        is_verified: data.isVerified,
-        license_image: data.interestedInSelling ? data.licenseImage : null,
-        license_expiry_date: data.interestedInSelling
-          ? data.licenseExpiryDate
-          : null,
-        id_card_image: data.interestedInSelling ? data.idCardImage : null,
-        id_card_verified: data.interestedInSelling
-          ? data.idCardVerified
-          : false,
-        license_types: data.interestedInSelling ? data.licenseTypes : null,
-        contact_preference: data.contactPreference,
-      })
-
-      if (profileError) throw profileError
+      if (!response.ok) {
+        throw new Error(result?.error || 'Registration failed')
+      }
 
       toast({
         title: 'Registration successful!',

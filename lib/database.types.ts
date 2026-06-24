@@ -28,6 +28,7 @@ export interface Database {
           license_expiry_date: string | null
           created_at: string
           email: string | null
+          registration_ip: string | null
         }
         Insert: {
           id: string
@@ -47,6 +48,7 @@ export interface Database {
           license_expiry_date?: string | null
           created_at?: string
           email?: string | null
+          registration_ip?: string | null
         }
         Update: {
           id?: string
@@ -66,6 +68,7 @@ export interface Database {
           license_expiry_date?: string | null
           created_at?: string
           email?: string | null
+          registration_ip?: string | null
         }
       }
       notifications: {
