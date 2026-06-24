@@ -20,6 +20,7 @@ import { UseFormReturn } from 'react-hook-form'
 
 import { ProfileInformation } from './ProfileInformation'
 import { SellerStatus } from './SellerStatus'
+import { NotificationPreferences } from './NotificationPreferences'
 import { MyListings } from './MyListings'
 import { MyBlogPosts } from './MyBlogPosts'
 import { PaymentHistory } from './PaymentHistory'
@@ -230,6 +231,8 @@ export function ProfileTabs({
           handleRemoveLicense={handleRemoveLicense}
           handleRemoveIdCard={handleRemoveIdCard}
         />
+
+        <NotificationPreferences profile={profile} />
       </TabsContent>
 
       {/* Listings Tab */}

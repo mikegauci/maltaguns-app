@@ -105,6 +105,7 @@ const registerSchema = z
     licenseExpiryDate: z.string().nullable().optional(),
     isVerified: z.boolean().default(false),
     contactPreference: z.enum(['email', 'phone', 'both']).default('both'),
+    acceptArticleEmails: z.boolean().default(false),
     acceptTerms: z.boolean().refine(val => val === true, {
       message: 'You must accept the terms and conditions',
     }),
@@ -159,6 +160,7 @@ export default function Register() {
         collectorsASpecial: false,
       },
       contactPreference: 'both',
+      acceptArticleEmails: false,
       acceptTerms: false,
       licenseExpiryDate: null,
     },
@@ -857,6 +859,30 @@ export default function Register() {
                   />
                 </div>
               )}
+
+              <FormField
+                control={form.control}
+                name="acceptArticleEmails"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Notify me about new articles by email
+                      </FormLabel>
+                      <FormDescription>
+                        Optional. Unsubscribe anytime. New articles always show
+                        in your notifications.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}

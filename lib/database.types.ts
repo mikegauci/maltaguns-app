@@ -29,6 +29,7 @@ export interface Database {
           created_at: string
           email: string | null
           registration_ip: string | null
+          article_email_opt_out: boolean
         }
         Insert: {
           id: string
@@ -49,6 +50,7 @@ export interface Database {
           created_at?: string
           email?: string | null
           registration_ip?: string | null
+          article_email_opt_out?: boolean
         }
         Update: {
           id?: string
@@ -69,6 +71,7 @@ export interface Database {
           created_at?: string
           email?: string | null
           registration_ip?: string | null
+          article_email_opt_out?: boolean
         }
       }
       notifications: {

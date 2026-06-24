@@ -93,6 +93,7 @@ export async function POST(req: Request) {
         license_types: data.interestedInSelling ? data.licenseTypes : null,
         contact_preference: data.contactPreference,
         registration_ip: registrationIp,
+        article_email_opt_out: !data.acceptArticleEmails,
       })
 
     if (profileError) {

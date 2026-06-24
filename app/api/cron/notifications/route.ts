@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { signUnsubscribeToken } from '@/lib/unsubscribe'
 
 type PendingNotification = {
   id: string
   user_id: string
+  type: string
   title: string
   body: string
   link_url: string | null
@@ -68,10 +70,23 @@ function toAbsoluteUrl(url: string): string {
   return `${base}${path}`
 }
 
-function notificationEmailHtml(n: PendingNotification): string {
+function getUnsubscribeUrl(userId: string): string {
+  const token = signUnsubscribeToken(userId)
+  return `${getSiteBaseUrl()}/api/unsubscribe?u=${encodeURIComponent(
+    userId
+  )}&t=${token}`
+}
+
+function notificationEmailHtml(
+  n: PendingNotification,
+  unsubscribeUrl?: string
+): string {
   const absoluteUrl = n.link_url ? toAbsoluteUrl(n.link_url) : ''
   const link = absoluteUrl
     ? `<p><a href="${absoluteUrl}">${absoluteUrl}</a></p>`
+    : ''
+  const unsubscribe = unsubscribeUrl
+    ? `<p style="color: #999; font-size: 12px; margin: 8px 0 0 0;">Don't want these emails? <a href="${unsubscribeUrl}" style="color: #999;">Unsubscribe from new article emails</a>. You'll still see them in your on-site notifications.</p>`
     : ''
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -80,6 +95,7 @@ function notificationEmailHtml(n: PendingNotification): string {
       ${link}
       <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e5e5;">
       <p style="color: #666; font-size: 12px; margin: 0;">MaltaGuns notification</p>
+      ${unsubscribe}
     </div>
   `
 }
@@ -194,7 +210,7 @@ async function sendPendingEmails(): Promise<{
 }> {
   const { data: pending, error: pendingErr } = await supabaseAdmin
     .from('notifications')
-    .select('id, user_id, title, body, link_url, created_at')
+    .select('id, user_id, type, title, body, link_url, created_at')
     .eq('email_status', 'pending')
     .is('email_sent_at', null)
     .order('created_at', { ascending: true })
@@ -210,14 +226,16 @@ async function sendPendingEmails(): Promise<{
   const userIds = Array.from(new Set(pendingNotifications.map(n => n.user_id)))
   const { data: profiles, error: profilesErr } = await supabaseAdmin
     .from('profiles')
-    .select('id, email')
+    .select('id, email, article_email_opt_out')
     .in('id', userIds)
 
   if (profilesErr) throw profilesErr
 
   const emailByUserId = new Map<string, string>()
+  const articleOptOutUserIds = new Set<string>()
   for (const p of profiles || []) {
     if (p.email) emailByUserId.set(p.id, p.email)
+    if (p.article_email_opt_out) articleOptOutUserIds.add(p.id)
   }
 
   const resend = getResend()
@@ -225,6 +243,18 @@ async function sendPendingEmails(): Promise<{
   let failed = 0
 
   for (const n of pendingNotifications) {
+    if (n.type === 'article_new' && articleOptOutUserIds.has(n.user_id)) {
+      await supabaseAdmin
+        .from('notifications')
+        .update({
+          email_status: 'skipped',
+          email_error: null,
+          email_sent_at: new Date().toISOString(),
+        })
+        .eq('id', n.id)
+      continue
+    }
+
     const to = emailByUserId.get(n.user_id)
     if (!to) {
       failed++
@@ -239,11 +269,22 @@ async function sendPendingEmails(): Promise<{
       continue
     }
 
+    const unsubscribeUrl =
+      n.type === 'article_new' ? getUnsubscribeUrl(n.user_id) : undefined
+
     const { error } = await resend.emails.send({
       from: 'MaltaGuns <contact@maltaguns.com>',
       to: [to],
       subject: n.title,
-      html: notificationEmailHtml(n),
+      html: notificationEmailHtml(n, unsubscribeUrl),
+      ...(unsubscribeUrl
+        ? {
+            headers: {
+              'List-Unsubscribe': `<${unsubscribeUrl}>`,
+              'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            },
+          }
+        : {}),
     })
 
     if (error) {
