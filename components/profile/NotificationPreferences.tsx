@@ -1,13 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { useToast } from '@/hooks/use-toast'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
@@ -62,30 +55,16 @@ export const NotificationPreferences = ({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Email Notifications</CardTitle>
-        <CardDescription>
-          Choose which emails you receive from MaltaGuns
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between gap-4">
-          <div className="space-y-0.5">
-            <div className="font-medium">New article published</div>
-            <p className="text-sm text-muted-foreground">
-              Email me when a new article is published. New articles always
-              appear in your on-site notifications.
-            </p>
-          </div>
-          <Switch
-            checked={emailEnabled}
-            onCheckedChange={handleToggle}
-            disabled={saving}
-            aria-label="Email me when a new article is published"
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex items-center justify-between gap-4 border-t pt-4">
+      <span className="text-sm text-muted-foreground">
+        Enable email notifications on new articles?
+      </span>
+      <Switch
+        checked={emailEnabled}
+        onCheckedChange={handleToggle}
+        disabled={saving}
+        aria-label="Enable email notifications on new articles"
+      />
+    </div>
   )
 }

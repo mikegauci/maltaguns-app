@@ -20,6 +20,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Pencil } from 'lucide-react'
 import { Profile, ProfileForm } from '../../app/profile/types'
+import { NotificationPreferences } from './NotificationPreferences'
 
 interface ProfileInformationProps {
   profile: Profile
@@ -163,6 +164,10 @@ export const ProfileInformation = ({
             </div>
           </div>
         )}
+
+        <div className="mt-6">
+          <NotificationPreferences profile={profile} />
+        </div>
       </CardContent>
     </Card>
   )
