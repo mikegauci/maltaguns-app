@@ -77,26 +77,100 @@ function getUnsubscribeUrl(userId: string): string {
   )}&t=${token}`
 }
 
+// Escape user/DB-provided text so it can't break the email markup.
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+// Friendly call-to-action label based on the notification type.
+function ctaLabelForType(type: string): string {
+  switch (type) {
+    case 'article_new':
+      return 'Read article'
+    case 'listing_expiring':
+    case 'listing_expired':
+      return 'View listing'
+    case 'license_expiring':
+    case 'license_approved':
+    case 'id_card_approved':
+      return 'Go to profile'
+    default:
+      return 'View'
+  }
+}
+
+// Shared, branded email shell used by every notification email so the look is
+// consistent across article, listing, license and manual notifications.
 function notificationEmailHtml(
   n: PendingNotification,
   unsubscribeUrl?: string
 ): string {
+  const base = getSiteBaseUrl()
+  const logoUrl = `${base}/maltaguns.png`
   const absoluteUrl = n.link_url ? toAbsoluteUrl(n.link_url) : ''
-  const link = absoluteUrl
-    ? `<p><a href="${absoluteUrl}">${absoluteUrl}</a></p>`
+  const title = escapeHtml(n.title)
+  const body = escapeHtml(n.body)
+
+  const button = absoluteUrl
+    ? `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 8px 0 4px;">
+        <tr>
+          <td align="center" style="border-radius: 8px; background-color: #171717;">
+            <a href="${absoluteUrl}" target="_blank" style="display: inline-block; padding: 12px 28px; font-size: 15px; font-weight: 600; line-height: 1; color: #ffffff; text-decoration: none; border-radius: 8px;">${ctaLabelForType(
+              n.type
+            )}</a>
+          </td>
+        </tr>
+      </table>`
     : ''
+
   const unsubscribe = unsubscribeUrl
-    ? `<p style="color: #999; font-size: 12px; margin: 8px 0 0 0;">Don't want these emails? <a href="${unsubscribeUrl}" style="color: #999;">Unsubscribe from new article emails</a>. You'll still see them in your on-site notifications.</p>`
+    ? `<p style="margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: #a1a1aa;">Don't want these emails? <a href="${unsubscribeUrl}" target="_blank" style="color: #a1a1aa; text-decoration: underline;">Unsubscribe from new article emails</a>. You'll still see them in your on-site notifications.</p>`
     : ''
+
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #111; margin: 0 0 12px 0;">${n.title}</h2>
-      <p style="color: #333; margin: 0 0 12px 0;">${n.body}</p>
-      ${link}
-      <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e5e5;">
-      <p style="color: #666; font-size: 12px; margin: 0;">MaltaGuns notification</p>
-      ${unsubscribe}
-    </div>
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta name="color-scheme" content="light only" />
+      <title>${title}</title>
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f4f4f5;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f5; padding: 24px 12px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 600px; background-color: #ffffff; border: 1px solid #e4e4e7; border-radius: 12px; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+              <tr>
+                <td align="center" style="padding: 28px 32px 24px; border-bottom: 3px solid #c8102e;">
+                  <img src="${logoUrl}" alt="MaltaGuns" width="180" style="display: block; width: 180px; max-width: 60%; height: auto;" />
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 32px;">
+                  <h1 style="margin: 0 0 12px; font-size: 20px; line-height: 1.3; color: #171717;">${title}</h1>
+                  <p style="margin: 0 0 24px; font-size: 15px; line-height: 1.6; color: #3f3f46;">${body}</p>
+                  ${button}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 20px 32px 28px; border-top: 1px solid #e4e4e7; background-color: #fafafa;">
+                  <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #71717a;">You're receiving this email from <a href="${base}" target="_blank" style="color: #71717a; text-decoration: underline;">MaltaGuns</a>, Malta's firearms community.</p>
+                  ${unsubscribe}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+  </html>
   `
 }
 
@@ -273,7 +347,7 @@ async function sendPendingEmails(): Promise<{
       n.type === 'article_new' ? getUnsubscribeUrl(n.user_id) : undefined
 
     const { error } = await resend.emails.send({
-      from: 'MaltaGuns <contact@maltaguns.com>',
+      from: 'MaltaGuns <noreply@maltaguns.com>',
       to: [to],
       subject: n.title,
       html: notificationEmailHtml(n, unsubscribeUrl),
