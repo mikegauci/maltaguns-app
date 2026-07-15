@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined')
@@ -11,8 +12,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
 })
 
-// This should be your actual price ID from Stripe dashboard
-const FEATURE_LISTING_PRICE_ID = 'price_1Ro4s8H1BEPEAa2S6gCJX29E'
+const FEATURE_LISTING_PRICE_ID = STRIPE_PRICE_IDS.featuredListing
 
 // Helper function to generate a slug from a string
 function slugify(text: string) {

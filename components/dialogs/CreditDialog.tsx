@@ -36,7 +36,7 @@ const plans: Plan[] = [
   {
     id: 'price_5credits',
     credits: 5,
-    price: 65,
+    price: 60,
     description: 'Best value for regular sellers',
   },
   {

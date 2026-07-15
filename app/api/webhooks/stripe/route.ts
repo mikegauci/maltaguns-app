@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { constructStripeEvent } from '@/lib/stripe-webhook'
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined')
@@ -15,8 +16,6 @@ if (!process.env.STRIPE_WEBHOOK_SECRET) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16',
 })
-
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
 
 export async function POST(request: Request) {
   console.log('[WEBHOOK-PLURAL] Received webhook request')
@@ -32,7 +31,7 @@ export async function POST(request: Request) {
 
     try {
       console.log('[WEBHOOK-PLURAL] Attempting to verify webhook signature')
-      event = stripe.webhooks.constructEvent(payload, signature, endpointSecret)
+      event = constructStripeEvent(stripe, payload, signature)
       console.log(
         '[WEBHOOK-PLURAL] Signature verified, event type:',
         event.type

@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 
 // Price amount in EUR
-const FEATURE_PRICE = 5
+const FEATURE_PRICE = 10
 
 interface FeatureListingDialogProps {
   open: boolean

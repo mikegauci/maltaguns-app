@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin'
+import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
@@ -36,17 +37,17 @@ export async function POST(request: Request) {
       { stripePriceId: string; credits: number }
     > = {
       price_1credit: {
-        stripePriceId: 'price_1Ro5asH1BEPEAa2S09UD5Qp1',
+        stripePriceId: STRIPE_PRICE_IDS.credit1,
         credits: 1,
-      }, // €10
+      }, // €15
       price_5credits: {
-        stripePriceId: 'price_1Ro4tZH1BEPEAa2SQ9xBrWZo',
+        stripePriceId: STRIPE_PRICE_IDS.credit5,
         credits: 5,
-      }, // €30
+      }, // €60
       price_10credits: {
-        stripePriceId: 'price_1Ro4tMH1BEPEAa2SNFgzJYw6',
+        stripePriceId: STRIPE_PRICE_IDS.credit10,
         credits: 10,
-      }, // €50
+      }, // €100
     }
 
     const plan = planMapping[priceId]

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin'
+import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: 'price_1Ro4tBH1BEPEAa2SF1bA1Mrb',
+          price: STRIPE_PRICE_IDS.eventCredit,
           quantity: 1,
         },
       ],
