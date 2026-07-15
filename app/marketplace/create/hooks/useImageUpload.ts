@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { UseFormSetValue } from 'react-hook-form'
 import { MAX_FILE_SIZE, MAX_FILES, ACCEPTED_IMAGE_TYPES } from '../constants'
+import { resizeImageForUpload } from '@/lib/image-resize'
 
 interface UseImageUploadProps {
   toast: (options: {
@@ -68,7 +69,9 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
       const uploadedUrls: string[] = []
 
       for (const file of files) {
-        const fileExt = file.name.split('.').pop()
+        // Downscale + re-encode to WebP before upload to cut Storage egress.
+        const resized = await resizeImageForUpload(file)
+        const fileExt = resized.name.split('.').pop()
         const fileName = `${sessionData.session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `listings/${fileName}`
 
@@ -76,9 +79,11 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
 
         const { error: uploadError } = await supabase.storage
           .from('listings')
-          .upload(filePath, file, {
-            cacheControl: '3600',
+          .upload(filePath, resized, {
+            // Unique filename per upload (never overwritten) → cache for 1 year.
+            cacheControl: '31536000',
             upsert: false,
+            contentType: resized.type,
           })
 
         if (uploadError) {

@@ -33,6 +33,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
+import { resizeImageForUpload } from '@/lib/image-resize'
 import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
@@ -419,17 +420,21 @@ export default function EditListing({ params }: { params: { slug: string } }) {
       }
 
       for (const file of files) {
+        // Downscale + re-encode to WebP before upload to cut Storage egress.
+        const resized = await resizeImageForUpload(file)
         // Create a unique file name
-        const fileExt = file.name.split('.').pop()
+        const fileExt = resized.name.split('.').pop()
         const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `listings/${listingId}/${fileName}`
 
         // Upload file to Supabase Storage
         const { error: uploadError } = await supabase.storage
           .from('listings')
-          .upload(filePath, file, {
-            cacheControl: '3600',
+          .upload(filePath, resized, {
+            // Unique filename per upload (never overwritten) → cache for 1 year.
+            cacheControl: '31536000',
             upsert: false,
+            contentType: resized.type,
           })
 
         if (uploadError) {
@@ -441,9 +446,10 @@ export default function EditListing({ params }: { params: { slug: string } }) {
           data: { publicUrl },
         } = supabase.storage.from('listings').getPublicUrl(filePath)
 
-        // Add to preview URLs
+        // Add to preview URLs. Store the already-resized file so the final
+        // upload on submit reuses it without re-encoding.
         setPreviewUrls(prev => [...prev, publicUrl])
-        setNewImages(prev => [...prev, file])
+        setNewImages(prev => [...prev, resized])
       }
 
       toast({
@@ -510,6 +516,7 @@ export default function EditListing({ params }: { params: { slug: string } }) {
 
       if (newImages.length > 0) {
         for (let i = 0; i < newImages.length; i++) {
+          // Files in newImages were already resized on selection.
           const file = newImages[i]
           const fileExt = file.name.split('.').pop()
           const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
@@ -518,8 +525,10 @@ export default function EditListing({ params }: { params: { slug: string } }) {
           const { error: uploadError } = await supabase.storage
             .from('listings')
             .upload(filePath, file, {
-              cacheControl: '3600',
+              // Unique filename per upload (never overwritten) → cache 1 year.
+              cacheControl: '31536000',
               upsert: false,
+              contentType: file.type,
             })
 
           if (uploadError) {

@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StorageImage } from '@/components/ui/storage-image'
 import {
   Package,
   Heart,
@@ -282,10 +283,10 @@ export default function WishlistPage() {
                 className="overflow-hidden hover:shadow-lg transition-all duration-200 group"
               >
                 <div className="aspect-video relative overflow-hidden">
-                  <img
+                  <StorageImage
                     src={item.listings.thumbnail}
                     alt={item.listings.title}
-                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-200"
+                    className="object-cover group-hover:scale-105 transition-transform duration-200"
                   />
                   {item.listings.status === 'sold' && (
                     <Badge

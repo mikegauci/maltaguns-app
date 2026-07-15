@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Package, ArrowLeft, Star } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { StorageImage } from '@/components/ui/storage-image'
 import { PageLayout } from '@/components/ui/page-layout'
 
 interface Listing {
@@ -144,10 +145,10 @@ export default function SearchResults() {
     >
       <Card className="overflow-hidden hover:shadow-lg transition-shadow">
         <div className="aspect-video relative overflow-hidden">
-          <img
+          <StorageImage
             src={listing.thumbnail}
             alt={listing.title}
-            className="object-cover w-full h-full"
+            className="object-cover"
           />
           {listing.status === 'sold' && (
             <Badge variant="destructive" className="absolute top-2 right-2">

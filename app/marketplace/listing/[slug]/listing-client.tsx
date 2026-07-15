@@ -27,6 +27,7 @@ import { FeatureCreditDialog, ReportListingDialog } from '@/components/dialogs'
 import { AutoFeatureHandler } from '../../auto-feature-handler'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
+import { StorageImage } from '@/components/ui/storage-image'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
 import {
   canViewSellerInfo,
@@ -919,10 +920,12 @@ export default function ListingClient({
           <Card>
             <CardContent className="p-2">
               <div className="relative h-[500px] flex items-center justify-center">
-                <img
+                <StorageImage
                   src={images[currentImageIndex]}
                   alt={listing.title}
-                  className="object-contain w-full h-full max-h-[500px]"
+                  className="object-contain"
+                  sizes="(max-width: 1024px) 100vw, 66vw"
+                  priority
                 />
                 {listing.status === 'sold' && (
                   <Badge
@@ -960,17 +963,18 @@ export default function ListingClient({
             {images.map((image, index) => (
               <div
                 key={index}
-                className={`aspect-video cursor-pointer overflow-hidden rounded-lg border-2 ${
+                className={`relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 ${
                   index === currentImageIndex
                     ? 'border-primary'
                     : 'border-transparent'
                 }`}
                 onClick={() => setCurrentImageIndex(index)}
               >
-                <img
+                <StorageImage
                   src={image}
                   alt={`${listing.title} - Image ${index + 1}`}
-                  className="object-cover w-full h-full"
+                  className="object-cover"
+                  sizes="(max-width: 768px) 16vw, 130px"
                 />
               </div>
             ))}

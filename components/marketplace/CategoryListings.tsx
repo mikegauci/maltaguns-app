@@ -14,6 +14,7 @@ import { Package, Star, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
+import { StorageImage } from '@/components/ui/storage-image'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '../ui/back-button'
@@ -196,10 +197,10 @@ export default function CategoryListings({
         className={`overflow-hidden hover:shadow-lg transition-shadow ${listing.is_featured ? 'border-2 border-red-500' : ''}`}
       >
         <div className="aspect-video relative overflow-hidden">
-          <img
+          <StorageImage
             src={listing.thumbnail}
             alt={listing.title}
-            className="object-cover w-full h-full"
+            className="object-cover"
           />
           {listing.status === 'sold' && (
             <Badge variant="destructive" className="absolute top-2 right-2">

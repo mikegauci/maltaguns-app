@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { StorageImage } from '@/components/ui/storage-image'
 
 interface Listing {
   id: string
@@ -40,12 +41,11 @@ export const FeaturedListingsSection = ({
               >
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="aspect-video relative overflow-hidden">
-                    <img
-                      src={
-                        listing.thumbnail || '/images/maltaguns-default-img.jpg'
-                      }
+                    <StorageImage
+                      src={listing.thumbnail}
                       alt={listing.title}
-                      className="object-cover w-full h-full"
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   </div>
                   <CardContent className="p-4">

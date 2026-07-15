@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Phone, Mail, Globe, BookOpen } from 'lucide-react'
 import Link from 'next/link'
+import { StorageImage } from '@/components/ui/storage-image'
 import { useEffect, useState } from 'react'
 import BlogPostCard from '@/components/blog/BlogPostCard'
 import { BackButton } from '@/components/ui/back-button'
@@ -207,10 +208,11 @@ export default function EstablishmentClient({
               >
                 <Card className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="aspect-video relative overflow-hidden">
-                    <img
+                    <StorageImage
                       src={listing.thumbnail}
                       alt={listing.title}
-                      className="object-cover w-full h-full"
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 33vw"
                     />
                   </div>
                   <CardContent className="p-4">

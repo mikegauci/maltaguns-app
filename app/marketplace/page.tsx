@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { AutoFeatureHandler } from './auto-feature-handler'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
+import { StorageImage } from '@/components/ui/storage-image'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -109,10 +110,10 @@ export default function Marketplace() {
         }`}
       >
         <div className="aspect-video relative overflow-hidden">
-          <img
+          <StorageImage
             src={listing.thumbnail}
             alt={listing.title}
-            className="object-cover w-full h-full"
+            className="object-cover"
           />
           {listing.status === 'sold' && (
             <Badge variant="destructive" className="absolute top-2 right-2">
