@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { resizeImageForUpload } from '@/lib/image-resize'
 import { EventCreditDialog } from '@/components/dialogs'
 import { BackButton } from '@/components/ui/back-button'
 import { Loader2 } from 'lucide-react'
@@ -333,15 +334,19 @@ export default function CreateEventPage() {
         throw new Error('Not authenticated')
       }
 
-      const fileExt = file.name.split('.').pop()
+      // Downscale + re-encode to WebP before upload to cut Storage egress.
+      const resized = await resizeImageForUpload(file)
+      const fileExt = resized.name.split('.').pop()
       const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
       const filePath = `events/${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from('events')
-        .upload(filePath, file, {
-          cacheControl: '3600',
+        .upload(filePath, resized, {
+          // Unique filename per upload (never overwritten) - cache for 1 year.
+          cacheControl: '31536000',
           upsert: false,
+          contentType: resized.type,
         })
 
       if (uploadError) {

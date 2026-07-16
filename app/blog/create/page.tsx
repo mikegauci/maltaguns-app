@@ -24,6 +24,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { resizeImageForUpload } from '@/lib/image-resize'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import {
@@ -76,15 +77,19 @@ type BlogPostForm = z.infer<typeof blogPostSchema>
 
 // Add this function to handle content image uploads
 async function uploadContentImage(file: File, supabase: any, userId: string) {
-  const fileExt = file.name.split('.').pop()
+  // Downscale + re-encode to WebP before upload to cut Storage egress.
+  const resized = await resizeImageForUpload(file)
+  const fileExt = resized.name.split('.').pop()
   const fileName = `${userId}-content-${Date.now()}-${Math.random()}.${fileExt}`
   const filePath = `blog/content/${fileName}`
 
   const { error: uploadError } = await supabase.storage
     .from('blog')
-    .upload(filePath, file, {
-      cacheControl: '3600',
+    .upload(filePath, resized, {
+      // Unique filename per upload (never overwritten) - cache for 1 year.
+      cacheControl: '31536000',
       upsert: false,
+      contentType: resized.type,
     })
 
   if (uploadError) {
@@ -510,15 +515,19 @@ export default function CreateBlogPost() {
         throw new Error('Not authenticated')
       }
 
-      const fileExt = file.name.split('.').pop()
+      // Downscale + re-encode to WebP before upload to cut Storage egress.
+      const resized = await resizeImageForUpload(file)
+      const fileExt = resized.name.split('.').pop()
       const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
       const filePath = `blog/${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from('blog')
-        .upload(filePath, file, {
-          cacheControl: '3600',
+        .upload(filePath, resized, {
+          // Unique filename per upload (never overwritten) - cache for 1 year.
+          cacheControl: '31536000',
           upsert: false,
+          contentType: resized.type,
         })
 
       if (uploadError) {

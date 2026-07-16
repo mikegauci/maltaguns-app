@@ -91,6 +91,21 @@ export function useProfileData({
           await supabase.from('profiles').update(updates).eq('id', userId)
         }
 
+        // The licenses bucket is private - swap the stored identifiers for
+        // short-lived signed URLs so the previews in SellerStatus render.
+        if (profileData.license_image || profileData.id_card_image) {
+          try {
+            const res = await fetch('/api/profile/document-urls')
+            if (res.ok) {
+              const { licenseUrl, idCardUrl } = await res.json()
+              if (profileData.license_image) profileData.license_image = licenseUrl
+              if (profileData.id_card_image) profileData.id_card_image = idCardUrl
+            }
+          } catch (err) {
+            console.error('Failed to resolve signed document URLs:', err)
+          }
+        }
+
         setProfile(profileData)
         form.reset({
           first_name: profileData.first_name || '',

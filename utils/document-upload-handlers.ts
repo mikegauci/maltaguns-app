@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { verifyLicenseImage, verifyIdCardImage } from './document-verification'
 import { LicenseTypes } from '@/lib/license-utils'
+import { resizeImageForUpload } from '@/lib/image-resize'
 import React from 'react'
 
 /**
@@ -194,16 +195,22 @@ export async function uploadAndVerifyLicense(
 
     setProgress?.(80)
 
+    // Downscale + re-encode to WebP before upload to cut Storage egress.
+    // Runs after OCR so verification accuracy is unaffected.
+    const resized = await resizeImageForUpload(convertedFile)
+
     // Upload to Supabase Storage
-    const fileExt = convertedFile.name.split('.').pop()
+    const fileExt = resized.name.split('.').pop()
     const fileName = `license-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
     const filePath = `licenses/${fileName}`
 
     const { error: uploadError } = await supabase.storage
       .from('licenses')
-      .upload(filePath, convertedFile, {
-        cacheControl: '3600',
+      .upload(filePath, resized, {
+        // Unique filename per upload (never overwritten) - cache for 1 year.
+        cacheControl: '31536000',
         upsert: false,
+        contentType: resized.type,
       })
 
     if (uploadError) throw uploadError
@@ -384,16 +391,22 @@ export async function uploadAndVerifyIdCard(
 
     setProgress?.(80)
 
+    // Downscale + re-encode to WebP before upload to cut Storage egress.
+    // Runs after OCR so verification accuracy is unaffected.
+    const resized = await resizeImageForUpload(convertedFile)
+
     // Upload to Supabase Storage (regardless of verification status)
-    const fileExt = convertedFile.name.split('.').pop()
+    const fileExt = resized.name.split('.').pop()
     const fileName = `id-card-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
     const filePath = `id-cards/${fileName}`
 
     const { error: uploadError } = await supabase.storage
       .from('licenses')
-      .upload(filePath, convertedFile, {
-        cacheControl: '3600',
+      .upload(filePath, resized, {
+        // Unique filename per upload (never overwritten) - cache for 1 year.
+        cacheControl: '31536000',
         upsert: false,
+        contentType: resized.type,
       })
 
     if (uploadError) throw uploadError

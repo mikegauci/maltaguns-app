@@ -23,6 +23,23 @@ interface HandlerDependencies {
   setIdCardUploadProgress?: (progress: number) => void // eslint-disable-line unused-imports/no-unused-vars
 }
 
+// Helper: The licenses bucket is private, so the raw stored URL from an
+// upload can't be rendered directly - fetch a freshly signed one instead.
+async function resolveSignedUrl(
+  kind: 'license' | 'idCard',
+  fallbackUrl: string
+): Promise<string> {
+  try {
+    const res = await fetch('/api/profile/document-urls')
+    if (!res.ok) return fallbackUrl
+    const { licenseUrl, idCardUrl } = await res.json()
+    const signedUrl = kind === 'license' ? licenseUrl : idCardUrl
+    return signedUrl || fallbackUrl
+  } catch {
+    return fallbackUrl
+  }
+}
+
 // Helper: Convert data URL to File
 export async function urlToFile(
   url: string,
@@ -81,11 +98,15 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
         if (updateError) throw updateError
 
+        // The licenses bucket is private - resolve a signed URL for the
+        // freshly uploaded file so the preview renders immediately.
+        const signedLicenseUrl = await resolveSignedUrl('license', result.publicUrl)
+
         setProfile(prev =>
           prev
             ? {
                 ...prev,
-                license_image: result.publicUrl || null,
+                license_image: signedLicenseUrl,
                 is_seller: true,
                 is_verified: result.isVerified,
                 license_types: result.licenseTypes as any,
@@ -139,11 +160,15 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
         if (updateError) throw updateError
 
+        // The licenses bucket is private - resolve a signed URL for the
+        // freshly uploaded file so the preview renders immediately.
+        const signedIdCardUrl = await resolveSignedUrl('idCard', result.publicUrl)
+
         setProfile(prev =>
           prev
             ? {
                 ...prev,
-                id_card_image: result.publicUrl || null,
+                id_card_image: signedIdCardUrl,
                 id_card_verified: result.isVerified,
               }
             : null

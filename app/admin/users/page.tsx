@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { resizeImageForUpload } from '@/lib/image-resize'
 import dynamic from 'next/dynamic'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
@@ -606,15 +607,20 @@ function UsersPageComponent() {
     try {
       setIsUploadingLicense(true)
 
-      const fileExt = file.name.split('.').pop()
+      // Downscale + re-encode to WebP before upload to cut Storage egress.
+      const resized = await resizeImageForUpload(file)
+
+      const fileExt = resized.name.split('.').pop()
       const fileName = `license-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `licenses/${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from('licenses')
-        .upload(filePath, file, {
-          cacheControl: '3600',
+        .upload(filePath, resized, {
+          // Unique filename per upload (never overwritten) - cache for 1 year.
+          cacheControl: '31536000',
           upsert: false,
+          contentType: resized.type,
         })
 
       if (uploadError) throw uploadError
@@ -634,9 +640,10 @@ function UsersPageComponent() {
         throw new Error(result.error || 'Failed to save license image')
       }
 
+      // Bucket is private - use the signed URL the server handed back.
       setFormData({
         ...formData,
-        license_image: publicUrl,
+        license_image: result.signedUrl || publicUrl,
         is_seller: true,
       })
 
@@ -671,15 +678,20 @@ function UsersPageComponent() {
     try {
       setIsUploadingIdCard(true)
 
-      const fileExt = file.name.split('.').pop()
+      // Downscale + re-encode to WebP before upload to cut Storage egress.
+      const resized = await resizeImageForUpload(file)
+
+      const fileExt = resized.name.split('.').pop()
       const fileName = `id-card-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
       const filePath = `id-cards/${fileName}`
 
       const { error: uploadError } = await supabase.storage
         .from('licenses')
-        .upload(filePath, file, {
-          cacheControl: '3600',
+        .upload(filePath, resized, {
+          // Unique filename per upload (never overwritten) - cache for 1 year.
+          cacheControl: '31536000',
           upsert: false,
+          contentType: resized.type,
         })
 
       if (uploadError) throw uploadError
@@ -699,9 +711,10 @@ function UsersPageComponent() {
         throw new Error(result.error || 'Failed to save ID card image')
       }
 
+      // Bucket is private - use the signed URL the server handed back.
       setFormData({
         ...formData,
-        id_card_image: publicUrl,
+        id_card_image: result.signedUrl || publicUrl,
       })
 
       toast({

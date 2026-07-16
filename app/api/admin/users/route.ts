@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { signLicenseUrl } from '@/lib/storage-signed-url'
 
 export const dynamic = 'force-dynamic'
 
@@ -126,10 +127,24 @@ export async function GET() {
       userCredits.set(credit.user_id, credit.amount)
     })
 
+    // The licenses bucket is private - resolve short-lived signed URLs so
+    // the admin table can still preview/link to license & ID card images.
+    const signedUrls = await Promise.all(
+      data.map(user =>
+        Promise.all([
+          signLicenseUrl(user.license_image),
+          signLicenseUrl(user.id_card_image),
+        ])
+      )
+    )
+
     // Add establishment data and credit info to users
-    const usersWithData = data.map(user => {
+    const usersWithData = data.map((user, index) => {
+      const [licenseUrl, idCardUrl] = signedUrls[index]
       return {
         ...user,
+        license_image: licenseUrl,
+        id_card_image: idCardUrl,
         establishments: userEstablishments.get(user.id) || [],
         purchasedBefore: userCredits.has(user.id),
         creditAmount: userCredits.get(user.id) || 0,

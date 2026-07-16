@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { resizeImageForUpload } from '@/lib/image-resize'
 import { Calendar as CalendarIcon, Clock, Trash2 } from 'lucide-react'
 import { Database } from '@/lib/database.types'
 import { BackButton } from '@/components/ui/back-button'
@@ -303,15 +304,19 @@ export default function EditEvent({ params }: { params: { slug: string } }) {
       // 1. Upload new poster if provided
       if (newPoster) {
         setUploadProgress(10)
-        const fileExt = newPoster.name.split('.').pop()
+        // Downscale + re-encode to WebP before upload to cut Storage egress.
+        const resizedPoster = await resizeImageForUpload(newPoster)
+        const fileExt = resizedPoster.name.split('.').pop()
         const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `events/${eventId}/${fileName}`
 
         const { error: uploadError } = await supabase.storage
           .from('events')
-          .upload(filePath, newPoster, {
-            cacheControl: '3600',
+          .upload(filePath, resizedPoster, {
+            // Unique filename per upload (never overwritten) - cache 1 year.
+            cacheControl: '31536000',
             upsert: false,
+            contentType: resizedPoster.type,
           })
 
         if (uploadError) {

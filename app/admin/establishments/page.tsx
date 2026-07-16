@@ -17,6 +17,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { resizeImageForUpload } from '@/lib/image-resize'
 import dynamic from 'next/dynamic'
 import { Store, Building, Wrench, Target, Upload, X } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -374,16 +375,21 @@ function EstablishmentsPageComponent() {
       // Use retailers bucket as seen in existing data
       const bucketName = 'retailers'
 
+      // Downscale + re-encode to WebP before upload to cut Storage egress.
+      const resized = await resizeImageForUpload(file)
+
       // Create unique filename following existing pattern
-      const fileExt = file.name.split('.').pop()
+      const fileExt = resized.name.split('.').pop()
       const fileName = `${session.user.id}-${Date.now()}.${fileExt}`
       const filePath = `retailers/${fileName}` // Path structure matches existing data
 
       const { error: uploadError } = await supabase.storage
         .from(bucketName)
-        .upload(filePath, file, {
-          cacheControl: '3600',
+        .upload(filePath, resized, {
+          // Unique filename per upload (never overwritten) - cache for 1 year.
+          cacheControl: '31536000',
           upsert: false,
+          contentType: resized.type,
         })
 
       if (uploadError) throw uploadError

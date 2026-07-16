@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { signLicenseUrl } from '@/lib/storage-signed-url'
 
 // Admin sets or replaces a user's license image URL (no OCR verification).
 export async function PATCH(
@@ -71,7 +72,10 @@ export async function PATCH(
       )
     }
 
-    return NextResponse.json({ success: true })
+    // Bucket is private, so hand back a signed URL for immediate preview.
+    const signedUrl = await signLicenseUrl(imageUrl)
+
+    return NextResponse.json({ success: true, signedUrl })
   } catch (error) {
     console.error('Error updating license:', error)
     return NextResponse.json(
