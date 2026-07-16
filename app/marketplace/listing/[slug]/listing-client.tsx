@@ -29,6 +29,7 @@ import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
+import { ImageLightbox } from '@/components/marketplace/ImageLightbox'
 import {
   canViewSellerInfo,
   getRequiredLicenses,
@@ -166,6 +167,7 @@ export default function ListingClient({
   const router = useRouter()
   const { supabase, session } = useSupabase()
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
   const [isFeatured, setIsFeatured] = useState(false)
   const [showFeatureDialog, setShowFeatureDialog] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
@@ -643,7 +645,7 @@ export default function ListingClient({
                 )}
             </>
           ) : (
-            <div className="relative min-h-[300px]">
+            <div className="relative min-h-[300px] md:min-h-[400px]">
               <div className="blur-sm" aria-hidden="true">
                 <div className="flex items-center gap-2 mt-2">
                   <Mail className="h-4 w-4 text-muted-foreground" />
@@ -919,7 +921,10 @@ export default function ListingClient({
           {/* Images Section */}
           <Card>
             <CardContent className="p-2">
-              <div className="relative h-[500px] flex items-center justify-center">
+              <div
+                className="relative h-[500px] flex items-center justify-center cursor-zoom-in"
+                onClick={() => setLightboxOpen(true)}
+              >
                 <StorageImage
                   src={images[currentImageIndex]}
                   alt={listing.title}
@@ -941,7 +946,10 @@ export default function ListingClient({
                       variant="ghost"
                       size="icon"
                       className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90"
-                      onClick={prevImage}
+                      onClick={e => {
+                        e.stopPropagation()
+                        prevImage()
+                      }}
                     >
                       <ChevronLeft className="h-6 w-6" />
                     </Button>
@@ -949,7 +957,10 @@ export default function ListingClient({
                       variant="ghost"
                       size="icon"
                       className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background/90"
-                      onClick={nextImage}
+                      onClick={e => {
+                        e.stopPropagation()
+                        nextImage()
+                      }}
                     >
                       <ChevronRight className="h-6 w-6" />
                     </Button>
@@ -958,6 +969,15 @@ export default function ListingClient({
               </div>
             </CardContent>
           </Card>
+
+          <ImageLightbox
+            open={lightboxOpen}
+            onOpenChange={setLightboxOpen}
+            images={images}
+            index={currentImageIndex}
+            onIndexChange={setCurrentImageIndex}
+            alt={listing.title}
+          />
 
           <div className="grid grid-cols-6 gap-4">
             {images.map((image, index) => (
