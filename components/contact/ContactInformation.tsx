@@ -13,7 +13,7 @@ export function ContactInformation() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Email</p>
-              <p className="font-medium">info@maltaguns.com</p>
+              <p className="font-medium">support@maltaguns.com</p>
             </div>
           </div>
 
