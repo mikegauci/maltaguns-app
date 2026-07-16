@@ -100,7 +100,10 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
         // The licenses bucket is private - resolve a signed URL for the
         // freshly uploaded file so the preview renders immediately.
-        const signedLicenseUrl = await resolveSignedUrl('license', result.publicUrl)
+        const signedLicenseUrl = await resolveSignedUrl(
+          'license',
+          result.publicUrl
+        )
 
         setProfile(prev =>
           prev
@@ -162,7 +165,10 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
         // The licenses bucket is private - resolve a signed URL for the
         // freshly uploaded file so the preview renders immediately.
-        const signedIdCardUrl = await resolveSignedUrl('idCard', result.publicUrl)
+        const signedIdCardUrl = await resolveSignedUrl(
+          'idCard',
+          result.publicUrl
+        )
 
         setProfile(prev =>
           prev

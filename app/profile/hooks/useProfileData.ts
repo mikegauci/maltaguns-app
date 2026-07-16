@@ -98,8 +98,10 @@ export function useProfileData({
             const res = await fetch('/api/profile/document-urls')
             if (res.ok) {
               const { licenseUrl, idCardUrl } = await res.json()
-              if (profileData.license_image) profileData.license_image = licenseUrl
-              if (profileData.id_card_image) profileData.id_card_image = idCardUrl
+              if (profileData.license_image)
+                profileData.license_image = licenseUrl
+              if (profileData.id_card_image)
+                profileData.id_card_image = idCardUrl
             }
           } catch (err) {
             console.error('Failed to resolve signed document URLs:', err)
