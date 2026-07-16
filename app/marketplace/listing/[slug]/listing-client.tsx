@@ -37,32 +37,10 @@ import {
 } from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
+import type { ListingDetails } from './types'
 
 // Default image to use when no images are provided
 const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
-
-interface ListingDetails {
-  id: string
-  title: string
-  description: string
-  price: number
-  category: string
-  subcategory?: string
-  calibre?: string
-  type: 'firearms' | 'non_firearms'
-  thumbnail: string
-  seller_id: string
-  created_at: string
-  editable_until: string | null
-  seller: {
-    username: string
-    email: string | null
-    phone: string | null
-    contact_preference?: 'email' | 'phone' | 'both'
-  } | null
-  images: string[]
-  status: string
-}
 
 function slugify(text: string) {
   return text
