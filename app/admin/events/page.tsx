@@ -44,6 +44,8 @@ interface Event {
   created_at: string
   updated_at: string
   slug: string
+  meta_title?: string | null
+  meta_description?: string | null
   creator?: {
     username: string
     email: string
@@ -80,6 +82,8 @@ function EventsPageComponent() {
     phone: '',
     email: '',
     price: '',
+    meta_title: '',
+    meta_description: '',
   })
   const supabase = createClientComponentClient()
 
@@ -271,6 +275,8 @@ function EventsPageComponent() {
       phone: event.phone,
       email: event.email,
       price: event.price || '',
+      meta_title: event.meta_title || '',
+      meta_description: event.meta_description || '',
     })
     setIsEditDialogOpen(true)
   }
@@ -306,8 +312,10 @@ function EventsPageComponent() {
           phone: formData.phone,
           email: formData.email,
           price: formData.price || null,
+          meta_title: formData.meta_title || null,
+          meta_description: formData.meta_description || null,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', selectedEvent.id)
 
       if (error) throw error
@@ -422,6 +430,35 @@ function EventsPageComponent() {
               }
               required
               rows={4}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-meta-title">Meta Title (optional)</Label>
+            <Input
+              id="edit-meta-title"
+              value={formData.meta_title}
+              onChange={e =>
+                setFormData({ ...formData, meta_title: e.target.value })
+              }
+              placeholder="Overrides the page title for search engines"
+              maxLength={70}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-meta-description">
+              Meta Description (optional)
+            </Label>
+            <Textarea
+              id="edit-meta-description"
+              value={formData.meta_description}
+              onChange={e =>
+                setFormData({ ...formData, meta_description: e.target.value })
+              }
+              placeholder="Overrides the meta description for search engines"
+              rows={2}
+              maxLength={200}
             />
           </div>
 

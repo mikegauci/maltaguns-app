@@ -176,6 +176,14 @@ export async function POST(req: NextRequest) {
       website: currentRecord.website,
       slug: currentRecord.slug,
       logo_url: logo_url !== undefined ? logo_url : currentRecord.logo_url,
+      meta_title:
+        otherFields.meta_title !== undefined
+          ? otherFields.meta_title
+          : currentRecord.meta_title,
+      meta_description:
+        otherFields.meta_description !== undefined
+          ? otherFields.meta_description
+          : currentRecord.meta_description,
       created_at: new Date().toISOString(),
     }
 

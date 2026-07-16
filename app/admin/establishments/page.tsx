@@ -38,6 +38,8 @@ interface Establishment {
   slug: string
   status: string
   logo_url: string | null
+  meta_title?: string | null
+  meta_description?: string | null
 }
 
 interface User {
@@ -87,6 +89,8 @@ function EstablishmentsPageComponent() {
     type: '',
     location: '',
     logo_url: '',
+    meta_title: '',
+    meta_description: '',
   })
   const [counts, setCounts] = useState({
     stores: 0,
@@ -454,6 +458,8 @@ function EstablishmentsPageComponent() {
       type: establishment.type,
       location: establishment.location,
       logo_url: establishment.logo_url || '',
+      meta_title: establishment.meta_title || '',
+      meta_description: establishment.meta_description || '',
     })
     setIsEditDialogOpen(true)
   }
@@ -527,6 +533,8 @@ function EstablishmentsPageComponent() {
           name: editFormData.name,
           location: editFormData.location,
           logo_url: editFormData.logo_url || null,
+          meta_title: editFormData.meta_title || null,
+          meta_description: editFormData.meta_description || null,
         }),
       })
 
@@ -938,6 +946,41 @@ function EstablishmentsPageComponent() {
                 setEditFormData({ ...editFormData, location: e.target.value })
               }
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-meta-title">Meta Title (optional)</Label>
+            <Input
+              id="edit-meta-title"
+              value={editFormData.meta_title}
+              onChange={e =>
+                setEditFormData({
+                  ...editFormData,
+                  meta_title: e.target.value,
+                })
+              }
+              placeholder="Overrides the page title for search engines"
+              maxLength={70}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-meta-description">
+              Meta Description (optional)
+            </Label>
+            <Textarea
+              id="edit-meta-description"
+              value={editFormData.meta_description}
+              onChange={e =>
+                setEditFormData({
+                  ...editFormData,
+                  meta_description: e.target.value,
+                })
+              }
+              placeholder="Overrides the meta description for search engines"
+              rows={2}
+              maxLength={200}
             />
           </div>
 

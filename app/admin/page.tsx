@@ -98,6 +98,12 @@ function AdminDashboardComponent() {
               href="/admin/notifications"
               icon="🔔"
             />
+            <AdminCard
+              title="SEO Settings"
+              description="Manage site meta title and description"
+              href="/admin/seo"
+              icon="🔍"
+            />
           </div>
         </TabsContent>
 

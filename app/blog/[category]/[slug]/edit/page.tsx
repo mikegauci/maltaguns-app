@@ -70,6 +70,8 @@ const formSchema = z.object({
   category: z.enum(['news', 'guides'], {
     required_error: 'Please select a category',
   }),
+  meta_title: z.string().optional(),
+  meta_description: z.string().optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -178,6 +180,8 @@ export default function EditBlogPost({
       featuredImage: '',
       published: false,
       category: 'news',
+      meta_title: '',
+      meta_description: '',
     },
   })
 
@@ -267,6 +271,8 @@ export default function EditBlogPost({
             featuredImage: post.featured_image || '',
             published: post.published,
             category: post.category || 'news',
+            meta_title: (post as any).meta_title || '',
+            meta_description: (post as any).meta_description || '',
           })
 
           if (editor) {
@@ -593,12 +599,14 @@ export default function EditBlogPost({
           published: data.published,
           category: data.category,
           slug: slug(data.title),
+          meta_title: data.meta_title || null,
+          meta_description: data.meta_description || null,
           // Preserve establishment IDs
           store_id: currentPost.store_id,
           servicing_id: currentPost.servicing_id,
           club_id: currentPost.club_id,
           range_id: currentPost.range_id,
-        })
+        } as any)
         .eq('id', postId)
 
       if (updateError) throw updateError
@@ -832,6 +840,42 @@ export default function EditBlogPost({
                         <SelectItem value="guides">Guides</SelectItem>
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="meta_title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Meta Title (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Overrides the page title for search engines"
+                        maxLength={70}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="meta_description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Meta Description (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Overrides the meta description for search engines"
+                        maxLength={200}
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

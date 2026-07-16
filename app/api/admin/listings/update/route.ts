@@ -17,6 +17,8 @@ type UpdateListingBody = {
   featured?: boolean
   editable_until?: string | null
   refresh_edit_window?: boolean
+  meta_title?: string | null
+  meta_description?: string | null
 }
 
 function parsePrice(price: string | number | undefined): number | undefined {
@@ -83,6 +85,10 @@ export async function POST(request: Request) {
       updatePayload.subcategory = body.subcategory || null
     if (body.calibre !== undefined) updatePayload.calibre = body.calibre || null
     if (body.status !== undefined) updatePayload.status = body.status
+    if (body.meta_title !== undefined)
+      updatePayload.meta_title = body.meta_title || null
+    if (body.meta_description !== undefined)
+      updatePayload.meta_description = body.meta_description || null
 
     const parsedPrice = parsePrice(body.price)
     if (body.price !== undefined && parsedPrice === undefined) {

@@ -21,4 +21,6 @@ export interface ListingDetails {
   seller: ListingSeller | null
   images: string[]
   status: string
+  meta_title?: string | null
+  meta_description?: string | null
 }

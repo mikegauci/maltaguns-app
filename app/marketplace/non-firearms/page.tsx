@@ -1,4 +1,10 @@
+import type { Metadata } from 'next'
 import CategoryListings from '@/components/marketplace/CategoryListings'
+import { getSectionMetadata } from '@/lib/seo'
+
+export async function generateMetadata(): Promise<Metadata> {
+  return getSectionMetadata('marketplace_non_firearms')
+}
 
 export default function NonFirearmsPage() {
   return (
