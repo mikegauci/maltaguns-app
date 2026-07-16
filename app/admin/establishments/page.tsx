@@ -565,15 +565,22 @@ function EstablishmentsPageComponent() {
     try {
       setIsSubmitting(true)
 
-      // Determine which table to delete from based on the type
-      const table = `${selectedEstablishment.type}s`
+      const response = await fetch('/api/admin/establishments/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: selectedEstablishment.id,
+          type: selectedEstablishment.type,
+        }),
+      })
 
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq('id', selectedEstablishment.id)
+      const result = await response.json()
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete establishment')
+      }
 
       toast({
         title: 'Success',
