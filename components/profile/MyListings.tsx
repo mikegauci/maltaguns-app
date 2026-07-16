@@ -420,7 +420,7 @@ export const MyListings = ({
                               </p>
                             </div>
 
-                            <div className="flex flex-col gap-2 sm:items-end">
+                            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -429,6 +429,15 @@ export const MyListings = ({
                               >
                                 <RefreshCw className="h-4 w-4 mr-2" />
                                 Relist for 30 days
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => confirmDeleteListing(listing.id)}
+                                className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 w-full sm:w-auto"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete
                               </Button>
                             </div>
                           </div>
