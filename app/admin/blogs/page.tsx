@@ -52,12 +52,16 @@ import {
   Wrench,
   ArrowUpDown,
   BarChart3,
+  FileText,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
+import { FormDialog } from '@/app/admin'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 
 // Remove hardcoded admin list - use database is_admin field instead
 
@@ -77,6 +81,8 @@ interface BlogPost {
   range_id?: string
   servicing_id?: string
   view_count?: number
+  meta_title?: string | null
+  meta_description?: string | null
   author?: {
     username: string
   }
@@ -101,6 +107,13 @@ export default function AdminBlogsPage() {
   const [establishmentFilter, setEstablishmentFilter] = useState('all')
   const [sortBy, setSortBy] = useState('created_at')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [isSeoDialogOpen, setIsSeoDialogOpen] = useState(false)
+  const [isSeoSubmitting, setIsSeoSubmitting] = useState(false)
+  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null)
+  const [seoFormData, setSeoFormData] = useState({
+    meta_title: '',
+    meta_description: '',
+  })
 
   // Check authorization
   useEffect(() => {
@@ -421,6 +434,60 @@ export default function AdminBlogsPage() {
     }
   }
 
+  function handleEditSeo(post: BlogPost) {
+    setSelectedPost(post)
+    setSeoFormData({
+      meta_title: post.meta_title || '',
+      meta_description: post.meta_description || '',
+    })
+    setIsSeoDialogOpen(true)
+  }
+
+  async function handleSeoSubmit() {
+    if (!selectedPost) return
+
+    try {
+      setIsSeoSubmitting(true)
+      const { error } = await supabase
+        .from('blog_posts')
+        .update({
+          meta_title: seoFormData.meta_title || null,
+          meta_description: seoFormData.meta_description || null,
+          updated_at: new Date().toISOString(),
+        } as any)
+        .eq('id', selectedPost.id)
+
+      if (error) throw error
+
+      setPosts(
+        posts.map(post =>
+          post.id === selectedPost.id
+            ? {
+                ...post,
+                meta_title: seoFormData.meta_title || null,
+                meta_description: seoFormData.meta_description || null,
+              }
+            : post
+        )
+      )
+
+      toast({
+        title: 'Success',
+        description: 'SEO settings updated successfully.',
+      })
+      setIsSeoDialogOpen(false)
+    } catch (error) {
+      console.error('Error updating SEO:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update SEO settings.',
+      })
+    } finally {
+      setIsSeoSubmitting(false)
+    }
+  }
+
   // Get establishment info
   function getEstablishmentInfo(post: BlogPost) {
     if (post.store_id && post.store?.[0]) {
@@ -680,6 +747,14 @@ export default function AdminBlogsPage() {
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="Edit SEO"
+                              onClick={() => handleEditSeo(post)}
+                            >
+                              <FileText className="h-4 w-4" />
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
@@ -728,6 +803,61 @@ export default function AdminBlogsPage() {
           )}
         </CardContent>
       </Card>
+
+      <FormDialog
+        title="Edit Blog SEO"
+        description={`Set meta title and description for "${selectedPost?.title || 'this post'}"`}
+        isOpen={isSeoDialogOpen}
+        onClose={() => setIsSeoDialogOpen(false)}
+        onSubmit={handleSeoSubmit}
+        isSubmitting={isSeoSubmitting}
+        submitLabel="Save SEO"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="blog-meta-title">Meta Title (optional)</Label>
+            <Input
+              id="blog-meta-title"
+              value={seoFormData.meta_title}
+              onChange={e =>
+                setSeoFormData(prev => ({
+                  ...prev,
+                  meta_title: e.target.value,
+                }))
+              }
+              placeholder="Overrides the page title for search engines"
+              maxLength={70}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank to use the post title. {seoFormData.meta_title.length}
+              /70
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="blog-meta-description">
+              Meta Description (optional)
+            </Label>
+            <Textarea
+              id="blog-meta-description"
+              value={seoFormData.meta_description}
+              onChange={e =>
+                setSeoFormData(prev => ({
+                  ...prev,
+                  meta_description: e.target.value,
+                }))
+              }
+              placeholder="Overrides the meta description for search engines"
+              rows={3}
+              maxLength={200}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank to use an excerpt of the post content.{' '}
+              {seoFormData.meta_description.length}/200
+            </p>
+          </div>
+        </div>
+      </FormDialog>
     </PageLayout>
   )
 }

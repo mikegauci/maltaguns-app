@@ -1,5 +1,6 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import type { Metadata } from 'next'
 import { Database } from '@/lib/database.types'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -7,11 +8,34 @@ import { Button } from '@/components/ui/button'
 import BlogPostCard from '@/components/blog/BlogPostCard'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import { getSectionMetadata } from '@/lib/seo'
+import type { SectionKey } from '@/lib/seo-defaults'
 
 // Force dynamic rendering for this page
 export const dynamic = 'force-dynamic'
 
-const validCategories = ['news', 'guides']
+const validCategories = ['news', 'guides'] as const
+
+const categoryToSection: Record<(typeof validCategories)[number], SectionKey> =
+  {
+    news: 'blog_news',
+    guides: 'blog_guides',
+  }
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { category: string }
+}): Promise<Metadata> {
+  const category = params.category.toLowerCase()
+  if (!validCategories.includes(category as (typeof validCategories)[number])) {
+    return { title: 'Blog | MaltaGuns' }
+  }
+
+  return getSectionMetadata(
+    categoryToSection[category as (typeof validCategories)[number]]
+  )
+}
 
 export default async function CategoryArchive({
   params,
@@ -21,7 +45,7 @@ export default async function CategoryArchive({
   const supabase = createServerComponentClient<Database>({ cookies })
   const category = params.category.toLowerCase()
 
-  if (!validCategories.includes(category)) {
+  if (!validCategories.includes(category as (typeof validCategories)[number])) {
     return notFound()
   }
 

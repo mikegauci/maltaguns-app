@@ -1,6 +1,7 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 import { Database } from '@/lib/database.types'
 import Link from 'next/link'
 import { Store, Users, MapPin, Wrench } from 'lucide-react'
@@ -9,6 +10,7 @@ import ViewTracker from '@/components/blog/ViewTracker'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
+import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
 
 interface BlogPostType {
   id: string
@@ -23,6 +25,8 @@ interface BlogPostType {
   servicing_id?: string
   published: boolean
   created_at: string
+  meta_title?: string | null
+  meta_description?: string | null
   author: {
     username: string
   }
@@ -41,6 +45,41 @@ interface BlogPostType {
 // Force dynamic rendering (disable static export)
 export const dynamic = 'force-dynamic'
 export const dynamicParams = true
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { category: string; slug: string }
+}): Promise<Metadata> {
+  const cookieStore = cookies()
+  const supabase = createServerComponentClient<Database>({
+    cookies: () => cookieStore,
+  })
+
+  const { data: post } = await supabase
+    .from('blog_posts')
+    .select('title, content, featured_image, meta_title, meta_description')
+    .eq('slug', params.slug)
+    .eq('category', params.category)
+    .eq('published', true)
+    .single()
+
+  if (!post) {
+    return { title: 'Post Not Found | MaltaGuns' }
+  }
+
+  const siteSettings = await getSiteSettings()
+  return buildMetadata({
+    title: (post as any).meta_title || `${post.title} | MaltaGuns`,
+    description:
+      (post as any).meta_description ||
+      truncateDescription(post.content) ||
+      undefined,
+    image: post.featured_image || undefined,
+    path: `/blog/${params.category}/${params.slug}`,
+    siteSettings,
+  })
+}
 
 export default async function BlogPost({
   params,
@@ -68,6 +107,8 @@ export default async function BlogPost({
       club_id,
       range_id,
       servicing_id,
+      meta_title,
+      meta_description,
       author:profiles(username),
       retailer:stores(id, business_name, slug, logo_url),
       store:stores(id, business_name, slug),
@@ -234,6 +275,8 @@ export default async function BlogPost({
     club_id: post.club_id,
     range_id: post.range_id,
     servicing_id: post.servicing_id,
+    meta_title: (post as any).meta_title,
+    meta_description: (post as any).meta_description,
     author: {
       username: authorUsername,
     },

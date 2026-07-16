@@ -50,6 +50,8 @@ interface Listing {
   editable_until: string | null
   relisted_at: string | null
   featured: boolean
+  meta_title?: string | null
+  meta_description?: string | null
   seller?: {
     username: string
     email: string
@@ -87,6 +89,8 @@ function ListingsPageComponent() {
     status: 'active',
     featured: false,
     expires_at: null as Date | null,
+    meta_title: '',
+    meta_description: '',
   })
 
   // Helper function to create URL-friendly slugs from titles
@@ -331,6 +335,8 @@ function ListingsPageComponent() {
       status: listing.status,
       featured: listing.featured || false,
       expires_at: listing.expires_at ? parseISO(listing.expires_at) : null,
+      meta_title: listing.meta_title || '',
+      meta_description: listing.meta_description || '',
     })
     setIsEditDialogOpen(true)
   }
@@ -366,6 +372,8 @@ function ListingsPageComponent() {
             ? formData.expires_at.toISOString()
             : undefined,
           featured: formData.featured,
+          meta_title: formData.meta_title || null,
+          meta_description: formData.meta_description || null,
         }),
       })
 
@@ -521,6 +529,46 @@ function ListingsPageComponent() {
               required
               rows={4}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-meta-title">Meta Title (optional)</Label>
+            <Input
+              id="edit-meta-title"
+              value={formData.meta_title}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, meta_title: e.target.value }))
+              }
+              placeholder="Overrides the page title for search engines"
+              maxLength={70}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank to use the listing title. {formData.meta_title.length}
+              /70
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-meta-description">
+              Meta Description (optional)
+            </Label>
+            <Textarea
+              id="edit-meta-description"
+              value={formData.meta_description}
+              onChange={e =>
+                setFormData(prev => ({
+                  ...prev,
+                  meta_description: e.target.value,
+                }))
+              }
+              placeholder="Overrides the meta description for search engines"
+              rows={2}
+              maxLength={200}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank to use the listing description.{' '}
+              {formData.meta_description.length}/200
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

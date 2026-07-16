@@ -1,11 +1,10 @@
-import { Metadata } from 'next'
+import type { Metadata } from 'next'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import { getSectionMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: 'Terms and Conditions | MaltaGuns',
-  description:
-    'Terms and Conditions for MaltaGuns - Your trusted source for firearms information, marketplace listings, and community events in Malta.',
+export async function generateMetadata(): Promise<Metadata> {
+  return getSectionMetadata('terms')
 }
 
 export default function TermsAndConditions() {

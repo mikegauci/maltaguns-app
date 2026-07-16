@@ -137,6 +137,8 @@ export async function GET() {
           slug: store.slug,
           status: store.status || 'active',
           logo_url: store.logo_url,
+          meta_title: store.meta_title || null,
+          meta_description: store.meta_description || null,
         }
       }) || []
 
@@ -157,6 +159,8 @@ export async function GET() {
           slug: club.slug,
           status: club.status || 'active',
           logo_url: club.logo_url,
+          meta_title: club.meta_title || null,
+          meta_description: club.meta_description || null,
         }
       }) || []
 
@@ -177,6 +181,8 @@ export async function GET() {
           slug: service.slug,
           status: service.status || 'active',
           logo_url: service.logo_url,
+          meta_title: service.meta_title || null,
+          meta_description: service.meta_description || null,
         }
       }) || []
 
@@ -197,6 +203,8 @@ export async function GET() {
           slug: range.slug,
           status: range.status || 'active',
           logo_url: range.logo_url,
+          meta_title: range.meta_title || null,
+          meta_description: range.meta_description || null,
         }
       }) || []
 

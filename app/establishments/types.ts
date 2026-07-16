@@ -15,6 +15,8 @@ export interface BaseEstablishment {
   website: string | null
   owner_id: string
   slug: string
+  meta_title?: string | null
+  meta_description?: string | null
 }
 
 export interface Listing {
