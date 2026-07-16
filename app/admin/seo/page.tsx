@@ -221,7 +221,7 @@ function SeoPageComponent() {
     updatePageField(key, field, '')
   }
 
-  function useDefault(key: SectionKey, field: 'title' | 'description') {
+  function applyDefault(key: SectionKey, field: 'title' | 'description') {
     const defaults = SECTION_SEO_DEFAULTS[key]
     updatePageField(
       key,
@@ -513,7 +513,7 @@ function SeoPageComponent() {
                                       type="button"
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => useDefault(key, 'title')}
+                                      onClick={() => applyDefault(key, 'title')}
                                     >
                                       Use default
                                     </Button>
@@ -561,7 +561,7 @@ function SeoPageComponent() {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() =>
-                                        useDefault(key, 'description')
+                                        applyDefault(key, 'description')
                                       }
                                     >
                                       Use default
