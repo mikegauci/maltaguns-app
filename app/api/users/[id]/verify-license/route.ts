@@ -1,7 +1,11 @@
-import { NextResponse } from 'next/server'
+import {
+  createAllLicenseTypes,
+  createEmptyLicenseTypes,
+} from '@/lib/license-utils'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 export async function PATCH(
   request: Request,
@@ -49,12 +53,20 @@ export async function PATCH(
       process.env.SUPABASE_SERVICE_ROLE_KEY || ''
     )
 
-    // Update the user's verification status
+    // Update the user's verification status and license types
+    const updatePayload = verified
+      ? {
+          is_verified: true,
+          license_types: createAllLicenseTypes(),
+        }
+      : {
+          is_verified: false,
+          license_types: createEmptyLicenseTypes(),
+        }
+
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
-      .update({
-        is_verified: verified,
-      })
+      .update(updatePayload)
       .eq('id', userId)
 
     if (updateError) {

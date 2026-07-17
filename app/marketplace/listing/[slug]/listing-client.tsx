@@ -33,6 +33,7 @@ import { ImageLightbox } from '@/components/marketplace/ImageLightbox'
 import {
   canViewSellerInfo,
   getRequiredLicenses,
+  isFullyVerified,
   LicenseTypes,
 } from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -320,7 +321,10 @@ export default function ListingClient({
         // Check if user has required license AND verified ID card AND an
         // admin-approved license for this listing category
         const categoryLabel = getCategoryLabel(listing.category, listing.type)
-        const hasLicenseAccess = canViewSellerInfo(licenses, categoryLabel)
+        const fullyVerified = isFullyVerified(isLicenseVerified, idCardVerified)
+        const hasLicenseAccess = canViewSellerInfo(licenses, categoryLabel, {
+          isFullyVerified: fullyVerified,
+        })
         const hasAccess =
           hasLicenseAccess && idCardVerified && isLicenseVerified
 
@@ -687,7 +691,13 @@ export default function ListingClient({
       const requiredLicenses = getRequiredLicenses(categoryLabel)
       const hasLicenseAccess = canViewSellerInfo(
         userLicenseTypes,
-        categoryLabel
+        categoryLabel,
+        {
+          isFullyVerified: isFullyVerified(
+            userLicenseVerified,
+            userIdCardVerified
+          ),
+        }
       )
 
       // Case 1: User has the license but ID card not verified

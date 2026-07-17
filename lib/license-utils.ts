@@ -12,6 +12,70 @@ export interface LicenseTypes {
   collectorsASpecial: boolean
 }
 
+export const LICENSE_TYPE_KEYS: (keyof LicenseTypes)[] = [
+  'tslA',
+  'tslASpecial',
+  'tslB',
+  'hunting',
+  'collectorsA',
+  'collectorsASpecial',
+]
+
+export function createEmptyLicenseTypes(): LicenseTypes {
+  return {
+    tslA: false,
+    tslASpecial: false,
+    tslB: false,
+    hunting: false,
+    collectorsA: false,
+    collectorsASpecial: false,
+  }
+}
+
+export function createAllLicenseTypes(): LicenseTypes {
+  return {
+    tslA: true,
+    tslASpecial: true,
+    tslB: true,
+    hunting: true,
+    collectorsA: true,
+    collectorsASpecial: true,
+  }
+}
+
+export function parseLicenseTypes(value: unknown): LicenseTypes {
+  const empty = createEmptyLicenseTypes()
+  if (!value || typeof value !== 'object') return empty
+
+  for (const key of LICENSE_TYPE_KEYS) {
+    const typedValue = value as Record<string, unknown>
+    if (typeof typedValue[key] === 'boolean') {
+      empty[key] = typedValue[key] as boolean
+    }
+  }
+
+  return empty
+}
+
+export function hasAllLicenseTypes(licenseTypes: LicenseTypes): boolean {
+  return LICENSE_TYPE_KEYS.every(key => licenseTypes[key])
+}
+
+export function hasAnyLicenseType(licenseTypes: LicenseTypes): boolean {
+  return LICENSE_TYPE_KEYS.some(key => licenseTypes[key])
+}
+
+export function getAllCategories(): string[] {
+  return Object.values(FIREARM_CATEGORIES).sort()
+}
+
+export function isFullyVerified(
+  isVerified: boolean,
+  idCardVerified: boolean
+): boolean {
+  return isVerified && idCardVerified
+}
+
 // Firearm categories - must match the display labels from getCategoryLabel
 export const FIREARM_CATEGORIES = {
   PISTOLS: 'Pistols',
@@ -80,8 +144,13 @@ const LICENSE_CATEGORY_MAP: Record<keyof LicenseTypes, string[]> = {
  * @returns Array of allowed category names
  */
 export function getAllowedCategories(
-  licenseTypes: LicenseTypes | null
+  licenseTypes: LicenseTypes | null,
+  options?: { isFullyVerified?: boolean }
 ): string[] {
+  if (options?.isFullyVerified) {
+    return getAllCategories()
+  }
+
   if (!licenseTypes) {
     // Users without licenses can only post replicas/deactivated
     return [FIREARM_CATEGORIES.REPLICA]
@@ -116,8 +185,13 @@ export function getAllowedCategories(
  */
 export function canViewSellerInfo(
   userLicenseTypes: LicenseTypes | null,
-  listingCategory: string
+  listingCategory: string,
+  options?: { isFullyVerified?: boolean }
 ): boolean {
+  if (options?.isFullyVerified) {
+    return true
+  }
+
   // Replica/deactivated firearms can be viewed by anyone with any license
   if (listingCategory === FIREARM_CATEGORIES.REPLICA) {
     if (!userLicenseTypes) return false
@@ -127,7 +201,7 @@ export function canViewSellerInfo(
   // Check if user has the required license for this category
   if (!userLicenseTypes) return false
 
-  const allowedCategories = getAllowedCategories(userLicenseTypes)
+  const allowedCategories = getAllowedCategories(userLicenseTypes, options)
   return allowedCategories.includes(listingCategory)
 }
 

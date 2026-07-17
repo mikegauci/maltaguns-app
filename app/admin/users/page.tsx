@@ -17,6 +17,17 @@ import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
+import {
+  createAllLicenseTypes,
+  createEmptyLicenseTypes,
+  formatLicenseName,
+  getActiveLicenses,
+  LICENSE_TYPE_KEYS,
+  LicenseTypes,
+  parseLicenseTypes,
+  hasAllLicenseTypes,
+  hasAnyLicenseType,
+} from '@/lib/license-utils'
 
 interface Establishment {
   type: 'store' | 'club' | 'servicing' | 'range'
@@ -38,6 +49,7 @@ interface User {
   first_name: string | null
   last_name: string | null
   notes: string | null
+  license_types: LicenseTypes | null
   establishments: Establishment[]
   purchasedBefore: boolean
   creditAmount: number
@@ -109,6 +121,7 @@ function UsersPageComponent() {
     first_name: '' as string | null,
     last_name: '' as string | null,
     notes: '' as string | null,
+    license_types: createEmptyLicenseTypes(),
   })
   const supabase = createClientComponentClient()
 
@@ -287,9 +300,14 @@ function UsersPageComponent() {
       header: 'License',
       enableSorting: true,
       cell: ({ row }) => {
+        const user = row.original
         const licenseUrl = row.getValue('license_image') as string | null
+        const activeLicenses = getActiveLicenses(
+          parseLicenseTypes(user.license_types)
+        )
+
         return (
-          <div className="flex items-center">
+          <div className="flex flex-col gap-1">
             {licenseUrl ? (
               <a
                 href={licenseUrl}
@@ -299,6 +317,8 @@ function UsersPageComponent() {
               >
                 View License
               </a>
+            ) : activeLicenses.length > 0 ? (
+              <span className="text-sm">{activeLicenses.join(', ')}</span>
             ) : (
               'No license'
             )}
@@ -395,30 +415,18 @@ function UsersPageComponent() {
                 onClick: () => handleToggleDisabled(user),
                 variant: user.is_disabled ? 'default' : 'destructive',
               },
-              ...(user.is_seller && user.license_image
-                ? [
-                    {
-                      label: user.is_verified
-                        ? 'Unverify License'
-                        : 'Verify License',
-                      onClick: () => handleToggleVerification(user),
-                      variant: user.is_verified ? 'destructive' : 'default',
-                    },
-                  ]
-                : []),
-              ...(user.is_seller && user.id_card_image
-                ? [
-                    {
-                      label: user.id_card_verified
-                        ? 'Unverify Identification'
-                        : 'Verify Identification',
-                      onClick: () => handleToggleIdCardVerification(user),
-                      variant: user.id_card_verified
-                        ? 'destructive'
-                        : 'default',
-                    },
-                  ]
-                : []),
+              {
+                label: user.is_verified ? 'Unverify License' : 'Verify License',
+                onClick: () => handleToggleVerification(user),
+                variant: user.is_verified ? 'destructive' : 'default',
+              },
+              {
+                label: user.id_card_verified
+                  ? 'Unverify Identification'
+                  : 'Verify Identification',
+                onClick: () => handleToggleIdCardVerification(user),
+                variant: user.id_card_verified ? 'destructive' : 'default',
+              },
             ]}
           />
         )
@@ -507,6 +515,7 @@ function UsersPageComponent() {
       first_name: '',
       last_name: '',
       notes: '',
+      license_types: createEmptyLicenseTypes(),
     })
     setIsCreateDialogOpen(true)
   }
@@ -527,6 +536,7 @@ function UsersPageComponent() {
       first_name: user.first_name,
       last_name: user.last_name,
       notes: user.notes,
+      license_types: parseLicenseTypes(user.license_types),
     })
     setIsEditDialogOpen(true)
   }
@@ -760,6 +770,7 @@ function UsersPageComponent() {
         ...formData,
         license_image: null,
         is_seller: false,
+        license_types: createEmptyLicenseTypes(),
       })
 
       toast({
@@ -829,16 +840,59 @@ function UsersPageComponent() {
     }
   }
 
+  function handleToggleAllLicenses(checked: boolean) {
+    setFormData({
+      ...formData,
+      license_types: checked
+        ? createAllLicenseTypes()
+        : createEmptyLicenseTypes(),
+    })
+  }
+
+  function handleToggleLicenseType(
+    licenseType: keyof LicenseTypes,
+    checked: boolean
+  ) {
+    setFormData({
+      ...formData,
+      license_types: {
+        ...formData.license_types,
+        [licenseType]: checked,
+      },
+    })
+  }
+
+  function handleVerifiedToggle(checked: boolean) {
+    if (checked) {
+      setFormData({
+        ...formData,
+        is_verified: true,
+        id_card_verified: true,
+        license_types: createAllLicenseTypes(),
+      })
+      return
+    }
+
+    setFormData({
+      ...formData,
+      is_verified: false,
+      id_card_verified: false,
+      license_types: createEmptyLicenseTypes(),
+    })
+  }
+
   async function handleEditSubmit() {
     if (!selectedUser) return
 
     try {
       setIsSubmitting(true)
 
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           username: formData.username,
           email: formData.email,
           first_name: formData.first_name,
@@ -847,23 +901,19 @@ function UsersPageComponent() {
           is_seller: formData.is_seller,
           is_verified: formData.is_verified,
           id_card_verified: formData.id_card_verified,
-          license_image: formData.license_image,
-          id_card_image: formData.id_card_image,
           is_disabled: formData.is_disabled,
           notes: formData.notes,
-        })
-        .eq('id', selectedUser.id)
+          license_types: hasAnyLicenseType(formData.license_types)
+            ? formData.license_types
+            : null,
+          ...(formData.password ? { password: formData.password } : {}),
+        }),
+      })
 
-      if (profileError) throw profileError
+      const result = await response.json()
 
-      // Update password if provided
-      if (formData.password) {
-        const { error: passwordError } =
-          await supabase.auth.admin.updateUserById(selectedUser.id, {
-            password: formData.password,
-          })
-
-        if (passwordError) throw passwordError
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update user')
       }
 
       toast({
@@ -1345,6 +1395,44 @@ function UsersPageComponent() {
                 </div>
               )}
             </div>
+            <div className="space-y-2 pt-2 border-t">
+              <Label>Eligible License Types</Label>
+              <p className="text-xs text-muted-foreground">
+                Select which license types this user is approved for. Use All
+                licenses to grant full firearms access.
+              </p>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit-all-licenses"
+                  checked={hasAllLicenseTypes(formData.license_types)}
+                  onCheckedChange={checked =>
+                    handleToggleAllLicenses(checked === true)
+                  }
+                />
+                <Label htmlFor="edit-all-licenses" className="font-medium">
+                  All licenses
+                </Label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {LICENSE_TYPE_KEYS.map(licenseType => (
+                  <div
+                    key={licenseType}
+                    className="flex items-center space-x-2"
+                  >
+                    <Checkbox
+                      id={`edit-license-${licenseType}`}
+                      checked={formData.license_types[licenseType]}
+                      onCheckedChange={checked =>
+                        handleToggleLicenseType(licenseType, checked === true)
+                      }
+                    />
+                    <Label htmlFor={`edit-license-${licenseType}`}>
+                      {formatLicenseName(licenseType)}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Identification Image</Label>
@@ -1443,13 +1531,7 @@ function UsersPageComponent() {
               <Switch
                 id="edit-is_verified"
                 checked={formData.is_verified && formData.id_card_verified}
-                onCheckedChange={checked =>
-                  setFormData({
-                    ...formData,
-                    is_verified: checked,
-                    id_card_verified: checked,
-                  })
-                }
+                onCheckedChange={handleVerifiedToggle}
               />
               <Label htmlFor="edit-is_verified">Verified</Label>
             </div>

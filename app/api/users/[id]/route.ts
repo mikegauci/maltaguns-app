@@ -3,57 +3,80 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
+const PROFILE_FIELDS = [
+  'username',
+  'email',
+  'first_name',
+  'last_name',
+  'is_admin',
+  'is_seller',
+  'is_verified',
+  'id_card_verified',
+  'is_disabled',
+  'notes',
+  'license_types',
+] as const
+
+async function requireAdmin() {
+  const supabase = createRouteHandlerClient({ cookies })
+
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession()
+
+  if (sessionError || !session) {
+    return {
+      error: NextResponse.json(
+        { error: 'Unauthorized - No valid session' },
+        { status: 401 }
+      ),
+    }
+  }
+
+  const { data: currentUserProfile, error: profileError } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', session.user.id)
+    .single()
+
+  if (profileError || !currentUserProfile) {
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to verify admin status' },
+        { status: 401 }
+      ),
+    }
+  }
+
+  if (!currentUserProfile.is_admin) {
+    return {
+      error: NextResponse.json(
+        { error: 'Unauthorized - Admin privileges required' },
+        { status: 403 }
+      ),
+    }
+  }
+
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  )
+
+  return { supabaseAdmin }
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createRouteHandlerClient({ cookies })
-
   try {
-    // Get the request body
-    const { notes } = await request.json()
+    const auth = await requireAdmin()
+    if ('error' in auth && auth.error) return auth.error
 
-    // First check if the current user is an admin
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+    const { supabaseAdmin } = auth
+    const body = await request.json()
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No valid session' },
-        { status: 401 }
-      )
-    }
-
-    // Get the current user's profile to check admin status
-    const { data: currentUserProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profileError || !currentUserProfile) {
-      return NextResponse.json(
-        { error: 'Failed to verify admin status' },
-        { status: 401 }
-      )
-    }
-
-    if (!currentUserProfile.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
-
-    // Create admin client to bypass RLS
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    )
-
-    // Check if user exists before trying to update
     const { data: userProfile, error: userProfileError } = await supabaseAdmin
       .from('profiles')
       .select('id')
@@ -75,26 +98,71 @@ export async function PATCH(
       )
     }
 
-    // Update the user's notes with admin client
-    const { error: updateError } = await supabaseAdmin
-      .from('profiles')
-      .update({ notes })
-      .eq('id', params.id)
+    const updateData: Record<string, unknown> = {}
+    for (const field of PROFILE_FIELDS) {
+      if (field in body) {
+        updateData[field] = body[field]
+      }
+    }
 
-    if (updateError) {
-      console.error('Error updating user notes:', updateError)
+    if (Object.keys(updateData).length === 0 && !body.password) {
       return NextResponse.json(
-        { error: `Failed to update user notes: ${updateError.message}` },
+        { error: 'No valid fields provided for update' },
         { status: 400 }
       )
     }
 
+    if (Object.keys(updateData).length > 0) {
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update(updateData)
+        .eq('id', params.id)
+
+      if (updateError) {
+        console.error('Error updating user profile:', updateError)
+        return NextResponse.json(
+          { error: `Failed to update user profile: ${updateError.message}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    if (body.password) {
+      const { error: passwordError } =
+        await supabaseAdmin.auth.admin.updateUserById(params.id, {
+          password: body.password,
+        })
+
+      if (passwordError) {
+        console.error('Error updating user password:', passwordError)
+        return NextResponse.json(
+          { error: `Failed to update password: ${passwordError.message}` },
+          { status: 400 }
+        )
+      }
+    }
+
+    if (body.email) {
+      const { error: emailError } =
+        await supabaseAdmin.auth.admin.updateUserById(params.id, {
+          email: body.email,
+        })
+
+      if (emailError) {
+        console.error('Error updating user email:', emailError)
+        return NextResponse.json(
+          { error: `Failed to update email: ${emailError.message}` },
+          { status: 400 }
+        )
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'Notes updated successfully',
+      message: 'User updated successfully',
     })
   } catch (error) {
-    console.error('Error in notes update operation:', error)
+    console.error('Error in user update operation:', error)
     return NextResponse.json(
       {
         error:
