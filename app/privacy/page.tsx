@@ -155,12 +155,27 @@ export default function PrivacyPolicy() {
         <h2 className="text-xl font-semibold mt-8 mb-4">
           6. Cookies and Tracking
         </h2>
-        <p>We use cookies to:</p>
+        <p>We use cookies and similar technologies to:</p>
         <ul className="list-disc pl-6 space-y-1">
-          <li>Maintain session state</li>
-          <li>Analyse site traffic (via Google Analytics or similar tools)</li>
+          <li>
+            Maintain session state and provide essential Platform features
+            (authentication and checkout)
+          </li>
+          <li>
+            Analyse site traffic with Google Analytics 4, only when you give
+            consent
+          </li>
         </ul>
-        <p>You can manage your cookie preferences in your browser settings.</p>
+        <p>
+          Essential cookies are required for the Platform to function. Analytics
+          cookies are optional and are not set until you opt in. You can accept
+          or reject non-essential cookies, and change your preferences at any
+          time via our{' '}
+          <a href="/cookie-policy" className="underline">
+            Cookie Policy
+          </a>{' '}
+          and Cookie settings in the site footer.
+        </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
           7. Changes to This Policy
@@ -173,7 +188,7 @@ export default function PrivacyPolicy() {
         <h2 className="text-xl font-semibold mt-8 mb-4">8. Contact Us</h2>
         <p>For data protection inquiries:</p>
         <ul className="pl-6 space-y-1">
-          <li>Email: info@strawberryorangedigital.com</li>
+          <li>Email: info@maltaguns.com</li>
           <li>
             Postal: Strawberry Orange Digital, Spyrou Kyprianou, 10, Office 22,
             Mesa Geitonia, 4001, Limassol, Cyprus

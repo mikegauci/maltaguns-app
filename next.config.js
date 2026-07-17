@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/cookies',
+        destination: '/cookie-policy',
+        permanent: true,
+      },
+    ]
+  },
   transpilePackages: ['jotai-devtools'],
   images: {
     remotePatterns: [

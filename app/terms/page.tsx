@@ -363,7 +363,7 @@ export default function TermsAndConditions() {
           <br />
           Limassol, Cyprus
           <br />
-          Email: info@strawberryorangedigital.com
+          Email: info@maltaguns.com
         </p>
       </div>
     </PageLayout>

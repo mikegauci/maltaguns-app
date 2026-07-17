@@ -3,9 +3,16 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Facebook, Mail } from 'lucide-react'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { useCookieConsent } from '@/components/providers/CookieConsentProvider'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
+  const { session } = useSupabase()
+  const { openPreferences } = useCookieConsent()
+
+  const linkClassName =
+    'text-sm text-muted-foreground hover:text-foreground transition-colors'
 
   return (
     <footer className="border-t bg-background">
@@ -31,91 +38,163 @@ export function Footer() {
             <h3 className="font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <Link
-                  href="/marketplace"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <Link href="/marketplace" className={linkClassName}>
                   Marketplace
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/establishments"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <Link href="/establishments" className={linkClassName}>
                   Establishments
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/events"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <Link href="/events" className={linkClassName}>
                   Events
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/blog"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <Link href="/blog" className={linkClassName}>
                   Blog
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/help"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <Link href="/help" className={linkClassName}>
                   Help
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/contact"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <Link href="/contact" className={linkClassName}>
                   Contact
                 </Link>
               </li>
+              {session?.user ? (
+                <>
+                  <li>
+                    <Link
+                      href="/profile"
+                      prefetch={false}
+                      className={linkClassName}
+                    >
+                      Profile
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/wishlist" className={linkClassName}>
+                      Wishlist
+                    </Link>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li>
+                    <Link href="/login" className={linkClassName}>
+                      Login
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/register" className={linkClassName}>
+                      Register
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
-          {/* Legal */}
-          <div className="text-center md:text-left">
-            <h3 className="font-semibold mb-4">Legal</h3>
-            <ul className="space-y-2">
-              <li>
+          {/* Legal (+ Connect on mobile) */}
+          <div className="text-center md:text-left flex flex-col gap-6">
+            <div>
+              <h3 className="font-semibold mb-4">Legal</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    href="/terms"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/privacy"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/cookie-policy"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Cookie Policy
+                  </Link>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={openPreferences}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Cookie settings
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col items-center md:hidden">
+              <h3 className="font-semibold mb-2">Connect With Us</h3>
+              <div className="flex items-center justify-center gap-4 mb-2">
                 <Link
-                  href="/terms"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  href="https://www.facebook.com/profile.php?id=61572524158548"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
-                  Terms of Service
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full text-muted-foreground"
+                  >
+                    <Facebook className="h-5 w-5" />
+                    <span className="sr-only">Facebook</span>
+                  </Button>
                 </Link>
-              </li>
-              <li>
-                <Link
-                  href="/privacy"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              </div>
+              <div className="space-y-2">
+                <a
+                  href="mailto:info@maltaguns.com"
+                  className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
                 >
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/cookies"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  <Mail className="h-4 w-4" />
+                  <span>info@maltaguns.com</span>
+                </a>
+                <a
+                  href="https://wa.link/kqa3o5"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
                 >
-                  Cookie Policy
-                </Link>
-              </li>
-            </ul>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M16.6 14c-.2-.1-1.5-.7-1.7-.8c-.2-.1-.4-.1-.6.1c-.2.2-.6.8-.8 1c-.1.2-.3.2-.5.1c-.7-.3-1.4-.7-2-1.2c-.5-.5-1-1.1-1.4-1.7c-.1-.2 0-.4.1-.5c.1-.1.2-.3.4-.4c.1-.1.2-.3.2-.4c.1-.1.1-.3 0-.4c-.1-.1-.6-1.3-.8-1.8c-.1-.7-.3-.7-.5-.7h-.5c-.2 0-.5.2-.6.3c-.6.6-.9 1.3-.9 2.1c.1.9.4 1.8 1 2.6c1.1 1.6 2.5 2.9 4.2 3.7c.5.2.9.4 1.4.5c.5.2 1 .2 1.6.1c.7-.1 1.3-.6 1.7-1.2c.2-.4.2-.8.1-1.2l-.4-.2m2.5-9.1C15.2 1 8.9 1 5 4.9c-3.2 3.2-3.8 8.1-1.6 12L2 22l5.3-1.4c1.5.8 3.1 1.2 4.7 1.2c5.5 0 9.9-4.4 9.9-9.9c.1-2.6-1-5.1-2.8-7m-2.7 14c-1.3.8-2.8 1.3-4.4 1.3c-1.5 0-2.9-.4-4.2-1.1l-.3-.2l-3.1.8l.8-3l-.2-.3c-2.4-4-1.2-9 2.7-11.5S16.6 3.7 19 7.5c2.4 3.9 1.3 9-2.6 11.4"
+                    />
+                  </svg>
+                  <span>+356 7723 3193</span>
+                </a>
+              </div>
+            </div>
           </div>
 
-          {/* Contact & Social */}
-          <div className="col-span-2 md:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
+          {/* Connect — desktop only */}
+          <div className="hidden md:flex flex-col items-start text-left">
             <h3 className="font-semibold mb-2">Connect With Us</h3>
-            <div className="flex items-center justify-center md:justify-start gap-4 mb-2">
+            <div className="flex items-center justify-start gap-4 mb-2">
               <Link
                 href="https://www.facebook.com/profile.php?id=61572524158548"
                 target="_blank"
@@ -124,7 +203,7 @@ export function Footer() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-full md:relative md:right-[6px] text-muted-foreground"
+                  className="h-7 w-7 rounded-full relative right-[6px] text-muted-foreground"
                 >
                   <Facebook className="h-5 w-5" />
                   <span className="sr-only">Facebook</span>
@@ -134,7 +213,7 @@ export function Footer() {
             <div className="space-y-2">
               <a
                 href="mailto:info@maltaguns.com"
-                className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
+                className="flex items-center justify-start gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
               >
                 <Mail className="h-4 w-4" />
                 <span>info@maltaguns.com</span>
@@ -143,7 +222,7 @@ export function Footer() {
                 href="https://wa.link/kqa3o5"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center md:justify-start gap-1 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
+                className="flex items-center justify-start gap-1 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
