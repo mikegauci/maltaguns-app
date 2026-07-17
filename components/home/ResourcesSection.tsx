@@ -5,7 +5,7 @@ import Link from 'next/link'
 export const ResourcesSection = () => {
   return (
     <section className="py-16">
-      <div className="container mx-auto px-6">
+      <div className="container mx-auto max-w-5xl px-6">
         <div className="text-center mb-8 md:mb-12">
           <h2 className="text-2xl md:text-3xl font-bold mb-2">Need Help?</h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -15,17 +15,17 @@ export const ResourcesSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-2 gap-3 md:gap-8">
           <Link href="/blog/guides">
             <Card className="hover:shadow-lg transition-shadow h-full">
-              <CardContent className="p-6 text-center md:text-left flex flex-col items-center md:items-start">
-                <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
-                  <BookOpen className="h-6 w-6 text-white" />
+              <CardContent className="p-2 md:p-6 text-center md:text-left flex flex-col items-center md:items-start">
+                <div className="rounded-lg bg-[#cb0e0e] p-2 md:p-3 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mb-3 md:mb-4">
+                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-lg mb-3">
+                <h3 className="font-semibold text-sm md:text-lg mb-3">
                   Guides & Resources
                 </h3>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-xs md:text-base text-muted-foreground mb-4">
                   Access comprehensive guides on licensing, safety regulations,
                   and maintenance tips for firearm owners in Malta.
                 </p>
@@ -54,12 +54,14 @@ export const ResourcesSection = () => {
 
           <Link href="/blog/news">
             <Card className="hover:shadow-lg transition-shadow h-full">
-              <CardContent className="p-6 text-center md:text-left flex flex-col items-center md:items-start">
-                <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
-                  <Globe className="h-6 w-6 text-white" />
+              <CardContent className="p-2 md:p-6 text-center md:text-left flex flex-col items-center md:items-start">
+                <div className="rounded-lg bg-[#cb0e0e] p-2 md:p-3 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mb-3 md:mb-4">
+                  <Globe className="h-5 w-5 md:h-6 md:w-6 text-white" />
                 </div>
-                <h3 className="font-semibold text-lg mb-3">Latest News</h3>
-                <p className="text-muted-foreground mb-4">
+                <h3 className="font-semibold text-sm md:text-lg mb-3">
+                  Latest News
+                </h3>
+                <p className="text-xs md:text-base text-muted-foreground mb-4">
                   Stay updated with the latest news, regulations, and
                   announcements affecting the firearms community in Malta.
                 </p>
