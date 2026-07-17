@@ -12,6 +12,7 @@ import {
   DEFAULT_CONSENT,
   denyGoogleAnalytics,
   getConsent,
+  grantGoogleAnalytics,
   setConsent as persistConsent,
 } from '@/lib/cookie-consent'
 
@@ -51,7 +52,6 @@ export function CookieConsentProvider({
   }, [])
 
   const setConsent = useCallback((next: CookieConsent) => {
-    const previous = getConsent()
     const normalized: CookieConsent = {
       essential: true,
       analytics: next.analytics,
@@ -60,7 +60,9 @@ export function CookieConsentProvider({
     setConsentState(normalized)
     setPreferencesOpen(false)
 
-    if (previous?.analytics && !normalized.analytics) {
+    if (normalized.analytics) {
+      grantGoogleAnalytics()
+    } else {
       denyGoogleAnalytics()
     }
   }, [])

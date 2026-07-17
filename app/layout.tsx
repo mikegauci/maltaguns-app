@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import QueryProvider from '@/components/providers/QueryProvider'
 import { CookieConsentProvider } from '@/components/providers/CookieConsentProvider'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
+import { GoogleAnalyticsTag } from '@/components/analytics/GoogleAnalyticsTag'
 import { CookieBanner } from '@/components/cookies/CookieBanner'
 import { Toaster } from '@/components/ui/toaster'
 import { Header } from '@/components/layout/Header'
@@ -34,6 +35,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
+        <GoogleAnalyticsTag />
         <QueryProvider>
           <SupabaseProvider>
             <ThemeProvider>
