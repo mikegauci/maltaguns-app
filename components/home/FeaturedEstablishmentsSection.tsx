@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Store, MapPin, Wrench, Phone, Mail, Globe } from 'lucide-react'
 import Link from 'next/link'
+import { HomeCarousel, HomeCarouselItem } from './HomeCarousel'
 
 interface Establishment {
   id: string
@@ -26,85 +27,96 @@ export const FeaturedEstablishmentsSection = ({
   return (
     <section className="py-16 bg-accent/50">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-2">Featured Establishments</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <div className="text-center mb-8 md:mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">
+            Featured Establishments
+          </h2>
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
             Looking for trusted dealers or shooting ranges in Malta? Check out
             these featured establishments that provide reliable and top-quality
             services.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {establishments.map(establishment => (
-            <Link
-              key={`${establishment.type}-${establishment.id}`}
-              href={`/establishments/${establishment.type === 'store' ? 'stores' : establishment.type}/${
-                establishment.slug || establishment.id
-              }`}
-            >
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                    {establishment.logo_url ? (
-                      <img
-                        src={establishment.logo_url}
-                        alt={establishment.business_name}
-                        className="w-16 h-16 object-contain rounded-lg"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                        {establishment.type === 'store' ? (
-                          <Store className="h-8 w-8 text-muted-foreground" />
-                        ) : establishment.type === 'range' ? (
-                          <MapPin className="h-8 w-8 text-muted-foreground" />
+        {establishments.length > 0 ? (
+          <HomeCarousel>
+            {establishments.slice(0, 10).map(establishment => (
+              <HomeCarouselItem key={`${establishment.type}-${establishment.id}`}>
+                <Link
+                  href={`/establishments/${establishment.type === 'store' ? 'stores' : establishment.type}/${
+                    establishment.slug || establishment.id
+                  }`}
+                  className="block h-full"
+                >
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full">
+                    <CardContent className="p-3 md:p-6 text-center md:text-left">
+                      <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 mb-2 md:mb-4">
+                        {establishment.logo_url ? (
+                          <img
+                            src={establishment.logo_url}
+                            alt={establishment.business_name}
+                            className="w-10 h-10 md:w-16 md:h-16 object-contain rounded-lg"
+                          />
                         ) : (
-                          <Wrench className="h-8 w-8 text-muted-foreground" />
+                          <div className="w-10 h-10 md:w-16 md:h-16 bg-muted rounded-lg flex items-center justify-center shrink-0">
+                            {establishment.type === 'store' ? (
+                              <Store className="h-5 w-5 md:h-8 md:w-8 text-muted-foreground" />
+                            ) : establishment.type === 'range' ? (
+                              <MapPin className="h-5 w-5 md:h-8 md:w-8 text-muted-foreground" />
+                            ) : (
+                              <Wrench className="h-5 w-5 md:h-8 md:w-8 text-muted-foreground" />
+                            )}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-sm md:text-lg line-clamp-2">
+                            {establishment.business_name}
+                          </h3>
+                          <div className="flex items-center justify-center md:justify-start gap-1.5 md:gap-2 text-xs md:text-sm text-muted-foreground">
+                            <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4 shrink-0" />
+                            <span className="line-clamp-1">
+                              {establishment.location}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {establishment.description && (
+                        <p className="text-xs md:text-sm text-muted-foreground mb-2 md:mb-4 line-clamp-2 hidden sm:block">
+                          {establishment.description}
+                        </p>
+                      )}
+
+                      <div className="space-y-1 md:space-y-2 text-xs md:text-sm hidden md:block">
+                        {establishment.phone && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Phone className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{establishment.phone}</span>
+                          </div>
+                        )}
+                        {establishment.email && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Mail className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{establishment.email}</span>
+                          </div>
+                        )}
+                        {establishment.website && (
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Globe className="h-4 w-4 shrink-0" />
+                            <span className="truncate">
+                              {establishment.website}
+                            </span>
+                          </div>
                         )}
                       </div>
-                    )}
-                    <div>
-                      <h3 className="font-semibold text-lg">
-                        {establishment.business_name}
-                      </h3>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        <span>{establishment.location}</span>
-                      </div>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </HomeCarouselItem>
+            ))}
+          </HomeCarousel>
+        ) : null}
 
-                  {establishment.description && (
-                    <p className="text-muted-foreground mb-4 line-clamp-2">
-                      {establishment.description}
-                    </p>
-                  )}
-
-                  <div className="space-y-2 text-sm">
-                    {establishment.phone && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-4 w-4" />
-                        <span>{establishment.phone}</span>
-                      </div>
-                    )}
-                    {establishment.email && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Mail className="h-4 w-4" />
-                        <span>{establishment.email}</span>
-                      </div>
-                    )}
-                    {establishment.website && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Globe className="h-4 w-4" />
-                        <span>{establishment.website}</span>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
         <div className="mt-6 flex justify-center">
           <Link href="/establishments">
             <Button>View All Establishments</Button>

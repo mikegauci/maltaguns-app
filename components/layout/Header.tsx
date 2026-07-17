@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { SearchBar } from '@/components/marketplace/Search'
 import {
   Store,
-  Menu,
   X,
   User,
   ChevronDown,
@@ -26,6 +25,28 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+
+/** Combined hamburger + search icon (Vestiaire-style) */
+function MenuSearchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <line x1="3" y1="6" x2="12" y2="6" />
+      <line x1="3" y1="12" x2="10" y2="12" />
+      <line x1="3" y1="18" x2="12" y2="18" />
+      <circle cx="17" cy="11" r="3.5" />
+      <line x1="19.5" y1="13.5" x2="22" y2="16" />
+    </svg>
+  )
+}
 
 export function Header() {
   const router = useRouter()
@@ -46,9 +67,10 @@ export function Header() {
     })
   }
 
-  // Close establishments submenu when route changes
+  // Close establishments submenu / mobile menu when route changes
   useEffect(() => {
     setEstablishmentsOpen(false)
+    setMenuOpen(false)
   }, [pathname])
 
   // Check if current path matches the menu item
@@ -75,19 +97,33 @@ export function Header() {
   return (
     <>
       <header className="border-b">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
+        <div className="container mx-auto px-4 py-3 relative flex items-center justify-between">
+          {/* Mobile: combined menu + search control (left) */}
+          <button
+            type="button"
+            className="lg:hidden z-10 flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu and search'}
+            aria-expanded={menuOpen}
+          >
+            {menuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <MenuSearchIcon className="h-5 w-5" />
+            )}
+          </button>
+
+          {/* Logo: centered on mobile, left on desktop */}
+          <Link
+            href="/"
+            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 lg:static lg:translate-x-0"
+          >
             <img
               src="/maltaguns.png"
               alt="MaltaGuns Logo"
               className="h-8 w-auto object-contain"
             />
           </Link>
-
-          {/* Mobile search bar - visible only on mobile */}
-          <div className="flex-1 mx-4 lg:hidden">
-            <SearchBar disableShortcut={true} />
-          </div>
 
           <nav className="hidden lg:flex items-center gap-3">
             {/* Desktop search bar - now before Marketplace */}
@@ -218,8 +254,8 @@ export function Header() {
             </Link>
           </nav>
 
-          {/* Right-side controls (single bell mount for both mobile + desktop) */}
-          <div className="flex items-center gap-2">
+          {/* Right-side controls: notifications (logged in) + desktop profile */}
+          <div className="z-10 flex items-center gap-2 min-h-10 min-w-10 justify-end">
             {session?.user && <NotificationsBell />}
 
             {/* Desktop Profile Dropdown */}
@@ -268,19 +304,6 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-
-            {/* Mobile hamburger */}
-            <button
-              className="lg:hidden"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Menu"
-            >
-              {menuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </button>
           </div>
         </div>
       </header>
@@ -288,6 +311,12 @@ export function Header() {
       {menuOpen && (
         <nav className="lg:hidden bg-background border-b">
           <div className="container mx-auto px-4 py-3 flex flex-col gap-4">
+            <SearchBar
+              variant="inline"
+              disableShortcut
+              onSearchComplete={() => setMenuOpen(false)}
+            />
+
             <Link href="/marketplace">
               <Button
                 variant="ghost"

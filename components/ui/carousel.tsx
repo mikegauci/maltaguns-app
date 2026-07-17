@@ -87,6 +87,9 @@ const Carousel = React.forwardRef<
 
     const handleKeyDown = React.useCallback(
       (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (!api?.canScrollPrev() && !api?.canScrollNext()) {
+          return
+        }
         if (event.key === 'ArrowLeft') {
           event.preventDefault()
           scrollPrev()
@@ -95,7 +98,7 @@ const Carousel = React.forwardRef<
           scrollNext()
         }
       },
-      [scrollPrev, scrollNext]
+      [api, scrollPrev, scrollNext]
     )
 
     React.useEffect(() => {
@@ -259,4 +262,5 @@ export {
   CarouselItem,
   CarouselPrevious,
   CarouselNext,
+  useCarousel,
 }

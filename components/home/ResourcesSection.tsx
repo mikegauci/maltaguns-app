@@ -6,9 +6,9 @@ export const ResourcesSection = () => {
   return (
     <section className="py-16">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-2">Need Help?</h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+        <div className="text-center mb-8 md:mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">Need Help?</h2>
+          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
             Need help? Check out our comprehensive <strong>guides</strong> and
             stay updated with the latest <strong>news</strong> and regulations
             for firearm owners in Malta.
@@ -16,9 +16,9 @@ export const ResourcesSection = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Link href="/guides">
+          <Link href="/blog/guides">
             <Card className="hover:shadow-lg transition-shadow h-full">
-              <CardContent className="p-6">
+              <CardContent className="p-6 text-center md:text-left flex flex-col items-center md:items-start">
                 <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
                   <BookOpen className="h-6 w-6 text-white" />
                 </div>
@@ -29,7 +29,7 @@ export const ResourcesSection = () => {
                   Access comprehensive guides on licensing, safety regulations,
                   and maintenance tips for firearm owners in Malta.
                 </p>
-                <div className="flex items-center text-sm text-primary">
+                <div className="flex items-center justify-center md:justify-start text-sm text-primary">
                   <span className="mr-2">Browse guides</span>
                   <svg
                     width="16"
@@ -52,9 +52,9 @@ export const ResourcesSection = () => {
             </Card>
           </Link>
 
-          <Link href="/news">
+          <Link href="/blog/news">
             <Card className="hover:shadow-lg transition-shadow h-full">
-              <CardContent className="p-6">
+              <CardContent className="p-6 text-center md:text-left flex flex-col items-center md:items-start">
                 <div className="rounded-lg bg-[#cb0e0e] p-3 w-12 h-12 flex items-center justify-center mb-4">
                   <Globe className="h-6 w-6 text-white" />
                 </div>
@@ -63,7 +63,7 @@ export const ResourcesSection = () => {
                   Stay updated with the latest news, regulations, and
                   announcements affecting the firearms community in Malta.
                 </p>
-                <div className="flex items-center text-sm text-primary">
+                <div className="flex items-center justify-center md:justify-start text-sm text-primary">
                   <span className="mr-2">Read news</span>
                   <svg
                     width="16"

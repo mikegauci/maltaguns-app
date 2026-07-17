@@ -9,7 +9,6 @@ import {
   FeaturedListingsSection,
   LatestArticlesSection,
   UpcomingEventsSection,
-  FeaturesGrid,
   FeaturedEstablishmentsSection,
   ResourcesSection,
   CTASection,
@@ -79,8 +78,6 @@ export default function Home() {
       <LatestArticlesSection posts={latestPosts} />
 
       <UpcomingEventsSection events={latestEvents} />
-
-      <FeaturesGrid />
 
       <FeaturedEstablishmentsSection establishments={featuredEstablishments} />
 

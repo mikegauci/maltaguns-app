@@ -44,14 +44,25 @@ const categories = {
 
 interface SearchBarProps {
   disableShortcut?: boolean
+  variant?: 'default' | 'inline'
+  onSearchComplete?: () => void
 }
 
-export function SearchBar({ disableShortcut = false }: SearchBarProps) {
+export function SearchBar({
+  disableShortcut = false,
+  variant = 'default',
+  onSearchComplete,
+}: SearchBarProps) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [category, setCategory] = useState('all')
   const [isOpen, setIsOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const completeSearch = () => {
+    setIsOpen(false)
+    onSearchComplete?.()
+  }
 
   // Function to handle search submission
   const handleSearch = (e?: React.FormEvent) => {
@@ -73,14 +84,14 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
           .replace(/_/g, '-')
         router.push(`/marketplace/non-firearms/${subcategory}`)
       }
-      setIsOpen(false)
+      completeSearch()
       return
     }
 
     // If search term is empty and All Categories is selected, redirect to search page
     if (!searchTerm.trim() && category === 'all') {
       router.push(`/marketplace/search`)
-      setIsOpen(false)
+      completeSearch()
       return
     }
 
@@ -96,7 +107,7 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
 
       // Navigate to search results page
       router.push(`/marketplace/search?${params.toString()}`)
-      setIsOpen(false)
+      completeSearch()
     }
   }
 
@@ -111,7 +122,7 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
   // Handle keyboard shortcuts
   useEffect(() => {
     // Skip setting up the keyboard shortcut if disabled
-    if (disableShortcut) return
+    if (disableShortcut || variant === 'inline') return
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Open search on Ctrl+K or Cmd+K
@@ -126,7 +137,92 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [disableShortcut])
+  }, [disableShortcut, variant])
+
+  const searchForm = (
+    <form
+      onSubmit={handleSearch}
+      className={`flex flex-col gap-3 ${variant === 'inline' ? '' : 'p-4 gap-4'}`}
+    >
+      <div className="flex flex-col gap-2">
+        <Select value={category} onValueChange={setCategory}>
+          <SelectTrigger
+            className={
+              variant === 'inline' ? 'bg-muted/60 border-transparent' : undefined
+            }
+          >
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" className="font-medium pl-6">
+              All Categories
+            </SelectItem>
+            <SelectItem value="firearms" className="font-medium pl-8">
+              Firearms
+            </SelectItem>
+            {Object.entries(categories.firearms).map(([value, label]) => (
+              <SelectItem
+                key={value}
+                value={`firearms-${value}`}
+                className="pl-12"
+              >
+                {label}
+              </SelectItem>
+            ))}
+
+            <SelectItem value="non_firearms" className="font-medium pl-8">
+              Non-Firearms
+            </SelectItem>
+            {Object.entries(categories.non_firearms).map(([value, label]) => (
+              <SelectItem
+                key={value}
+                value={`non_firearms-${value}`}
+                className="pl-12"
+              >
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2">
+          <div className="flex-1 relative">
+            {variant === 'inline' && (
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            )}
+            <Input
+              ref={searchInputRef}
+              placeholder="Search listings..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className={`pr-8 w-full ${variant === 'inline' ? 'pl-9 bg-muted/60 border-transparent' : ''}`}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Button type="submit">
+            <SearchIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      {variant !== 'inline' && (
+        <div className="text-xs text-muted-foreground">
+          Search for items by title or description. Use plural forms to find
+          singular matches too.
+        </div>
+      )}
+    </form>
+  )
+
+  if (variant === 'inline') {
+    return searchForm
+  }
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -149,74 +245,7 @@ export function SearchBar({ disableShortcut = false }: SearchBarProps) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[300px] md:w-[400px] p-0" align="start">
-        <form onSubmit={handleSearch} className="flex flex-col p-4 gap-4">
-          <div className="flex flex-col gap-2">
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all" className="font-medium pl-6">
-                  All Categories
-                </SelectItem>
-                <SelectItem value="firearms" className="font-medium pl-8">
-                  Firearms
-                </SelectItem>
-                {Object.entries(categories.firearms).map(([value, label]) => (
-                  <SelectItem
-                    key={value}
-                    value={`firearms-${value}`}
-                    className="pl-12"
-                  >
-                    {label}
-                  </SelectItem>
-                ))}
-
-                <SelectItem value="non_firearms" className="font-medium pl-8">
-                  Non-Firearms
-                </SelectItem>
-                {Object.entries(categories.non_firearms).map(
-                  ([value, label]) => (
-                    <SelectItem
-                      key={value}
-                      value={`non_firearms-${value}`}
-                      className="pl-12"
-                    >
-                      {label}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-            <div className="flex gap-2">
-              <div className="flex-1 relative">
-                <Input
-                  ref={searchInputRef}
-                  placeholder="Search listings..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="pr-8 w-full"
-                />
-                {searchTerm && (
-                  <button
-                    type="button"
-                    onClick={clearSearch}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              <Button type="submit">
-                <SearchIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          <div className="text-xs text-muted-foreground">
-            Search for items by title or description. Use plural forms to find
-            singular matches too.
-          </div>
-        </form>
+        {searchForm}
       </PopoverContent>
     </Popover>
   )
