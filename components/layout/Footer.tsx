@@ -4,10 +4,12 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Facebook, Mail } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { useCookieConsent } from '@/components/providers/CookieConsentProvider'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
   const { session } = useSupabase()
+  const { openPreferences } = useCookieConsent()
 
   const linkClassName =
     'text-sm text-muted-foreground hover:text-foreground transition-colors'
@@ -122,11 +124,20 @@ export function Footer() {
                 </li>
                 <li>
                   <Link
-                    href="/cookies"
+                    href="/cookie-policy"
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Cookie Policy
                   </Link>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={openPreferences}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Cookie settings
+                  </button>
                 </li>
               </ul>
             </div>

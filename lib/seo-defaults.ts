@@ -16,6 +16,7 @@ export type SectionKey =
   | 'help'
   | 'privacy'
   | 'terms'
+  | 'cookies'
 
 export type PageSeoEntry = {
   title?: string | null
@@ -140,6 +141,13 @@ export const SECTION_SEO_DEFAULTS: Record<
     description:
       'Terms and Conditions for MaltaGuns - Your trusted source for firearms information, marketplace listings, and community events in Malta.',
     path: '/terms',
+    group: 'Legal',
+  },
+  cookies: {
+    title: 'Cookie Policy | MaltaGuns',
+    description:
+      'Cookie Policy for MaltaGuns — how we use essential and analytics cookies, and how to manage your preferences.',
+    path: '/cookie-policy',
     group: 'Legal',
   },
 }
