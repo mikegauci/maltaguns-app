@@ -142,7 +142,11 @@ export function SearchBar({
   const searchForm = (
     <form
       onSubmit={handleSearch}
-      className={`flex flex-col gap-3 ${variant === 'inline' ? '' : 'p-4 gap-4'}`}
+      className={
+        variant === 'inline'
+          ? 'flex flex-col gap-3'
+          : 'flex flex-col gap-4 p-4'
+      }
     >
       <div className="flex flex-col gap-2">
         <Select value={category} onValueChange={setCategory}>

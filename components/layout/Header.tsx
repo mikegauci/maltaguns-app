@@ -116,12 +116,12 @@ export function Header() {
           {/* Logo: centered on mobile, left on desktop */}
           <Link
             href="/"
-            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 lg:static lg:translate-x-0"
+            className="absolute left-1/2 -translate-x-1/2 z-0 flex items-center gap-2 max-w-[min(45vw,11rem)] lg:static lg:translate-x-0 lg:max-w-none lg:z-auto"
           >
             <img
               src="/maltaguns.png"
               alt="MaltaGuns Logo"
-              className="h-8 w-auto object-contain"
+              className="h-8 w-auto max-w-full object-contain"
             />
           </Link>
 
