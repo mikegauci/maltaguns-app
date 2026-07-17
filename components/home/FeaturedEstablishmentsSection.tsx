@@ -41,7 +41,9 @@ export const FeaturedEstablishmentsSection = ({
         {establishments.length > 0 ? (
           <HomeCarousel>
             {establishments.slice(0, 10).map(establishment => (
-              <HomeCarouselItem key={`${establishment.type}-${establishment.id}`}>
+              <HomeCarouselItem
+                key={`${establishment.type}-${establishment.id}`}
+              >
                 <Link
                   href={`/establishments/${establishment.type === 'store' ? 'stores' : establishment.type}/${
                     establishment.slug || establishment.id
@@ -91,13 +93,17 @@ export const FeaturedEstablishmentsSection = ({
                         {establishment.phone && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Phone className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{establishment.phone}</span>
+                            <span className="truncate">
+                              {establishment.phone}
+                            </span>
                           </div>
                         )}
                         {establishment.email && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Mail className="h-4 w-4 shrink-0" />
-                            <span className="truncate">{establishment.email}</span>
+                            <span className="truncate">
+                              {establishment.email}
+                            </span>
                           </div>
                         )}
                         {establishment.website && (

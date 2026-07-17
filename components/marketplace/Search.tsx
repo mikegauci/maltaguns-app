@@ -143,16 +143,16 @@ export function SearchBar({
     <form
       onSubmit={handleSearch}
       className={
-        variant === 'inline'
-          ? 'flex flex-col gap-3'
-          : 'flex flex-col gap-4 p-4'
+        variant === 'inline' ? 'flex flex-col gap-3' : 'flex flex-col gap-4 p-4'
       }
     >
       <div className="flex flex-col gap-2">
         <Select value={category} onValueChange={setCategory}>
           <SelectTrigger
             className={
-              variant === 'inline' ? 'bg-muted/60 border-transparent' : undefined
+              variant === 'inline'
+                ? 'bg-muted/60 border-transparent'
+                : undefined
             }
           >
             <SelectValue placeholder="Select category" />

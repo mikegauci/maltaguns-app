@@ -25,7 +25,9 @@ export const UpcomingEventsSection = ({
     <section className="py-16">
       <div className="container mx-auto px-6">
         <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">Upcoming Events</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">
+            Upcoming Events
+          </h2>
           <p className="text-base md:text-lg text-muted-foreground">
             Join upcoming community events and competitions - don't miss out!
           </p>

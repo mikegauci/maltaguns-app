@@ -16,7 +16,9 @@ export const HeroSection = ({ isAuthenticated }: HeroSectionProps) => {
         />
         <div className="absolute inset-0 bg-black/75"></div>
       </div>
-      <div className="relative mx-auto max-w-5xl py-20 sm:py-24 lg:py-36 px-6 lg:px-8">        <div className="text-center">
+      <div className="relative mx-auto max-w-5xl py-20 sm:py-24 lg:py-36 px-6 lg:px-8">
+        {' '}
+        <div className="text-center">
           <h1 className="text-5xl sm:text-6xl font-bold mb-6 text-white">
             Welcome to MaltaGuns
           </h1>

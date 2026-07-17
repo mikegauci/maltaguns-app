@@ -27,7 +27,9 @@ export const RecentListingsSection = ({
     <section className="py-16 bg-accent/50">
       <div className="container mx-auto px-6">
         <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">Recent Listings</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">
+            Recent Listings
+          </h2>
           <p className="text-base md:text-lg text-muted-foreground">
             Explore the latest listings and find verified firearms and
             accessories.
