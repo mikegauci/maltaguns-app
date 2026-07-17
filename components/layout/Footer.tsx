@@ -10,9 +10,9 @@ export function Footer() {
   return (
     <footer className="border-t bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {/* Logo and About */}
-          <div className="flex flex-col gap-4">
+          <div className="col-span-2 md:col-span-1 flex flex-col gap-4 items-center md:items-start text-center md:text-left">
             <Link href="/" className="flex items-center gap-2">
               <img
                 src="/maltaguns.png"
@@ -27,7 +27,7 @@ export function Footer() {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <div className="text-center md:text-left">
             <h3 className="font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
@@ -82,7 +82,7 @@ export function Footer() {
           </div>
 
           {/* Legal */}
-          <div>
+          <div className="text-center md:text-left">
             <h3 className="font-semibold mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
@@ -113,9 +113,9 @@ export function Footer() {
           </div>
 
           {/* Contact & Social */}
-          <div>
+          <div className="col-span-2 md:col-span-1 flex flex-col items-center md:items-start text-center md:text-left">
             <h3 className="font-semibold mb-2">Connect With Us</h3>
-            <div className="flex items-center gap-4 mb-2">
+            <div className="flex items-center justify-center md:justify-start gap-4 mb-2">
               <Link
                 href="https://www.facebook.com/profile.php?id=61572524158548"
                 target="_blank"
@@ -124,7 +124,7 @@ export function Footer() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-full relative right-[6px] text-muted-foreground"
+                  className="h-7 w-7 rounded-full md:relative md:right-[6px] text-muted-foreground"
                 >
                   <Facebook className="h-5 w-5" />
                   <span className="sr-only">Facebook</span>
@@ -134,7 +134,7 @@ export function Footer() {
             <div className="space-y-2">
               <a
                 href="mailto:info@maltaguns.com"
-                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
+                className="flex items-center justify-center md:justify-start gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
               >
                 <Mail className="h-4 w-4" />
                 <span>info@maltaguns.com</span>
@@ -143,7 +143,7 @@ export function Footer() {
                 href="https://wa.link/kqa3o5"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
+                className="flex items-center justify-center md:justify-start gap-1 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

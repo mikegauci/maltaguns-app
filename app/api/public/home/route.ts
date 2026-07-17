@@ -22,7 +22,7 @@ export async function GET() {
       .eq('status', 'active')
       .gt('expires_at', now)
       .order('created_at', { ascending: false })
-      .limit(3),
+      .limit(10),
 
     supabase
       .from('featured_listings')
@@ -36,7 +36,7 @@ export async function GET() {
       .eq('listings.status', 'active')
       .gt('listings.expires_at', now)
       .order('end_date', { ascending: false })
-      .limit(3),
+      .limit(10),
 
     supabase
       .from('blog_posts')
@@ -48,23 +48,23 @@ export async function GET() {
       )
       .eq('published', true)
       .order('created_at', { ascending: false })
-      .limit(3),
+      .limit(10),
 
     supabase
       .from('events')
       .select('*')
       .gte('start_date', now)
       .order('start_date', { ascending: true })
-      .limit(3),
+      .limit(10),
 
-    supabase.from('stores').select('*').order('created_at', { ascending: false }).limit(3),
-    supabase.from('ranges').select('*').order('created_at', { ascending: false }).limit(3),
+    supabase.from('stores').select('*').order('created_at', { ascending: false }).limit(10),
+    supabase.from('ranges').select('*').order('created_at', { ascending: false }).limit(10),
     supabase
       .from('servicing')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(3),
-    supabase.from('clubs').select('*').order('created_at', { ascending: false }).limit(3),
+      .limit(10),
+    supabase.from('clubs').select('*').order('created_at', { ascending: false }).limit(10),
   ])
 
   if (recentListingsRes.error) {
@@ -94,7 +94,7 @@ export async function GET() {
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
-    .slice(0, 3)
+    .slice(0, 10)
 
   return NextResponse.json(
     {
