@@ -68,9 +68,7 @@ export function CookieBanner() {
             <Button variant="outline" onClick={rejectNonEssential}>
               Reject non-essential
             </Button>
-            <Button variant="outline" onClick={acceptAll}>
-              Accept all
-            </Button>
+            <Button onClick={acceptAll}>Accept</Button>
           </div>
         </div>
       </div>

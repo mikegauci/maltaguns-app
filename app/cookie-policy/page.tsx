@@ -135,7 +135,10 @@ export default function CookiePolicy() {
           Analytics (optional)
         </h3>
         <p>
-          Loaded only after you opt in via the cookie banner or Cookie settings.
+          The Google tag loads on every page with Consent Mode defaults set to
+          denied (no analytics cookies until you opt in). Analytics storage is
+          enabled only after you accept via the cookie banner or Cookie
+          settings.
           {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ? (
             <>
               {' '}
@@ -186,9 +189,9 @@ export default function CookiePolicy() {
           3. Managing your preferences
         </h2>
         <p>
-          On your first visit, you can accept all cookies or reject
-          non-essential cookies. You can change your mind at any time using
-          Cookie settings in the footer, or the button below.
+          On your first visit, you can accept cookies or reject non-essential
+          cookies. You can change your mind at any time using Cookie settings in
+          the footer, or the button below.
         </p>
         <p className="not-prose mt-4">
           <CookieSettingsButton />

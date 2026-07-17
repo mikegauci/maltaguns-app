@@ -81,3 +81,15 @@ export function denyGoogleAnalytics(): void {
 
   clearGoogleAnalyticsCookies()
 }
+
+export function grantGoogleAnalytics(): void {
+  if (typeof window === 'undefined') return
+  if (typeof window.gtag !== 'function') return
+
+  window.gtag('consent', 'update', {
+    analytics_storage: 'granted',
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+  })
+}
