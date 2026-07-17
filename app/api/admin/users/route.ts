@@ -48,7 +48,7 @@ export async function GET() {
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select(
-        'id, username, email, created_at, is_admin, is_seller, is_verified, license_image, id_card_image, id_card_verified, is_disabled, first_name, last_name, notes'
+        'id, username, email, created_at, is_admin, is_seller, is_verified, license_image, id_card_image, id_card_verified, is_disabled, first_name, last_name, notes, license_types'
       )
       .order('created_at', { ascending: false })
 

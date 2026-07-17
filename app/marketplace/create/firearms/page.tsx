@@ -38,7 +38,11 @@ import {
   PriceField,
   ImageUploadField,
 } from '../../../../components/marketplace/FormFields'
-import { getAllowedCategories, LicenseTypes } from '@/lib/license-utils'
+import {
+  getAllowedCategories,
+  isFullyVerified,
+  LicenseTypes,
+} from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
 
 export default function CreateFirearmsListing() {
@@ -86,7 +90,7 @@ export default function CreateFirearmsListing() {
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('license_types')
+          .select('license_types, is_verified, id_card_verified')
           .eq('id', userId)
           .single()
 
@@ -97,7 +101,12 @@ export default function CreateFirearmsListing() {
         }
 
         const licenseTypes = profile?.license_types as LicenseTypes | null
-        const allowed = getAllowedCategories(licenseTypes)
+        const allowed = getAllowedCategories(licenseTypes, {
+          isFullyVerified: isFullyVerified(
+            profile?.is_verified ?? false,
+            profile?.id_card_verified ?? false
+          ),
+        })
         setAllowedCategories(allowed)
 
         // Set default category to the first allowed category
