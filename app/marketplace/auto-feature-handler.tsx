@@ -41,7 +41,9 @@ export function AutoFeatureHandler({
 
           if (!user) {
             console.error('No user found for auto-featuring')
-            toast.error('Please sign in to finish applying your featured listing')
+            toast.error(
+              'Please sign in to finish applying your featured listing'
+            )
             return
           }
 

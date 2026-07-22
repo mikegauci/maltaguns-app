@@ -180,10 +180,7 @@ export async function POST(request: Request) {
         .eq('id', listingId)
 
       if (updateError) {
-        console.error(
-          '[AUTO-FEATURE API] Error updating listing:',
-          updateError
-        )
+        console.error('[AUTO-FEATURE API] Error updating listing:', updateError)
         return NextResponse.json(
           { error: 'Failed to update listing' },
           { status: 500 }
