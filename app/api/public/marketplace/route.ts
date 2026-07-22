@@ -43,7 +43,7 @@ export async function GET() {
   }))
 
   const featuredListings = processed.filter(l => l.is_featured)
-  const regularListings = processed.filter(l => !l.is_featured)
+  const regularListings = processed
 
   return NextResponse.json(
     { featuredListings, regularListings },

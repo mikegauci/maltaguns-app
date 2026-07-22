@@ -163,16 +163,12 @@ export default function CategoryListings({
         const regular: Listing[] = []
 
         filteredListings.forEach(listing => {
-          // Add to featured if it's in the featured IDs set
-          if (featuredIds.has(listing.id)) {
-            featured.push({
-              ...listing,
-              is_featured: true,
-            })
-          }
+          const isFeatured = featuredIds.has(listing.id)
+          const withFlag = { ...listing, is_featured: isFeatured }
 
-          // Always add to regular listings - this ensures a listing appears in both sections if featured
-          regular.push(listing)
+          if (isFeatured) featured.push(withFlag)
+
+          regular.push(withFlag)
         })
 
         setFeaturedListings(featured)
