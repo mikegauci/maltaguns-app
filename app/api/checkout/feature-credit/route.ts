@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
+import { getAppUrl } from '@/lib/seo'
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined')
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
 
     // Create success URL with listing slug
     const slug = slugify(listing.title)
-    const hostUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const hostUrl = getAppUrl()
     const successUrl = `${hostUrl}/marketplace/listing/${slug}?success=true&listingId=${listingId}`
     const cancelUrl = `${hostUrl}/marketplace/listing/${slug}?canceled=true`
 

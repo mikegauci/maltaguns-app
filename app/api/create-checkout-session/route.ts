@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
+import { getAppUrl } from '@/lib/seo'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
@@ -84,8 +85,8 @@ export async function POST(request: Request) {
       ],
       mode: 'payment',
       customer_email: profile.email,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/profile?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/profile?canceled=true`,
+      success_url: `${getAppUrl()}/profile?success=true`,
+      cancel_url: `${getAppUrl()}/profile?canceled=true`,
       metadata: {
         userId: userId,
         credits: plan.credits.toString(),
