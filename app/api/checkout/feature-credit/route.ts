@@ -65,6 +65,38 @@ export async function POST(request: Request) {
 
     console.log('[CHECKOUT] Found listing:', listing.title)
 
+    // Block repurchase while an active feature has more than 3 days remaining
+    const now = new Date()
+    const { data: existingFeature, error: featureCheckError } = await supabase
+      .from('featured_listings')
+      .select('end_date')
+      .eq('listing_id', listingId)
+      .gt('end_date', now.toISOString())
+      .maybeSingle()
+
+    if (featureCheckError) {
+      console.error('[CHECKOUT] Feature status check error:', featureCheckError)
+      return NextResponse.json(
+        { error: 'Failed to check featured status' },
+        { status: 500 }
+      )
+    }
+
+    if (existingFeature) {
+      const daysRemaining = Math.ceil(
+        (new Date(existingFeature.end_date).getTime() - now.getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+      if (daysRemaining > 3) {
+        return NextResponse.json(
+          {
+            error: `This listing is already featured for ${daysRemaining} more days. You can renew when 3 or fewer days remain.`,
+          },
+          { status: 409 }
+        )
+      }
+    }
+
     // Create success URL with listing slug
     const slug = slugify(listing.title)
     const hostUrl = getAppUrl()

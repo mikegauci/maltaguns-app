@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server'
+import Stripe from 'stripe'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 
-// Create a Supabase client with the service role key for admin operations
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2023-10-16',
+})
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
+
+const FEATURE_DAYS = 15
+const LISTING_EXTEND_DAYS = 30
 
 export async function POST(request: Request) {
   try {
@@ -18,6 +27,17 @@ export async function POST(request: Request) {
       )
     }
 
+    // Require an authenticated session matching the claimed userId
+    const supabase = createRouteHandlerClient({ cookies })
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError || !user || user.id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     console.log(
       '[AUTO-FEATURE API] Auto-featuring listing:',
       listingId,
@@ -25,14 +45,77 @@ export async function POST(request: Request) {
       userId
     )
 
-    // Check if this listing is already featured by this user
-    const now = new Date().toISOString()
+    // Find a pending or recently paid featured transaction for this listing
+    const { data: transactions, error: txFindError } = await supabaseAdmin
+      .from('credit_transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('credit_type', 'featured')
+      .ilike('description', `%${listingId}%`)
+      .order('created_at', { ascending: false })
+      .limit(5)
+
+    if (txFindError) {
+      console.error(
+        '[AUTO-FEATURE API] Error finding transactions:',
+        txFindError
+      )
+      return NextResponse.json(
+        { error: 'Failed to verify payment' },
+        { status: 500 }
+      )
+    }
+
+    const candidateTx =
+      transactions?.find(tx => tx.status === 'pending' && tx.stripe_payment_id) ||
+      transactions?.find(
+        tx => tx.status === 'completed' && tx.stripe_payment_id
+      )
+
+    if (!candidateTx?.stripe_payment_id) {
+      return NextResponse.json(
+        { error: 'No paid featured checkout found for this listing' },
+        { status: 402 }
+      )
+    }
+
+    // Verify the Stripe checkout session was actually paid
+    let session: Stripe.Checkout.Session
+    try {
+      session = await stripe.checkout.sessions.retrieve(
+        candidateTx.stripe_payment_id
+      )
+    } catch (stripeError) {
+      console.error(
+        '[AUTO-FEATURE API] Error retrieving Stripe session:',
+        stripeError
+      )
+      return NextResponse.json(
+        { error: 'Failed to verify Stripe payment' },
+        { status: 502 }
+      )
+    }
+
+    if (
+      session.payment_status !== 'paid' ||
+      session.metadata?.listingId !== listingId ||
+      session.metadata?.userId !== userId
+    ) {
+      return NextResponse.json(
+        { error: 'Payment not completed for this listing' },
+        { status: 402 }
+      )
+    }
+
+    const now = new Date()
+    const nowIso = now.toISOString()
+
+    // Check if this listing is already featured
     const { data: existingFeature, error: checkError } = await supabaseAdmin
       .from('featured_listings')
       .select('*')
       .eq('listing_id', listingId)
       .eq('user_id', userId)
-      .gt('end_date', now)
       .maybeSingle()
 
     if (checkError) {
@@ -46,19 +129,38 @@ export async function POST(request: Request) {
       )
     }
 
-    if (existingFeature) {
+    const alreadyFeaturedActive =
+      existingFeature && new Date(existingFeature.end_date) > now
+
+    // Mark transaction completed if still pending
+    if (candidateTx.status === 'pending') {
+      const { error: txUpdateError } = await supabaseAdmin
+        .from('credit_transactions')
+        .update({ status: 'completed' })
+        .eq('id', candidateTx.id)
+
+      if (txUpdateError) {
+        console.error(
+          '[AUTO-FEATURE API] Error updating transaction:',
+          txUpdateError
+        )
+        // Non-critical; continue applying feature
+      }
+    }
+
+    if (alreadyFeaturedActive) {
       console.log('[AUTO-FEATURE API] Listing is already featured')
       return NextResponse.json({
         success: true,
         message: 'Listing was already featured',
         alreadyFeatured: true,
+        expiresAt: existingFeature.end_date,
       })
     }
 
-    // Calculate start and end dates
-    const startDate = new Date()
-    const endDate = new Date()
-    endDate.setDate(endDate.getDate() + 15) // 15 days
+    const endDate = new Date(now)
+    endDate.setDate(endDate.getDate() + FEATURE_DAYS)
+    const endDateIso = endDate.toISOString()
 
     // Check if listing needs expiry extension
     const { data: listing, error: listingError } = await supabaseAdmin
@@ -75,88 +177,83 @@ export async function POST(request: Request) {
       )
     }
 
-    // Calculate days until expiration
     const daysUntilExpiration = Math.ceil(
-      (new Date(listing.expires_at).getTime() - startDate.getTime()) /
+      (new Date(listing.expires_at).getTime() - now.getTime()) /
         (1000 * 60 * 60 * 24)
     )
 
-    // If listing expires in less than 15 days, extend it to 30 days
     const newExpiresAt =
-      daysUntilExpiration <= 15
-        ? new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000)
-        : new Date(listing.expires_at)
+      daysUntilExpiration <= FEATURE_DAYS
+        ? new Date(
+            now.getTime() + LISTING_EXTEND_DAYS * 24 * 60 * 60 * 1000
+          ).toISOString()
+        : listing.expires_at
 
-    // Update the listing first - only update expires_at
-    const { error: updateError } = await supabaseAdmin
-      .from('listings')
-      .update({
-        expires_at: newExpiresAt.toISOString(),
-      })
-      .eq('id', listingId)
+    if (newExpiresAt !== listing.expires_at) {
+      const { error: updateError } = await supabaseAdmin
+        .from('listings')
+        .update({ expires_at: newExpiresAt })
+        .eq('id', listingId)
 
-    if (updateError) {
-      console.error('[AUTO-FEATURE API] Error updating listing:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to update listing' },
-        { status: 500 }
-      )
+      if (updateError) {
+        console.error(
+          '[AUTO-FEATURE API] Error updating listing:',
+          updateError
+        )
+        return NextResponse.json(
+          { error: 'Failed to update listing' },
+          { status: 500 }
+        )
+      }
     }
 
-    // Feature the listing
-    const { error: featuredError } = await supabaseAdmin
-      .from('featured_listings')
-      .insert({
-        listing_id: listingId,
-        user_id: userId,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-      })
-      .select()
+    if (existingFeature) {
+      const { error: featuredError } = await supabaseAdmin
+        .from('featured_listings')
+        .update({
+          start_date: nowIso,
+          end_date: endDateIso,
+          updated_at: nowIso,
+        })
+        .eq('id', existingFeature.id)
 
-    if (featuredError) {
-      console.error(
-        '[AUTO-FEATURE API] Error featuring listing:',
-        featuredError
-      )
-      return NextResponse.json(
-        { error: 'Failed to feature listing', details: featuredError },
-        { status: 500 }
-      )
-    }
-
-    // Record the transaction - using admin client to bypass RLS
-    try {
-      const { error: transactionError } = await supabaseAdmin
-        .from('credit_transactions')
+      if (featuredError) {
+        console.error(
+          '[AUTO-FEATURE API] Error updating feature:',
+          featuredError
+        )
+        return NextResponse.json(
+          { error: 'Failed to feature listing', details: featuredError },
+          { status: 500 }
+        )
+      }
+    } else {
+      const { error: featuredError } = await supabaseAdmin
+        .from('featured_listings')
         .insert({
+          listing_id: listingId,
           user_id: userId,
-          amount: 1,
-          credit_type: 'featured',
-          status: 'completed',
-          description: `Featured listing ${listingId} for 15 days`,
-          type: 'debit', // Ensure this is always set
+          start_date: nowIso,
+          end_date: endDateIso,
         })
 
-      if (transactionError) {
+      if (featuredError) {
         console.error(
-          '[AUTO-FEATURE API] Error recording transaction:',
-          transactionError
+          '[AUTO-FEATURE API] Error featuring listing:',
+          featuredError
         )
-        // Non-critical error, continue
-      } else {
-        console.log('[AUTO-FEATURE API] Transaction recorded successfully')
+        return NextResponse.json(
+          { error: 'Failed to feature listing', details: featuredError },
+          { status: 500 }
+        )
       }
-    } catch (error) {
-      console.error('[AUTO-FEATURE API] Error recording transaction:', error)
-      // Non-critical error, continue with the process
     }
 
     return NextResponse.json({
       success: true,
       message: 'Listing featured automatically',
-      expiresAt: endDate.toISOString(),
-      listingExpiresAt: newExpiresAt.toISOString(),
+      expiresAt: endDateIso,
+      listingExpiresAt: newExpiresAt,
     })
   } catch (error) {
     console.error('[AUTO-FEATURE API] Unexpected error:', error)

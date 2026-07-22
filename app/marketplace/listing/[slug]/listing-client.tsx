@@ -1062,7 +1062,12 @@ export default function ListingClient({
       </div>
 
       {/* Add the AutoFeatureHandler with the specific listing ID */}
-      <AutoFeatureHandler listingId={listing.id} />
+      <AutoFeatureHandler
+        listingId={listing.id}
+        onFeatured={() => {
+          setIsFeatured(true)
+        }}
+      />
     </PageLayout>
   )
 }

@@ -7,9 +7,13 @@ import { supabase } from '@/lib/supabase'
 
 interface AutoFeatureHandlerProps {
   listingId?: string
+  onFeatured?: () => void
 }
 
-export function AutoFeatureHandler({ listingId }: AutoFeatureHandlerProps) {
+export function AutoFeatureHandler({
+  listingId,
+  onFeatured,
+}: AutoFeatureHandlerProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [processed, setProcessed] = useState(false)
@@ -37,6 +41,7 @@ export function AutoFeatureHandler({ listingId }: AutoFeatureHandlerProps) {
 
           if (!user) {
             console.error('No user found for auto-featuring')
+            toast.error('Please sign in to finish applying your featured listing')
             return
           }
 
@@ -60,8 +65,9 @@ export function AutoFeatureHandler({ listingId }: AutoFeatureHandlerProps) {
           if (existingFeature) {
             toast.success('Your listing is now featured!', {
               description:
-                'It will appear at the top of search results for 30 days.',
+                'It will appear at the top of search results for 15 days.',
             })
+            onFeatured?.()
 
             // Clean the URL parameters
             const currentPath = window.location.pathname
@@ -69,7 +75,7 @@ export function AutoFeatureHandler({ listingId }: AutoFeatureHandlerProps) {
             return
           }
 
-          // Not featured yet, call our auto-feature API
+          // Not featured yet, call our auto-feature API (verifies Stripe payment)
           const response = await fetch('/api/listings/auto-feature', {
             method: 'POST',
             headers: {
@@ -89,16 +95,16 @@ export function AutoFeatureHandler({ listingId }: AutoFeatureHandlerProps) {
           const data = await response.json()
 
           if (data.success) {
-            // Show success message
             toast.success(
               data.alreadyFeatured
                 ? 'Your listing was already featured!'
                 : 'Your listing is now featured!',
               {
                 description:
-                  'It will appear at the top of search results for 30 days.',
+                  'It will appear at the top of search results for 15 days.',
               }
             )
+            onFeatured?.()
 
             // Clean the URL parameters
             const currentPath = window.location.pathname
@@ -117,7 +123,7 @@ export function AutoFeatureHandler({ listingId }: AutoFeatureHandlerProps) {
     }
 
     processFeature()
-  }, [searchParams, processed, router, listingId])
+  }, [searchParams, processed, router, listingId, onFeatured])
 
   // This component doesn't render anything visible
   return null

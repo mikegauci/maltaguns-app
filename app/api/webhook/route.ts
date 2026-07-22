@@ -434,7 +434,7 @@ export async function POST(request: Request) {
             )
           }
 
-          // Check for existing featured listing
+          // Check for existing featured listing (unique on listing_id + user_id)
           console.log(
             '[WEBHOOK-SINGULAR] Checking for existing featured listing'
           )
@@ -443,7 +443,7 @@ export async function POST(request: Request) {
               .from('featured_listings')
               .select('*')
               .eq('listing_id', listingId)
-              .gt('end_date', new Date().toISOString())
+              .eq('user_id', userId)
               .order('end_date', { ascending: false })
               .limit(1)
 
