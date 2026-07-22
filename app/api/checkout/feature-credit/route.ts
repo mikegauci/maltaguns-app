@@ -97,9 +97,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create success URL with listing slug
+    // Create success URL with listing slug. Redirect back to the origin the
+    // checkout was started from (works for local, preview and prod); fall back
+    // to the canonical site URL only when no origin header is present.
     const slug = slugify(listing.title)
-    const hostUrl = getAppUrl()
+    const hostUrl = request.headers.get('origin') || getAppUrl()
     const successUrl = `${hostUrl}/marketplace/listing/${slug}?success=true&listingId=${listingId}`
     const cancelUrl = `${hostUrl}/marketplace/listing/${slug}?canceled=true`
 

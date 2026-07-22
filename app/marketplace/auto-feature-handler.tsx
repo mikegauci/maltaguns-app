@@ -45,37 +45,9 @@ export function AutoFeatureHandler({
             return
           }
 
-          // Check if the listing is already featured (webhook might have done this)
-          const now = new Date().toISOString()
-          const { data: existingFeature, error: checkError } = await supabase
-            .from('featured_listings')
-            .select('*')
-            .eq('listing_id', targetId)
-            .gt('end_date', now)
-            .maybeSingle()
-
-          if (checkError) {
-            console.error(
-              'Error checking if listing is already featured:',
-              checkError
-            )
-          }
-
-          // If it's already featured, just show success message
-          if (existingFeature) {
-            toast.success('Your listing is now featured!', {
-              description:
-                'It will appear at the top of search results for 15 days.',
-            })
-            onFeatured?.()
-
-            // Clean the URL parameters
-            const currentPath = window.location.pathname
-            router.replace(currentPath)
-            return
-          }
-
-          // Not featured yet, call our auto-feature API (verifies Stripe payment)
+          // Always call the auto-feature API. It verifies the Stripe payment and
+          // applies or renews the feature (or confirms the webhook already did),
+          // so we never report success without the period actually being set.
           const response = await fetch('/api/listings/auto-feature', {
             method: 'POST',
             headers: {

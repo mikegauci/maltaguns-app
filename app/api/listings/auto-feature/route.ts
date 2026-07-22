@@ -45,15 +45,18 @@ export async function POST(request: Request) {
       userId
     )
 
-    // Find a pending or recently paid featured transaction for this listing
+    // Only consider PENDING featured transactions. A completed row has already
+    // been applied (by this route or the webhook) and must never be reused,
+    // otherwise revisiting an old success URL would re-feature for free.
     const { data: transactions, error: txFindError } = await supabaseAdmin
       .from('credit_transactions')
       .select('*')
       .eq('user_id', userId)
       .eq('credit_type', 'featured')
+      .eq('status', 'pending')
       .ilike('description', `%${listingId}%`)
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(10)
 
     if (txFindError) {
       console.error(
@@ -66,51 +69,38 @@ export async function POST(request: Request) {
       )
     }
 
-    const candidateTx =
-      transactions?.find(tx => tx.status === 'pending' && tx.stripe_payment_id) ||
-      transactions?.find(
-        tx => tx.status === 'completed' && tx.stripe_payment_id
-      )
-
-    if (!candidateTx?.stripe_payment_id) {
-      return NextResponse.json(
-        { error: 'No paid featured checkout found for this listing' },
-        { status: 402 }
-      )
-    }
-
-    // Verify the Stripe checkout session was actually paid
-    let session: Stripe.Checkout.Session
-    try {
-      session = await stripe.checkout.sessions.retrieve(
-        candidateTx.stripe_payment_id
-      )
-    } catch (stripeError) {
-      console.error(
-        '[AUTO-FEATURE API] Error retrieving Stripe session:',
-        stripeError
-      )
-      return NextResponse.json(
-        { error: 'Failed to verify Stripe payment' },
-        { status: 502 }
-      )
-    }
-
-    if (
-      session.payment_status !== 'paid' ||
-      session.metadata?.listingId !== listingId ||
-      session.metadata?.userId !== userId
-    ) {
-      return NextResponse.json(
-        { error: 'Payment not completed for this listing' },
-        { status: 402 }
-      )
+    // Verify each pending transaction against Stripe and use the first session
+    // that is genuinely paid for this listing/user. This avoids picking a newer
+    // abandoned checkout when an older one was actually paid.
+    let paidTx: (typeof transactions)[number] | null = null
+    for (const tx of transactions || []) {
+      if (!tx.stripe_payment_id) continue
+      try {
+        const session = await stripe.checkout.sessions.retrieve(
+          tx.stripe_payment_id
+        )
+        if (
+          session.payment_status === 'paid' &&
+          session.metadata?.listingId === listingId &&
+          session.metadata?.userId === userId
+        ) {
+          paidTx = tx
+          break
+        }
+      } catch (stripeError) {
+        console.error(
+          '[AUTO-FEATURE API] Error retrieving Stripe session:',
+          tx.stripe_payment_id,
+          stripeError
+        )
+        // Keep checking the other pending transactions
+      }
     }
 
     const now = new Date()
     const nowIso = now.toISOString()
 
-    // Check if this listing is already featured
+    // Existing feature row (unique on listing_id + user_id)
     const { data: existingFeature, error: checkError } = await supabaseAdmin
       .from('featured_listings')
       .select('*')
@@ -129,40 +119,34 @@ export async function POST(request: Request) {
       )
     }
 
-    const alreadyFeaturedActive =
-      existingFeature && new Date(existingFeature.end_date) > now
-
-    // Mark transaction completed if still pending
-    if (candidateTx.status === 'pending') {
-      const { error: txUpdateError } = await supabaseAdmin
-        .from('credit_transactions')
-        .update({ status: 'completed' })
-        .eq('id', candidateTx.id)
-
-      if (txUpdateError) {
-        console.error(
-          '[AUTO-FEATURE API] Error updating transaction:',
-          txUpdateError
+    if (!paidTx) {
+      // No un-applied paid checkout. If the webhook already featured it, the
+      // work is done; report success. Otherwise there is nothing to apply.
+      if (existingFeature && new Date(existingFeature.end_date) > now) {
+        console.log(
+          '[AUTO-FEATURE API] No pending payment; listing already featured'
         )
-        // Non-critical; continue applying feature
+        return NextResponse.json({
+          success: true,
+          message: 'Listing was already featured',
+          alreadyFeatured: true,
+          expiresAt: existingFeature.end_date,
+        })
       }
+
+      return NextResponse.json(
+        { error: 'No paid featured checkout found for this listing' },
+        { status: 402 }
+      )
     }
 
-    if (alreadyFeaturedActive) {
-      console.log('[AUTO-FEATURE API] Listing is already featured')
-      return NextResponse.json({
-        success: true,
-        message: 'Listing was already featured',
-        alreadyFeatured: true,
-        expiresAt: existingFeature.end_date,
-      })
-    }
-
+    // A valid, not-yet-applied payment exists. Apply (or renew) a fresh 15-day
+    // feature window, matching the webhook's behavior.
     const endDate = new Date(now)
     endDate.setDate(endDate.getDate() + FEATURE_DAYS)
     const endDateIso = endDate.toISOString()
 
-    // Check if listing needs expiry extension
+    // Extend listing expiry if it would lapse during the feature window
     const { data: listing, error: listingError } = await supabaseAdmin
       .from('listings')
       .select('expires_at')
@@ -247,6 +231,21 @@ export async function POST(request: Request) {
           { status: 500 }
         )
       }
+    }
+
+    // Mark the payment consumed only after the feature was applied, so a
+    // failure above leaves it pending for a later retry.
+    const { error: txUpdateError } = await supabaseAdmin
+      .from('credit_transactions')
+      .update({ status: 'completed' })
+      .eq('id', paidTx.id)
+
+    if (txUpdateError) {
+      console.error(
+        '[AUTO-FEATURE API] Error updating transaction:',
+        txUpdateError
+      )
+      // Non-critical; the webhook idempotency check also guards duplicates
     }
 
     return NextResponse.json({
