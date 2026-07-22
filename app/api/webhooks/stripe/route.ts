@@ -1,5 +1,3 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
@@ -112,14 +110,10 @@ export async function POST(request: Request) {
         listingId
       )
 
-      // Create a Supabase client
-      console.log('[WEBHOOK-PLURAL] Creating Supabase client')
-      const supabase = createRouteHandlerClient({ cookies })
-
       try {
         // First, check the listing details to get current expiry
         console.log('[WEBHOOK-PLURAL] Checking listing details')
-        const { data: listingData, error: listingError } = await supabase
+        const { data: listingData, error: listingError } = await supabaseAdmin
           .from('listings')
           .select('expires_at, type')
           .eq('id', listingId)
@@ -140,11 +134,10 @@ export async function POST(request: Request) {
 
         // Update the transaction status to completed
         console.log('[WEBHOOK-PLURAL] Updating transaction status to completed')
-        const { data: txData, error: transactionError } = await supabase
+        const { data: txData, error: transactionError } = await supabaseAdmin
           .from('credit_transactions')
           .update({
             status: 'completed',
-            updated_at: new Date().toISOString(),
           })
           .eq('stripe_payment_id', session.id)
           .eq('user_id', userId)
@@ -165,15 +158,16 @@ export async function POST(request: Request) {
           )
         }
 
-        // Check for existing featured listing
+        // Check for existing featured listing (any row for this listing+user due to unique constraint)
         console.log('[WEBHOOK-PLURAL] Checking for existing featured listing')
-        const { data: existingFeature, error: featureError } = await supabase
-          .from('featured_listings')
-          .select('*')
-          .eq('listing_id', listingId)
-          .gt('end_date', new Date().toISOString())
-          .order('end_date', { ascending: false })
-          .limit(1)
+        const { data: existingFeature, error: featureError } =
+          await supabaseAdmin
+            .from('featured_listings')
+            .select('*')
+            .eq('listing_id', listingId)
+            .eq('user_id', userId)
+            .order('end_date', { ascending: false })
+            .limit(1)
 
         if (featureError) {
           console.error(
@@ -233,9 +227,7 @@ export async function POST(request: Request) {
             '[WEBHOOK-PLURAL] Found existing feature. Will update to fixed 15-day period'
           )
 
-          // Update the existing featured listing with new dates
-          console.log('[WEBHOOK-PLURAL] Updating existing featured listing')
-          const { data: updateData, error: updateError } = await supabase
+          const { data: updateData, error: updateError } = await supabaseAdmin
             .from('featured_listings')
             .update({
               start_date: startDate,
@@ -261,14 +253,11 @@ export async function POST(request: Request) {
             updateData
           )
         } else {
-          // Create new feature
           console.log(
             '[WEBHOOK-PLURAL] No existing feature found, creating new one'
           )
 
-          // Insert new featured listing
-          console.log('[WEBHOOK-PLURAL] Inserting new featured listing')
-          const { data: insertData, error: insertError } = await supabase
+          const { data: insertData, error: insertError } = await supabaseAdmin
             .from('featured_listings')
             .insert({
               listing_id: listingId,
@@ -295,22 +284,17 @@ export async function POST(request: Request) {
           )
         }
 
-        // Update the listing
-        const listingUpdateData: any = {}
-
-        // Add the new expires_at if needed
+        // Update the listing expiry if needed
         if (newExpiryDate) {
-          listingUpdateData.expires_at = newExpiryDate.toISOString()
-        }
+          const listingUpdateData = {
+            expires_at: newExpiryDate.toISOString(),
+          }
+          console.log(
+            '[WEBHOOK-PLURAL] Updating listing with:',
+            listingUpdateData
+          )
 
-        console.log(
-          '[WEBHOOK-PLURAL] Updating listing with:',
-          listingUpdateData
-        )
-
-        // Only update if there's something to update
-        if (Object.keys(listingUpdateData).length > 0) {
-          const { error: listingUpdateError } = await supabase
+          const { error: listingUpdateError } = await supabaseAdmin
             .from('listings')
             .update(listingUpdateData)
             .eq('id', listingId)
@@ -322,10 +306,9 @@ export async function POST(request: Request) {
             )
             // Not critical, continue
           } else {
-            const updateMessage = newExpiryDate
-              ? `Listing expires_at updated successfully. New expiry: ${newExpiryDate.toISOString()}`
-              : 'No listing updates needed'
-            console.log(`[WEBHOOK-PLURAL] ${updateMessage}`)
+            console.log(
+              `[WEBHOOK-PLURAL] Listing expires_at updated successfully. New expiry: ${newExpiryDate.toISOString()}`
+            )
           }
         }
 

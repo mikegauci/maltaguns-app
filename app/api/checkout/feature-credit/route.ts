@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
+import { getAppUrl } from '@/lib/seo'
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined')
@@ -64,9 +65,43 @@ export async function POST(request: Request) {
 
     console.log('[CHECKOUT] Found listing:', listing.title)
 
-    // Create success URL with listing slug
+    // Block repurchase while an active feature has more than 3 days remaining
+    const now = new Date()
+    const { data: existingFeature, error: featureCheckError } = await supabase
+      .from('featured_listings')
+      .select('end_date')
+      .eq('listing_id', listingId)
+      .gt('end_date', now.toISOString())
+      .maybeSingle()
+
+    if (featureCheckError) {
+      console.error('[CHECKOUT] Feature status check error:', featureCheckError)
+      return NextResponse.json(
+        { error: 'Failed to check featured status' },
+        { status: 500 }
+      )
+    }
+
+    if (existingFeature) {
+      const daysRemaining = Math.ceil(
+        (new Date(existingFeature.end_date).getTime() - now.getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+      if (daysRemaining > 3) {
+        return NextResponse.json(
+          {
+            error: `This listing is already featured for ${daysRemaining} more days. You can renew when 3 or fewer days remain.`,
+          },
+          { status: 409 }
+        )
+      }
+    }
+
+    // Create success URL with listing slug. Redirect back to the origin the
+    // checkout was started from (works for local, preview and prod); fall back
+    // to the canonical site URL only when no origin header is present.
     const slug = slugify(listing.title)
-    const hostUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const hostUrl = request.headers.get('origin') || getAppUrl()
     const successUrl = `${hostUrl}/marketplace/listing/${slug}?success=true&listingId=${listingId}`
     const cancelUrl = `${hostUrl}/marketplace/listing/${slug}?canceled=true`
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export const revalidate = 5
 
@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     }
   }
 
-  let supabaseQuery = supabase
+  let supabaseQuery = supabaseAdmin
     .from('listings')
     .select('*')
     .eq('status', 'active')
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
 
   const [{ data, error }, featuredRes] = await Promise.all([
     supabaseQuery,
-    supabase
+    supabaseAdmin
       .from('featured_listings')
       .select('listing_id')
       .gt('end_date', new Date().toISOString()),
@@ -51,6 +51,17 @@ export async function GET(req: Request) {
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (featuredRes.error) {
+    console.error(
+      '[MARKETPLACE SEARCH] Featured listings query failed:',
+      featuredRes.error
+    )
+    return NextResponse.json(
+      { error: featuredRes.error.message },
+      { status: 500 }
+    )
   }
 
   const featuredIds = new Set((featuredRes.data || []).map(r => r.listing_id))
@@ -72,4 +83,3 @@ export async function GET(req: Request) {
     }
   )
 }
-

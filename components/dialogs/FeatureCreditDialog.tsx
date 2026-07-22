@@ -16,6 +16,7 @@ import { Loader2 } from 'lucide-react'
 
 // Price amount in EUR
 const FEATURE_PRICE = 10
+const RENEW_WITHIN_DAYS = 3
 
 interface FeatureListingDialogProps {
   open: boolean
@@ -35,19 +36,20 @@ export function FeatureCreditDialog({
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [isRenewal, setIsRenewal] = useState(false)
+  const [alreadyFeatured, setAlreadyFeatured] = useState(false)
 
   useEffect(() => {
-    // Check if this is a renewal
+    // Check if this is a renewal (featured with <= 3 days remaining)
     const checkFeatureStatus = async () => {
       try {
-        const now = new Date().toISOString()
+        const now = new Date()
+        const nowIso = now.toISOString()
 
-        // Check for an existing feature in the featured_listings table
         const { data: feature, error: featureError } = await supabase
           .from('featured_listings')
           .select('*')
           .eq('listing_id', listingId)
-          .gt('end_date', now)
+          .gt('end_date', nowIso)
           .maybeSingle()
 
         if (featureError) {
@@ -56,6 +58,15 @@ export function FeatureCreditDialog({
         }
 
         if (feature) {
+          const endDate = new Date(feature.end_date)
+          const daysRemaining = Math.ceil(
+            (endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          )
+          const canRenew = daysRemaining <= RENEW_WITHIN_DAYS
+          setAlreadyFeatured(!canRenew)
+          setIsRenewal(canRenew)
+        } else {
+          setAlreadyFeatured(false)
           setIsRenewal(false)
         }
       } catch (error) {
@@ -72,23 +83,6 @@ export function FeatureCreditDialog({
     try {
       setLoading(true)
 
-      // First, extend the listing expiry to 30 days
-      const expiryResponse = await fetch('/api/listings/update-expiry', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          listingId,
-        }),
-      })
-
-      if (!expiryResponse.ok) {
-        const errorData = await expiryResponse.json()
-        throw new Error(errorData.error || 'Failed to extend listing expiry')
-      }
-
-      // Then proceed with the feature purchase
       const response = await fetch('/api/checkout/feature-credit', {
         method: 'POST',
         headers: {
@@ -127,6 +121,7 @@ export function FeatureCreditDialog({
       if (!newOpen) {
         setSuccess(false)
         setIsRenewal(false)
+        setAlreadyFeatured(false)
       }
     }
   }
@@ -136,12 +131,18 @@ export function FeatureCreditDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {success ? 'Listing Featured!' : 'Feature Your Listing'}
+            {success
+              ? 'Listing Featured!'
+              : isRenewal
+                ? 'Renew Featured Listing'
+                : 'Feature Your Listing'}
           </DialogTitle>
           <DialogDescription>
             {success
               ? 'Your listing will now appear at the top of search results for 15 days.'
-              : `Feature your listing for €${FEATURE_PRICE} to make it stand out and appear at the top of search results for 15 days.`}
+              : alreadyFeatured
+                ? 'This listing is already featured. You can renew when 3 or fewer days remain.'
+                : `Feature your listing for €${FEATURE_PRICE} to make it stand out and appear at the top of search results for 15 days.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -184,14 +185,16 @@ export function FeatureCreditDialog({
             <Button
               onClick={handlePurchase}
               className="w-full"
-              disabled={loading}
+              disabled={loading || alreadyFeatured}
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {loading
                 ? 'Processing...'
-                : isRenewal
-                  ? 'Renew Feature'
-                  : `Purchase Feature (€${FEATURE_PRICE})`}
+                : alreadyFeatured
+                  ? 'Already Featured'
+                  : isRenewal
+                    ? 'Renew Feature'
+                    : `Purchase Feature (€${FEATURE_PRICE})`}
             </Button>
           ) : (
             <Button

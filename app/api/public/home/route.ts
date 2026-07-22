@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export const revalidate = 30
 
@@ -16,7 +16,7 @@ export async function GET() {
     servicingRes,
     clubsRes,
   ] = await Promise.all([
-    supabase
+    supabaseAdmin
       .from('listings')
       .select('*')
       .eq('status', 'active')
@@ -24,7 +24,7 @@ export async function GET() {
       .order('created_at', { ascending: false })
       .limit(10),
 
-    supabase
+    supabaseAdmin
       .from('featured_listings')
       .select(
         `
@@ -38,7 +38,7 @@ export async function GET() {
       .order('end_date', { ascending: false })
       .limit(10),
 
-    supabase
+    supabaseAdmin
       .from('blog_posts')
       .select(
         `
@@ -50,21 +50,33 @@ export async function GET() {
       .order('created_at', { ascending: false })
       .limit(10),
 
-    supabase
+    supabaseAdmin
       .from('events')
       .select('*')
       .gte('start_date', now)
       .order('start_date', { ascending: true })
       .limit(10),
 
-    supabase.from('stores').select('*').order('created_at', { ascending: false }).limit(10),
-    supabase.from('ranges').select('*').order('created_at', { ascending: false }).limit(10),
-    supabase
+    supabaseAdmin
+      .from('stores')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabaseAdmin
+      .from('ranges')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10),
+    supabaseAdmin
       .from('servicing')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(10),
-    supabase.from('clubs').select('*').order('created_at', { ascending: false }).limit(10),
+    supabaseAdmin
+      .from('clubs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10),
   ])
 
   if (recentListingsRes.error) {
@@ -74,10 +86,23 @@ export async function GET() {
     )
   }
 
-  const featuredListings = (featuredListingsRes.data || []).map((item: any) => ({
-    ...(item.listings as any),
-    is_featured: true,
-  }))
+  if (featuredListingsRes.error) {
+    console.error(
+      '[HOME API] Featured listings query failed:',
+      featuredListingsRes.error
+    )
+    return NextResponse.json(
+      { error: featuredListingsRes.error.message },
+      { status: 500 }
+    )
+  }
+
+  const featuredListings = (featuredListingsRes.data || []).map(
+    (item: any) => ({
+      ...(item.listings as any),
+      is_featured: true,
+    })
+  )
 
   const establishments: any[] = []
   const pushTyped = (rows: any[] | null, type: string) => {
@@ -111,4 +136,3 @@ export async function GET() {
     }
   )
 }
-

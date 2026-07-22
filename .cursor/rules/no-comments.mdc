@@ -1,0 +1,11 @@
+---
+description: Do not add code comments unless explicitly requested
+alwaysApply: true
+---
+
+# No Comments
+
+- Do not add comments to code you write or edit.
+- Do not add JSDoc, TODO comments, or explanatory inline comments.
+- Prefer clear naming and structure over comments.
+- Only add a comment if the user explicitly asks for one, or if it is required to satisfy a linter/tooling rule already present in the file.
