@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify'
+import sanitizeHtml from 'sanitize-html'
 
 const ALLOWED_TAGS = [
   'p',
@@ -32,22 +32,16 @@ const ALLOWED_TAGS = [
   'td',
 ]
 
-const ALLOWED_ATTR = [
-  'href',
-  'target',
-  'rel',
-  'src',
-  'alt',
-  'title',
-  'class',
-  'width',
-  'height',
-]
+const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
+  a: ['href', 'target', 'rel', 'title', 'class'],
+  img: ['src', 'alt', 'title', 'class', 'width', 'height'],
+  '*': ['class'],
+}
 
 export function sanitizeBlogHtml(html: string): string {
-  return DOMPurify.sanitize(html, {
-    ALLOWED_TAGS,
-    ALLOWED_ATTR,
-    ALLOW_DATA_ATTR: false,
+  return sanitizeHtml(html ?? '', {
+    allowedTags: ALLOWED_TAGS,
+    allowedAttributes: ALLOWED_ATTRIBUTES,
+    allowedSchemes: ['http', 'https', 'mailto'],
   })
 }
