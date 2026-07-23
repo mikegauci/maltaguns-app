@@ -106,7 +106,13 @@ export default function EstablishmentClient({
     }
 
     fetchBlogPosts()
-  }, [establishment.id, refreshTrigger, config.label, config.blogForeignKey])
+  }, [
+    establishment.id,
+    refreshTrigger,
+    config.label,
+    config.blogForeignKey,
+    supabase,
+  ])
 
   return (
     <PageLayout>

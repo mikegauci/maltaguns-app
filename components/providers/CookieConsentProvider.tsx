@@ -21,7 +21,7 @@ type CookieConsentContextValue = {
   hasAnswered: boolean
   isReady: boolean
   preferencesOpen: boolean
-  setConsent: (consent: CookieConsent) => void
+  setConsent: (_consent: CookieConsent) => void
   openPreferences: () => void
   closePreferences: () => void
 }
@@ -29,13 +29,6 @@ type CookieConsentContextValue = {
 const CookieConsentContext = createContext<
   CookieConsentContextValue | undefined
 >(undefined)
-
-declare global {
-  interface Window {
-    gtag?: (...args: unknown[]) => void
-    dataLayer?: unknown[]
-  }
-}
 
 export function CookieConsentProvider({
   children,

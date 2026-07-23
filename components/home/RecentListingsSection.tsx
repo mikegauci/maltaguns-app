@@ -14,8 +14,8 @@ interface Listing {
 
 interface RecentListingsSectionProps {
   listings: Listing[]
-  formatPrice: (price: number) => string
-  slugify: (text: string) => string
+  formatPrice: (_price: number) => string
+  slugify: (_text: string) => string
 }
 
 export const RecentListingsSection = ({

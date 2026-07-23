@@ -13,10 +13,10 @@ const ZOOM_TOGGLE_SCALE = 2.5
 
 interface ImageLightboxProps {
   open: boolean
-  onOpenChange: (open: boolean) => void
+  onOpenChange: (_open: boolean) => void
   images: string[]
   index: number
-  onIndexChange: (index: number) => void
+  onIndexChange: (_index: number) => void
   alt: string
 }
 
