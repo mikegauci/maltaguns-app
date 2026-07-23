@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { FEATURE_DAYS } from '@/lib/featured-listings'
 
 interface AutoFeatureHandlerProps {
   listingId?: string
@@ -74,8 +75,7 @@ export function AutoFeatureHandler({
                 ? 'Your listing was already featured!'
                 : 'Your listing is now featured!',
               {
-                description:
-                  'It will appear at the top of search results for 15 days.',
+                description: `It will appear at the top of search results for ${FEATURE_DAYS} days.`,
               }
             )
             onFeatured?.()

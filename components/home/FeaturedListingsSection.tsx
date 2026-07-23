@@ -13,8 +13,8 @@ interface Listing {
 
 interface FeaturedListingsSectionProps {
   listings: Listing[]
-  formatPrice: (price: number) => string
-  slugify: (text: string) => string
+  formatPrice: (_price: number) => string
+  slugify: (_text: string) => string
 }
 
 export const FeaturedListingsSection = ({

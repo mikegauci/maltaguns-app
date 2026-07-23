@@ -6,7 +6,7 @@ import { slugify } from '../utils'
 interface CreateListingDependencies {
   supabase: SupabaseClient
   router: AppRouterInstance
-  toast: (options: {
+  toast: (_options: {
     title: string
     description?: string
     variant?: 'default' | 'destructive'

@@ -21,7 +21,7 @@ import { ContactFormValues } from '@/hooks/useContactForm'
 
 interface ContactFormProps {
   form: UseFormReturn<ContactFormValues>
-  onSubmit: (data: ContactFormValues) => void
+  onSubmit: (_data: ContactFormValues) => void
   isSubmitting: boolean
 }
 

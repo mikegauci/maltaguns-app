@@ -5,7 +5,7 @@ import { MAX_FILE_SIZE, MAX_FILES, ACCEPTED_IMAGE_TYPES } from '../constants'
 import { resizeImageForUpload } from '@/lib/image-resize'
 
 interface UseImageUploadProps {
-  toast: (options: {
+  toast: (_options: {
     title: string
     description?: string
     variant?: 'default' | 'destructive'

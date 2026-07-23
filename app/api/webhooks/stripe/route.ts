@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { constructStripeEvent } from '@/lib/stripe-webhook'
+import {
+  FEATURE_DAYS,
+  getFeatureEndDate,
+  getListingExtendDate,
+  LISTING_EXTEND_DAYS,
+} from '@/lib/featured-listings'
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined')
@@ -185,11 +191,8 @@ export async function POST(request: Request) {
           existingFeature
         )
 
-        // Always set start date to now and end date to 15 days from now
-        // This ensures a consistent 15-day feature period regardless of any existing period
         const startDate = new Date().toISOString()
-        const endDate = new Date()
-        endDate.setDate(endDate.getDate() + 15)
+        const endDate = getFeatureEndDate()
         const endDateIso = endDate.toISOString()
 
         console.log(
@@ -199,7 +202,6 @@ export async function POST(request: Request) {
           endDateIso
         )
 
-        // Check if listing is expiring soon (less than 15 days)
         const currentExpiryDate = new Date(listingData.expires_at)
         const now = new Date()
         const daysUntilExpiry = Math.floor(
@@ -210,21 +212,19 @@ export async function POST(request: Request) {
           daysUntilExpiry
         )
 
-        // Calculate new expiry date for listing if needed
         let newExpiryDate = null
-        if (daysUntilExpiry < 15) {
+        if (daysUntilExpiry <= FEATURE_DAYS) {
           console.log(
-            '[WEBHOOK-PLURAL] Listing is expiring soon, will extend to 30 days'
+            `[WEBHOOK-PLURAL] Listing is expiring soon, will extend to ${LISTING_EXTEND_DAYS} days`
           )
-          newExpiryDate = new Date()
-          newExpiryDate.setDate(newExpiryDate.getDate() + 30)
+          newExpiryDate = getListingExtendDate()
         }
 
         if (existingFeature && existingFeature.length > 0) {
           // If there's an existing feature, update its dates
           const feature = existingFeature[0]
           console.log(
-            '[WEBHOOK-PLURAL] Found existing feature. Will update to fixed 15-day period'
+            `[WEBHOOK-PLURAL] Found existing feature. Will update to fixed ${FEATURE_DAYS}-day period`
           )
 
           const { data: updateData, error: updateError } = await supabaseAdmin
@@ -249,7 +249,7 @@ export async function POST(request: Request) {
           }
 
           console.log(
-            `[WEBHOOK-PLURAL] Reset feature for listing ${listingId} to new 15-day period`,
+            `[WEBHOOK-PLURAL] Reset feature for listing ${listingId} to new ${FEATURE_DAYS}-day period`,
             updateData
           )
         } else {

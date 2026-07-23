@@ -1,6 +1,12 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import {
+  FEATURE_DAYS,
+  getFeatureEndDate,
+  getListingExtendDate,
+  LISTING_EXTEND_DAYS,
+} from '@/lib/featured-listings'
 
 export async function POST(request: Request) {
   try {
@@ -25,10 +31,8 @@ export async function POST(request: Request) {
 
     // Calculate new dates
     const now = new Date()
-    const newFeatureEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000) // 15 days
-    const newListingExpiryDate = new Date(
-      now.getTime() + 30 * 24 * 60 * 60 * 1000
-    ) // 30 days
+    const newFeatureEndDate = getFeatureEndDate(now)
+    const newListingExpiryDate = getListingExtendDate(now)
 
     console.log('Renewing feature with the following dates:')
     console.log('- New feature end date:', newFeatureEndDate.toISOString())
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
         amount: 1,
         credit_type: 'featured',
         status: 'completed',
-        description: `Renewed feature for listing ${listingId} for 15 days and extended expiry for 30 days`,
+        description: `Renewed feature for listing ${listingId} for ${FEATURE_DAYS} days and extended expiry for ${LISTING_EXTEND_DAYS} days`,
         type: 'debit',
       })
 

@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 import { getAppUrl } from '@/lib/seo'
+import { FEATURE_RENEW_WITHIN_DAYS } from '@/lib/featured-listings'
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined')
@@ -87,10 +88,10 @@ export async function POST(request: Request) {
         (new Date(existingFeature.end_date).getTime() - now.getTime()) /
           (1000 * 60 * 60 * 24)
       )
-      if (daysRemaining > 3) {
+      if (daysRemaining > FEATURE_RENEW_WITHIN_DAYS) {
         return NextResponse.json(
           {
-            error: `This listing is already featured for ${daysRemaining} more days. You can renew when 3 or fewer days remain.`,
+            error: `This listing is already featured for ${daysRemaining} more days. You can renew when ${FEATURE_RENEW_WITHIN_DAYS} or fewer days remain.`,
           },
           { status: 409 }
         )
