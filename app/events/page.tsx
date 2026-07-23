@@ -25,6 +25,7 @@ import Link from 'next/link'
 import { format, addMonths, subMonths, isBefore, startOfDay } from 'date-fns'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
+import { StorageImage } from '@/components/ui/storage-image'
 
 interface Event {
   id: string
@@ -117,10 +118,11 @@ export default function EventsPage() {
                   <Card className="h-full hover:shadow-lg transition-shadow">
                     {event.poster_url && (
                       <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                        <img
+                        <StorageImage
                           src={event.poster_url}
                           alt={event.title}
-                          className="object-cover w-full h-full"
+                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         />
                       </div>
                     )}
@@ -316,10 +318,11 @@ export default function EventsPage() {
                 <Card className="hover:shadow-lg transition-shadow">
                   {event.poster_url && (
                     <div className="aspect-video relative overflow-hidden rounded-t-lg">
-                      <img
+                      <StorageImage
                         src={event.poster_url}
                         alt={event.title}
-                        className="object-cover w-full h-full"
+                        className="object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                     </div>
                   )}

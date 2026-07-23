@@ -8,6 +8,7 @@ import ViewTracker from '@/components/blog/ViewTracker'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
+import { StorageImage } from '@/components/ui/storage-image'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
 import { sanitizeBlogHtml } from '@/lib/sanitize-html'
 import { JsonLd } from '@/components/seo/JsonLd'
@@ -345,11 +346,13 @@ export default async function BlogPost(props: {
 
       <article className="prose prose-neutral dark:prose-invert prose-strong:text-[#0a0a0a] prose-b:text-[#0a0a0a] mx-auto">
         {post.featured_image && (
-          <div className="mb-8">
-            <img
+          <div className="relative mb-8 w-full h-[220px] sm:h-[320px] md:h-[420px] lg:h-[550px] overflow-hidden rounded-lg">
+            <StorageImage
               src={post.featured_image}
               alt={post.title}
-              className="w-full h-[220px] sm:h-[320px] md:h-[420px] lg:h-[550px] object-cover rounded-lg"
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 1200px"
+              priority
             />
           </div>
         )}

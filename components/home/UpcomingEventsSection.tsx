@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StorageImage } from '@/components/ui/storage-image'
 import { Calendar } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -43,10 +44,11 @@ export const UpcomingEventsSection = ({
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full">
                     {event.poster_url ? (
                       <div className="aspect-video relative overflow-hidden">
-                        <img
+                        <StorageImage
                           src={event.poster_url}
                           alt={event.title}
-                          className="object-cover w-full h-full"
+                          className="object-cover"
+                          sizes="(max-width: 768px) 42vw, 25vw"
                         />
                       </div>
                     ) : (

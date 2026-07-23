@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface HeroSectionProps {
   isAuthenticated: boolean
@@ -9,10 +10,14 @@ export const HeroSection = ({ isAuthenticated }: HeroSectionProps) => {
   return (
     <section className="relative isolate">
       <div className="absolute inset-0 overflow-hidden">
-        <img
+        <Image
           src="/maltaguns-hero-2.jpg"
           alt="MaltaGuns Hero"
-          className="w-full h-full object-cover"
+          fill
+          priority
+          sizes="100vw"
+          quality={75}
+          className="object-cover"
         />
         <div className="absolute inset-0 bg-black/75"></div>
       </div>

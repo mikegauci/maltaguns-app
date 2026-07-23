@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -118,9 +119,11 @@ export function Header() {
             href="/"
             className="absolute left-1/2 -translate-x-1/2 z-0 flex items-center gap-2 max-w-[min(45vw,11rem)] lg:static lg:translate-x-0 lg:max-w-none lg:z-auto"
           >
-            <img
+            <Image
               src="/maltaguns.png"
               alt="MaltaGuns Logo"
+              width={152}
+              height={28}
               className="h-8 w-auto max-w-full object-contain"
             />
           </Link>

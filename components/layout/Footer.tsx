@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Facebook, Mail } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
@@ -21,9 +22,11 @@ export function Footer() {
           {/* Logo and About */}
           <div className="col-span-2 md:col-span-1 flex flex-col gap-4 items-center md:items-start text-center md:text-left">
             <Link href="/" className="flex items-center gap-2">
-              <img
+              <Image
                 src="/maltaguns.png"
                 alt="MaltaGuns Logo"
+                width={152}
+                height={28}
                 className="h-8 w-auto"
               />
             </Link>
