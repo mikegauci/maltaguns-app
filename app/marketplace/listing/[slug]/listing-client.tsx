@@ -700,155 +700,88 @@ export default function ListingClient({
         }
       )
 
-      // Case 1: User has the license but ID card not verified
       if (hasLicenseAccess && !userIdCardVerified) {
         return (
-          <div className="space-y-4">
-            <div className="relative min-h-[200px]">
-              <div className="blur-sm">
-                <p className="font-semibold">••••••••••</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>••••••@••••.com</span>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>+356 •••• ••••</span>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
-                <Lock className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-center text-muted-foreground mb-2 font-semibold">
-                  Identification Verification Required
-                </p>
-                <p className="text-xs text-center text-muted-foreground mb-4">
-                  You have the required license for this category, but your
-                  identification needs to be verified to view seller
-                  information.
-                </p>
-                <Link href="/profile" className="w-full">
-                  <Button variant="outline" className="w-full" size="sm">
-                    Verify Identification
-                  </Button>
-                </Link>
-              </div>
-            </div>
+          <div className="flex flex-col items-center text-center space-y-3 py-2">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground font-semibold">
+              Identification Verification Required
+            </p>
+            <p className="text-xs text-muted-foreground">
+              You have the required license for this category, but your
+              identification needs to be verified to view seller information.
+            </p>
+            <Link href="/profile" className="w-full">
+              <Button variant="outline" className="w-full" size="sm">
+                Verify Identification
+              </Button>
+            </Link>
           </div>
         )
       }
 
-      // Case 2: User has the license type + verified ID, but the license is
-      // still awaiting verification by an administrator
       if (hasLicenseAccess && userIdCardVerified && !userLicenseVerified) {
         return (
-          <div className="space-y-4">
-            <div className="relative min-h-[200px]">
-              <div className="blur-sm">
-                <p className="font-semibold">••••••••••</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>••••••@••••.com</span>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span>+356 •••• ••••</span>
-                </div>
-              </div>
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
-                <Lock className="h-8 w-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-center text-muted-foreground mb-2 font-semibold">
-                  License Pending Verification
-                </p>
-                <p className="text-xs text-center text-muted-foreground mb-4">
-                  Your license has been uploaded and is awaiting verification by
-                  an administrator. You'll be able to view seller information
-                  once it's approved.
-                </p>
-                <Link href="/profile" className="w-full">
-                  <Button variant="outline" className="w-full" size="sm">
-                    View License Status
-                  </Button>
-                </Link>
-              </div>
-            </div>
+          <div className="flex flex-col items-center text-center space-y-3 py-2">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground font-semibold">
+              License Pending Verification
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Your license has been uploaded and is awaiting verification by an
+              administrator. You'll be able to view seller information once it's
+              approved.
+            </p>
+            <Link href="/profile" className="w-full">
+              <Button variant="outline" className="w-full" size="sm">
+                View License Status
+              </Button>
+            </Link>
           </div>
         )
       }
 
-      // Case 3: User doesn't have the required license
       return (
-        <div className="space-y-4">
-          <div className="relative min-h-[200px]">
-            <div className="blur-sm">
-              <p className="font-semibold">••••••••••</p>
-              <div className="flex items-center gap-2 mt-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                <span>••••••@••••.com</span>
+        <div className="flex flex-col items-center text-center space-y-3 py-2">
+          <Lock className="h-8 w-8 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground font-semibold">
+            License & Identification Required
+          </p>
+          <p className="text-xs text-muted-foreground">
+            You need one of the following licenses and a verified identification
+            to view seller information for this category ({categoryLabel}):
+          </p>
+          <div className="text-xs text-muted-foreground space-y-1 w-full">
+            {requiredLicenses.map((license, index) => (
+              <div key={index} className="font-medium">
+                • {license}
               </div>
-              <div className="flex items-center gap-2 mt-2">
-                <Phone className="h-4 w-4 text-muted-foreground" />
-                <span>+356 •••• ••••</span>
-              </div>
-            </div>
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
-              <Lock className="h-8 w-8 text-muted-foreground mb-2" />
-              <p className="text-sm text-center text-muted-foreground mb-2 font-semibold">
-                License & Identification Required
-              </p>
-              <p className="text-xs text-center text-muted-foreground mb-4">
-                You need one of the following licenses and a verified
-                identification to view seller information for this category (
-                {categoryLabel}):
-              </p>
-              <div className="text-xs text-center text-muted-foreground mb-4 space-y-1">
-                {requiredLicenses.map((license, index) => (
-                  <div key={index} className="font-medium">
-                    • {license}
-                  </div>
-                ))}
-              </div>
-              <Link href="/profile" className="w-full">
-                <Button variant="outline" className="w-full" size="sm">
-                  Update License Information
-                </Button>
-              </Link>
-            </div>
+            ))}
           </div>
+          <Link href="/profile" className="w-full">
+            <Button variant="outline" className="w-full" size="sm">
+              Update License Information
+            </Button>
+          </Link>
         </div>
       )
     }
 
-    // Show login/register prompt if not authenticated
     return (
-      <div className="space-y-4">
-        <div className="relative min-h-[200px]">
-          <div className="blur-sm">
-            <p className="font-semibold">••••••••••</p>
-            <div className="flex items-center gap-2 mt-2">
-              <Mail className="h-4 w-4 text-muted-foreground" />
-              <span>••••••@••••.com</span>
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <Phone className="h-4 w-4 text-muted-foreground" />
-              <span>+356 •••• ••••</span>
-            </div>
-          </div>
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 p-4">
-            <Lock className="h-8 w-8 text-muted-foreground mb-2" />
-            <p className="text-sm text-center text-muted-foreground mb-4">
-              Create a verified account to view seller information
-            </p>
-            <div className="flex flex-col gap-2 w-full">
-              <Link href="/register" className="w-full">
-                <Button className="w-full">Register to Contact Seller</Button>
-              </Link>
-              <Link href="/login" className="w-full">
-                <Button variant="outline" className="w-full">
-                  Login
-                </Button>
-              </Link>
-            </div>
-          </div>
+      <div className="flex flex-col items-center text-center space-y-3 py-2">
+        <Lock className="h-8 w-8 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">
+          Create a verified account to view seller information
+        </p>
+        <div className="flex flex-col gap-2 w-full">
+          <Link href="/register" className="w-full">
+            <Button className="w-full">Register to Contact Seller</Button>
+          </Link>
+          <Link href="/login" className="w-full">
+            <Button variant="outline" className="w-full">
+              Login
+            </Button>
+          </Link>
         </div>
       </div>
     )
@@ -903,14 +836,12 @@ export default function ListingClient({
         />
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Main Content Section (3 columns) */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* Images Section */}
-          <Card>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] gap-6">
+        <div className="min-w-0 space-y-6">
+          <Card className="overflow-hidden">
             <CardContent className="p-2">
               <div
-                className="relative h-[500px] flex items-center justify-center cursor-zoom-in"
+                className="relative h-[500px] w-full overflow-hidden flex items-center justify-center cursor-zoom-in"
                 onClick={() => setLightboxOpen(true)}
               >
                 <StorageImage
@@ -967,11 +898,11 @@ export default function ListingClient({
             alt={listing.title}
           />
 
-          <div className="grid grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-4">
             {images.map((image, index) => (
               <div
                 key={index}
-                className={`relative aspect-video cursor-pointer overflow-hidden rounded-lg border-2 ${
+                className={`relative aspect-video min-w-0 cursor-pointer overflow-hidden rounded-lg border-2 ${
                   index === currentImageIndex
                     ? 'border-primary'
                     : 'border-transparent'
@@ -1048,11 +979,12 @@ export default function ListingClient({
           </Card>
         </div>
 
-        {/* Seller Information Section (1 column) */}
-        <div className="lg:col-span-1">
-          <Card>
+        <div className="min-w-0">
+          <Card className="overflow-hidden">
             <CardHeader>
-              <CardTitle>Seller Information</CardTitle>
+              <CardTitle className="text-xl break-words">
+                Seller Information
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {renderSellerInfo()}

@@ -91,7 +91,7 @@ export const FeaturedEstablishmentsSection = ({
                       </div>
 
                       {establishment.description && (
-                        <p className="text-xs md:text-sm text-muted-foreground mb-2 md:mb-4 line-clamp-2 hidden sm:block">
+                        <p className="text-xs md:text-sm text-muted-foreground mb-2 md:mb-4 max-sm:hidden line-clamp-3">
                           {establishment.description}
                         </p>
                       )}
