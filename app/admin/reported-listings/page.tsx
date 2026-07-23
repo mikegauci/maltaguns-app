@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { BackButton } from '@/components/ui/back-button'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -68,7 +68,7 @@ function ReportedListingsPageComponent() {
     null
   )
   const [newStatus, setNewStatus] = useState('')
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   // Helper function to create URL-friendly slugs from titles
   function slugify(text: string): string {

@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
 import CategoryListings from '@/components/marketplace/CategoryListings'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import {
   firearmsCategories,
@@ -13,9 +13,9 @@ import {
 import { PageLayout } from '@/components/ui/page-layout'
 
 interface FirearmsCategoryPageProps {
-  params: {
+  params: Promise<{
     category: string
-  }
+  }>
 }
 
 // Valid firearms categories from constants
@@ -23,12 +23,11 @@ const VALID_CATEGORIES = Object.keys(firearmsCategories) as Array<
   keyof typeof firearmsCategories
 >
 
-export default function FirearmsCategoryPage({
-  params,
-}: FirearmsCategoryPageProps) {
+export default function FirearmsCategoryPage(props: FirearmsCategoryPageProps) {
+  const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
   const [canAccess, setCanAccess] = useState(false)
 

@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import {
   Bold,
@@ -34,7 +35,7 @@ const ACCEPTED_IMAGE_TYPES = [
 
 async function uploadContentImage(
   file: File,
-  supabase: ReturnType<typeof createClientComponentClient<Database>>,
+  supabase: SupabaseClient<Database>,
   userId: string
 ) {
   const resized = await resizeImageForUpload(file)
@@ -75,7 +76,7 @@ export default function BlogEditor({
   onUploadingChange,
 }: BlogEditorProps) {
   const { toast } = useToast()
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClient()
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')

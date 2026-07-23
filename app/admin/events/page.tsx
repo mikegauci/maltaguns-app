@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { BackButton } from '@/components/ui/back-button'
 import {
   Popover,
@@ -84,7 +84,7 @@ function EventsPageComponent() {
     meta_title: '',
     meta_description: '',
   })
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const columns: ColumnDef<Event>[] = [
     {
