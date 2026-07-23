@@ -7,7 +7,6 @@ import {
   FEATURE_DAYS,
   getFeatureEndDate,
   getListingExtendDate,
-  LISTING_EXTEND_DAYS,
 } from '@/lib/featured-listings'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
@@ -143,8 +142,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // A valid, not-yet-applied payment exists. Apply (or renew) a fresh 15-day
-    // feature window, matching the webhook's behavior.
     const endDate = getFeatureEndDate(now)
     const endDateIso = endDate.toISOString()
 
@@ -170,9 +167,7 @@ export async function POST(request: Request) {
 
     const newExpiresAt =
       daysUntilExpiration <= FEATURE_DAYS
-        ? new Date(
-            now.getTime() + LISTING_EXTEND_DAYS * 24 * 60 * 60 * 1000
-          ).toISOString()
+        ? getListingExtendDate(now).toISOString()
         : listing.expires_at
 
     if (newExpiresAt !== listing.expires_at) {
