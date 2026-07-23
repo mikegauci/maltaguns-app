@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import { z } from 'zod'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { requireAdmin } from '@/lib/api-auth'
+import { supabaseAdmin as supabaseAdminClient } from '@/lib/supabaseAdmin'
 
 const sendSchema = z.object({
   sendToAll: z.boolean().default(false),
@@ -12,7 +11,9 @@ const sendSchema = z.object({
   linkUrl: z.string().max(2048).optional().nullable(),
 })
 
-async function listAllUserIds(): Promise<string[]> {
+async function listAllUserIds(
+  supabaseAdmin: typeof supabaseAdminClient
+): Promise<string[]> {
   const ids: string[] = []
   const pageSize = 1000
   let from = 0
@@ -40,30 +41,10 @@ async function listAllUserIds(): Promise<string[]> {
 
 export async function POST(request: Request) {
   try {
-    // Verify admin privileges using the current session
-    const supabase = createRouteHandlerClient({ cookies })
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    if (sessionError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: currentUserProfile, error: profileError } =
-      await supabaseAdmin
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', session.user.id)
-        .single()
-
-    if (profileError || !currentUserProfile?.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
+    const { supabaseAdmin } = auth
 
     const parsed = sendSchema.safeParse(await request.json())
     if (!parsed.success) {
@@ -75,7 +56,7 @@ export async function POST(request: Request) {
 
     const { sendToAll, userIds, title, description, linkUrl } = parsed.data
 
-    const recipients = sendToAll ? await listAllUserIds() : userIds
+    const recipients = sendToAll ? await listAllUserIds(supabaseAdmin) : userIds
     if (recipients.length === 0) {
       return NextResponse.json(
         { error: 'No recipients selected' },
@@ -92,10 +73,8 @@ export async function POST(request: Request) {
       body: description,
       link_url: linkUrl || null,
       dedupe_key: dedupeKey,
-      // email_status defaults to pending (DB default)
     }))
 
-    // Insert in chunks to avoid request limits
     const chunkSize = 1000
     for (let i = 0; i < rows.length; i += chunkSize) {
       const chunk = rows.slice(i, i + chunkSize)

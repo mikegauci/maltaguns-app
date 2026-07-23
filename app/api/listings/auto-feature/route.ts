@@ -1,22 +1,12 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { createClient } from '@supabase/supabase-js'
+import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { stripe } from '@/lib/credit-checkout'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import {
   FEATURE_DAYS,
   getFeatureEndDate,
   getListingExtendDate,
 } from '@/lib/featured-listings'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
-})
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
 
 export async function POST(request: Request) {
   try {
@@ -29,14 +19,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Require an authenticated session matching the claimed userId
-    const supabase = createRouteHandlerClient({ cookies })
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
 
-    if (authError || !user || user.id !== userId) {
+    const { user } = auth
+    if (user.id !== userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -47,9 +34,6 @@ export async function POST(request: Request) {
       userId
     )
 
-    // Only consider PENDING featured transactions. A completed row has already
-    // been applied (by this route or the webhook) and must never be reused,
-    // otherwise revisiting an old success URL would re-feature for free.
     const { data: transactions, error: txFindError } = await supabaseAdmin
       .from('credit_transactions')
       .select('*')
@@ -71,9 +55,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verify each pending transaction against Stripe and use the first session
-    // that is genuinely paid for this listing/user. This avoids picking a newer
-    // abandoned checkout when an older one was actually paid.
     let paidTx: (typeof transactions)[number] | null = null
     for (const tx of transactions || []) {
       if (!tx.stripe_payment_id) continue
@@ -95,14 +76,12 @@ export async function POST(request: Request) {
           tx.stripe_payment_id,
           stripeError
         )
-        // Keep checking the other pending transactions
       }
     }
 
     const now = new Date()
     const nowIso = now.toISOString()
 
-    // Existing feature row (unique on listing_id + user_id)
     const { data: existingFeature, error: checkError } = await supabaseAdmin
       .from('featured_listings')
       .select('*')
@@ -122,8 +101,6 @@ export async function POST(request: Request) {
     }
 
     if (!paidTx) {
-      // No un-applied paid checkout. If the webhook already featured it, the
-      // work is done; report success. Otherwise there is nothing to apply.
       if (existingFeature && new Date(existingFeature.end_date) > now) {
         console.log(
           '[AUTO-FEATURE API] No pending payment; listing already featured'
@@ -145,7 +122,6 @@ export async function POST(request: Request) {
     const endDate = getFeatureEndDate(now)
     const endDateIso = endDate.toISOString()
 
-    // Extend listing expiry if it would lapse during the feature window
     const { data: listing, error: listingError } = await supabaseAdmin
       .from('listings')
       .select('expires_at')
@@ -227,8 +203,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Mark the payment consumed only after the feature was applied, so a
-    // failure above leaves it pending for a later retry.
     const { error: txUpdateError } = await supabaseAdmin
       .from('credit_transactions')
       .update({ status: 'completed' })
@@ -239,7 +213,6 @@ export async function POST(request: Request) {
         '[AUTO-FEATURE API] Error updating transaction:',
         txUpdateError
       )
-      // Non-critical; the webhook idempotency check also guards duplicates
     }
 
     return NextResponse.json({

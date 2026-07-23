@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { constructStripeEvent } from '@/lib/stripe-webhook'
-import {
-  FEATURE_DAYS,
-  getFeatureEndDate,
-  getListingExtendDate,
-  LISTING_EXTEND_DAYS,
-} from '@/lib/featured-listings'
+import { handleCheckoutSessionCompleted } from '@/lib/stripe-checkout-completed'
+import { stripe } from '@/lib/credit-checkout'
+
+const LOG_PREFIX = '[WEBHOOK-PLURAL]'
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined')
@@ -17,328 +14,41 @@ if (!process.env.STRIPE_WEBHOOK_SECRET) {
   throw new Error('STRIPE_WEBHOOK_SECRET is not defined')
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-})
-
 export async function POST(request: Request) {
-  console.log('[WEBHOOK-PLURAL] Received webhook request')
+  console.log(`${LOG_PREFIX} Received webhook request`)
   try {
     const payload = await request.text()
     const signature = request.headers.get('stripe-signature') || ''
     console.log(
-      '[WEBHOOK-PLURAL] Webhook signature:',
+      `${LOG_PREFIX} Webhook signature:`,
       signature.substring(0, 10) + '...'
     )
 
     let event: Stripe.Event
 
     try {
-      console.log('[WEBHOOK-PLURAL] Attempting to verify webhook signature')
+      console.log(`${LOG_PREFIX} Attempting to verify webhook signature`)
       event = constructStripeEvent(stripe, payload, signature)
-      console.log(
-        '[WEBHOOK-PLURAL] Signature verified, event type:',
-        event.type
-      )
+      console.log(`${LOG_PREFIX} Signature verified, event type:`, event.type)
     } catch (err: any) {
       console.error(
-        `[WEBHOOK-PLURAL] Signature verification failed: ${err.message}`
+        `${LOG_PREFIX} Signature verification failed: ${err.message}`
       )
       return NextResponse.json({ error: err.message }, { status: 400 })
     }
 
-    // Handle the checkout.session.completed event
     if (event.type === 'checkout.session.completed') {
-      console.log(
-        '[WEBHOOK-PLURAL] Processing checkout.session.completed event'
-      )
       const session = event.data.object as Stripe.Checkout.Session
-      console.log('[WEBHOOK-PLURAL] Session ID:', session.id)
-      console.log('[WEBHOOK-PLURAL] Session metadata:', session.metadata)
-      console.log('[WEBHOOK-PLURAL] Event ID:', event.id)
-
-      // Global idempotency check - check if we've already processed this payment
-      try {
-        const { data: existingCompletedTx, error: txCheckError } =
-          await supabaseAdmin
-            .from('credit_transactions')
-            .select('*')
-            .eq('stripe_payment_id', session.id)
-            .eq('status', 'completed')
-            .limit(1)
-
-        if (txCheckError) {
-          console.error(
-            '[WEBHOOK-PLURAL] Error checking completed transactions:',
-            txCheckError
-          )
-        } else if (existingCompletedTx && existingCompletedTx.length > 0) {
-          console.log(
-            '[WEBHOOK-PLURAL] Payment already processed, skipping to maintain idempotency'
-          )
-          return NextResponse.json({
-            skipped: true,
-            reason: 'Payment already processed',
-          })
-        }
-      } catch (error) {
-        console.error('[WEBHOOK-PLURAL] Error in idempotency check:', error)
-      }
-
-      // Extract userId and listingId from session metadata
-      const userId = session.metadata?.userId
-      const listingId = session.metadata?.listingId
-      const credits = session.metadata?.credits
-      const creditType = session.metadata?.creditType
-
-      // Skip credit purchase events - these are handled by the /api/webhook endpoint
-      if (credits && creditType === 'featured' && !listingId) {
-        console.log(
-          '[WEBHOOK-PLURAL] Skipping credit purchase event - handled by singular webhook'
-        )
-        return NextResponse.json({
-          skipped: true,
-          reason: 'Credit purchase handled by other webhook',
-        })
-      }
-
-      if (!userId || !listingId) {
-        console.error(
-          '[WEBHOOK-PLURAL] Missing userId or listingId in metadata'
-        )
-        return NextResponse.json({ error: 'Missing metadata' }, { status: 400 })
-      }
-
-      console.log(
-        '[WEBHOOK-PLURAL] Processing for userId:',
-        userId,
-        'listingId:',
-        listingId
-      )
-
-      try {
-        // First, check the listing details to get current expiry
-        console.log('[WEBHOOK-PLURAL] Checking listing details')
-        const { data: listingData, error: listingError } = await supabaseAdmin
-          .from('listings')
-          .select('expires_at, type')
-          .eq('id', listingId)
-          .single()
-
-        if (listingError) {
-          console.error(
-            '[WEBHOOK-PLURAL] Error fetching listing details:',
-            listingError
-          )
-          return NextResponse.json(
-            { error: 'Error fetching listing details' },
-            { status: 500 }
-          )
-        }
-
-        console.log('[WEBHOOK-PLURAL] Listing details:', listingData)
-
-        // Update the transaction status to completed
-        console.log('[WEBHOOK-PLURAL] Updating transaction status to completed')
-        const { data: txData, error: transactionError } = await supabaseAdmin
-          .from('credit_transactions')
-          .update({
-            status: 'completed',
-          })
-          .eq('stripe_payment_id', session.id)
-          .eq('user_id', userId)
-          .eq('credit_type', 'featured')
-          .eq('status', 'pending')
-          .select()
-
-        if (transactionError) {
-          console.error(
-            '[WEBHOOK-PLURAL] Error updating transaction:',
-            transactionError
-          )
-          // Continue anyway, not critical
-        } else {
-          console.log(
-            '[WEBHOOK-PLURAL] Transaction updated successfully:',
-            txData
-          )
-        }
-
-        // Check for existing featured listing (any row for this listing+user due to unique constraint)
-        console.log('[WEBHOOK-PLURAL] Checking for existing featured listing')
-        const { data: existingFeature, error: featureError } =
-          await supabaseAdmin
-            .from('featured_listings')
-            .select('*')
-            .eq('listing_id', listingId)
-            .eq('user_id', userId)
-            .order('end_date', { ascending: false })
-            .limit(1)
-
-        if (featureError) {
-          console.error(
-            '[WEBHOOK-PLURAL] Error checking for existing feature:',
-            featureError
-          )
-          return NextResponse.json(
-            { error: 'Error checking existing feature' },
-            { status: 500 }
-          )
-        }
-
-        console.log(
-          '[WEBHOOK-PLURAL] Existing feature check result:',
-          existingFeature
-        )
-
-        const startDate = new Date().toISOString()
-        const endDate = getFeatureEndDate()
-        const endDateIso = endDate.toISOString()
-
-        console.log(
-          '[WEBHOOK-PLURAL] New feature period:',
-          startDate,
-          'to',
-          endDateIso
-        )
-
-        const currentExpiryDate = new Date(listingData.expires_at)
-        const now = new Date()
-        const daysUntilExpiry = Math.floor(
-          (currentExpiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-        )
-        console.log(
-          '[WEBHOOK-PLURAL] Days until listing expiry:',
-          daysUntilExpiry
-        )
-
-        let newExpiryDate = null
-        if (daysUntilExpiry <= FEATURE_DAYS) {
-          console.log(
-            `[WEBHOOK-PLURAL] Listing is expiring soon, will extend to ${LISTING_EXTEND_DAYS} days`
-          )
-          newExpiryDate = getListingExtendDate()
-        }
-
-        if (existingFeature && existingFeature.length > 0) {
-          // If there's an existing feature, update its dates
-          const feature = existingFeature[0]
-          console.log(
-            `[WEBHOOK-PLURAL] Found existing feature. Will update to fixed ${FEATURE_DAYS}-day period`
-          )
-
-          const { data: updateData, error: updateError } = await supabaseAdmin
-            .from('featured_listings')
-            .update({
-              start_date: startDate,
-              end_date: endDateIso,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', feature.id)
-            .select()
-
-          if (updateError) {
-            console.error(
-              '[WEBHOOK-PLURAL] Error updating feature:',
-              updateError
-            )
-            return NextResponse.json(
-              { error: 'Error updating feature' },
-              { status: 500 }
-            )
-          }
-
-          console.log(
-            `[WEBHOOK-PLURAL] Reset feature for listing ${listingId} to new ${FEATURE_DAYS}-day period`,
-            updateData
-          )
-        } else {
-          console.log(
-            '[WEBHOOK-PLURAL] No existing feature found, creating new one'
-          )
-
-          const { data: insertData, error: insertError } = await supabaseAdmin
-            .from('featured_listings')
-            .insert({
-              listing_id: listingId,
-              user_id: userId,
-              start_date: startDate,
-              end_date: endDateIso,
-            })
-            .select()
-
-          if (insertError) {
-            console.error(
-              '[WEBHOOK-PLURAL] Error creating feature:',
-              insertError
-            )
-            return NextResponse.json(
-              { error: 'Error creating feature' },
-              { status: 500 }
-            )
-          }
-
-          console.log(
-            `[WEBHOOK-PLURAL] Created new feature for listing ${listingId}:`,
-            insertData
-          )
-        }
-
-        // Update the listing expiry if needed
-        if (newExpiryDate) {
-          const listingUpdateData = {
-            expires_at: newExpiryDate.toISOString(),
-          }
-          console.log(
-            '[WEBHOOK-PLURAL] Updating listing with:',
-            listingUpdateData
-          )
-
-          const { error: listingUpdateError } = await supabaseAdmin
-            .from('listings')
-            .update(listingUpdateData)
-            .eq('id', listingId)
-
-          if (listingUpdateError) {
-            console.error(
-              '[WEBHOOK-PLURAL] Error updating listing:',
-              listingUpdateError
-            )
-            // Not critical, continue
-          } else {
-            console.log(
-              `[WEBHOOK-PLURAL] Listing expires_at updated successfully. New expiry: ${newExpiryDate.toISOString()}`
-            )
-          }
-        }
-
-        console.log(
-          '[WEBHOOK-PLURAL] Webhook processing completed successfully'
-        )
-        return NextResponse.json({
-          success: true,
-          feature_start: startDate,
-          feature_end: endDateIso,
-          listing_expiry: newExpiryDate
-            ? newExpiryDate.toISOString()
-            : listingData.expires_at,
-        })
-      } catch (error) {
-        console.error(
-          '[WEBHOOK-PLURAL] Unexpected error processing webhook:',
-          error
-        )
-        return NextResponse.json(
-          { error: 'Unexpected error processing webhook' },
-          { status: 500 }
-        )
-      }
+      return handleCheckoutSessionCompleted(session, {
+        logPrefix: LOG_PREFIX,
+        handleCredits: false,
+      })
     }
 
-    console.log('[WEBHOOK-PLURAL] Event type not handled:', event.type)
+    console.log(`${LOG_PREFIX} Event type not handled:`, event.type)
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('[WEBHOOK-PLURAL] Unexpected error:', error)
+    console.error(`${LOG_PREFIX} Unexpected error:`, error)
     return NextResponse.json({ error: 'Unexpected error' }, { status: 500 })
   }
 }

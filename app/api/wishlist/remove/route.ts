@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Database } from '@/lib/database.types'
+import { requireAuthenticatedUser } from '@/lib/api-auth'
 
 export async function DELETE(request: Request) {
   try {
@@ -15,20 +16,12 @@ export async function DELETE(request: Request) {
       )
     }
 
-    // Create a Supabase client with the cookies for auth
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
+
+    const { user } = auth
     const supabase = createRouteHandlerClient<Database>({ cookies })
 
-    // Get the current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    // Remove from wishlist
     const { error: deleteError } = await supabase
       .from('wishlist')
       .delete()

@@ -1,41 +1,13 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/api-auth'
 
 export async function POST(req: Request) {
   try {
-    // Create a regular Supabase client to check authorization
-    const supabase = createRouteHandlerClient({ cookies })
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    // Check if the user is authorized
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+    const { supabaseAdmin } = auth
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No valid session' },
-        { status: 401 }
-      )
-    }
-
-    // Get the user's profile to check if they are an admin
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profileError || !profileData || !profileData.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
-
-    // Parse request body
     const {
       owner_id,
       type,
@@ -55,7 +27,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // Validate establishment type
     if (!['store', 'club', 'servicing', 'range'].includes(type)) {
       return NextResponse.json(
         { error: 'Invalid establishment type' },
@@ -63,13 +34,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // Create a Supabase admin client with service role key
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    )
-
-    // Verify the owner exists
     const { data: ownerProfile, error: ownerError } = await supabaseAdmin
       .from('profiles')
       .select('id, username, email')
@@ -80,18 +44,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Owner not found' }, { status: 404 })
     }
 
-    // Create slug from business name
     const slug = name
       .toLowerCase()
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/--+/g, '-')
 
-    // Determine table name
     const tableName = type === 'servicing' ? 'servicing' : `${type}s`
 
-    // Prepare establishment data based on table type
-    // Base fields that exist in all tables
     const baseData = {
       business_name: name,
       location,
@@ -104,7 +64,6 @@ export async function POST(req: Request) {
       logo_url: logo_url || null,
     }
 
-    // Insert new establishment
     const { data: newEstablishment, error: insertError } = await supabaseAdmin
       .from(tableName)
       .insert(baseData)

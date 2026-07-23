@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { escapeHtml } from '@/lib/escape-html'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { signUnsubscribeToken } from '@/lib/unsubscribe'
 
@@ -77,17 +78,6 @@ function getUnsubscribeUrl(userId: string): string {
   )}&t=${token}`
 }
 
-// Escape user/DB-provided text so it can't break the email markup.
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
-// Friendly call-to-action label based on the notification type.
 function ctaLabelForType(type: string): string {
   switch (type) {
     case 'article_new':

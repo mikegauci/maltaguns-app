@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { createCreditCheckoutSession } from '@/lib/credit-checkout'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 import { getAppUrl } from '@/lib/seo'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-})
 
 export async function POST(request: Request) {
   try {
@@ -53,36 +49,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid price ID' }, { status: 400 })
     }
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: plan.stripePriceId,
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      customer_email: profile.email,
-      success_url: `${getAppUrl()}/profile?success=true`,
-      cancel_url: `${getAppUrl()}/profile?canceled=true`,
-      metadata: {
-        userId: user.id,
-        credits: plan.credits.toString(),
-        creditType: 'featured',
-      },
+    const { session, insertError } = await createCreditCheckoutSession({
+      userId: user.id,
+      email: profile.email,
+      stripePriceId: plan.stripePriceId,
+      credits: plan.credits,
+      creditType: 'featured',
+      successUrl: `${getAppUrl()}/profile?success=true`,
+      cancelUrl: `${getAppUrl()}/profile?canceled=true`,
+      description: `Purchase of ${plan.credits} credits (${priceId})`,
     })
-
-    const { error: insertError } = await supabaseAdmin
-      .from('credit_transactions')
-      .insert({
-        user_id: user.id,
-        amount: plan.credits,
-        status: 'pending',
-        type: 'credit',
-        credit_type: 'featured',
-        description: `Purchase of ${plan.credits} credits (${priceId})`,
-        stripe_payment_id: session.id,
-      })
 
     if (insertError) {
       console.error('Error inserting credit transaction:', insertError)

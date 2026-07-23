@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
+import { addOrIncrementCredits, ensureUserExists } from '@/lib/admin-credits'
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,61 +24,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { data: userExists, error: userError } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('id', user_id)
-      .single()
-
-    if (userError || !userExists) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 })
-    }
-
-    const amountToAdd = Number(amount)
-
-    const { data: existingCredit, error: existingError } = await supabaseAdmin
-      .from('credits')
-      .select('id, amount')
-      .eq('user_id', user_id)
-      .maybeSingle()
-
-    if (existingError) {
-      console.error('Error looking up existing credits:', existingError)
+    const userCheck = await ensureUserExists(supabaseAdmin, user_id)
+    if ('error' in userCheck) {
       return NextResponse.json(
-        { message: 'Failed to add credits', error: existingError.message },
-        { status: 500 }
+        { message: userCheck.error },
+        { status: userCheck.status }
       )
     }
 
-    let data
-    let error
-
-    if (existingCredit) {
-      const newAmount = Number(existingCredit.amount) + amountToAdd
-
-      const updateResult = await supabaseAdmin
-        .from('credits')
-        .update({
-          amount: newAmount,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingCredit.id)
-        .select()
-
-      data = updateResult.data
-      error = updateResult.error
-    } else {
-      const insertResult = await supabaseAdmin
-        .from('credits')
-        .insert({
-          user_id,
-          amount: amountToAdd,
-        })
-        .select()
-
-      data = insertResult.data
-      error = insertResult.error
-    }
+    const { data, error } = await addOrIncrementCredits(supabaseAdmin, {
+      table: 'credits',
+      userId: user_id,
+      amount: Number(amount),
+      incrementExisting: true,
+    })
 
     if (error) {
       console.error('Error adding credits:', error)

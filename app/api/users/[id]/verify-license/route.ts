@@ -2,10 +2,8 @@ import {
   createAllLicenseTypes,
   createEmptyLicenseTypes,
 } from '@/lib/license-utils'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/api-auth'
 
 export async function PATCH(
   request: Request,
@@ -15,45 +13,11 @@ export async function PATCH(
     const userId = params.id
     const { verified } = await request.json()
 
-    // Create a regular Supabase client for auth checks
-    const supabase = createRouteHandlerClient({ cookies })
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    // Check if the current user is an admin
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { supabaseAdmin } = auth
 
-    // Get the current user's profile to check if they are an admin
-    const { data: currentUserProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profileError || !currentUserProfile) {
-      return NextResponse.json(
-        { error: 'Failed to get user profile' },
-        { status: 500 }
-      )
-    }
-
-    if (!currentUserProfile.is_admin) {
-      return NextResponse.json(
-        { error: 'Only admins can update verification status' },
-        { status: 403 }
-      )
-    }
-
-    // Create an admin client with service_role key to bypass RLS
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    )
-
-    // Update the user's verification status and license types
     const updatePayload = verified
       ? {
           is_verified: true,

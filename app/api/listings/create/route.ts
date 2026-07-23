@@ -2,34 +2,18 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Database } from '@/lib/database.types'
+import { requireAuthenticatedUser } from '@/lib/api-auth'
 
 export async function POST(request: Request) {
   try {
     const data = await request.json()
 
-    // Create a Supabase client with the cookies for auth
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
+
+    const { user } = auth
     const supabase = createRouteHandlerClient<Database>({ cookies })
 
-    // Get the current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError) {
-      console.error('Auth error:', authError)
-      return NextResponse.json(
-        { error: 'Authentication error', details: authError.message },
-        { status: 401 }
-      )
-    }
-
-    if (!user) {
-      console.error('No user found in session')
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    // If this is a firearms listing, check if user is verified
     if (data.type === 'firearms') {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
@@ -52,7 +36,6 @@ export async function POST(request: Request) {
         )
       }
 
-      // Check if user has verified license
       if (!profile.is_verified || !profile.license_image) {
         return NextResponse.json(
           {
@@ -63,7 +46,6 @@ export async function POST(request: Request) {
         )
       }
 
-      // Check if user has verified identification
       if (!profile.id_card_verified || !profile.id_card_image) {
         return NextResponse.json(
           {
@@ -75,14 +57,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Format the images as a PostgreSQL array literal
     const imageUrls = data.images || []
     const formattedImages =
       imageUrls.length > 0
         ? `{${imageUrls.map((url: string) => `"${url}"`).join(',')}}`
         : `{}`
 
-    // Create the listing with all required fields
     const listingData = {
       seller_id: user.id,
       type: data.type,
@@ -96,14 +76,12 @@ export async function POST(request: Request) {
       thumbnail: imageUrls[0] || '',
       status: 'active',
       is_featured: false,
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
-      // Sellers can edit freely for 48 hours after publish
+      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       editable_until: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
     }
 
     console.log('Creating listing with data:', listingData)
 
-    // Create the listing
     const { data: listing, error: listingError } = await supabase
       .from('listings')
       .insert(listingData)
@@ -118,9 +96,7 @@ export async function POST(request: Request) {
       )
     }
 
-    // If this is a firearms listing, deduct credits
     if (data.type === 'firearms') {
-      // Deduct one credit
       const { error: creditError } = await supabase
         .from('credits')
         .update({
@@ -131,10 +107,8 @@ export async function POST(request: Request) {
 
       if (creditError) {
         console.error('Error updating credits:', creditError)
-        // Continue anyway since the listing was created
       }
 
-      // Record the transaction
       const { error: transactionError } = await supabase
         .from('credit_transactions')
         .insert({
@@ -145,7 +119,6 @@ export async function POST(request: Request) {
 
       if (transactionError) {
         console.error('Error recording transaction:', transactionError)
-        // Continue anyway since the listing was created
       }
     }
 

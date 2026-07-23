@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { requireAdmin } from '@/lib/api-auth'
 import {
   SECTION_SEO_DEFAULTS,
   type PageSeoMap,
@@ -41,28 +39,10 @@ function normalizePageSeo(input: PageSeoMap | null | undefined): PageSeoMap {
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    if (sessionError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profileError || !profile?.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
+    const { supabaseAdmin } = auth
 
     const body = (await request.json()) as UpdateSeoSettingsBody
     const pageSeo = normalizePageSeo(body.page_seo)
@@ -75,7 +55,6 @@ export async function POST(request: Request) {
       twitter_handle:
         emptyToNull(body.twitter_handle)?.replace(/^@/, '') || null,
       page_seo: pageSeo,
-      // Keep legacy columns in sync for the original 4 sections
       marketplace_meta_title: pageSeo.marketplace?.title || null,
       marketplace_meta_description: pageSeo.marketplace?.description || null,
       events_meta_title: pageSeo.events?.title || null,

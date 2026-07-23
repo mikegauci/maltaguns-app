@@ -1,39 +1,18 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { requireAdmin } from '@/lib/api-auth'
+import { sanitizePostgrestSearchTerm } from '@/lib/marketplace-search'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    if (sessionError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { data: currentUserProfile, error: profileError } =
-      await supabaseAdmin
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', session.user.id)
-        .single()
-
-    if (profileError || !currentUserProfile?.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
+    const { supabaseAdmin } = auth
 
     const url = new URL(request.url)
-    const qRaw = url.searchParams.get('q') ?? ''
-    const q = qRaw.trim()
+    const q = sanitizePostgrestSearchTerm(url.searchParams.get('q') ?? '')
 
     let query = supabaseAdmin
       .from('profiles')
