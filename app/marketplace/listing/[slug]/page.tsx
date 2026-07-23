@@ -3,6 +3,11 @@ import type { Metadata } from 'next'
 import ListingClient from './listing-client'
 import { fetchListingBySlug } from './server'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
+import { JsonLd } from '@/components/seo/JsonLd'
+import {
+  buildBreadcrumbList,
+  buildProductSchema,
+} from '@/lib/seo-jsonld'
 
 export const revalidate = 30
 
@@ -13,7 +18,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const listing = await fetchListingBySlug(params.slug)
   if (!listing) {
-    return { title: 'Listing Not Found | MaltaGuns' }
+    return buildMetadata({
+      title: 'Listing Not Found | MaltaGuns',
+      noIndex: true,
+    })
   }
 
   const siteSettings = await getSiteSettings()
@@ -40,5 +48,29 @@ export default async function ListingPage({
 
   if (!listing) notFound()
 
-  return <ListingClient listing={listing} />
+  const path = `/marketplace/listing/${slug}`
+
+  return (
+    <>
+      <JsonLd
+        data={[
+          buildProductSchema({
+            name: listing.title,
+            description: listing.description,
+            image: listing.thumbnail || listing.images?.[0] || null,
+            price: listing.price,
+            path,
+            availability:
+              listing.status === 'active' ? 'InStock' : 'OutOfStock',
+          }),
+          buildBreadcrumbList([
+            { name: 'Home', path: '/' },
+            { name: 'Marketplace', path: '/marketplace' },
+            { name: listing.title, path },
+          ]),
+        ]}
+      />
+      <ListingClient listing={listing} />
+    </>
+  )
 }

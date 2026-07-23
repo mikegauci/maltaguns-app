@@ -1,5 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import QueryProvider from '@/components/providers/QueryProvider'
@@ -11,19 +12,31 @@ import { Toaster } from '@/components/ui/toaster'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import SupabaseProvider from '@/components/providers/SupabaseProvider'
-import { getAppUrl, getSectionMetadata } from '@/lib/seo'
+import { getSectionMetadata } from '@/lib/seo'
+import { getAppUrl, isNonProductionHost } from '@/lib/seo-host'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export async function generateMetadata(): Promise<Metadata> {
   const homeMetadata = await getSectionMetadata('home')
+  const host = headers().get('host')
+  const previewNoIndex = isNonProductionHost(host)
 
   return {
     metadataBase: new URL(getAppUrl()),
     icons: {
       icon: [{ url: '/favicon.png', type: 'image/png', sizes: '32x32' }],
+      apple: [{ url: '/favicon.png', type: 'image/png', sizes: '150x150' }],
     },
     ...homeMetadata,
+    ...(previewNoIndex
+      ? {
+          robots: {
+            index: false,
+            follow: false,
+          },
+        }
+      : {}),
   }
 }
 

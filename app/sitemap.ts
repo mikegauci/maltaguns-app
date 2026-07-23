@@ -21,6 +21,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/marketplace/non-firearms',
     '/events',
     '/blog',
+    '/blog/news',
+    '/blog/guides',
     '/establishments',
     '/establishments/stores',
     '/establishments/clubs',

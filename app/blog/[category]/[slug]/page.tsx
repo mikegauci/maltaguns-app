@@ -12,6 +12,8 @@ import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
 import { sanitizeBlogHtml } from '@/lib/sanitize-html'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { buildArticleSchema, buildBreadcrumbList } from '@/lib/seo-jsonld'
 
 interface BlogPostType {
   id: string
@@ -66,7 +68,10 @@ export async function generateMetadata({
     .single()
 
   if (!post) {
-    return { title: 'Post Not Found | MaltaGuns' }
+    return buildMetadata({
+      title: 'Post Not Found | MaltaGuns',
+      noIndex: true,
+    })
   }
 
   const siteSettings = await getSiteSettings()
@@ -310,6 +315,32 @@ export default async function BlogPost({
 
   return (
     <PageLayout>
+      <JsonLd
+        data={[
+          buildArticleSchema({
+            headline: blogPost.title,
+            description: blogPost.meta_description || blogPost.content,
+            image: blogPost.featured_image,
+            datePublished: post.created_at,
+            authorName: blogPost.author.username,
+            path: `/blog/${params.category}/${params.slug}`,
+          }),
+          buildBreadcrumbList([
+            { name: 'Home', path: '/' },
+            { name: 'Blog', path: '/blog' },
+            {
+              name:
+                params.category.charAt(0).toUpperCase() +
+                params.category.slice(1),
+              path: `/blog/${params.category}`,
+            },
+            {
+              name: blogPost.title,
+              path: `/blog/${params.category}/${params.slug}`,
+            },
+          ]),
+        ]}
+      />
       <ViewTracker postId={post.id} />
       <div className="flex justify-between items-center mb-8">
         <BackButton label="Back" href="/blog" hideLabelOnMobile={false} />

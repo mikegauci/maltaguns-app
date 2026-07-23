@@ -4,11 +4,11 @@ import type { Metadata } from 'next'
 import EstablishmentClient from '@/components/EstablishmentClient'
 import { fetchEstablishmentBySlug } from '@/app/establishments/server'
 import { generateEstablishmentMetadata } from '@/app/establishments/seo'
+import { EstablishmentJsonLd } from '@/app/establishments/EstablishmentJsonLd'
 
-// Force dynamic rendering (disable static export)
 export const dynamic = 'force-dynamic'
 export const dynamicParams = true
-export const revalidate = 0 // Disable cache
+export const revalidate = 0
 
 export async function generateMetadata({
   params,
@@ -23,7 +23,6 @@ export default async function RangePage({
 }: {
   params: { slug: string }
 }) {
-  // Force cache revalidation
   headers()
 
   const establishment = await fetchEstablishmentBySlug('ranges', params.slug)
@@ -32,5 +31,10 @@ export default async function RangePage({
     notFound()
   }
 
-  return <EstablishmentClient establishment={establishment} type="ranges" />
+  return (
+    <>
+      <EstablishmentJsonLd establishment={establishment} type="ranges" />
+      <EstablishmentClient establishment={establishment} type="ranges" />
+    </>
+  )
 }

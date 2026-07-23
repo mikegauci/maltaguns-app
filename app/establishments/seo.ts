@@ -9,7 +9,10 @@ export async function generateEstablishmentMetadata(
 ): Promise<Metadata> {
   const establishment = await fetchEstablishmentBySlug(type, slug)
   if (!establishment) {
-    return { title: 'Establishment Not Found | MaltaGuns' }
+    return buildMetadata({
+      title: 'Establishment Not Found | MaltaGuns',
+      noIndex: true,
+    })
   }
 
   const siteSettings = await getSiteSettings()

@@ -5,9 +5,15 @@ import {
   type PageSeoMap,
   type SectionKey,
 } from '@/lib/seo-defaults'
+import {
+  getAppUrl,
+  isNonProductionHost,
+  toAbsoluteUrl,
+} from '@/lib/seo-host'
 
 export type { SectionKey, PageSeoMap }
 export { SECTION_SEO_DEFAULTS }
+export { getAppUrl, isNonProductionHost, toAbsoluteUrl }
 
 export type SiteSettings = {
   id: number
@@ -16,7 +22,6 @@ export type SiteSettings = {
   default_og_image: string | null
   twitter_handle: string | null
   page_seo: PageSeoMap | null
-  // Legacy columns (kept for backward compatibility; prefer page_seo)
   marketplace_meta_title?: string | null
   marketplace_meta_description?: string | null
   events_meta_title?: string | null
@@ -31,6 +36,7 @@ export type SiteSettings = {
 const FALLBACK_TITLE = 'MaltaGuns - Firearms Community Hub'
 const FALLBACK_DESCRIPTION =
   'The premier destination for the firearms community in Malta'
+export const DEFAULT_OG_IMAGE_PATH = '/images/maltaguns-default-img.jpg'
 
 const LEGACY_SECTION_KEYS = [
   'marketplace',
@@ -38,37 +44,6 @@ const LEGACY_SECTION_KEYS = [
   'blog',
   'establishments',
 ] as const
-
-/**
- * Canonical public site URL for SEO (sitemap, robots, metadataBase, canonicals).
- * Ignores localhost / vercel.app so production SEO never points at preview hosts.
- */
-export function getAppUrl(): string {
-  const candidates = [
-    process.env.NEXT_PUBLIC_SITE_URL,
-    process.env.NEXT_PUBLIC_APP_URL,
-  ]
-    .filter((value): value is string => Boolean(value))
-    .map(value => value.replace(/\/$/, ''))
-
-  for (const url of candidates) {
-    try {
-      const host = new URL(url).hostname
-      if (
-        host === 'localhost' ||
-        host === '127.0.0.1' ||
-        host.endsWith('.vercel.app')
-      ) {
-        continue
-      }
-      return url
-    } catch {
-      continue
-    }
-  }
-
-  return 'https://maltaguns.com'
-}
 
 export async function getSiteSettings(): Promise<SiteSettings | null> {
   const { data, error } = await (supabase as any)
@@ -125,9 +100,12 @@ export function buildMetadata({
   const resolvedTitle = title?.trim() || siteTitle
   const resolvedDescription =
     truncateDescription(description) || siteDescription
-  const resolvedImage =
-    image?.trim() || siteSettings?.default_og_image || undefined
   const appUrl = getAppUrl()
+  const rawImage =
+    image?.trim() ||
+    siteSettings?.default_og_image?.trim() ||
+    DEFAULT_OG_IMAGE_PATH
+  const resolvedImage = toAbsoluteUrl(rawImage, appUrl)
   const canonical =
     path !== undefined
       ? `${appUrl}${path.startsWith('/') ? path : `/${path}`}`
@@ -144,29 +122,35 @@ export function buildMetadata({
             canonical,
           },
         }
-      : {}),
+      : noIndex
+        ? {
+            alternates: {
+              canonical: null,
+            },
+          }
+        : {}),
     openGraph: {
       title: resolvedTitle,
       description: resolvedDescription,
       siteName: siteTitle,
       type: 'website',
-      ...(canonical ? { url: canonical } : {}),
-      ...(resolvedImage
-        ? {
-            images: [
-              {
-                url: resolvedImage,
-              },
-            ],
-          }
-        : {}),
+      ...(canonical
+        ? { url: canonical }
+        : noIndex
+          ? { url: undefined }
+          : {}),
+      images: [
+        {
+          url: resolvedImage,
+        },
+      ],
     },
     twitter: {
-      card: resolvedImage ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title: resolvedTitle,
       description: resolvedDescription,
       ...(twitterHandle ? { site: `@${twitterHandle}` } : {}),
-      ...(resolvedImage ? { images: [resolvedImage] } : {}),
+      images: [resolvedImage],
     },
     ...(noIndex
       ? {
@@ -188,7 +172,6 @@ function getPageOverride(
     return fromJson
   }
 
-  // Legacy flat columns for the original 4 sections
   if ((LEGACY_SECTION_KEYS as readonly string[]).includes(section)) {
     const titleKey = `${section}_meta_title` as keyof SiteSettings
     const descriptionKey = `${section}_meta_description` as keyof SiteSettings
@@ -201,10 +184,6 @@ function getPageOverride(
   return {}
 }
 
-/**
- * Metadata for indexed pages managed via /admin/seo.
- * Uses admin overrides when set, otherwise SECTION_SEO_DEFAULTS.
- */
 export async function getSectionMetadata(
   section: SectionKey
 ): Promise<Metadata> {
@@ -212,7 +191,6 @@ export async function getSectionMetadata(
   const siteSettings = await getSiteSettings()
   const override = getPageOverride(siteSettings, section)
 
-  // Home falls back to global site_title/site_description when no home override
   if (section === 'home') {
     return buildMetadata({
       title:
