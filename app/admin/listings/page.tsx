@@ -1,7 +1,7 @@
 'use client'
 
 import nextDynamic from 'next/dynamic'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format, parseISO } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -32,6 +32,17 @@ import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import { createClient } from '@/lib/supabase/client'
+import { resizeImageForUpload } from '@/lib/image-resize'
+import {
+  getListingStoragePathFromUrl,
+  parseImageUrls,
+} from '@/lib/listing-images'
+import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_FILE_SIZE,
+  MAX_FILES,
+} from '@/app/marketplace/create/constants'
 
 const DataTable = nextDynamic(
   () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
@@ -48,7 +59,7 @@ interface Listing {
   title: string
   description: string
   price: string
-  images: string[]
+  images: string | string[]
   thumbnail: string
   status: string
   created_at: string
@@ -69,12 +80,18 @@ export default ListingsPageComponent
 
 function ListingsPageComponent() {
   const { toast } = useToast()
+  const supabase = createClient()
+  const editListingIdRef = useRef<string | null>(null)
+  const initialImageUrlsRef = useRef<string[]>([])
+  const uploadedDuringEditRef = useRef<string[]>([])
   const [listings, setListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
+  const [imageUrls, setImageUrls] = useState<string[]>([])
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -320,7 +337,12 @@ function ListingsPageComponent() {
   }, [fetchListings])
 
   function handleEdit(listing: Listing) {
+    const parsedImages = parseImageUrls(listing.images)
+    editListingIdRef.current = listing.id
+    initialImageUrlsRef.current = parsedImages
+    uploadedDuringEditRef.current = []
     setSelectedListing(listing)
+    setImageUrls(parsedImages)
     setFormData({
       title: listing.title,
       description: listing.description,
@@ -338,6 +360,175 @@ function ListingsPageComponent() {
     setIsEditDialogOpen(true)
   }
 
+  async function removeStorageImages(urls: string[]) {
+    const paths = urls
+      .map(url => getListingStoragePathFromUrl(url))
+      .filter((path): path is string => Boolean(path))
+
+    if (paths.length === 0) return
+
+    const { error } = await supabase.storage.from('listings').remove(paths)
+    if (error) {
+      console.error('Failed to remove listing images from storage:', error)
+    }
+  }
+
+  async function handleEditDialogClose() {
+    const abandonedUploads = [...uploadedDuringEditRef.current]
+    editListingIdRef.current = null
+    initialImageUrlsRef.current = []
+    uploadedDuringEditRef.current = []
+    setIsEditDialogOpen(false)
+    setImageUrls([])
+    setIsUploading(false)
+
+    if (abandonedUploads.length > 0) {
+      void removeStorageImages(abandonedUploads)
+    }
+  }
+
+  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
+    if (!event.target.files || event.target.files.length === 0) {
+      return
+    }
+
+    if (!selectedListing) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Listing information is missing.',
+      })
+      return
+    }
+
+    const listingId = selectedListing.id
+    const files = Array.from(event.target.files)
+
+    if (files.length + imageUrls.length > MAX_FILES) {
+      toast({
+        variant: 'destructive',
+        title: 'Too many files',
+        description: `Maximum ${MAX_FILES} images allowed`,
+      })
+      return
+    }
+
+    for (const file of files) {
+      if (file.size > MAX_FILE_SIZE) {
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: `${file.name} exceeds 5MB limit`,
+        })
+        return
+      }
+
+      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid file type',
+          description: `${file.name} is not a supported image format`,
+        })
+        return
+      }
+    }
+
+    setIsUploading(true)
+
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        throw new Error('Authentication error: ' + sessionError.message)
+      }
+
+      if (!session?.user.id) {
+        throw new Error('Not authenticated')
+      }
+
+      const uploadedUrls: string[] = []
+
+      for (const file of files) {
+        if (editListingIdRef.current !== listingId) {
+          break
+        }
+
+        const resized = await resizeImageForUpload(file)
+        const fileExt = resized.name.split('.').pop()
+        const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
+        const filePath = `listings/${listingId}/${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('listings')
+          .upload(filePath, resized, {
+            cacheControl: '31536000',
+            upsert: false,
+            contentType: resized.type,
+          })
+
+        if (uploadError) {
+          throw uploadError
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('listings').getPublicUrl(filePath)
+
+        uploadedUrls.push(publicUrl)
+      }
+
+      if (editListingIdRef.current !== listingId) {
+        await removeStorageImages(uploadedUrls)
+        return
+      }
+
+      uploadedDuringEditRef.current = [
+        ...uploadedDuringEditRef.current,
+        ...uploadedUrls,
+      ]
+      setImageUrls(prev => [...prev, ...uploadedUrls])
+      toast({
+        title: 'Images uploaded',
+        description: 'Images have been uploaded successfully.',
+      })
+    } catch (error) {
+      console.error('Image upload error:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Upload failed',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to upload images. Please try again.',
+      })
+    } finally {
+      if (editListingIdRef.current === listingId) {
+        setIsUploading(false)
+      }
+      event.target.value = ''
+    }
+  }
+
+  function handleRemoveImage(index: number) {
+    setImageUrls(prev => {
+      const removedUrl = prev[index]
+      if (!removedUrl) return prev
+
+      uploadedDuringEditRef.current = uploadedDuringEditRef.current.filter(
+        url => url !== removedUrl
+      )
+
+      if (!initialImageUrlsRef.current.includes(removedUrl)) {
+        void removeStorageImages([removedUrl])
+      }
+
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
   function handleDelete(listing: Listing) {
     setSelectedListing(listing)
     setIsDeleteDialogOpen(true)
@@ -346,17 +537,18 @@ function ListingsPageComponent() {
   async function handleEditSubmit() {
     if (!selectedListing) return
 
+    const listingId = selectedListing.id
+
     try {
       setIsSubmitting(true)
 
-      // Use admin update API route (bypasses RLS for admin users)
       const response = await fetch('/api/admin/listings/update', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          listingId: selectedListing.id,
+          listingId,
           title: formData.title,
           description: formData.description,
           price: formData.price,
@@ -371,6 +563,7 @@ function ListingsPageComponent() {
           featured: formData.featured,
           meta_title: formData.meta_title || null,
           meta_description: formData.meta_description || null,
+          images: imageUrls,
         }),
       })
 
@@ -379,12 +572,23 @@ function ListingsPageComponent() {
         throw new Error(errorData?.error || 'Failed to update listing')
       }
 
+      if (editListingIdRef.current === listingId) {
+        const removedImages = initialImageUrlsRef.current.filter(
+          url => !imageUrls.includes(url)
+        )
+        uploadedDuringEditRef.current = []
+        initialImageUrlsRef.current = [...imageUrls]
+        if (removedImages.length > 0) {
+          void removeStorageImages(removedImages)
+        }
+      }
+
       toast({
         title: 'Success',
         description: 'Listing updated successfully',
       })
 
-      setIsEditDialogOpen(false)
+      await handleEditDialogClose()
       fetchListings()
     } catch (error) {
       toast({
@@ -497,12 +701,66 @@ function ListingsPageComponent() {
         title="Edit Listing"
         description="Update listing information"
         isOpen={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
+        onClose={handleEditDialogClose}
         onSubmit={handleEditSubmit}
-        isSubmitting={isSubmitting}
+        isSubmitting={isSubmitting || isUploading}
         submitLabel="Update"
       >
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Images</Label>
+            <p className="text-sm text-muted-foreground">
+              Upload up to {MAX_FILES} images. First image will be used as
+              thumbnail.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {imageUrls.map((url, index) => (
+                <div
+                  key={`${url}-${index}`}
+                  className="relative aspect-square rounded-md overflow-hidden border"
+                >
+                  <img
+                    src={url}
+                    alt={`Listing image ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2 h-7 w-7 p-0 rounded-full"
+                    onClick={() => handleRemoveImage(index)}
+                    disabled={isUploading || isSubmitting}
+                  >
+                    ✕
+                  </Button>
+                  {index === 0 && (
+                    <span className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                      Thumbnail
+                    </span>
+                  )}
+                </div>
+              ))}
+
+              {imageUrls.length < MAX_FILES && (
+                <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-square hover:bg-muted/50 transition-colors">
+                  <span className="text-3xl mb-1">+</span>
+                  <span className="text-sm text-center text-muted-foreground px-2">
+                    {isUploading ? 'Uploading...' : 'Add Image'}
+                  </span>
+                  <input
+                    type="file"
+                    accept={ACCEPTED_IMAGE_TYPES.join(',')}
+                    className="hidden"
+                    onChange={handleImageUpload}
+                    disabled={isUploading || isSubmitting}
+                    multiple
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-title">Title</Label>
             <Input
