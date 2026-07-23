@@ -1035,7 +1035,9 @@ export async function verifyIdCardImage(
     )
 
     // Create a Tesseract worker with enhanced settings for ID cards
-    const worker = await (await getCreateWorker())('eng', 1, {
+    const worker = await (
+      await getCreateWorker()
+    )('eng', 1, {
       logger: m => {
         if (m.status === 'recognizing text') {
           console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`)
