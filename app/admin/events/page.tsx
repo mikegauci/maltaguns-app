@@ -515,7 +515,6 @@ function EventsPageComponent() {
                     onSelect={date =>
                       setFormData({ ...formData, start_date: date || null })
                     }
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
@@ -548,7 +547,6 @@ function EventsPageComponent() {
                     onSelect={date =>
                       setFormData({ ...formData, end_date: date || null })
                     }
-                    initialFocus
                   />
                 </PopoverContent>
               </Popover>
