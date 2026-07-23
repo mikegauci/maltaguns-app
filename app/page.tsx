@@ -1,3 +1,5 @@
+import { preload } from 'react-dom'
+import { getImageProps } from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import {
   HeroSection,
@@ -13,10 +15,30 @@ import { getHomePageData } from '@/lib/public-data'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { getSiteSettings } from '@/lib/seo'
 import { buildOrganizationSchema, buildWebSiteSchema } from '@/lib/seo-jsonld'
+import heroImage from '@/public/maltaguns-hero-2.jpg'
 
 export const revalidate = 30
 
+function preloadHeroImage() {
+  const { props } = getImageProps({
+    src: heroImage,
+    alt: 'MaltaGuns Hero',
+    sizes: '100vw',
+    quality: 75,
+    fill: true,
+  })
+
+  preload(props.src, {
+    as: 'image',
+    imageSrcSet: props.srcSet,
+    imageSizes: props.sizes,
+    fetchPriority: 'high',
+  })
+}
+
 export default async function Home() {
+  preloadHeroImage()
+
   const supabase = await createClient()
 
   const [{ data: userData }, homeData, siteSettings] = await Promise.all([
