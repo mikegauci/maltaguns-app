@@ -1,8 +1,5 @@
 import { JsonLd } from '@/components/seo/JsonLd'
-import {
-  buildBreadcrumbList,
-  buildLocalBusinessSchema,
-} from '@/lib/seo-jsonld'
+import { buildBreadcrumbList, buildLocalBusinessSchema } from '@/lib/seo-jsonld'
 import type {
   EstablishmentType,
   EstablishmentWithDetails,

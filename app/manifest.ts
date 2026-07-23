@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: 'MaltaGuns',
     short_name: 'MaltaGuns',
     description:
-      'Marketplace and community hub for Malta\'s shooting and collecting community',
+      "Marketplace and community hub for Malta's shooting and collecting community",
     start_url: '/',
     display: 'standalone',
     background_color: '#0a0a0a',

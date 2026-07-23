@@ -14,10 +14,7 @@ import { getHomePageData } from '@/lib/public-data'
 import { Database } from '@/lib/database.types'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { getSiteSettings } from '@/lib/seo'
-import {
-  buildOrganizationSchema,
-  buildWebSiteSchema,
-} from '@/lib/seo-jsonld'
+import { buildOrganizationSchema, buildWebSiteSchema } from '@/lib/seo-jsonld'
 
 export const revalidate = 30
 

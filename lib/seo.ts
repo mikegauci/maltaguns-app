@@ -5,11 +5,7 @@ import {
   type PageSeoMap,
   type SectionKey,
 } from '@/lib/seo-defaults'
-import {
-  getAppUrl,
-  isNonProductionHost,
-  toAbsoluteUrl,
-} from '@/lib/seo-host'
+import { getAppUrl, isNonProductionHost, toAbsoluteUrl } from '@/lib/seo-host'
 
 export type { SectionKey, PageSeoMap }
 export { SECTION_SEO_DEFAULTS }
@@ -134,11 +130,7 @@ export function buildMetadata({
       description: resolvedDescription,
       siteName: siteTitle,
       type: 'website',
-      ...(canonical
-        ? { url: canonical }
-        : noIndex
-          ? { url: undefined }
-          : {}),
+      ...(canonical ? { url: canonical } : noIndex ? { url: undefined } : {}),
       images: [
         {
           url: resolvedImage,

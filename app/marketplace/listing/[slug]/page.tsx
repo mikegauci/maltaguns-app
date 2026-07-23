@@ -4,10 +4,7 @@ import ListingClient from './listing-client'
 import { fetchListingBySlug } from './server'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
 import { JsonLd } from '@/components/seo/JsonLd'
-import {
-  buildBreadcrumbList,
-  buildProductSchema,
-} from '@/lib/seo-jsonld'
+import { buildBreadcrumbList, buildProductSchema } from '@/lib/seo-jsonld'
 
 export const revalidate = 30
 
