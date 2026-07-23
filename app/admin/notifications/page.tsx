@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Database } from '@/lib/database.types'
+import { createClient } from '@/lib/supabase/client'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
@@ -31,7 +30,7 @@ function displayName(u: UserRow): string {
 export default function AdminNotificationsPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClient()
 
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [loading, setLoading] = useState(true)

@@ -1,4 +1,4 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
+import { createMiddlewareClient } from '@/lib/supabase/middleware'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { PROTECTED_ROUTES } from './middleware/config'
@@ -17,7 +17,7 @@ function applyHostHeaders(req: NextRequest, res: NextResponse): NextResponse {
   return res
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   try {
     const signOutAndRedirectToLogin = async (errorMessage?: string) => {
       const redirectUrl = new URL('/login', req.url)
@@ -28,7 +28,7 @@ export async function middleware(req: NextRequest) {
 
       const response = NextResponse.redirect(redirectUrl)
 
-      const supabase = createMiddlewareClient({ req, res: response })
+      const supabase = createMiddlewareClient(req, response)
       await supabase.auth.signOut()
 
       return applyHostHeaders(req, addSecurityHeaders(response))
@@ -36,7 +36,7 @@ export async function middleware(req: NextRequest) {
 
     if (req.nextUrl.pathname.startsWith('/api/webhooks/stripe')) {
       console.log(
-        '[MIDDLEWARE] Detected Stripe webhook request, skipping auth check'
+        '[PROXY] Detected Stripe webhook request, skipping auth check'
       )
       return applyHostHeaders(
         req,
@@ -68,7 +68,7 @@ export async function middleware(req: NextRequest) {
 
     const res = NextResponse.next()
 
-    const supabase = createMiddlewareClient({ req, res })
+    const supabase = createMiddlewareClient(req, res)
 
     const {
       data: { user },
@@ -91,7 +91,7 @@ export async function middleware(req: NextRequest) {
 
     return applyHostHeaders(req, addSecurityHeaders(res))
   } catch (error) {
-    console.error('Middleware error:', error)
+    console.error('Proxy error:', error)
     return applyHostHeaders(req, redirectToLogin(req))
   }
 }

@@ -188,25 +188,26 @@ export default function EventsPage() {
               classNames={{
                 months: 'w-full',
                 month: 'w-full space-y-4',
-                caption: 'hidden',
-                table: 'w-full border-collapse border border-border',
-                head_row: 'flex w-full',
-                head_cell:
+                month_caption: 'hidden',
+                month_grid: 'w-full border-collapse border border-border',
+                weekdays: 'flex w-full',
+                weekday:
                   'text-muted-foreground flex-1 font-normal text-[0.8rem] py-2 border-b border-r last:border-r-0 w-[calc(100%/7)] [&:nth-child(6)]:text-orange-600 [&:nth-child(7)]:text-orange-600',
-                row: 'flex w-full mt-0',
-                cell: 'relative flex-1 h-[120px] p-0 text-center border-r last:border-r-0 border-b last-of-type:border-b-0 hover:bg-accent/50 hover:text-accent-foreground focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md w-[calc(100%/7)] [&:nth-child(6)]:bg-orange-50 [&:nth-child(7)]:bg-orange-50 dark:[&:nth-child(6)]:bg-orange-950/20 dark:[&:nth-child(7)]:bg-orange-950/20 [&:has(.today)]:hover:bg-primary/90 [&:has(.today)]:hover:text-primary-foreground',
-                day: 'h-full w-full p-2 font-normal aria-selected:opacity-100',
-                day_today:
-                  'bg-primary text-primary-foreground rounded-md today',
-                day_outside: 'text-muted-foreground opacity-50',
-                day_disabled: 'text-muted-foreground opacity-50',
-                day_range_middle:
+                week: 'flex w-full mt-0',
+                day: 'relative flex-1 h-[120px] p-0 text-center border-r last:border-r-0 border-b last-of-type:border-b-0 hover:bg-accent/50 hover:text-accent-foreground focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md w-[calc(100%/7)] [&:nth-child(6)]:bg-orange-50 [&:nth-child(7)]:bg-orange-50 dark:[&:nth-child(6)]:bg-orange-950/20 dark:[&:nth-child(7)]:bg-orange-950/20 [&:has(.today)]:hover:bg-primary/90 [&:has(.today)]:hover:text-primary-foreground',
+                day_button:
+                  'h-full w-full p-2 font-normal aria-selected:opacity-100',
+                today: 'bg-primary text-primary-foreground rounded-md today',
+                outside: 'text-muted-foreground opacity-50',
+                disabled: 'text-muted-foreground opacity-50',
+                range_middle:
                   'aria-selected:bg-accent aria-selected:text-accent-foreground',
-                day_hidden: 'invisible',
-                day_selected: 'text-foreground font-bold !important',
+                hidden: 'invisible',
+                selected: 'text-foreground font-bold',
               }}
               components={{
-                DayContent: ({ date }) => {
+                DayButton: ({ day, ...buttonProps }) => {
+                  const date = day.date
                   const events = getDayEvents(date)
                   const isToday =
                     date.toDateString() === new Date().toDateString()
@@ -217,43 +218,45 @@ export default function EventsPage() {
                   const isWeekend = date.getDay() === 0 || date.getDay() === 6
 
                   return (
-                    <div className="w-full h-full flex flex-col">
-                      <span
-                        className={`text-sm p-1 rounded-md ${
-                          isToday
-                            ? 'font-bold text-primary-foreground'
-                            : isWeekend
-                              ? 'text-orange-600 font-medium'
-                              : 'text-foreground'
-                        }`}
-                      >
-                        {date.getDate()}
-                        {isToday && (
-                          <span className="ml-1 text-[0.7rem]">Today</span>
-                        )}
-                      </span>
-                      <div className="flex flex-col gap-1 mt-1">
-                        {events.map(event => (
-                          <Link
-                            key={event.id}
-                            href={`/events/${event.slug || event.id}`}
-                            className="block"
-                          >
-                            <div
-                              className={`text-xs p-1 rounded ${
-                                isPast
-                                  ? 'bg-muted text-muted-foreground hover:bg-muted/80'
-                                  : isWeekend
-                                    ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/50'
-                                    : 'bg-primary/10 text-primary hover:bg-primary/20'
-                              } truncate transition-colors`}
+                    <button type="button" {...buttonProps}>
+                      <div className="w-full h-full flex flex-col">
+                        <span
+                          className={`text-sm p-1 rounded-md ${
+                            isToday
+                              ? 'font-bold text-primary-foreground'
+                              : isWeekend
+                                ? 'text-orange-600 font-medium'
+                                : 'text-foreground'
+                          }`}
+                        >
+                          {date.getDate()}
+                          {isToday && (
+                            <span className="ml-1 text-[0.7rem]">Today</span>
+                          )}
+                        </span>
+                        <div className="flex flex-col gap-1 mt-1">
+                          {events.map(event => (
+                            <Link
+                              key={event.id}
+                              href={`/events/${event.slug || event.id}`}
+                              className="block"
                             >
-                              {truncateTitle(event.title)}
-                            </div>
-                          </Link>
-                        ))}
+                              <div
+                                className={`text-xs p-1 rounded ${
+                                  isPast
+                                    ? 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    : isWeekend
+                                      ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/50'
+                                      : 'bg-primary/10 text-primary hover:bg-primary/20'
+                                } truncate transition-colors`}
+                              >
+                                {truncateTitle(event.title)}
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    </button>
                   )
                 },
               }}

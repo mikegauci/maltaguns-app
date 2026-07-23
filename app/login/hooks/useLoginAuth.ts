@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { SupabaseClient } from '@supabase/auth-helpers-nextjs'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { forceLogout } from '@/lib/auth-utils'
 import { checkAccountDisabled, handleLoginRedirect } from '../utils/authUtils'
 

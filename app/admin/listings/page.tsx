@@ -697,7 +697,6 @@ function ListingsPageComponent() {
                   onSelect={date =>
                     setFormData(prev => ({ ...prev, expires_at: date || null }))
                   }
-                  initialFocus
                   disabled={date => date < new Date()}
                 />
               </PopoverContent>

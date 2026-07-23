@@ -32,11 +32,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { BackButton } from '@/components/ui/back-button'
 import { Loader2 } from 'lucide-react'
-import { Database } from '@/lib/database.types'
 import { PageLayout } from '@/components/ui/page-layout'
 
 const EventCreditDialog = nextDynamic(
@@ -179,7 +178,7 @@ type EventForm = z.infer<typeof eventSchema>
 export default function CreateEventPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingPoster, setUploadingPoster] = useState(false)
   const [showCreditDialog, setShowCreditDialog] = useState(false)

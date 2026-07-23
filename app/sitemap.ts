@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/public'
 import { getAppUrl } from '@/lib/seo'
 
 function slugify(text: string): string {

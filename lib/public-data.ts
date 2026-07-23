@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/public'
 
 export async function getHomePageData() {
   try {

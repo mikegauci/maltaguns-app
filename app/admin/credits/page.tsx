@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
@@ -43,7 +43,7 @@ function CreditsPageComponent() {
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [selectedCredit, setSelectedCredit] = useState<Credit | null>(null)
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   const fetchData = useCallback(async () => {
     try {

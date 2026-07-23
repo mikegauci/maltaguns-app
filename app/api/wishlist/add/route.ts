@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { Database } from '@/lib/database.types'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
 
@@ -19,7 +18,7 @@ export async function POST(request: Request) {
     if ('error' in auth) return auth.error
 
     const { user } = auth
-    const supabase = createRouteHandlerClient<Database>({ cookies })
+    const supabase = await createClient()
 
     const { data: listing, error: listingError } = await supabase
       .from('listings')

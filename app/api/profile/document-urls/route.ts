@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
 import { signLicenseUrl } from '@/lib/storage-signed-url'
 
@@ -12,7 +11,7 @@ export async function GET() {
     if ('error' in auth) return auth.error
 
     const { user } = auth
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await createClient()
 
     const { data: profile, error } = await supabase
       .from('profiles')

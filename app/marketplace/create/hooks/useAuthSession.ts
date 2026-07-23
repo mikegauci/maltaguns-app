@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 
 export function useAuthSession() {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [isRetailer, setIsRetailer] = useState(false)

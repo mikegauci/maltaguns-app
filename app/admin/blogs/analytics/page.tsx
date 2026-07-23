@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { Database } from '@/lib/database.types'
 import {
   Card,
@@ -65,7 +65,7 @@ interface BlogAnalytics {
 export default function BlogAnalyticsPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClient()
 
   const [analytics, setAnalytics] = useState<BlogAnalytics | null>(null)
   const [loading, setLoading] = useState(true)

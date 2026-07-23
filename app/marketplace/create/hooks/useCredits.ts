@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export function useCredits() {
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
   const [credits, setCredits] = useState<number>(0)
   const [hasCredits, setHasCredits] = useState(true)
 

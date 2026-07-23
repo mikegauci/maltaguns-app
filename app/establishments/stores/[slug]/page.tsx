@@ -10,20 +10,18 @@ export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 export const revalidate = 0
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string }
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>
 }): Promise<Metadata> {
+  const params = await props.params
   return generateEstablishmentMetadata('stores', params.slug)
 }
 
-export default async function StorePage({
-  params,
-}: {
-  params: { slug: string }
+export default async function StorePage(props: {
+  params: Promise<{ slug: string }>
 }) {
-  headers()
+  const params = await props.params
+  await headers()
 
   const establishment = await fetchEstablishmentBySlug('stores', params.slug)
 
