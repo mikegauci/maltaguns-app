@@ -1,38 +1,10 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-
-// This endpoint is now deprecated as admin status is controlled directly in the database
+import { requireAdmin } from '@/lib/api-auth'
 
 export async function POST() {
-  const supabase = createRouteHandlerClient({ cookies })
-
   try {
-    // Verify the current user is an admin
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No valid session' },
-        { status: 401 }
-      )
-    }
-
-    // Check if the user is an admin
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profileError || !profileData || !profileData.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
     return NextResponse.json({
       success: true,

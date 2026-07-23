@@ -1,60 +1,17 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/api-auth'
 
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  // Create regular client for auth checks
-  const supabase = createRouteHandlerClient({ cookies })
-
   try {
-    // Get the request body to determine new disabled status
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
+
+    const { supabaseAdmin } = auth
     const { disabled } = await request.json()
 
-    // First check if the current user is an admin
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
-
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No valid session' },
-        { status: 401 }
-      )
-    }
-
-    // Get the current user's profile to check admin status
-    const { data: currentUserProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profileError || !currentUserProfile) {
-      return NextResponse.json(
-        { error: 'Failed to verify admin status' },
-        { status: 401 }
-      )
-    }
-
-    if (!currentUserProfile.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
-
-    // Create admin client to bypass RLS
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    )
-
-    // Check if user exists before trying to update
     const { data: userProfile, error: userProfileError } = await supabaseAdmin
       .from('profiles')
       .select('id')
@@ -76,7 +33,6 @@ export async function PATCH(
       )
     }
 
-    // Update the user's disabled status with admin client
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
       .update({ is_disabled: disabled })

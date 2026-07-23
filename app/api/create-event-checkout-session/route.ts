@@ -1,13 +1,9 @@
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { createCreditCheckoutSession } from '@/lib/credit-checkout'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 import { getAppUrl } from '@/lib/seo'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-})
 
 export async function POST() {
   try {
@@ -29,39 +25,19 @@ export async function POST() {
       )
     }
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: STRIPE_PRICE_IDS.eventCredit,
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      customer_email: profile.email,
-      success_url: `${getAppUrl()}/events/create?success=true`,
-      cancel_url: `${getAppUrl()}/profile?canceled=true`,
-      metadata: {
-        userId: user.id,
-        credits: '1',
-        creditType: 'event',
-        description: 'Purchase of 1 event credit',
-      },
+    const { session, insertError } = await createCreditCheckoutSession({
+      userId: user.id,
+      email: profile.email,
+      stripePriceId: STRIPE_PRICE_IDS.eventCredit,
+      credits: 1,
+      creditType: 'event',
+      successUrl: `${getAppUrl()}/events/create?success=true`,
+      cancelUrl: `${getAppUrl()}/profile?canceled=true`,
+      description: 'Purchase of 1 event credit',
+      pendingDescription: 'Pending purchase of 1 event credit',
     })
 
-    const { error: transactionError } = await supabaseAdmin
-      .from('credit_transactions')
-      .insert({
-        user_id: user.id,
-        amount: 1,
-        status: 'pending',
-        type: 'credit',
-        credit_type: 'event',
-        description: 'Pending purchase of 1 event credit',
-        stripe_payment_id: session.id,
-      })
-
-    if (transactionError) {
+    if (insertError) {
       return NextResponse.json(
         { error: 'Error recording transaction' },
         { status: 500 }

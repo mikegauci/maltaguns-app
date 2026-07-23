@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { deleteListingCascade } from '@/lib/listing-delete'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export async function POST(request: Request) {
@@ -31,61 +32,14 @@ export async function POST(request: Request) {
       )
     }
 
-    const { error: featuredError } = await supabaseAdmin
-      .from('featured_listings')
-      .delete()
-      .eq('listing_id', listingId)
+    const result = await deleteListingCascade(listingId, {
+      sellerId: user.id,
+      logPrefix: '[DELETE API]',
+    })
 
-    if (featuredError) {
-      console.error(
-        '[DELETE API] Error removing from featured listings:',
-        featuredError
-      )
-    }
-
-    const { error: savedError } = await supabaseAdmin
-      .from('saved_listings')
-      .delete()
-      .eq('listing_id', listingId)
-
-    if (savedError) {
-      console.error(
-        '[DELETE API] Error removing from saved listings:',
-        savedError
-      )
-    }
-
-    const { error: reportsError } = await supabaseAdmin
-      .from('report_listings')
-      .delete()
-      .eq('listing_id', listingId)
-
-    if (reportsError) {
-      console.error(
-        '[DELETE API] Error deleting listing reports:',
-        reportsError
-      )
-    }
-
-    const { error: messagesError } = await supabaseAdmin
-      .from('messages')
-      .delete()
-      .eq('listing_id', listingId)
-
-    if (messagesError) {
-      console.error('[DELETE API] Error deleting messages:', messagesError)
-    }
-
-    const { error: deleteError } = await supabaseAdmin
-      .from('listings')
-      .delete()
-      .eq('id', listingId)
-      .eq('seller_id', user.id)
-
-    if (deleteError) {
-      console.error('[DELETE API] Error deleting listing:', deleteError)
+    if ('error' in result) {
       return NextResponse.json(
-        { error: 'Failed to delete listing', details: deleteError },
+        { error: 'Failed to delete listing', details: result.error },
         { status: 500 }
       )
     }

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Database } from '@/lib/database.types'
+import { requireAuthenticatedUser } from '@/lib/api-auth'
 
 export async function POST(request: Request) {
   try {
@@ -14,20 +15,12 @@ export async function POST(request: Request) {
       )
     }
 
-    // Create a Supabase client with the cookies for auth
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
+
+    const { user } = auth
     const supabase = createRouteHandlerClient<Database>({ cookies })
 
-    // Get the current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    // Check if the listing exists and is active
     const { data: listing, error: listingError } = await supabase
       .from('listings')
       .select('id, status, seller_id')
@@ -38,7 +31,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 
-    // Don't allow users to wishlist their own listings
     if (listing.seller_id === user.id) {
       return NextResponse.json(
         { error: 'Cannot add your own listing to wishlist' },
@@ -46,7 +38,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Check if already in wishlist
     const { data: existingWishlistItem } = await supabase
       .from('wishlist')
       .select('id')
@@ -61,7 +52,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Add to wishlist
     const { data: wishlistItem, error: wishlistError } = await supabase
       .from('wishlist')
       .insert({

@@ -2,25 +2,18 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Database } from '@/lib/database.types'
+import { requireAuthenticatedUser } from '@/lib/api-auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    // Create a Supabase client with the cookies for auth
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
+
+    const { user } = auth
     const supabase = createRouteHandlerClient<Database>({ cookies })
 
-    // Get the current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
-    }
-
-    // Fetch wishlist items with listing details
     const { data: wishlistItems, error: wishlistError } = await supabase
       .from('wishlist')
       .select(
@@ -59,7 +52,6 @@ export async function GET() {
       )
     }
 
-    // Filter out items where listing might have been deleted
     const validWishlistItems =
       wishlistItems?.filter(item => item.listings) || []
 

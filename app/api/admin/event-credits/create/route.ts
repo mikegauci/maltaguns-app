@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
+import { addOrIncrementCredits, ensureUserExists } from '@/lib/admin-credits'
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,23 +24,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { data: userExists, error: userError } = await supabaseAdmin
-      .from('profiles')
-      .select('id')
-      .eq('id', user_id)
-      .single()
-
-    if (userError || !userExists) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 })
+    const userCheck = await ensureUserExists(supabaseAdmin, user_id)
+    if ('error' in userCheck) {
+      return NextResponse.json(
+        { message: userCheck.error },
+        { status: userCheck.status }
+      )
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('credits_events')
-      .insert({
-        user_id,
-        amount: Number(amount),
-      })
-      .select()
+    const { data, error } = await addOrIncrementCredits(supabaseAdmin, {
+      table: 'credits_events',
+      userId: user_id,
+      amount: Number(amount),
+      incrementExisting: false,
+    })
 
     if (error) {
       return NextResponse.json(

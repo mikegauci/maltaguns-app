@@ -1,8 +1,8 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import Stripe from 'stripe'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { stripe } from '@/lib/credit-checkout'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 import { getAppUrl } from '@/lib/seo'
 import { FEATURE_RENEW_WITHIN_DAYS } from '@/lib/featured-listings'
@@ -10,10 +10,6 @@ import { FEATURE_RENEW_WITHIN_DAYS } from '@/lib/featured-listings'
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined')
 }
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-})
 
 const FEATURE_LISTING_PRICE_ID = STRIPE_PRICE_IDS.featuredListing
 
