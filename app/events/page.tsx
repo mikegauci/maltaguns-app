@@ -189,6 +189,9 @@ export default function EventsPage() {
                 months: 'w-full',
                 month: 'w-full space-y-4',
                 month_caption: 'hidden',
+                nav: 'hidden',
+                button_previous: 'hidden',
+                button_next: 'hidden',
                 month_grid: 'w-full border-collapse border border-border',
                 weekdays: 'flex w-full',
                 weekday:
