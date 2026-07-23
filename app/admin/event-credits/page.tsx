@@ -1,14 +1,12 @@
 'use client'
 
+import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
-import {
-  DataTable,
-  EditEventCreditDialog,
-  AddEventCreditDialog,
-} from '@/app/admin'
+import { EditEventCreditDialog } from '@/app/admin/components/EditEventCreditDialog'
+import { AddEventCreditDialog } from '@/app/admin/components/AddEventCreditDialog'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
@@ -16,6 +14,11 @@ import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+
+const DataTable = nextDynamic(
+  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
+  { ssr: false }
+) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface EventCredit {
   id: string

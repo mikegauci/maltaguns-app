@@ -59,7 +59,7 @@ import Link from 'next/link'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
-import { FormDialog } from '@/app/admin'
+import { FormDialog } from '@/app/admin/components/FormDialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 

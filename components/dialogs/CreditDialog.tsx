@@ -1,6 +1,5 @@
 'use client'
 
-import { useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -11,13 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { loadStripe } from '@stripe/stripe-js'
 import { useRouter } from 'next/navigation'
-
-// Initialize Stripe with your publishable key.
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-)
 
 interface Plan {
   id: string
@@ -55,15 +48,17 @@ interface CreditDialogProps {
   source?: 'profile' | 'marketplace'
 }
 
+async function getStripe() {
+  const { loadStripe } = await import('@stripe/stripe-js')
+  return loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+}
+
 export function CreditDialog({
   open,
   onOpenChange,
   source,
 }: CreditDialogProps) {
   const router = useRouter()
-  useEffect(() => {
-    void stripePromise
-  }, [])
 
   const handlePurchase = async (priceId: string) => {
     try {
@@ -79,7 +74,7 @@ export function CreditDialog({
       }
 
       const data = await res.json()
-      const stripe = await stripePromise
+      const stripe = await getStripe()
       if (!stripe) throw new Error('Stripe failed to load')
       const { error } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
@@ -92,21 +87,16 @@ export function CreditDialog({
 
   const handleBack = () => {
     if (source === 'profile') {
-      // Just close the dialog if opened from profile
       onOpenChange(false)
     } else if (source === 'marketplace') {
-      // Return to marketplace create page
       router.push('/marketplace/create')
       onOpenChange(false)
     } else {
-      // Default behavior - just close
       onOpenChange(false)
     }
   }
 
-  // Prevent closing the dialog when clicking outside or pressing escape
   const handleOpenChange = (newOpen: boolean) => {
-    // Only allow the dialog to be closed programmatically through our buttons
     if (newOpen === false) {
       return
     }

@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
@@ -47,13 +46,7 @@ const emptyGlobal: GlobalForm = {
   twitter_handle: '',
 }
 
-const SeoPageContent = dynamic(() => Promise.resolve(SeoPageComponent), {
-  ssr: false,
-})
-
-export default function SeoSettingsPage() {
-  return <SeoPageContent />
-}
+export default SeoPageComponent
 
 function CharCount({
   length,

@@ -9,22 +9,11 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Tabs, TabsContent } from '@/components/ui/tabs'
-import dynamic from 'next/dynamic'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 
-// Use dynamic import with SSR disabled to prevent hydration issues
-const AdminDashboardContent = dynamic(
-  () => Promise.resolve(AdminDashboardComponent),
-  {
-    ssr: false,
-  }
-)
-
-export default function AdminDashboard() {
-  return <AdminDashboardContent />
-}
+export default AdminDashboardComponent
 
 function AdminDashboardComponent() {
   return (

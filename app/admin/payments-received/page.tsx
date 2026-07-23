@@ -1,17 +1,21 @@
 'use client'
 
+import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
-import { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
-import { DataTable } from '@/app/admin'
 import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, Copy } from 'lucide-react'
-import dynamic from 'next/dynamic'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+
+const DataTable = nextDynamic(
+  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
+  { ssr: false }
+) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface Payment {
   id: string
@@ -29,17 +33,7 @@ interface Payment {
   created_at: string
 }
 
-// Use dynamic import with SSR disabled to prevent hydration issues
-const PaymentsReceivedPageContent = dynamic(
-  () => Promise.resolve(PaymentsReceivedPageComponent),
-  {
-    ssr: false,
-  }
-)
-
-export default function PaymentsReceivedPage() {
-  return <PaymentsReceivedPageContent />
-}
+export default PaymentsReceivedPageComponent
 
 function PaymentsReceivedPageComponent() {
   const { toast } = useToast()

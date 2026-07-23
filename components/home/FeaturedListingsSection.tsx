@@ -1,8 +1,11 @@
+'use client'
+
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { StorageImage } from '@/components/ui/storage-image'
 import { HomeCarousel, HomeCarouselItem } from './HomeCarousel'
+import { formatPrice, slugify } from '@/lib/format'
 
 interface Listing {
   id: string
@@ -13,14 +16,10 @@ interface Listing {
 
 interface FeaturedListingsSectionProps {
   listings: Listing[]
-  formatPrice: (_price: number) => string
-  slugify: (_text: string) => string
 }
 
 export const FeaturedListingsSection = ({
   listings,
-  formatPrice,
-  slugify,
 }: FeaturedListingsSectionProps) => {
   return (
     <section className="py-16">

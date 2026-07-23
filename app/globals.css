@@ -69,6 +69,11 @@
   @apply my-4;
 }
 
+.ProseMirror strong,
+.ProseMirror b {
+  @apply text-foreground font-bold;
+}
+
 .ProseMirror ul {
   @apply list-disc pl-6 my-4;
 }

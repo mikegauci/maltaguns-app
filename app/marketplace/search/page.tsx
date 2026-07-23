@@ -156,8 +156,8 @@ export default function SearchResults() {
             </Badge>
           )}
         </div>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-2 mb-3">
+        <CardContent className="p-3 sm:p-6">
+          <div className="flex items-center gap-2 mb-2 sm:mb-3">
             {listing.type === 'firearms' ? (
               <div className="inline-flex">
                 <Image
@@ -173,18 +173,20 @@ export default function SearchResults() {
                 <Package className="h-4 w-4 mr-2" />
               </div>
             )}
-            <Badge variant="secondary">
+            <Badge variant="secondary" className="text-[10px] sm:text-xs">
               {getCategoryLabel(listing.category, listing.type)}
             </Badge>
           </div>
-          <h3 className="text-md font-semibold mb-2 line-clamp-1">
+          <h3 className="text-sm sm:text-md font-semibold mb-1 sm:mb-2 line-clamp-1">
             {listing.title}
           </h3>
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[40px]">
+          <p className="text-sm text-muted-foreground mb-2 sm:mb-4 line-clamp-2 min-h-[40px]">
             {listing.description}
           </p>
           <div className="flex items-center justify-between">
-            <p className="text-lg font-bold">{formatPrice(listing.price)}</p>
+            <p className="text-sm sm:text-lg font-bold">
+              {formatPrice(listing.price)}
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -225,7 +227,7 @@ export default function SearchResults() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <div className="h-48 bg-muted rounded-t-lg" />
@@ -257,7 +259,7 @@ export default function SearchResults() {
                 <Star className="h-5 w-5 text-red-500" />
                 <h2 className="text-xl font-bold">Featured Listings</h2>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
                 {featuredListings.map(renderListingCard)}
               </div>
             </div>
@@ -267,7 +269,7 @@ export default function SearchResults() {
             <h2 className="text-2xl font-bold mb-4">
               {featuredListings.length > 0 ? 'All Results' : 'Search Results'}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
               {listings.map(renderListingCard)}
             </div>
           </div>

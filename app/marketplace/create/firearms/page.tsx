@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import nextDynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -24,8 +25,13 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Loader2 } from 'lucide-react'
-import { CreditDialog, LegalWarningDialog } from '@/components/dialogs'
+import { LegalWarningDialog } from '@/components/dialogs'
 import { firearmsCategories } from '../constants'
+
+const CreditDialog = nextDynamic(
+  () => import('@/components/dialogs/CreditDialog').then(m => m.CreditDialog),
+  { ssr: false }
+)
 import { firearmsSchema, FirearmsForm } from '../schemas'
 import { useImageUpload } from '../hooks/useImageUpload'
 import { useAuthSession } from '../hooks/useAuthSession'
@@ -290,7 +296,7 @@ export default function CreateFirearmsListing() {
         isLoading={isSubmitting}
       />
 
-      {userId && (
+      {userId && showCreditDialog && (
         <CreditDialog
           open={showCreditDialog}
           onOpenChange={open => {

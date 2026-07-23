@@ -1,5 +1,9 @@
-import { createWorker } from 'tesseract.js'
 import { LicenseTypes } from '@/lib/license-utils'
+
+async function getCreateWorker() {
+  const { createWorker } = await import('tesseract.js')
+  return createWorker
+}
 
 /**
  * Verifies if an uploaded license image contains the required text and is not expired
@@ -40,7 +44,7 @@ export async function verifyLicenseImage(
       await findBestOrientation(file)
 
     // Create a Tesseract worker
-    const worker = await createWorker('eng')
+    const worker = await (await getCreateWorker())('eng')
 
     // Use the best rotated image we found
     const { confidence, text } = bestText
@@ -141,7 +145,7 @@ async function findBestOrientation(file: File): Promise<{
     let bestImage = originalImageBase64
 
     // Create a Tesseract worker once and reuse for all rotations
-    const worker = await createWorker('eng')
+    const worker = await (await getCreateWorker())('eng')
 
     // Try each rotation and find the one with highest confidence
     for (const angle of rotationAngles) {
@@ -222,7 +226,7 @@ async function findBestOrientationWithProgress(
     let bestImage = originalImageBase64
 
     // Create a Tesseract worker once and reuse for all rotations
-    const worker = await createWorker('eng')
+    const worker = await (await getCreateWorker())('eng')
 
     // Try each rotation and find the one with highest confidence
     for (let i = 0; i < rotationAngles.length; i++) {
@@ -1031,7 +1035,9 @@ export async function verifyIdCardImage(
     )
 
     // Create a Tesseract worker with enhanced settings for ID cards
-    const worker = await createWorker('eng', 1, {
+    const worker = await (
+      await getCreateWorker()
+    )('eng', 1, {
       logger: m => {
         if (m.status === 'recognizing text') {
           console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`)
