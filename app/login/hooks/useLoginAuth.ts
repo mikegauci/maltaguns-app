@@ -22,7 +22,7 @@ export function useLoginAuth(supabase: SupabaseClient) {
         setIsDisabled(true)
         if (typeof window !== 'undefined') {
           localStorage.removeItem('supabase.auth.token')
-          forceLogout()
+          void forceLogout()
         }
       }
     }
