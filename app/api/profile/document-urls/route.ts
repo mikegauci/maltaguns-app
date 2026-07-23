@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { signLicenseUrl } from '@/lib/storage-signed-url'
 
+export const dynamic = 'force-dynamic'
+
 // Returns short-lived signed URLs for the current user's own license/id-card
 // images. The licenses bucket is private, so callers can no longer read
 // these directly via the stored "public" URL.
