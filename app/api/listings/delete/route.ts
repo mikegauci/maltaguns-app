@@ -1,50 +1,36 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Create a Supabase client with admin privileges to bypass RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
+import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export async function POST(request: Request) {
   try {
-    const { listingId, userId } = await request.json()
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
 
-    if (!listingId || !userId) {
+    const { user } = auth
+    const { listingId } = await request.json()
+
+    if (!listingId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
-    console.log(
-      '[DELETE API] Attempting to delete listing:',
-      listingId,
-      'for user:',
-      userId
-    )
-
-    // First verify that the user owns this listing
-    const { error: listingError } = await supabaseAdmin
+    const { data: listing, error: listingError } = await supabaseAdmin
       .from('listings')
-      .select('*')
+      .select('id, seller_id')
       .eq('id', listingId)
-      .eq('seller_id', userId)
+      .eq('seller_id', user.id)
       .single()
 
-    if (listingError) {
-      console.error('[DELETE API] Error finding listing:', listingError)
+    if (listingError || !listing) {
       return NextResponse.json(
         { error: 'Listing not found or permission denied' },
         { status: 404 }
       )
     }
 
-    // Begin cascading delete of all related records
-    console.log('[DELETE API] Beginning cascading delete...')
-
-    // 1. Delete featured_listings entries
     const { error: featuredError } = await supabaseAdmin
       .from('featured_listings')
       .delete()
@@ -55,10 +41,8 @@ export async function POST(request: Request) {
         '[DELETE API] Error removing from featured listings:',
         featuredError
       )
-      // Continue despite this error
     }
 
-    // 2. Delete saved_listings entries
     const { error: savedError } = await supabaseAdmin
       .from('saved_listings')
       .delete()
@@ -69,10 +53,8 @@ export async function POST(request: Request) {
         '[DELETE API] Error removing from saved listings:',
         savedError
       )
-      // Continue despite this error
     }
 
-    // 3. Delete listing_reports entries
     const { error: reportsError } = await supabaseAdmin
       .from('report_listings')
       .delete()
@@ -83,11 +65,8 @@ export async function POST(request: Request) {
         '[DELETE API] Error deleting listing reports:',
         reportsError
       )
-      // Continue despite this error
     }
 
-    // 4. Delete messages related to this listing (if applicable)
-    // This would depend on your schema, adjust as needed
     const { error: messagesError } = await supabaseAdmin
       .from('messages')
       .delete()
@@ -95,14 +74,13 @@ export async function POST(request: Request) {
 
     if (messagesError) {
       console.error('[DELETE API] Error deleting messages:', messagesError)
-      // Continue despite this error
     }
 
-    // 5. Delete the listing itself
     const { error: deleteError } = await supabaseAdmin
       .from('listings')
       .delete()
       .eq('id', listingId)
+      .eq('seller_id', user.id)
 
     if (deleteError) {
       console.error('[DELETE API] Error deleting listing:', deleteError)
@@ -111,8 +89,6 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
-
-    console.log('[DELETE API] Listing deleted successfully')
 
     return NextResponse.json({
       success: true,

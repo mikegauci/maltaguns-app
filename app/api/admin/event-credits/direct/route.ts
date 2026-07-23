@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/api-auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,15 +21,13 @@ interface ProfileMap {
   [key: string]: Profile
 }
 
-// Create a direct Supabase client that bypasses RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
-
 export async function GET() {
   try {
-    // Direct fetch all event credits with service role
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
+
+    const { supabaseAdmin } = auth
+
     const { data: eventCredits, error: eventCreditsError } = await supabaseAdmin
       .from('credits_events')
       .select('*')
@@ -46,12 +44,10 @@ export async function GET() {
       return NextResponse.json({ data: [] })
     }
 
-    // Get unique user IDs
     const userIds = Array.from(
       new Set((eventCredits as EventCredit[]).map(c => c.user_id))
     )
 
-    // Fetch profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
       .select('id, username, email')
@@ -59,10 +55,8 @@ export async function GET() {
 
     if (profilesError) {
       console.error('Direct API profiles error:', profilesError)
-      // Continue with event credits only
     }
 
-    // Create profiles map
     const profileMap: ProfileMap = {}
     if (profiles) {
       ;(profiles as Profile[]).forEach(profile => {
@@ -70,7 +64,6 @@ export async function GET() {
       })
     }
 
-    // Combine data
     const data = (eventCredits as EventCredit[]).map(eventCredit => ({
       ...eventCredit,
       username: profileMap[eventCredit.user_id]?.username || 'Unknown',

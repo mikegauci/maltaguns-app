@@ -20,14 +20,13 @@ const stripePromise = loadStripe(
 interface EventCreditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  userId: string
+  userId: string // eslint-disable-line unused-imports/no-unused-vars
   onSuccess?: () => void
 }
 
 export function EventCreditDialog({
   open,
   onOpenChange,
-  userId,
 }: EventCreditDialogProps) {
   const router = useRouter()
 
@@ -36,7 +35,6 @@ export function EventCreditDialog({
       const res = await fetch('/api/create-event-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
       })
 
       if (!res.ok) {

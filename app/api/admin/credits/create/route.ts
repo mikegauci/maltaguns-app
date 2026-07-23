@@ -1,25 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Create a direct Supabase client that bypasses RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
+import { requireAdmin } from '@/lib/api-auth'
 
 export async function POST(req: NextRequest) {
   try {
-    // Parse request body
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
+
+    const { supabaseAdmin } = auth
     const { user_id, amount } = await req.json()
 
-    console.log(
-      'Create request received for user_id:',
-      user_id,
-      'with amount:',
-      amount
-    )
-
-    // Validate required fields
     if (!user_id) {
       return NextResponse.json(
         { message: 'User ID is required' },
@@ -34,14 +23,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if user exists
     const { data: userExists, error: userError } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('id', user_id)
       .single()
-
-    console.log('User lookup result:', { userExists, userError })
 
     if (userError || !userExists) {
       return NextResponse.json({ message: 'User not found' }, { status: 404 })
@@ -49,18 +35,11 @@ export async function POST(req: NextRequest) {
 
     const amountToAdd = Number(amount)
 
-    // Each user can only have one row in `credits` (unique constraint on user_id).
-    // If a row already exists, increment its amount; otherwise insert a new row.
     const { data: existingCredit, error: existingError } = await supabaseAdmin
       .from('credits')
       .select('id, amount')
       .eq('user_id', user_id)
       .maybeSingle()
-
-    console.log('Existing credit lookup result:', {
-      existingCredit,
-      existingError,
-    })
 
     if (existingError) {
       console.error('Error looking up existing credits:', existingError)
@@ -87,7 +66,6 @@ export async function POST(req: NextRequest) {
 
       data = updateResult.data
       error = updateResult.error
-      console.log('Update result:', { data, error })
     } else {
       const insertResult = await supabaseAdmin
         .from('credits')
@@ -99,7 +77,6 @@ export async function POST(req: NextRequest) {
 
       data = insertResult.data
       error = insertResult.error
-      console.log('Insert result:', { data, error })
     }
 
     if (error) {

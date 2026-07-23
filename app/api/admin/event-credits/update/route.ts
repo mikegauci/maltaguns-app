@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-
-// Create a direct Supabase client that bypasses RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
+import { requireAdmin } from '@/lib/api-auth'
 
 export async function PATCH(req: NextRequest) {
   try {
-    // Parse request body
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
+
+    const { supabaseAdmin } = auth
     const { user_id, created_at, amount } = await req.json()
 
-    // Validate required fields
     if (!user_id || !created_at) {
       return NextResponse.json(
         {
@@ -30,7 +26,6 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    // Check if event credit record exists
     const { data: eventCreditExists, error: eventCreditError } =
       await supabaseAdmin
         .from('credits_events')
@@ -46,7 +41,6 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    // Update the event credit record
     const { data, error } = await supabaseAdmin
       .from('credits_events')
       .update({

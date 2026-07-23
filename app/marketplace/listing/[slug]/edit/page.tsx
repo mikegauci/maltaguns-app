@@ -663,7 +663,6 @@ export default function EditListing({ params }: { params: { slug: string } }) {
         },
         body: JSON.stringify({
           listingId,
-          userId: session.user.id,
         }),
       })
 

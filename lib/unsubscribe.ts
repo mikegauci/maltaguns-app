@@ -1,10 +1,9 @@
 import crypto from 'crypto'
 
 function getSecret(): string {
-  const secret =
-    process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY
+  const secret = process.env.SUPABASE_JWT_SECRET
   if (!secret) {
-    throw new Error('Missing secret for unsubscribe token signing')
+    throw new Error('Missing SUPABASE_JWT_SECRET for unsubscribe token signing')
   }
   return secret
 }

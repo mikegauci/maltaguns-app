@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { requireAuthenticatedUser } from '@/lib/api-auth'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 import { getAppUrl } from '@/lib/seo'
 import { FEATURE_RENEW_WITHIN_DAYS } from '@/lib/featured-listings'
@@ -16,7 +17,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 const FEATURE_LISTING_PRICE_ID = STRIPE_PRICE_IDS.featuredListing
 
-// Helper function to generate a slug from a string
 function slugify(text: string) {
   return text
     .toLowerCase()
@@ -26,47 +26,46 @@ function slugify(text: string) {
 }
 
 export async function POST(request: Request) {
-  console.log('[CHECKOUT] Starting checkout process')
   try {
-    const { userId, listingId } = await request.json()
-    console.log('[CHECKOUT] Request data:', { userId, listingId })
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
+
+    const { user } = auth
+    const { listingId } = await request.json()
+
+    if (!listingId) {
+      return NextResponse.json({ error: 'Missing listingId' }, { status: 400 })
+    }
 
     const supabase = createRouteHandlerClient({ cookies })
 
-    // Verify user exists and get their profile
-    console.log('[CHECKOUT] Verifying user profile')
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('email')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single()
 
-    if (profileError || !profile) {
-      console.error('[CHECKOUT] Profile fetch error:', profileError)
+    if (profileError || !profile?.email) {
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
       )
     }
 
-    console.log('[CHECKOUT] Found user profile:', profile.email)
-
-    // Get the listing details for metadata
-    console.log('[CHECKOUT] Fetching listing details')
     const { data: listing, error: listingError } = await supabase
       .from('listings')
-      .select('title')
+      .select('title, seller_id')
       .eq('id', listingId)
       .single()
 
     if (listingError || !listing) {
-      console.error('[CHECKOUT] Listing fetch error:', listingError)
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 
-    console.log('[CHECKOUT] Found listing:', listing.title)
+    if (listing.seller_id !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
 
-    // Block repurchase while an active feature has more than 3 days remaining
     const now = new Date()
     const { data: existingFeature, error: featureCheckError } = await supabase
       .from('featured_listings')
@@ -76,7 +75,6 @@ export async function POST(request: Request) {
       .maybeSingle()
 
     if (featureCheckError) {
-      console.error('[CHECKOUT] Feature status check error:', featureCheckError)
       return NextResponse.json(
         { error: 'Failed to check featured status' },
         { status: 500 }
@@ -98,18 +96,11 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create success URL with listing slug. Redirect back to the origin the
-    // checkout was started from (works for local, preview and prod); fall back
-    // to the canonical site URL only when no origin header is present.
     const slug = slugify(listing.title)
-    const hostUrl = request.headers.get('origin') || getAppUrl()
+    const hostUrl = getAppUrl()
     const successUrl = `${hostUrl}/marketplace/listing/${slug}?success=true&listingId=${listingId}`
     const cancelUrl = `${hostUrl}/marketplace/listing/${slug}?canceled=true`
 
-    console.log('[CHECKOUT] URLs:', { successUrl, cancelUrl })
-
-    // Create Stripe checkout session
-    console.log('[CHECKOUT] Creating Stripe checkout session')
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -123,19 +114,15 @@ export async function POST(request: Request) {
       cancel_url: cancelUrl,
       customer_email: profile.email,
       metadata: {
-        userId: userId,
+        userId: user.id,
         listingId: listingId,
       },
     })
 
-    console.log('[CHECKOUT] Stripe session created:', session.id)
-
-    // Pre-create a transaction record with pending status
-    console.log('[CHECKOUT] Creating transaction record')
-    const { data: txData, error: transactionError } = await supabase
+    const { error: transactionError } = await supabase
       .from('credit_transactions')
       .insert({
-        user_id: userId,
+        user_id: user.id,
         amount: 1,
         status: 'pending',
         credit_type: 'featured',
@@ -143,19 +130,14 @@ export async function POST(request: Request) {
         stripe_payment_id: session.id,
         type: 'debit',
       })
-      .select()
 
     if (transactionError) {
       console.error(
         '[CHECKOUT] Error creating transaction record:',
         transactionError
       )
-      // Continue anyway as this is not critical
-    } else {
-      console.log('[CHECKOUT] Transaction record created:', txData)
     }
 
-    console.log('[CHECKOUT] Redirecting to Stripe checkout:', session.url)
     return NextResponse.json({ url: session.url })
   } catch (error) {
     console.error('[CHECKOUT] Error creating checkout session:', error)

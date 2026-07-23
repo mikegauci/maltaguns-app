@@ -1,38 +1,15 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { requireAdmin } from '@/lib/api-auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    // Verify admin privileges using the current session
-    const supabase = createRouteHandlerClient({ cookies })
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    if (sessionError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const { supabaseAdmin } = auth
 
-    const { data: currentUserProfile, error: profileError } =
-      await supabaseAdmin
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', session.user.id)
-        .single()
-
-    if (profileError || !currentUserProfile?.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
-
-    // Fetch featured listing IDs
     const { data: featuredData, error: featuredError } = await supabaseAdmin
       .from('featured_listings')
       .select('listing_id')
@@ -50,7 +27,6 @@ export async function GET() {
       featuredData?.map(item => item.listing_id) || []
     )
 
-    // Fetch all listings with seller info (service role bypasses RLS)
     const { data: listings, error: listingsError } = await supabaseAdmin
       .from('listings')
       .select(

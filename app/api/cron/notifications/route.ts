@@ -40,7 +40,7 @@ function getAuthBearer(req: NextRequest): string | null {
 
 function isAuthorizedCron(req: NextRequest): boolean {
   const expected = process.env.NOTIFICATIONS_CRON_SECRET
-  if (!expected) return true
+  if (!expected) return false
 
   const viaHeader = getCronSecret(req)
   if (viaHeader && viaHeader === expected) return true

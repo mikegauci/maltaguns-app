@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin'
+import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 import { getAppUrl } from '@/lib/seo'
 
@@ -8,29 +9,26 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16',
 })
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    console.log('[EVENT-CHECKOUT] Starting checkout session creation')
-    const { userId } = await request.json()
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
 
-    // Look up the user's profile
-    const { data: profile, error: profileError } = await supabase
+    const { user } = auth
+
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('email')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single()
 
     if (profileError || !profile?.email) {
-      console.error('[EVENT-CHECKOUT] User profile not found:', profileError)
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 400 }
       )
     }
 
-    console.log('[EVENT-CHECKOUT] Creating checkout session for user:', userId)
-
-    // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -44,20 +42,17 @@ export async function POST(request: Request) {
       success_url: `${getAppUrl()}/events/create?success=true`,
       cancel_url: `${getAppUrl()}/profile?canceled=true`,
       metadata: {
-        userId: userId,
+        userId: user.id,
         credits: '1',
         creditType: 'event',
         description: 'Purchase of 1 event credit',
       },
     })
 
-    console.log('[EVENT-CHECKOUT] Checkout session created:', session.id)
-
-    // Record the pending transaction
-    const { error: transactionError } = await supabase
+    const { error: transactionError } = await supabaseAdmin
       .from('credit_transactions')
       .insert({
-        user_id: userId,
+        user_id: user.id,
         amount: 1,
         status: 'pending',
         type: 'credit',
@@ -67,23 +62,18 @@ export async function POST(request: Request) {
       })
 
     if (transactionError) {
-      console.error(
-        '[EVENT-CHECKOUT] Error recording transaction:',
-        transactionError
-      )
       return NextResponse.json(
         { error: 'Error recording transaction' },
         { status: 500 }
       )
     }
 
-    console.log('[EVENT-CHECKOUT] Transaction recorded successfully')
     return NextResponse.json({ sessionId: session.id })
-  } catch (error: any) {
-    console.error('[EVENT-CHECKOUT] Error:', error)
-    return NextResponse.json(
-      { error: `Failed to create checkout session: ${error.message}` },
-      { status: 500 }
-    )
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Failed to create checkout session'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

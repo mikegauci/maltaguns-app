@@ -1,7 +1,7 @@
-// /api/create-checkout-session/route.ts
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { supabaseAdmin as supabase } from '@/lib/supabaseAdmin'
+import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 import { getAppUrl } from '@/lib/seo'
 
@@ -11,28 +11,25 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: Request) {
   try {
-    const { priceId, userId } = await request.json()
-    console.log('Received request:', { priceId, userId })
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
 
-    // Look up the user's profile using the admin client
-    const { data: profile, error: profileError } = await supabase
+    const { user } = auth
+    const { priceId } = await request.json()
+
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('email')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single()
 
     if (profileError || !profile?.email) {
-      console.error('Profile error:', profileError)
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 400 }
       )
     }
-    console.log('Profile email:', profile.email)
 
-    /*
-      Map your internal price IDs from Stripe Dashboard - Products to the corresponding Stripe Price IDs and credit amounts.
-    */
     const planMapping: Record<
       string,
       { stripePriceId: string; credits: number }
@@ -40,41 +37,22 @@ export async function POST(request: Request) {
       price_1credit: {
         stripePriceId: STRIPE_PRICE_IDS.credit1,
         credits: 1,
-      }, // €15
+      },
       price_5credits: {
         stripePriceId: STRIPE_PRICE_IDS.credit5,
         credits: 5,
-      }, // €60
+      },
       price_10credits: {
         stripePriceId: STRIPE_PRICE_IDS.credit10,
         credits: 10,
-      }, // €100
+      },
     }
 
     const plan = planMapping[priceId]
     if (!plan) {
-      console.error('Invalid priceId:', priceId)
       return NextResponse.json({ error: 'Invalid price ID' }, { status: 400 })
     }
-    console.log('Using plan:', plan)
 
-    // Debug: Check valid values for credit_transactions table
-    try {
-      const { data: sampleTransaction, error: queryError } = await supabase
-        .from('credit_transactions')
-        .select('type, credit_type, status')
-        .limit(1)
-
-      if (queryError) {
-        console.log('Error querying sample transaction:', queryError)
-      } else {
-        console.log('Sample transaction values:', sampleTransaction)
-      }
-    } catch (err) {
-      console.error('Error checking transaction values:', err)
-    }
-
-    // Create a new Stripe Checkout session.
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -88,44 +66,34 @@ export async function POST(request: Request) {
       success_url: `${getAppUrl()}/profile?success=true`,
       cancel_url: `${getAppUrl()}/profile?canceled=true`,
       metadata: {
-        userId: userId,
+        userId: user.id,
         credits: plan.credits.toString(),
         creditType: 'featured',
       },
     })
-    console.log('Stripe session created:', session.id)
 
-    // Record a pending credit transaction in Supabase.
-    try {
-      const { error: insertError } = await supabase
-        .from('credit_transactions')
-        .insert({
-          user_id: userId,
-          amount: plan.credits,
-          status: 'pending',
-          type: 'credit',
-          credit_type: 'featured',
-          description: `Purchase of ${plan.credits} credits (${priceId})`,
-          stripe_payment_id: session.id,
-        })
+    const { error: insertError } = await supabaseAdmin
+      .from('credit_transactions')
+      .insert({
+        user_id: user.id,
+        amount: plan.credits,
+        status: 'pending',
+        type: 'credit',
+        credit_type: 'featured',
+        description: `Purchase of ${plan.credits} credits (${priceId})`,
+        stripe_payment_id: session.id,
+      })
 
-      if (insertError) {
-        console.error('Error inserting credit transaction:', insertError)
-        // Continue execution but log the error
-        console.log('Insert error details:', JSON.stringify(insertError))
-      } else {
-        console.log('Successfully recorded pending transaction')
-      }
-    } catch (insertError) {
-      console.error('Exception inserting credit transaction:', insertError)
+    if (insertError) {
+      console.error('Error inserting credit transaction:', insertError)
     }
 
     return NextResponse.json({ sessionId: session.id, url: session.url })
-  } catch (error: any) {
-    console.error('Error in create-checkout-session:', error.message, error)
-    return NextResponse.json(
-      { error: `Failed to create checkout session: ${error.message}` },
-      { status: 500 }
-    )
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Failed to create checkout session'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

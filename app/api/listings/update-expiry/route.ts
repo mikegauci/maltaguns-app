@@ -1,31 +1,22 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { requireAuthenticatedUser } from '@/lib/api-auth'
 
 export async function POST(request: Request) {
   try {
-    // Extract listingId from request body
     const { listingId } = await request.json()
 
     if (!listingId) {
       return NextResponse.json({ error: 'Missing listingId' }, { status: 400 })
     }
 
-    // Initialize Supabase client with the user's session
+    const auth = await requireAuthenticatedUser()
+    if ('error' in auth) return auth.error
+
+    const { user } = auth
     const supabase = createRouteHandlerClient({ cookies })
 
-    // Verify user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized. Please log in.' },
-        { status: 401 }
-      )
-    }
-
-    // First, check if the listing exists and belongs to the user
     const { data: listing, error: listingError } = await supabase
       .from('listings')
       .select('id, seller_id, expires_at')
@@ -43,8 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
     }
 
-    // Verify the user owns the listing
-    if (listing.seller_id !== session.user.id) {
+    if (listing.seller_id !== user.id) {
       return NextResponse.json(
         { error: 'You do not have permission to update this listing' },
         { status: 403 }
