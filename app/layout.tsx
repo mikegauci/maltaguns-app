@@ -12,6 +12,8 @@ import { Toaster } from '@/components/ui/toaster'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import SupabaseProvider from '@/components/providers/SupabaseProvider'
+import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner'
+import { getImpersonationState } from '@/lib/impersonation'
 import { getSectionMetadata } from '@/lib/seo'
 import { getAppUrl, isNonProductionHost } from '@/lib/seo-host'
 
@@ -40,21 +42,37 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const impersonation = await getImpersonationState()
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className}${impersonation ? ' pt-10' : ''}`}>
         <GoogleAnalyticsTag />
         <QueryProvider>
           <SupabaseProvider>
             <ThemeProvider>
               <CookieConsentProvider>
+                {impersonation && (
+                  <ImpersonationBanner
+                    adminUsername={impersonation.adminUsername}
+                    targetUsername={impersonation.targetUsername}
+                  />
+                )}
                 <Header />
-                <main className="min-h-[calc(100vh-64px)]">{children}</main>
+                <main
+                  className={
+                    impersonation
+                      ? 'min-h-[calc(100vh-64px-40px)]'
+                      : 'min-h-[calc(100vh-64px)]'
+                  }
+                >
+                  {children}
+                </main>
                 <Footer />
                 <CookieBanner />
                 <GoogleAnalytics />

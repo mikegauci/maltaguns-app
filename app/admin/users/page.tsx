@@ -99,6 +99,7 @@ function getEstablishmentLabel(type: string): string {
 function UsersPageComponent() {
   const { toast } = useToast()
   const [users, setUsers] = useState<User[]>([])
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -428,6 +429,17 @@ function UsersPageComponent() {
                 onClick: () => handleToggleIdCardVerification(user),
                 variant: user.id_card_verified ? 'destructive' : 'default',
               },
+              ...(!user.is_admin &&
+              !user.is_disabled &&
+              user.id !== currentUserId
+                ? [
+                    {
+                      label: 'Impersonate',
+                      onClick: () => handleImpersonate(user),
+                      variant: 'outline' as const,
+                    },
+                  ]
+                : []),
             ]}
           />
         )
@@ -452,6 +464,8 @@ function UsersPageComponent() {
         console.error('No session found')
         throw new Error('No active session')
       }
+
+      setCurrentUserId(session.user.id)
 
       console.log('Fetching users with session:', {
         userId: session.user.id,
@@ -1054,6 +1068,37 @@ function UsersPageComponent() {
           error instanceof Error
             ? error.message
             : `Failed to ${user.is_verified ? 'unverify' : 'verify'} user`,
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleImpersonate(user: User) {
+    try {
+      setIsSubmitting(true)
+
+      const response = await fetch('/api/admin/impersonate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId: user.id }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to impersonate user')
+      }
+
+      window.location.href = '/'
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to impersonate user',
       })
     } finally {
       setIsSubmitting(false)

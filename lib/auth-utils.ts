@@ -1,15 +1,13 @@
-/**
- * Auth utilities for handling authentication-related operations
- */
+export async function clearImpersonationCookieClient(): Promise<void> {
+  try {
+    await fetch('/api/admin/impersonate/clear', { method: 'POST' })
+  } catch {}
+}
 
-/**
- * Force logout by clearing all auth-related data from localStorage and cookies,
- * then redirecting to the homepage
- */
-export function forceLogout() {
-  // Clear all Supabase auth data from localStorage
+export async function forceLogout() {
+  await clearImpersonationCookieClient()
+
   if (typeof window !== 'undefined') {
-    // Clear all storage related to authentication
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
       if (
@@ -20,7 +18,6 @@ export function forceLogout() {
       }
     }
 
-    // Clear cookies related to auth
     document.cookie.split(';').forEach(cookie => {
       const [name] = cookie.trim().split('=')
       if (name && (name.includes('supabase') || name.includes('auth'))) {
@@ -28,7 +25,6 @@ export function forceLogout() {
       }
     })
 
-    // Redirect to homepage without cache-busting query param
     window.location.href = '/'
   }
 }

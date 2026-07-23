@@ -90,8 +90,7 @@ export function Header() {
     } catch (error) {
       console.error('Error during standard logout:', error)
     } finally {
-      // Always perform force logout to ensure clean state
-      forceLogout()
+      await forceLogout()
     }
   }
 
