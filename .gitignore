@@ -37,3 +37,5 @@ browser-tools-mcp/
 *.swp
 *.swo
 *.swn
+# Vercel
+.vercel/
