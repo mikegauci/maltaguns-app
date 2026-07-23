@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/public'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { EstablishmentWithDetails, EstablishmentType } from './types'
 import { getEstablishmentConfig } from './config'

@@ -1,15 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Database } from '@/lib/database.types'
+import { createClient } from '@/lib/supabase/client'
 
 interface ViewTrackerProps {
   postId: string
 }
 
 export default function ViewTracker({ postId }: ViewTrackerProps) {
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClient()
   const [tracked, setTracked] = useState(false)
 
   useEffect(() => {

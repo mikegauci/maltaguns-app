@@ -1,11 +1,11 @@
 'use client'
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/client'
 import { useEffect } from 'react'
 import { forceLogout } from '@/lib/auth-utils'
 
 export default function LogoutPage() {
-  const supabase = createClientComponentClient()
+  const supabase = createClient()
 
   useEffect(() => {
     async function logout() {

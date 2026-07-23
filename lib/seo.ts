@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/public'
 import {
   SECTION_SEO_DEFAULTS,
   type PageSeoMap,

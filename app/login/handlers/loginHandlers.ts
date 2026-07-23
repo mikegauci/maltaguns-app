@@ -1,4 +1,4 @@
-import { SupabaseClient } from '@supabase/auth-helpers-nextjs'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   resolveUsernameToEmail,
   checkAccountDisabledByEmail,

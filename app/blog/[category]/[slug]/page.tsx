@@ -1,8 +1,6 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { Database } from '@/lib/database.types'
 import Link from 'next/link'
 import { Store, Users, MapPin, Wrench } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -49,15 +47,11 @@ interface BlogPostType {
 export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { category: string; slug: string }
+export async function generateMetadata(props: {
+  params: Promise<{ category: string; slug: string }>
 }): Promise<Metadata> {
-  const cookieStore = cookies()
-  const supabase = createServerComponentClient<Database>({
-    cookies: () => cookieStore,
-  })
+  const params = await props.params
+  const supabase = await createClient()
 
   const { data: post } = await supabase
     .from('blog_posts')
@@ -87,15 +81,11 @@ export async function generateMetadata({
   })
 }
 
-export default async function BlogPost({
-  params,
-}: {
-  params: { category: string; slug: string }
+export default async function BlogPost(props: {
+  params: Promise<{ category: string; slug: string }>
 }) {
-  const cookieStore = cookies()
-  const supabase = createServerComponentClient<Database>({
-    cookies: () => cookieStore,
-  })
+  const params = await props.params
+  const supabase = await createClient()
 
   const { data: post, error } = await supabase
     .from('blog_posts')

@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase/public'
 import type { ListingDetails } from './types'
 
 function slugify(text: string): string {

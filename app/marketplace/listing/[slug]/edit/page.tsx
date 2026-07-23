@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -31,8 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Database } from '@/lib/database.types'
+import { createClient } from '@/lib/supabase/client'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
@@ -175,10 +174,13 @@ function parseImageUrls(images: string): string[] {
   }
 }
 
-export default function EditListing({ params }: { params: { slug: string } }) {
+export default function EditListing(props: {
+  params: Promise<{ slug: string }>
+}) {
+  const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClientComponentClient<Database>()
+  const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
   const [listingId, setListingId] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<

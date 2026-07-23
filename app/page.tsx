@@ -1,5 +1,4 @@
-import { cookies } from 'next/headers'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@/lib/supabase/server'
 import {
   HeroSection,
   RecentListingsSection,
@@ -11,7 +10,6 @@ import {
   CTASection,
 } from '@/components/home'
 import { getHomePageData } from '@/lib/public-data'
-import { Database } from '@/lib/database.types'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { getSiteSettings } from '@/lib/seo'
 import { buildOrganizationSchema, buildWebSiteSchema } from '@/lib/seo-jsonld'
@@ -19,10 +17,7 @@ import { buildOrganizationSchema, buildWebSiteSchema } from '@/lib/seo-jsonld'
 export const revalidate = 30
 
 export default async function Home() {
-  const cookieStore = cookies()
-  const supabase = createServerComponentClient<Database>({
-    cookies: () => cookieStore,
-  })
+  const supabase = await createClient()
 
   const [{ data: userData }, homeData, siteSettings] = await Promise.all([
     supabase.auth.getUser(),

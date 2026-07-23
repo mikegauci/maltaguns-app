@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import type { User } from '@supabase/supabase-js'
@@ -16,7 +15,7 @@ type RequireAdminFailure = {
 export async function requireAdmin(): Promise<
   RequireAdminSuccess | RequireAdminFailure
 > {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = await createClient()
   const {
     data: { user },
     error: authError,
@@ -52,7 +51,7 @@ export async function requireAdmin(): Promise<
 export async function requireAuthenticatedUser(): Promise<
   { user: User } | RequireAdminFailure
 > {
-  const supabase = createRouteHandlerClient({ cookies })
+  const supabase = await createClient()
   const {
     data: { user },
     error: authError,

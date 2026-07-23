@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
 import { stripe } from '@/lib/credit-checkout'
@@ -33,7 +32,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing listingId' }, { status: 400 })
     }
 
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await createClient()
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')

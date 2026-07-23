@@ -9,7 +9,6 @@ const nextConfig = {
       },
     ]
   },
-  transpilePackages: ['jotai-devtools'],
   images: {
     remotePatterns: [
       {
@@ -18,9 +17,7 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    serverComponentsExternalPackages: ['sharp'],
-  },
+  serverExternalPackages: ['sharp'],
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push({
