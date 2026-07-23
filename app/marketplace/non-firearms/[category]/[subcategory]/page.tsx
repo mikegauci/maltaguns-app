@@ -1,5 +1,4 @@
 'use client'
-import { use } from 'react'
 
 import { notFound } from 'next/navigation'
 import CategoryListings from '@/components/marketplace/CategoryListings'
@@ -10,10 +9,10 @@ import {
 } from '@/app/marketplace/create/constants'
 
 interface NonFirearmsSubcategoryPageProps {
-  params: Promise<{
+  params: {
     category: string
     subcategory: string
-  }>
+  }
 }
 
 // Valid non-firearms categories from constants
@@ -21,10 +20,9 @@ const VALID_CATEGORIES = Object.keys(nonFirearmsCategories) as Array<
   keyof typeof nonFirearmsCategories
 >
 
-export default function NonFirearmsSubcategoryPage(
-  props: NonFirearmsSubcategoryPageProps
-) {
-  const params = use(props.params)
+export default function NonFirearmsSubcategoryPage({
+  params,
+}: NonFirearmsSubcategoryPageProps) {
   // Convert URL slugs to category keys
   const categorySlug = params.category
   const subcategorySlug = params.subcategory

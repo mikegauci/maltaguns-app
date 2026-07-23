@@ -31,9 +31,10 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Store, Users, Wrench, MapPin } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
+import { Database } from '@/lib/database.types'
 import Link from 'next/link'
 import { PageLayout } from '@/components/ui/page-layout'
 
@@ -63,7 +64,7 @@ type EstablishmentForm = z.infer<typeof establishmentSchema>
 export default function CreateEstablishmentPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)

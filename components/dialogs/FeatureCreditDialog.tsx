@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase/public'
+import { supabase } from '@/lib/supabase'
 
 import {
   Dialog,

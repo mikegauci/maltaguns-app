@@ -3,8 +3,10 @@ import { fetchListingBySlug } from '@/app/marketplace/listing/[slug]/server'
 
 export const revalidate = 30
 
-export async function GET(_req: Request, props: { params: Promise<{ slug: string }> }) {
-  const params = await props.params;
+export async function GET(
+  _req: Request,
+  { params }: { params: { slug: string } }
+) {
   const { slug } = params
 
   const listing = await fetchListingBySlug(slug)

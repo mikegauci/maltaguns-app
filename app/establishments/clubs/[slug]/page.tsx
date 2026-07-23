@@ -10,18 +10,20 @@ export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 export const revalidate = 0
 
-export async function generateMetadata(props: {
-  params: Promise<{ slug: string }>
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string }
 }): Promise<Metadata> {
-  const params = await props.params
   return generateEstablishmentMetadata('clubs', params.slug)
 }
 
-export default async function ClubPage(props: {
-  params: Promise<{ slug: string }>
+export default async function ClubPage({
+  params,
+}: {
+  params: { slug: string }
 }) {
-  const params = await props.params
-  await headers()
+  headers()
 
   const establishment = await fetchEstablishmentBySlug('clubs', params.slug)
 

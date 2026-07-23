@@ -1,7 +1,7 @@
 'use client'
 
-import { Suspense, useRef, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useRef, useState } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -42,10 +42,10 @@ const resetPasswordSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 
-function LoginContent() {
+export default function Login() {
   const router = useRouter()
   const { toast } = useToast()
-  const [supabase] = useState(() => createClient())
+  const [supabase] = useState(() => createClientComponentClient())
   const loginInFlightRef = useRef(false)
 
   // Custom hook for auth state management
@@ -313,21 +313,5 @@ function LoginContent() {
         error={resetError}
       />
     </div>
-  )
-}
-
-export default function Login() {
-  return (
-    <Suspense
-      fallback={
-        <div className="container max-w-md mx-auto py-10">
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        </div>
-      }
-    >
-      <LoginContent />
-    </Suspense>
   )
 }

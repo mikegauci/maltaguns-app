@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -24,12 +24,13 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import { Loader2 } from 'lucide-react'
 import slug from 'slug'
+import { Database } from '@/lib/database.types'
 import {
   Select,
   SelectContent,
@@ -69,13 +70,14 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>
 
-export default function EditBlogPost(props: {
-  params: Promise<{ category: string; slug: string }>
+export default function EditBlogPost({
+  params,
+}: {
+  params: { category: string; slug: string }
 }) {
-  const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [postId, setPostId] = useState<string | null>(null)

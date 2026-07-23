@@ -2,10 +2,11 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 
-export default async function UnsubscribePage(props: {
-  searchParams: Promise<{ status?: string }>
+export default function UnsubscribePage({
+  searchParams,
+}: {
+  searchParams: { status?: string }
 }) {
-  const searchParams = await props.searchParams
   const success = searchParams.status === 'ok'
 
   return (

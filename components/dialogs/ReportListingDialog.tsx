@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Flag } from 'lucide-react'
 
 interface ReportListingDialogProps {
@@ -42,7 +42,7 @@ const reportReasons = [
 export function ReportListingDialog({ listingId }: ReportListingDialogProps) {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const supabase = createClientComponentClient()
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState<string>('')
   const [description, setDescription] = useState('')

@@ -3,9 +3,8 @@ import { requireAdmin } from '@/lib/api-auth'
 
 export async function PATCH(
   request: Request,
-  props: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const params = await props.params
   try {
     const userId = params.id
     const { verified } = await request.json()

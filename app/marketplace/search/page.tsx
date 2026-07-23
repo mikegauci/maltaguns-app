@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -104,7 +104,7 @@ async function fetchSearchResults(q: string, categoryParam: string) {
   }>
 }
 
-function SearchResultsContent() {
+export default function SearchResults() {
   const searchParams = useSearchParams()
   const query = searchParams.get('q') || ''
   const categoryParam = searchParams.get('category') || 'all'
@@ -276,21 +276,5 @@ function SearchResultsContent() {
         </>
       )}
     </PageLayout>
-  )
-}
-
-export default function SearchResults() {
-  return (
-    <Suspense
-      fallback={
-        <PageLayout>
-          <div className="flex justify-center py-20">
-            <Package className="h-8 w-8 animate-pulse text-muted-foreground" />
-          </div>
-        </PageLayout>
-      }
-    >
-      <SearchResultsContent />
-    </Suspense>
   )
 }

@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { Store, Building, Wrench, Target, Upload, X } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -95,7 +95,7 @@ function EstablishmentsPageComponent() {
     servicing: 0,
     ranges: 0,
   })
-  const supabase = createClient()
+  const supabase = createClientComponentClient()
 
   const columns: ColumnDef<Establishment>[] = [
     {

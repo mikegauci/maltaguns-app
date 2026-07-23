@@ -12,7 +12,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Package, Star, Plus } from 'lucide-react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase/public'
+import { supabase } from '@/lib/supabase'
 import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
 import { PageLayout } from '@/components/ui/page-layout'

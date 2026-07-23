@@ -8,7 +8,7 @@ import { format } from 'date-fns'
 import { EditEventCreditDialog } from '@/app/admin/components/EditEventCreditDialog'
 import { AddEventCreditDialog } from '@/app/admin/components/AddEventCreditDialog'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
@@ -41,7 +41,7 @@ function EventCreditsPageComponent() {
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [selectedEventCredit, setSelectedEventCredit] =
     useState<EventCredit | null>(null)
-  const supabase = createClient()
+  const supabase = createClientComponentClient()
 
   const fetchData = useCallback(async () => {
     try {

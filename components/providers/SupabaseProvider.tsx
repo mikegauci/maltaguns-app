@@ -1,6 +1,6 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { Session, SupabaseClient } from '@supabase/supabase-js'
 
@@ -17,7 +17,7 @@ export default function SupabaseProvider({
 }: {
   children: React.ReactNode
 }) {
-  const [supabase] = useState(() => createClient())
+  const [supabase] = useState(() => createClientComponentClient())
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 

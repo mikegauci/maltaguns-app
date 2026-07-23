@@ -1,5 +1,7 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import type { Metadata } from 'next'
+import { Database } from '@/lib/database.types'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -20,10 +22,11 @@ const categoryToSection: Record<(typeof validCategories)[number], SectionKey> =
     guides: 'blog_guides',
   }
 
-export async function generateMetadata(props: {
-  params: Promise<{ category: string }>
+export async function generateMetadata({
+  params,
+}: {
+  params: { category: string }
 }): Promise<Metadata> {
-  const params = await props.params
   const category = params.category.toLowerCase()
   if (!validCategories.includes(category as (typeof validCategories)[number])) {
     return { title: 'Blog | MaltaGuns' }
@@ -34,11 +37,12 @@ export async function generateMetadata(props: {
   )
 }
 
-export default async function CategoryArchive(props: {
-  params: Promise<{ category: string }>
+export default async function CategoryArchive({
+  params,
+}: {
+  params: { category: string }
 }) {
-  const params = await props.params
-  const supabase = await createClient()
+  const supabase = createServerComponentClient<Database>({ cookies })
   const category = params.category.toLowerCase()
 
   if (!validCategories.includes(category as (typeof validCategories)[number])) {

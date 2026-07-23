@@ -19,7 +19,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export async function generateMetadata(): Promise<Metadata> {
   const homeMetadata = await getSectionMetadata('home')
-  const host = (await headers()).get('host')
+  const host = headers().get('host')
   const previewNoIndex = isNonProductionHost(host)
 
   return {

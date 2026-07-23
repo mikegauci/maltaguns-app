@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -24,8 +24,9 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
+import { Database } from '@/lib/database.types'
 import { PageLayout } from '@/components/ui/page-layout'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
@@ -48,13 +49,10 @@ const clubSchema = z.object({
 
 type ClubForm = z.infer<typeof clubSchema>
 
-export default function EditClubPage(props: {
-  params: Promise<{ slug: string }>
-}) {
-  const params = use(props.params)
+export default function EditClubPage({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [clubId, setClubId] = useState<string | null>(null)

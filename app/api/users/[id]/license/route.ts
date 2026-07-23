@@ -4,9 +4,8 @@ import { signLicenseUrl } from '@/lib/storage-signed-url'
 
 export async function PATCH(
   request: Request,
-  props: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const params = await props.params
   try {
     const userId = params.id
     const { imageUrl } = await request.json()
@@ -54,9 +53,8 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  props: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const params = await props.params
   try {
     const userId = params.id
 

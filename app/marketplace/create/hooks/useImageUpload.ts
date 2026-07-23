@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { UseFormSetValue } from 'react-hook-form'
 import { MAX_FILE_SIZE, MAX_FILES, ACCEPTED_IMAGE_TYPES } from '../constants'
 import { resizeImageForUpload } from '@/lib/image-resize'
@@ -14,7 +14,7 @@ interface UseImageUploadProps {
 }
 
 export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
-  const supabase = createClient()
+  const supabase = createClientComponentClient()
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
 

@@ -14,7 +14,7 @@ import {
   Pencil,
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { supabase } from '@/lib/supabase/public'
+import { supabase } from '@/lib/supabase'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 

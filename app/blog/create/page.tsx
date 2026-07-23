@@ -24,12 +24,13 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import { Loader2 } from 'lucide-react'
 import slug from 'slug'
+import { Database } from '@/lib/database.types'
 import {
   Select,
   SelectContent,
@@ -69,7 +70,7 @@ type BlogPostForm = z.infer<typeof blogPostSchema>
 export default function CreateBlogPost() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)

@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { SupabaseClient } from '@supabase/auth-helpers-nextjs'
 
 /**
  * Check if a user's account is disabled

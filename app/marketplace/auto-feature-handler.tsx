@@ -1,9 +1,9 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { supabase } from '@/lib/supabase/public'
+import { supabase } from '@/lib/supabase'
 import { FEATURE_DAYS } from '@/lib/featured-listings'
 
 interface AutoFeatureHandlerProps {
@@ -11,7 +11,7 @@ interface AutoFeatureHandlerProps {
   onFeatured?: () => void
 }
 
-function AutoFeatureHandlerInner({
+export function AutoFeatureHandler({
   listingId,
   onFeatured,
 }: AutoFeatureHandlerProps) {
@@ -21,8 +21,10 @@ function AutoFeatureHandlerInner({
 
   useEffect(() => {
     const processFeature = async () => {
+      // Only process once
       if (processed) return
 
+      // Check if this is a success return from payment
       const success = searchParams.get('success')
       const targetId = listingId || searchParams.get('listingId')
 
@@ -31,6 +33,7 @@ function AutoFeatureHandlerInner({
           console.log('Auto-featuring after payment success')
           setProcessed(true)
 
+          // Get the current user
           const {
             data: { user },
             error: authError,
@@ -45,6 +48,9 @@ function AutoFeatureHandlerInner({
             return
           }
 
+          // Always call the auto-feature API. It verifies the Stripe payment and
+          // applies or renews the feature (or confirms the webhook already did),
+          // so we never report success without the period actually being set.
           const response = await fetch('/api/listings/auto-feature', {
             method: 'POST',
             headers: {
@@ -74,6 +80,7 @@ function AutoFeatureHandlerInner({
             )
             onFeatured?.()
 
+            // Clean the URL parameters
             const currentPath = window.location.pathname
             router.replace(currentPath)
           }
@@ -92,13 +99,6 @@ function AutoFeatureHandlerInner({
     processFeature()
   }, [searchParams, processed, router, listingId, onFeatured])
 
+  // This component doesn't render anything visible
   return null
-}
-
-export function AutoFeatureHandler(props: AutoFeatureHandlerProps) {
-  return (
-    <Suspense fallback={null}>
-      <AutoFeatureHandlerInner {...props} />
-    </Suspense>
-  )
 }

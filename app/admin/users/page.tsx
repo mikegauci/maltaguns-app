@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
@@ -123,7 +123,7 @@ function UsersPageComponent() {
     notes: '' as string | null,
     license_types: createEmptyLicenseTypes(),
   })
-  const supabase = createClient()
+  const supabase = createClientComponentClient()
 
   const columns: ColumnDef<User>[] = [
     {

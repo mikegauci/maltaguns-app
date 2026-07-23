@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -24,9 +24,10 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { Calendar as CalendarIcon, Clock, Trash2 } from 'lucide-react'
+import { Database } from '@/lib/database.types'
 import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { format } from 'date-fns'
@@ -71,13 +72,10 @@ const eventSchema = z.object({
 
 type EventForm = z.infer<typeof eventSchema>
 
-export default function EditEvent(props: {
-  params: Promise<{ slug: string }>
-}) {
-  const params = use(props.params)
+export default function EditEvent({ params }: { params: { slug: string } }) {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const supabase = createClientComponentClient<Database>()
   const [isLoading, setIsLoading] = useState(true)
   const [eventId, setEventId] = useState<string | null>(null)
   const [posterUrl, setPosterUrl] = useState<string | null>(null)

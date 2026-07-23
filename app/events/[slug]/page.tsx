@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase/public'
+import { supabase } from '@/lib/supabase'
 import EventClient from './event-client'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
@@ -55,10 +55,11 @@ async function fetchEventBySlug(slug: string): Promise<Event | null> {
   return event as Event
 }
 
-export async function generateMetadata(props: {
-  params: Promise<{ slug: string }>
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string }
 }): Promise<Metadata> {
-  const params = await props.params
   const event = await fetchEventBySlug(params.slug)
   if (!event) {
     return buildMetadata({
@@ -80,10 +81,11 @@ export async function generateMetadata(props: {
   })
 }
 
-export default async function EventPage(props: {
-  params: Promise<{ slug: string }>
+export default async function EventPage({
+  params,
+}: {
+  params: { slug: string }
 }) {
-  const params = await props.params
   const event = await fetchEventBySlug(params.slug)
 
   if (!event) {

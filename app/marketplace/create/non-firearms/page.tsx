@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Loader2 } from 'lucide-react'
 import { nonFirearmsCategories, nonFirearmsSubcategories } from '../constants'
 import { nonFirearmsSchema, NonFirearmsForm } from '../schemas'
@@ -40,7 +40,7 @@ import { PageLayout } from '@/components/ui/page-layout'
 export default function CreateNonFirearmsListing() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const supabase = createClientComponentClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedCategory, setSelectedCategory] =
     useState<keyof typeof nonFirearmsSubcategories>('airsoft')
