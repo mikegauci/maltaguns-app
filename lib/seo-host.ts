@@ -10,16 +10,25 @@ export function isNonProductionHost(host: string | null | undefined): boolean {
   )
 }
 
+function normalizeHostname(url: string): string | null {
+  try {
+    const parsed = new URL(url)
+    if (parsed.hostname === 'maltaguns.com') {
+      parsed.hostname = 'www.maltaguns.com'
+    }
+    return parsed.origin
+  } catch {
+    return null
+  }
+}
+
 function normalizeAppUrl(url: string): string | null {
   try {
     const parsed = new URL(url)
     if (isNonProductionHost(parsed.hostname)) {
       return null
     }
-    if (parsed.hostname === 'maltaguns.com') {
-      parsed.hostname = 'www.maltaguns.com'
-    }
-    return parsed.origin
+    return normalizeHostname(url)
   } catch {
     return null
   }
@@ -35,6 +44,22 @@ export function getAppUrl(): string {
 
   for (const url of candidates) {
     const normalized = normalizeAppUrl(url)
+    if (normalized) return normalized
+  }
+
+  return CANONICAL_ORIGIN
+}
+
+export function getAuthRedirectOrigin(): string {
+  const candidates = [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .map(value => value.replace(/\/$/, ''))
+
+  for (const url of candidates) {
+    const normalized = normalizeHostname(url)
     if (normalized) return normalized
   }
 

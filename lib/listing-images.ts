@@ -1,4 +1,4 @@
-import { DEFAULT_LISTING_IMAGE } from '../app/marketplace/create/constants'
+const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
 
 function escapePostgresArrayElement(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
@@ -23,7 +23,10 @@ export function parseImageUrls(images: unknown): string[] {
         .map(url => url.trim())
         .map(url =>
           url.startsWith('"') && url.endsWith('"')
-            ? url.substring(1, url.length - 1).replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+            ? url
+                .substring(1, url.length - 1)
+                .replace(/\\"/g, '"')
+                .replace(/\\\\/g, '\\')
             : url
         )
         .filter(Boolean)
@@ -101,3 +104,5 @@ export function getListingStoragePathFromUrl(imageUrl: string): string | null {
   const path = urlParts.slice(bucketIndex + 1).join('/')
   return path || null
 }
+
+export { DEFAULT_LISTING_IMAGE }

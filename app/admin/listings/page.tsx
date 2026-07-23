@@ -434,6 +434,7 @@ function ListingsPageComponent() {
     }
 
     setIsUploading(true)
+    const uploadedUrls: string[] = []
 
     try {
       const {
@@ -448,8 +449,6 @@ function ListingsPageComponent() {
       if (!session?.user.id) {
         throw new Error('Not authenticated')
       }
-
-      const uploadedUrls: string[] = []
 
       for (const file of files) {
         if (editListingIdRef.current !== listingId) {
@@ -495,6 +494,9 @@ function ListingsPageComponent() {
         description: 'Images have been uploaded successfully.',
       })
     } catch (error) {
+      if (uploadedUrls.length > 0) {
+        await removeStorageImages(uploadedUrls)
+      }
       console.error('Image upload error:', error)
       toast({
         variant: 'destructive',
