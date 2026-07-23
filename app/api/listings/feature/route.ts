@@ -1,6 +1,11 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import {
+  FEATURE_DAYS,
+  getFeatureEndDate,
+  getListingExtendDate,
+} from '@/lib/featured-listings'
 
 export async function POST(request: Request) {
   try {
@@ -39,14 +44,12 @@ export async function POST(request: Request) {
         (1000 * 60 * 60 * 24)
     )
 
-    // If listing expires in less than 15 days, extend it to 30 days
     const newExpiresAt =
-      daysUntilExpiration <= 15
-        ? new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+      daysUntilExpiration <= FEATURE_DAYS
+        ? getListingExtendDate(now)
         : new Date(listing.expires_at)
 
-    // Set featured duration to 15 days
-    const featureEndDate = new Date(now.getTime() + 15 * 24 * 60 * 60 * 1000)
+    const featureEndDate = getFeatureEndDate(now)
     console.log('[FEATURE-API] Setting expiration dates:')
     console.log('- Listing expiry:', newExpiresAt.toISOString())
     console.log('- Feature until:', featureEndDate.toISOString())

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getFeatureEndDate } from '@/lib/featured-listings'
 
 type UpdateListingBody = {
   listingId: string
@@ -164,9 +165,7 @@ export async function POST(request: Request) {
               listing_id: body.listingId,
               user_id: existingListing.seller_id,
               start_date: new Date().toISOString(),
-              end_date: new Date(
-                Date.now() + 30 * 24 * 60 * 60 * 1000
-              ).toISOString(),
+              end_date: getFeatureEndDate().toISOString(),
             })
 
           if (featureError) {

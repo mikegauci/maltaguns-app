@@ -3,6 +3,12 @@ import Stripe from 'stripe'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
+import {
+  FEATURE_DAYS,
+  getFeatureEndDate,
+  getListingExtendDate,
+  LISTING_EXTEND_DAYS,
+} from '@/lib/featured-listings'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',
@@ -12,9 +18,6 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 )
-
-const FEATURE_DAYS = 15
-const LISTING_EXTEND_DAYS = 30
 
 export async function POST(request: Request) {
   try {
@@ -142,8 +145,7 @@ export async function POST(request: Request) {
 
     // A valid, not-yet-applied payment exists. Apply (or renew) a fresh 15-day
     // feature window, matching the webhook's behavior.
-    const endDate = new Date(now)
-    endDate.setDate(endDate.getDate() + FEATURE_DAYS)
+    const endDate = getFeatureEndDate(now)
     const endDateIso = endDate.toISOString()
 
     // Extend listing expiry if it would lapse during the feature window

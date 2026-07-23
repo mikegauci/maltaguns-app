@@ -1,4 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js'
+import { FEATURE_DAYS, LISTING_EXTEND_DAYS } from '@/lib/featured-listings'
 import {
   uploadAndVerifyLicense,
   uploadAndVerifyIdCard,
@@ -493,12 +494,12 @@ export function createProfileHandlers(deps: HandlerDependencies) {
             ? {
                 ...listing,
                 expires_at: new Date(
-                  Date.now() + 30 * 24 * 60 * 60 * 1000
+                  Date.now() + LISTING_EXTEND_DAYS * 24 * 60 * 60 * 1000
                 ).toISOString(),
-                days_until_expiration: 30,
+                days_until_expiration: LISTING_EXTEND_DAYS,
                 is_near_expiration: false,
                 is_featured: true,
-                featured_days_remaining: 15,
+                featured_days_remaining: FEATURE_DAYS,
               }
             : listing
         )
@@ -508,8 +509,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
       toast({
         title: 'Listing featured and renewed',
-        description:
-          'Your listing has been featured for 15 days and renewed for 30 days.',
+        description: `Your listing has been featured for ${FEATURE_DAYS} days and renewed for ${LISTING_EXTEND_DAYS} days.`,
       })
 
       setListingToFeature(null)

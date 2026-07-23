@@ -13,10 +13,12 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
+import {
+  FEATURE_DAYS,
+  FEATURE_RENEW_WITHIN_DAYS,
+} from '@/lib/featured-listings'
 
-// Price amount in EUR
 const FEATURE_PRICE = 10
-const RENEW_WITHIN_DAYS = 3
 
 interface FeatureListingDialogProps {
   open: boolean
@@ -62,7 +64,7 @@ export function FeatureCreditDialog({
           const daysRemaining = Math.ceil(
             (endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
           )
-          const canRenew = daysRemaining <= RENEW_WITHIN_DAYS
+          const canRenew = daysRemaining <= FEATURE_RENEW_WITHIN_DAYS
           setAlreadyFeatured(!canRenew)
           setIsRenewal(canRenew)
         } else {
@@ -139,10 +141,10 @@ export function FeatureCreditDialog({
           </DialogTitle>
           <DialogDescription>
             {success
-              ? 'Your listing will now appear at the top of search results for 15 days.'
+              ? `Your listing will now appear at the top of search results for ${FEATURE_DAYS} days.`
               : alreadyFeatured
-                ? 'This listing is already featured. You can renew when 3 or fewer days remain.'
-                : `Feature your listing for €${FEATURE_PRICE} to make it stand out and appear at the top of search results for 15 days.`}
+                ? `This listing is already featured. You can renew when ${FEATURE_RENEW_WITHIN_DAYS} or fewer days remain.`
+                : `Feature your listing for €${FEATURE_PRICE} to make it stand out and appear at the top of search results for ${FEATURE_DAYS} days.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -151,7 +153,7 @@ export function FeatureCreditDialog({
             <div className="text-center p-4 bg-muted rounded-md">
               <p className="font-semibold text-lg">€{FEATURE_PRICE}.00</p>
               <p className="text-sm text-muted-foreground">
-                One-time payment for 15 days of featuring
+                One-time payment for {FEATURE_DAYS} days of featuring
               </p>
             </div>
           </div>
@@ -174,8 +176,8 @@ export function FeatureCreditDialog({
               </svg>
             </div>
             <p className="text-center text-sm text-muted-foreground mt-2">
-              Your listing will now appear at the top of search results for 15
-              days.
+              Your listing will now appear at the top of search results for{' '}
+              {FEATURE_DAYS} days.
             </p>
           </div>
         )}
