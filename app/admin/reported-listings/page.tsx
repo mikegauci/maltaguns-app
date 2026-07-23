@@ -1,10 +1,13 @@
 'use client'
 
+import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
-import { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
-import { DataTable, FormDialog, ConfirmDialog, ActionCell } from '@/app/admin'
+import { FormDialog } from '@/app/admin/components/FormDialog'
+import { ConfirmDialog } from '@/app/admin/components/ConfirmDialog'
+import { ActionCell } from '@/app/admin/components/ActionCell'
 import {
   Select,
   SelectContent,
@@ -16,12 +19,16 @@ import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { BackButton } from '@/components/ui/back-button'
-import dynamic from 'next/dynamic'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+
+const DataTable = nextDynamic(
+  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
+  { ssr: false }
+) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface ReportedListing {
   id: string
@@ -46,17 +53,7 @@ interface ReportedListing {
   }
 }
 
-// Use dynamic import with SSR disabled to prevent hydration issues
-const ReportedListingsPageContent = dynamic(
-  () => Promise.resolve(ReportedListingsPageComponent),
-  {
-    ssr: false,
-  }
-)
-
-export default function ReportedListingsPage() {
-  return <ReportedListingsPageContent />
-}
+export default ReportedListingsPageComponent
 
 function ReportedListingsPageComponent() {
   const { toast } = useToast()

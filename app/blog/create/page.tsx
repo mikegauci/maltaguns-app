@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -27,23 +28,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
-import {
-  Bold,
-  Italic,
-  Heading2,
-  Heading3,
-  List,
-  ListOrdered,
-  Quote,
-  Loader2,
-  Image as ImageIcon,
-  Link as LinkIcon,
-} from 'lucide-react'
-import { LinkDialog, ImageAltDialog } from '@/components/dialogs'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Image from '@tiptap/extension-image'
-import Link from '@tiptap/extension-link'
+import { Loader2 } from 'lucide-react'
 import slug from 'slug'
 import { Database } from '@/lib/database.types'
 import {
@@ -54,9 +39,16 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-// Note: Admin check now uses database is_admin field instead of hardcoded IDs
+const BlogEditor = dynamic(() => import('@/components/blog/BlogEditor'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-[400px] border rounded-lg flex items-center justify-center text-muted-foreground">
+      Loading editor...
+    </div>
+  ),
+})
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ACCEPTED_IMAGE_TYPES = [
   'image/jpeg',
   'image/jpg',
@@ -75,34 +67,6 @@ const blogPostSchema = z.object({
 
 type BlogPostForm = z.infer<typeof blogPostSchema>
 
-// Add this function to handle content image uploads
-async function uploadContentImage(file: File, supabase: any, userId: string) {
-  // Downscale + re-encode to WebP before upload to cut Storage egress.
-  const resized = await resizeImageForUpload(file)
-  const fileExt = resized.name.split('.').pop()
-  const fileName = `${userId}-content-${Date.now()}-${Math.random()}.${fileExt}`
-  const filePath = `blog/content/${fileName}`
-
-  const { error: uploadError } = await supabase.storage
-    .from('blog')
-    .upload(filePath, resized, {
-      // Unique filename per upload (never overwritten) - cache for 1 year.
-      cacheControl: '31536000',
-      upsert: false,
-      contentType: resized.type,
-    })
-
-  if (uploadError) {
-    throw uploadError
-  }
-
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from('blog').getPublicUrl(filePath)
-
-  return publicUrl
-}
-
 export default function CreateBlogPost() {
   const router = useRouter()
   const { toast } = useToast()
@@ -111,21 +75,10 @@ export default function CreateBlogPost() {
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false)
-  const [linkUrl, setLinkUrl] = useState('')
-  const [openInNewTab, setOpenInNewTab] = useState(true)
   const [storeId, setStoreId] = useState<string | null>(null)
   const [servicingId, setServicingId] = useState<string | null>(null)
   const [clubId, setClubId] = useState<string | null>(null)
   const [rangeId, setRangeId] = useState<string | null>(null)
-  const [imageAltDialogOpen, setImageAltDialogOpen] = useState(false)
-  const [imageAltText, setImageAltText] = useState('')
-  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null)
-  const [selectedImage, setSelectedImage] = useState<{
-    src: string
-    alt: string
-  } | null>(null)
-  const [isEditingExistingImage, setIsEditingExistingImage] = useState(false)
 
   useEffect(() => {
     async function checkUserStore() {
@@ -415,58 +368,6 @@ export default function CreateBlogPost() {
     }
   }, [])
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Image.configure({
-        HTMLAttributes: {
-          class: 'cursor-pointer hover:ring-2 hover:ring-primary/50 rounded-md',
-        },
-      }),
-      Link.configure({
-        openOnClick: false,
-      }),
-    ],
-    // Prevent SSR/hydration mismatch warnings in Next.js (App Router)
-    immediatelyRender: false,
-    content: '',
-    onUpdate: ({ editor }) => {
-      form.setValue('content', editor.getHTML())
-    },
-    editorProps: {
-      attributes: {
-        class:
-          'prose prose-neutral dark:prose-invert focus:outline-none min-h-[200px]',
-      },
-      handleClick: (view, pos, event) => {
-        // Check if the clicked element is an image
-        const domEvent = event as MouseEvent
-        const element = domEvent.target as HTMLElement
-
-        if (element.tagName === 'IMG') {
-          const img = element as HTMLImageElement
-          setSelectedImage({
-            src: img.src,
-            alt: img.alt || '',
-          })
-          setImageAltText(img.alt || '')
-          setIsEditingExistingImage(true)
-          setImageAltDialogOpen(true)
-          return true
-        }
-        return false
-      },
-    },
-    autofocus: true,
-  })
-
-  // Ensure editor is focused when mounted
-  useEffect(() => {
-    if (editor) {
-      editor.commands.focus()
-    }
-  }, [editor])
-
   const form = useForm<BlogPostForm>({
     resolver: zodResolver(blogPostSchema),
     defaultValues: {
@@ -557,174 +458,6 @@ export default function CreateBlogPost() {
     }
   }
 
-  // Update the addImage function
-  const addImage = async () => {
-    try {
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.accept = 'image/*'
-
-      input.onchange = async event => {
-        const file = (event.target as HTMLInputElement).files?.[0]
-        if (!file) return
-
-        if (file.size > MAX_FILE_SIZE) {
-          toast({
-            variant: 'destructive',
-            title: 'File too large',
-            description: 'Image must be less than 5MB',
-          })
-          return
-        }
-
-        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-          toast({
-            variant: 'destructive',
-            title: 'Invalid file type',
-            description:
-              'Please upload a valid image file (JPEG, PNG, or WebP)',
-          })
-          return
-        }
-
-        setPendingImageFile(file)
-        // Remove file extension from filename for alt text
-        const altTextWithoutExtension = file.name.replace(/\.[^/.]+$/, '')
-        setImageAltText(altTextWithoutExtension)
-        setImageAltDialogOpen(true)
-      }
-
-      input.click()
-    } catch (error) {
-      console.error('Error adding image:', error)
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to add image to post',
-      })
-    }
-  }
-
-  const handleImageInsert = async () => {
-    if (!imageAltText) return
-
-    if (isEditingExistingImage && selectedImage) {
-      // Update existing image alt text
-      editor
-        ?.chain()
-        .focus()
-        .setImage({
-          src: selectedImage.src,
-          alt: imageAltText,
-        })
-        .run()
-
-      toast({
-        title: 'Alt text updated',
-        description: 'Image alt text has been updated successfully',
-      })
-
-      // Reset state
-      setImageAltDialogOpen(false)
-      setImageAltText('')
-      setSelectedImage(null)
-      setIsEditingExistingImage(false)
-      return
-    }
-
-    if (!pendingImageFile) return
-
-    setUploadingContentImage(true)
-    try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (sessionError || !session?.user.id) {
-        throw new Error('Authentication error')
-      }
-
-      const imageUrl = await uploadContentImage(
-        pendingImageFile,
-        supabase,
-        session.user.id
-      )
-
-      if (editor) {
-        editor
-          .chain()
-          .focus()
-          .setImage({ src: imageUrl, alt: imageAltText })
-          .run()
-      }
-
-      toast({
-        title: 'Image inserted',
-        description: 'Your image has been added to the post',
-      })
-
-      // Reset state
-      setImageAltDialogOpen(false)
-      setImageAltText('')
-      setPendingImageFile(null)
-      setIsEditingExistingImage(false)
-    } catch (error) {
-      console.error('Content image upload error:', error)
-      toast({
-        variant: 'destructive',
-        title: 'Upload failed',
-        description:
-          error instanceof Error ? error.message : 'Failed to upload image',
-      })
-    } finally {
-      setUploadingContentImage(false)
-    }
-  }
-
-  // Add this function to set a link
-  const setLink = () => {
-    if (!editor) return
-
-    // Check if text is selected
-    if (!editor.state.selection.empty) {
-      setLinkDialogOpen(true)
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'No text selected',
-        description: 'Please select some text to add a link.',
-      })
-    }
-  }
-
-  // Add this function to apply the link
-  const applyLink = () => {
-    if (!editor || !linkUrl) return
-
-    // Set link with appropriate target attribute
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange('link')
-      .setLink({
-        href: linkUrl,
-        target: openInNewTab ? '_blank' : null,
-      })
-      .run()
-
-    // Reset state
-    setLinkUrl('')
-    setLinkDialogOpen(false)
-  }
-
-  // Add this function to remove links
-  const removeLink = () => {
-    if (!editor) return
-
-    editor.chain().focus().extendMarkRange('link').unsetLink().run()
-  }
-
   async function onSubmit(data: BlogPostForm) {
     setIsLoading(true)
     try {
@@ -792,120 +525,6 @@ export default function CreateBlogPost() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const MenuBar = () => {
-    if (!editor) return null
-
-    return (
-      <div className="border rounded-lg p-2 mb-4 flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={editor.isActive('bold') ? 'bg-accent' : ''}
-        >
-          <Bold className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={editor.isActive('italic') ? 'bg-accent' : ''}
-        >
-          <Italic className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
-          }
-          className={
-            editor.isActive('heading', { level: 2 }) ? 'bg-accent' : ''
-          }
-        >
-          <Heading2 className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 3 }).run()
-          }
-          className={
-            editor.isActive('heading', { level: 3 }) ? 'bg-accent' : ''
-          }
-        >
-          <Heading3 className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={editor.isActive('bulletList') ? 'bg-accent' : ''}
-        >
-          <List className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={editor.isActive('orderedList') ? 'bg-accent' : ''}
-        >
-          <ListOrdered className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={editor.isActive('blockquote') ? 'bg-accent' : ''}
-        >
-          <Quote className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={addImage}
-          disabled={uploadingContentImage}
-        >
-          {uploadingContentImage ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <ImageIcon className="h-4 w-4" />
-          )}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={setLink}
-          className={editor.isActive('link') ? 'bg-accent' : ''}
-        >
-          <LinkIcon className="h-4 w-4" />
-        </Button>
-        {editor.isActive('link') && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={removeLink}
-            className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
-          >
-            <LinkIcon className="h-4 w-4" />
-            Remove
-          </Button>
-        )}
-      </div>
-    )
   }
 
   if (isLoading) {
@@ -1019,12 +638,11 @@ export default function CreateBlogPost() {
                   <FormItem>
                     <FormLabel>Content</FormLabel>
                     <FormControl>
-                      <div className="min-h-[400px] border rounded-lg">
-                        <MenuBar />
-                        <div className="p-4">
-                          <EditorContent editor={editor} />
-                        </div>
-                      </div>
+                      <BlogEditor
+                        autofocus
+                        onChange={html => form.setValue('content', html)}
+                        onUploadingChange={setUploadingContentImage}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -1053,43 +671,6 @@ export default function CreateBlogPost() {
           </Form>
         </CardContent>
       </Card>
-
-      {/* Add Link Dialog */}
-      <LinkDialog
-        open={linkDialogOpen}
-        onOpenChange={setLinkDialogOpen}
-        linkUrl={linkUrl}
-        setLinkUrl={setLinkUrl}
-        openInNewTab={openInNewTab}
-        setOpenInNewTab={setOpenInNewTab}
-        onApply={applyLink}
-      />
-
-      {/* Add Image Alt Text Dialog */}
-      <ImageAltDialog
-        open={imageAltDialogOpen}
-        onOpenChange={open => {
-          if (!open) {
-            setImageAltDialogOpen(false)
-            setImageAltText('')
-            setPendingImageFile(null)
-            setSelectedImage(null)
-            setIsEditingExistingImage(false)
-          }
-        }}
-        imageAltText={imageAltText}
-        setImageAltText={setImageAltText}
-        isEditingExistingImage={isEditingExistingImage}
-        selectedImage={selectedImage}
-        uploadingContentImage={uploadingContentImage}
-        onInsert={handleImageInsert}
-        onCancel={() => {
-          setPendingImageFile(null)
-          setImageAltText('')
-          setSelectedImage(null)
-          setIsEditingExistingImage(false)
-        }}
-      />
     </PageLayout>
   )
 }

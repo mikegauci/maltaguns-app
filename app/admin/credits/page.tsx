@@ -1,24 +1,27 @@
 'use client'
 
+import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
-import {
-  DataTable,
-  AdminLoadingState,
-  AdminErrorState,
-  AdminDataCount,
-  EditCreditDialog,
-  AddCreditDialog,
-} from '@/app/admin'
+import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { AdminErrorState } from '@/app/admin/components/AdminErrorState'
+import { AdminDataCount } from '@/app/admin/components/AdminDataCount'
+import { EditCreditDialog } from '@/app/admin/components/EditCreditDialog'
+import { AddCreditDialog } from '@/app/admin/components/AddCreditDialog'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
+
+const DataTable = nextDynamic(
+  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
+  { ssr: false }
+) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface Credit {
   id: string

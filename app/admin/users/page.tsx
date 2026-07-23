@@ -1,10 +1,13 @@
 'use client'
 
+import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
-import { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
-import { DataTable, FormDialog, ConfirmDialog, ActionCell } from '@/app/admin'
+import { FormDialog } from '@/app/admin/components/FormDialog'
+import { ConfirmDialog } from '@/app/admin/components/ConfirmDialog'
+import { ActionCell } from '@/app/admin/components/ActionCell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -12,7 +15,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { resizeImageForUpload } from '@/lib/image-resize'
-import dynamic from 'next/dynamic'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import { PageHeader } from '@/components/ui/page-header'
@@ -28,6 +30,11 @@ import {
   hasAllLicenseTypes,
   hasAnyLicenseType,
 } from '@/lib/license-utils'
+
+const DataTable = nextDynamic(
+  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
+  { ssr: false }
+) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface Establishment {
   type: 'store' | 'club' | 'servicing' | 'range'
@@ -55,14 +62,7 @@ interface User {
   creditAmount: number
 }
 
-// Use dynamic import with SSR disabled to prevent hydration issues
-const UsersPageContent = dynamic(() => Promise.resolve(UsersPageComponent), {
-  ssr: false,
-})
-
-export default function UsersPage() {
-  return <UsersPageContent />
-}
+export default UsersPageComponent
 
 // Helper functions for establishment styling
 function getEstablishmentColor(type: string): string {

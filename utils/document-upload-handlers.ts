@@ -1,5 +1,4 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { verifyLicenseImage, verifyIdCardImage } from './document-verification'
 import { LicenseTypes } from '@/lib/license-utils'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import React from 'react'
@@ -163,6 +162,7 @@ export async function uploadAndVerifyLicense(
     setProgress?.(30)
 
     // Verify the license image using OCR
+    const { verifyLicenseImage } = await import('./document-verification')
     const {
       isVerified: hasPoliceHeader,
       isExpired,
@@ -366,6 +366,7 @@ export async function uploadAndVerifyIdCard(
     setProgress?.(40)
 
     // Verify the ID card image using OCR
+    const { verifyIdCardImage } = await import('./document-verification')
     const { isVerified, nameMatch, extractedName } = await verifyIdCardImage(
       convertedFile,
       userFirstName,

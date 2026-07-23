@@ -127,9 +127,6 @@ export default async function BlogPost({
     notFound()
   }
 
-  // Log the structure to help debug
-  console.log('Blog post data structure:', JSON.stringify(post, null, 2))
-
   // Handle differences in the API response structure by fetching the username directly
   let authorUsername = 'Unknown'
   try {
@@ -288,11 +285,10 @@ export default async function BlogPost({
     servicing: post.servicing || [],
   }
 
-  // Get current session to check if user can edit
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  const canEdit = session?.user.id === post.author_id
+    data: { user },
+  } = await supabase.auth.getUser()
+  const canEdit = user?.id === post.author_id
 
   // Get the establishment icon based on type
   const getEstablishmentIcon = () => {
@@ -332,7 +328,7 @@ export default async function BlogPost({
             <img
               src={post.featured_image}
               alt={post.title}
-              className="w-full h-[550px] object-cover rounded-lg"
+              className="w-full h-[220px] sm:h-[320px] md:h-[420px] lg:h-[550px] object-cover rounded-lg"
             />
           </div>
         )}

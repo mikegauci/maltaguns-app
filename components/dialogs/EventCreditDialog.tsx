@@ -10,18 +10,18 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { loadStripe } from '@stripe/stripe-js'
 import { useRouter } from 'next/navigation'
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-)
 
 interface EventCreditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   userId: string // eslint-disable-line unused-imports/no-unused-vars
   onSuccess?: () => void
+}
+
+async function getStripe() {
+  const { loadStripe } = await import('@stripe/stripe-js')
+  return loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 }
 
 export function EventCreditDialog({
@@ -43,10 +43,9 @@ export function EventCreditDialog({
       }
 
       const data = await res.json()
-      const stripe = await stripePromise
+      const stripe = await getStripe()
       if (!stripe) throw new Error('Stripe failed to load')
 
-      // Add success URL parameter to redirect back to the create page with success=true
       const { error } = await stripe.redirectToCheckout({
         sessionId: data.sessionId,
       })
@@ -57,9 +56,7 @@ export function EventCreditDialog({
     }
   }
 
-  // Prevent closing the dialog when clicking outside or pressing escape
   const handleOpenChange = (newOpen: boolean) => {
-    // Only allow the dialog to be closed programmatically through our buttons
     if (newOpen === false) {
       return
     }

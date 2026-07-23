@@ -1,10 +1,13 @@
 'use client'
 
+import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
-import { ColumnDef } from '@tanstack/react-table'
+import type { ColumnDef } from '@tanstack/react-table'
 import { format, parseISO } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
-import { DataTable, FormDialog, ConfirmDialog, ActionCell } from '@/app/admin'
+import { FormDialog } from '@/app/admin/components/FormDialog'
+import { ConfirmDialog } from '@/app/admin/components/ConfirmDialog'
+import { ActionCell } from '@/app/admin/components/ActionCell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -18,7 +21,6 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { BackButton } from '@/components/ui/back-button'
-import dynamic from 'next/dynamic'
 import {
   Popover,
   PopoverContent,
@@ -30,6 +32,11 @@ import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+
+const DataTable = nextDynamic(
+  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
+  { ssr: false }
+) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface Listing {
   id: string
@@ -58,17 +65,7 @@ interface Listing {
   }
 }
 
-// Use dynamic import with SSR disabled to prevent hydration issues
-const ListingsPageContent = dynamic(
-  () => Promise.resolve(ListingsPageComponent),
-  {
-    ssr: false,
-  }
-)
-
-export default function ListingsPage() {
-  return <ListingsPageContent />
-}
+export default ListingsPageComponent
 
 function ListingsPageComponent() {
   const { toast } = useToast()

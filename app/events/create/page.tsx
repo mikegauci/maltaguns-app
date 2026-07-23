@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import nextDynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -33,13 +34,19 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { resizeImageForUpload } from '@/lib/image-resize'
-import { EventCreditDialog } from '@/components/dialogs'
 import { BackButton } from '@/components/ui/back-button'
 import { Loader2 } from 'lucide-react'
 import { Database } from '@/lib/database.types'
 import { PageLayout } from '@/components/ui/page-layout'
 
-// Force dynamic rendering to avoid hydration issues
+const EventCreditDialog = nextDynamic(
+  () =>
+    import('@/components/dialogs/EventCreditDialog').then(
+      m => m.EventCreditDialog
+    ),
+  { ssr: false }
+)
+
 export const dynamic = 'force-dynamic'
 
 const eventTypes = [

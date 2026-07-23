@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import nextDynamic from 'next/dynamic'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -17,8 +18,6 @@ import {
   FeatureCreditDialog,
   DeleteConfirmationDialog,
   RemoveFeatureDialog,
-  CreditDialog,
-  EventCreditDialog,
 } from '@/components/dialogs'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LoadingState } from '@/components/ui/loading-state'
@@ -30,6 +29,19 @@ import { createContentHandlers } from './handlers/contentHandlers'
 import { ProfileTabs } from '../../components/profile/ProfileTabs'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
+
+const CreditDialog = nextDynamic(
+  () => import('@/components/dialogs/CreditDialog').then(m => m.CreditDialog),
+  { ssr: false }
+)
+
+const EventCreditDialog = nextDynamic(
+  () =>
+    import('@/components/dialogs/EventCreditDialog').then(
+      m => m.EventCreditDialog
+    ),
+  { ssr: false }
+)
 
 export default function ProfilePage() {
   const { toast } = useToast()
@@ -280,32 +292,37 @@ export default function ProfilePage() {
         }}
       />
 
-      <CreditDialog
-        open={showCreditDialog}
-        onOpenChange={setShowCreditDialog}
-        userId={profile?.id || ''}
-        source="profile"
-        onSuccess={() => {
-          refreshCredits()
-          toast({
-            title: 'Credits purchased',
-            description: 'Your credits have been added to your account.',
-          })
-        }}
-      />
+      {showCreditDialog && (
+        <CreditDialog
+          open={showCreditDialog}
+          onOpenChange={setShowCreditDialog}
+          userId={profile?.id || ''}
+          source="profile"
+          onSuccess={() => {
+            refreshCredits()
+            toast({
+              title: 'Credits purchased',
+              description: 'Your credits have been added to your account.',
+            })
+          }}
+        />
+      )}
 
-      <EventCreditDialog
-        open={showEventCreditDialog}
-        onOpenChange={setShowEventCreditDialog}
-        userId={profile?.id || ''}
-        onSuccess={() => {
-          refreshCredits()
-          toast({
-            title: 'Event credits purchased',
-            description: 'Your event credits have been added to your account.',
-          })
-        }}
-      />
+      {showEventCreditDialog && (
+        <EventCreditDialog
+          open={showEventCreditDialog}
+          onOpenChange={setShowEventCreditDialog}
+          userId={profile?.id || ''}
+          onSuccess={() => {
+            refreshCredits()
+            toast({
+              title: 'Event credits purchased',
+              description:
+                'Your event credits have been added to your account.',
+            })
+          }}
+        />
+      )}
     </PageLayout>
   )
 }

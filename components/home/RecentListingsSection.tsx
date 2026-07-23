@@ -1,9 +1,12 @@
+'use client'
+
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { StorageImage } from '@/components/ui/storage-image'
 import { HomeCarousel, HomeCarouselItem } from './HomeCarousel'
+import { formatPrice, slugify } from '@/lib/format'
 
 interface Listing {
   id: string
@@ -14,14 +17,10 @@ interface Listing {
 
 interface RecentListingsSectionProps {
   listings: Listing[]
-  formatPrice: (_price: number) => string
-  slugify: (_text: string) => string
 }
 
 export const RecentListingsSection = ({
   listings,
-  formatPrice,
-  slugify,
 }: RecentListingsSectionProps) => {
   return (
     <section className="py-16 bg-accent/50">

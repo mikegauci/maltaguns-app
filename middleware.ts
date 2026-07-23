@@ -67,31 +67,27 @@ export async function middleware(req: NextRequest) {
     // Create a response early
     const res = NextResponse.next()
 
-    // Create the Supabase client (only for routes that need auth/admin)
     const supabase = createMiddlewareClient({ req, res })
 
-    // Fetch session (Supabase may refresh internally if needed)
     const {
-      data: { session },
-    } = await supabase.auth.getSession()
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser()
 
-    // If no session exists, redirect to login
-    if (!session) {
-      console.log('No session found, redirecting to login')
+    if (userError || !user) {
+      console.log('No authenticated user found, redirecting to login')
       return await signOutAndRedirectToLogin()
     }
 
-    // For admin routes, check authorization
     if (isAdminRoute) {
-      const profile = await getUserProfile(supabase, session.user.id)
+      const profile = await getUserProfile(supabase, user.id)
       if (!profile?.is_admin) {
-        console.log('User not authorized for admin:', session.user.email)
+        console.log('User not authorized for admin:', user.email)
         const response = NextResponse.redirect(new URL('/', req.url))
         return addSecurityHeaders(response)
       }
     }
 
-    // Add security headers and return
     return addSecurityHeaders(res)
   } catch (error) {
     console.error('Middleware error:', error)
