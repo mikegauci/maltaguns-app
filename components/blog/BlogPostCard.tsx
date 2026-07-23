@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { StorageImage } from '@/components/ui/storage-image'
 import { format } from 'date-fns'
 import { Store, Users, MapPin, Wrench } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -195,10 +196,11 @@ export default function BlogPostCard({ post }: BlogPostCardProps) {
       <Card className="h-full min-h-[400px] hover:shadow-lg transition-shadow duration-200">
         {post.featured_image && (
           <div className="relative w-full aspect-video">
-            <img
+            <StorageImage
               src={post.featured_image}
               alt={post.title}
-              className="object-cover w-full h-full rounded-t-lg"
+              className="object-cover rounded-t-lg"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
           </div>
         )}

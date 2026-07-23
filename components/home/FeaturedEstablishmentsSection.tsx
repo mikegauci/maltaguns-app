@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { StorageImage } from '@/components/ui/storage-image'
 import { Store, MapPin, Wrench, Phone, Mail, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { HomeCarousel, HomeCarouselItem } from './HomeCarousel'
@@ -56,10 +57,14 @@ export const FeaturedEstablishmentsSection = ({
                     <CardContent className="p-3 md:p-6 text-center md:text-left">
                       <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 mb-2 md:mb-4">
                         {establishment.logo_url ? (
-                          <img
+                          <StorageImage
                             src={establishment.logo_url}
                             alt={establishment.business_name}
-                            className="w-10 h-10 md:w-16 md:h-16 object-contain rounded-lg"
+                            width={64}
+                            height={64}
+                            sizes="64px"
+                            fallbackSrc="/maltaguns.png"
+                            className="w-10 h-10 md:w-16 md:h-16 object-contain rounded-lg shrink-0"
                           />
                         ) : (
                           <div className="w-10 h-10 md:w-16 md:h-16 bg-muted rounded-lg flex items-center justify-center shrink-0">

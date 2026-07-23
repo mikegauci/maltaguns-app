@@ -100,6 +100,7 @@ export default function MarketplaceClient({
 
     return (
       <Card
+        key={listing.id}
         className={`relative overflow-hidden hover:shadow-lg transition-shadow h-full ${
           listing.is_featured ? 'border-2 border-red-500' : ''
         }`}

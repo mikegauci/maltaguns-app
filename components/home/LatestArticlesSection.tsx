@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { StorageImage } from '@/components/ui/storage-image'
 import { BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
@@ -50,10 +51,11 @@ export const LatestArticlesSection = ({
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow h-full">
                     {post.featured_image ? (
                       <div className="aspect-video relative overflow-hidden">
-                        <img
+                        <StorageImage
                           src={post.featured_image}
                           alt={post.title}
-                          className="object-cover w-full h-full"
+                          className="object-cover"
+                          sizes="(max-width: 768px) 42vw, 25vw"
                         />
                       </div>
                     ) : (
