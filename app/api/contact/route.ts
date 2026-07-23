@@ -1,28 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { z } from 'zod'
+import { escapeHtml } from '@/lib/escape-html'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const contactFormSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  subject: z.string().min(5, 'Subject must be at least 5 characters'),
-  message: z.string().min(10, 'Message must be at least 10 characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters').max(200),
+  email: z.string().email('Invalid email address').max(320),
+  subject: z.string().min(5, 'Subject must be at least 5 characters').max(200),
+  message: z
+    .string()
+    .min(10, 'Message must be at least 10 characters')
+    .max(5000),
 })
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-
-    // Validate the request body
     const validatedData = contactFormSchema.parse(body)
 
-    // Send email using Resend
+    const name = escapeHtml(validatedData.name)
+    const email = escapeHtml(validatedData.email)
+    const subject = escapeHtml(validatedData.subject)
+    const message = escapeHtml(validatedData.message).replace(/\n/g, '<br>')
+
     const { data, error } = await resend.emails.send({
       from: 'MaltaGuns Contact Form <contact@maltaguns.com>',
       to: ['support@maltaguns.com'],
-      subject: `Contact Form: ${validatedData.subject}`,
+      subject: `Contact Form: ${validatedData.subject.slice(0, 200)}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
@@ -30,15 +36,15 @@ export async function POST(request: NextRequest) {
           </h2>
           
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
-            <p><strong>Name:</strong> ${validatedData.name}</p>
-            <p><strong>Email:</strong> ${validatedData.email}</p>
-            <p><strong>Subject:</strong> ${validatedData.subject}</p>
+            <p><strong>Name:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
           </div>
           
           <div style="margin: 20px 0;">
             <p><strong>Message:</strong></p>
             <div style="background-color: #ffffff; padding: 15px; border-left: 4px solid #007bff; margin-top: 10px;">
-              ${validatedData.message.replace(/\n/g, '<br>')}
+              ${message}
             </div>
           </div>
           

@@ -11,6 +11,7 @@ import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
+import { sanitizeBlogHtml } from '@/lib/sanitize-html'
 
 interface BlogPostType {
   id: string
@@ -375,7 +376,9 @@ export default async function BlogPost({
           </div>
         </div>
 
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div
+          dangerouslySetInnerHTML={{ __html: sanitizeBlogHtml(post.content) }}
+        />
       </article>
     </PageLayout>
   )

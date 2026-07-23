@@ -1,49 +1,15 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { createClient } from '@supabase/supabase-js'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/api-auth'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    // Create a regular Supabase client to check authorization
-    const supabase = createRouteHandlerClient({ cookies })
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    // Check if the user is authorized
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+    const { supabaseAdmin } = auth
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No valid session' },
-        { status: 401 }
-      )
-    }
-
-    // Get the user's profile to check if they are an admin
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profileError || !profileData || !profileData.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
-
-    // Create a Supabase admin client with service role key
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    )
-
-    // Fetch all credit transactions with admin client
     const { data: transactions, error: transactionsError } = await supabaseAdmin
       .from('credit_transactions')
       .select('*')

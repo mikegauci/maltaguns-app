@@ -50,7 +50,7 @@ const plans: Plan[] = [
 interface CreditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  userId: string
+  userId: string // eslint-disable-line unused-imports/no-unused-vars
   onSuccess?: () => void
   source?: 'profile' | 'marketplace'
 }
@@ -58,7 +58,6 @@ interface CreditDialogProps {
 export function CreditDialog({
   open,
   onOpenChange,
-  userId,
   source,
 }: CreditDialogProps) {
   const router = useRouter()
@@ -71,7 +70,7 @@ export function CreditDialog({
       const res = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId, userId }),
+        body: JSON.stringify({ priceId }),
       })
 
       if (!res.ok) {

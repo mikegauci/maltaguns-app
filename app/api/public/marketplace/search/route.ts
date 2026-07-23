@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { buildListingSearchOrFilter } from '@/lib/marketplace-search'
 
 export const revalidate = 5
 
-// Public search endpoint. We keep caching short to avoid exploding cache keys.
 export async function GET(req: Request) {
   const url = new URL(req.url)
   const q = (url.searchParams.get('q') || '').trim()
@@ -33,12 +33,9 @@ export async function GET(req: Request) {
   if (typeValue) supabaseQuery = supabaseQuery.eq('type', typeValue)
   if (categoryValue) supabaseQuery = supabaseQuery.eq('category', categoryValue)
 
-  if (q) {
-    const searchTerms = q.toLowerCase().split(/\s+/).filter(Boolean)
-    const searchConditions = searchTerms
-      .map(term => `title.ilike.%${term}%,description.ilike.%${term}%`)
-      .join(',')
-    supabaseQuery = supabaseQuery.or(searchConditions)
+  const searchFilter = q ? buildListingSearchOrFilter(q) : null
+  if (searchFilter) {
+    supabaseQuery = supabaseQuery.or(searchFilter)
   }
 
   const [{ data, error }, featuredRes] = await Promise.all([

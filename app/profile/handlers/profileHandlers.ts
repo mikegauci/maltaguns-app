@@ -383,7 +383,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       const response = await fetch('/api/listings/delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId, userId: session.session.user.id }),
+        body: JSON.stringify({ listingId }),
       })
 
       if (!response.ok) {
@@ -465,28 +465,6 @@ export function createProfileHandlers(deps: HandlerDependencies) {
   ): Promise<void> {
     try {
       if (!listingToFeature) return
-
-      const { data: userData, error: authError } = await supabase.auth.getUser()
-      if (authError) throw authError
-
-      const expiryResponse = await fetch('/api/listings/update-expiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId: listingToFeature }),
-      })
-
-      if (!expiryResponse.ok) throw new Error('Failed to extend listing expiry')
-
-      const featureResponse = await fetch('/api/listings/renew-feature', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userData.user.id,
-          listingId: listingToFeature,
-        }),
-      })
-
-      if (!featureResponse.ok) throw new Error('Failed to renew feature')
 
       setListings(prevListings =>
         prevListings.map(listing =>

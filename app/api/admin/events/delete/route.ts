@@ -1,13 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-
-// Create a Supabase client with admin privileges to bypass RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-)
+import { requireAdmin } from '@/lib/api-auth'
 
 export async function POST(request: Request) {
   try {
@@ -20,34 +12,10 @@ export async function POST(request: Request) {
       )
     }
 
-    // Verify admin privileges
-    const supabase = createRouteHandlerClient({ cookies })
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession()
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
 
-    if (sessionError || !session) {
-      return NextResponse.json(
-        { error: 'Unauthorized - No valid session' },
-        { status: 401 }
-      )
-    }
-
-    // Check if the current user is an admin
-    const { data: currentUserProfile, error: profileError } =
-      await supabaseAdmin
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', session.user.id)
-        .single()
-
-    if (profileError || !currentUserProfile?.is_admin) {
-      return NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      )
-    }
+    const { supabaseAdmin } = auth
 
     console.log('[ADMIN DELETE API] Admin attempting to delete event:', eventId)
 

@@ -1,45 +1,13 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { requireAdmin } from '@/lib/api-auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export const dynamic = 'force-dynamic'
 
-async function requireAdmin() {
-  const supabase = createRouteHandlerClient({ cookies })
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession()
-
-  if (sessionError || !session) {
-    return {
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    }
-  }
-
-  const { data: profile, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', session.user.id)
-    .single()
-
-  if (profileError || !profile?.is_admin) {
-    return {
-      error: NextResponse.json(
-        { error: 'Unauthorized - Admin privileges required' },
-        { status: 403 }
-      ),
-    }
-  }
-
-  return { session }
-}
-
 export async function GET() {
   try {
     const auth = await requireAdmin()
-    if (auth.error) return auth.error
+    if ('error' in auth) return auth.error
 
     const { data, error } = await (supabaseAdmin as any)
       .from('site_settings')

@@ -23,7 +23,7 @@ const FEATURE_PRICE = 10
 interface FeatureListingDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  userId: string
+  userId: string // eslint-disable-line unused-imports/no-unused-vars
   listingId: string
   onSuccess?: () => void
 }
@@ -31,7 +31,6 @@ interface FeatureListingDialogProps {
 export function FeatureCreditDialog({
   open,
   onOpenChange,
-  userId,
   listingId,
 }: FeatureListingDialogProps) {
   const router = useRouter()
@@ -91,7 +90,6 @@ export function FeatureCreditDialog({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId,
           listingId,
         }),
       })
