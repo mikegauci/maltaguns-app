@@ -3,6 +3,8 @@ import EventClient from './event-client'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
+import { JsonLd } from '@/components/seo/JsonLd'
+import { buildBreadcrumbList, buildEventSchema } from '@/lib/seo-jsonld'
 
 interface Event {
   id: string
@@ -60,7 +62,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const event = await fetchEventBySlug(params.slug)
   if (!event) {
-    return { title: 'Event Not Found | MaltaGuns' }
+    return buildMetadata({
+      title: 'Event Not Found | MaltaGuns',
+      noIndex: true,
+    })
   }
 
   const siteSettings = await getSiteSettings()
@@ -87,5 +92,30 @@ export default async function EventPage({
     notFound()
   }
 
-  return <EventClient event={event} />
+  const path = `/events/${params.slug}`
+
+  return (
+    <>
+      <JsonLd
+        data={[
+          buildEventSchema({
+            name: event.title,
+            description: event.description,
+            image: event.poster_url,
+            startDate: event.start_date,
+            endDate: event.end_date,
+            location: event.location,
+            path,
+            organizer: event.organizer,
+          }),
+          buildBreadcrumbList([
+            { name: 'Home', path: '/' },
+            { name: 'Events', path: '/events' },
+            { name: event.title, path },
+          ]),
+        ]}
+      />
+      <EventClient event={event} />
+    </>
+  )
 }
