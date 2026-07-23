@@ -18,6 +18,7 @@ import { AutoFeatureHandler } from './auto-feature-handler'
 import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
+import { MarketplaceCategoryNav } from '@/components/marketplace/MarketplaceCategoryNav'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
 
@@ -99,8 +100,7 @@ export default function MarketplaceClient({
 
     return (
       <Card
-        key={listing.id}
-        className={`relative overflow-hidden hover:shadow-lg transition-shadow ${
+        className={`relative overflow-hidden hover:shadow-lg transition-shadow h-full ${
           listing.is_featured ? 'border-2 border-red-500' : ''
         }`}
       >
@@ -186,49 +186,6 @@ export default function MarketplaceClient({
     )
   }
 
-  // Category navigation data
-  const categories = [
-    {
-      title: 'Firearms',
-      icon: (
-        <Image
-          src="/images/pistol-gun-icon.svg"
-          alt="Firearms"
-          width={20}
-          height={20}
-        />
-      ),
-      href: '/marketplace/firearms',
-      subcategories: [
-        { name: 'Airguns', href: '/marketplace/firearms/airguns' },
-        { name: 'Ammunition', href: '/marketplace/firearms/ammunition' },
-        { name: 'Black Powder', href: '/marketplace/firearms/black-powder' },
-        { name: 'Carbines', href: '/marketplace/firearms/carbines' },
-        { name: 'Crossbow', href: '/marketplace/firearms/crossbow' },
-        { name: 'Pistols', href: '/marketplace/firearms/pistols' },
-        {
-          name: 'Replica/Deactivated',
-          href: '/marketplace/firearms/replica-deactivated',
-        },
-        { name: 'Revolvers', href: '/marketplace/firearms/revolvers' },
-        { name: 'Rifles', href: '/marketplace/firearms/rifles' },
-        { name: 'Schedule 1', href: '/marketplace/firearms/schedule-1' },
-        { name: 'Shotguns', href: '/marketplace/firearms/shotguns' },
-      ],
-    },
-    {
-      title: 'Non-Firearms',
-      icon: <Package className="h-5 w-5" />,
-      href: '/marketplace/non-firearms',
-      subcategories: [
-        { name: 'Airsoft', href: '/marketplace/non-firearms/airsoft' },
-        { name: 'Reloading', href: '/marketplace/non-firearms/reloading' },
-        { name: 'Militaria', href: '/marketplace/non-firearms/militaria' },
-        { name: 'Accessories', href: '/marketplace/non-firearms/accessories' },
-      ],
-    },
-  ]
-
   return (
     <PageLayout>
       <PageHeader
@@ -254,34 +211,7 @@ export default function MarketplaceClient({
         <AutoFeatureHandler />
       </Suspense>
 
-      {/* Category Navigation */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        {categories.map(category => (
-          <Card key={category.title} className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2">
-                {category.icon}
-                <Link href={category.href} className="hover:underline">
-                  {category.title}
-                </Link>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-2">
-                {category.subcategories.map(subcategory => (
-                  <Link
-                    key={subcategory.name}
-                    href={subcategory.href}
-                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
-                  >
-                    {subcategory.name}
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <MarketplaceCategoryNav />
 
       {error ? (
         <Card className="p-6 text-center">
