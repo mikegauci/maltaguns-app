@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
+import { getAuthRedirectOrigin } from '@/lib/seo-host'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
@@ -561,6 +562,7 @@ function UsersPageComponent() {
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: `${getAuthRedirectOrigin()}/login`,
           data: {
             username: formData.username,
           },

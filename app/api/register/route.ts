@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { getAuthRedirectOrigin } from '@/lib/seo-host'
 
 function getClientIp(req: Request): string | null {
   const xff = req.headers.get('x-forwarded-for')
@@ -31,7 +32,7 @@ export async function POST(req: Request) {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/login`,
+          emailRedirectTo: `${getAuthRedirectOrigin()}/login`,
           data: {
             username: data.username,
           },

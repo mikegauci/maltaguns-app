@@ -1,6 +1,12 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
 import { getFeatureEndDate } from '@/lib/featured-listings'
+import { MAX_FILES } from '@/app/marketplace/create/constants'
+import {
+  formatImageUrls,
+  isAllowedListingImageUrl,
+  resolveThumbnail,
+} from '@/lib/listing-images'
 
 type UpdateListingBody = {
   listingId: string
@@ -18,6 +24,7 @@ type UpdateListingBody = {
   refresh_edit_window?: boolean
   meta_title?: string | null
   meta_description?: string | null
+  images?: string[]
 }
 
 function parsePrice(price: string | number | undefined): number | undefined {
@@ -110,6 +117,41 @@ export async function POST(request: Request) {
         }
         updatePayload.editable_until = new Date(ts).toISOString()
       }
+    }
+
+    if (body.images !== undefined) {
+      if (!Array.isArray(body.images)) {
+        return NextResponse.json(
+          { error: 'Invalid images. Must be an array of strings.' },
+          { status: 400 }
+        )
+      }
+      if (body.images.length > MAX_FILES) {
+        return NextResponse.json(
+          {
+            error: `Invalid images. Maximum ${MAX_FILES} images allowed.`,
+          },
+          { status: 400 }
+        )
+      }
+      if (body.images.some(url => typeof url !== 'string' || !url.trim())) {
+        return NextResponse.json(
+          { error: 'Invalid images. Each image must be a non-empty string.' },
+          { status: 400 }
+        )
+      }
+      const imageUrls = body.images.map(url => url.trim())
+      if (imageUrls.some(url => !isAllowedListingImageUrl(url))) {
+        return NextResponse.json(
+          {
+            error:
+              'Invalid images. Only listing storage URLs or default site images are allowed.',
+          },
+          { status: 400 }
+        )
+      }
+      updatePayload.images = formatImageUrls(imageUrls)
+      updatePayload.thumbnail = resolveThumbnail(imageUrls)
     }
 
     const { data: updatedListing, error: updateError } = await supabaseAdmin
