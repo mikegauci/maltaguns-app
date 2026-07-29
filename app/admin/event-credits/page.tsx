@@ -14,6 +14,10 @@ import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import {
+  ADMIN_USER_USERNAME_EMAIL_SEARCH_KEYS,
+  ADMIN_USER_SEARCH_PLACEHOLDER,
+} from '@/lib/admin-user-types'
 
 const DataTable = nextDynamic(
   () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
@@ -34,7 +38,6 @@ function EventCreditsPageComponent() {
   const router = useRouter()
   const { toast } = useToast()
   const [eventCredits, setEventCredits] = useState<EventCredit[]>([])
-  const [profiles, setProfiles] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -87,16 +90,6 @@ function EventCreditsPageComponent() {
       } else {
         setError('Unexpected data format received')
         setEventCredits([])
-      }
-
-      // Also fetch all profiles for the add dialog
-      const { data: allProfiles } = await supabase
-        .from('profiles')
-        .select('id, username, email')
-        .order('username', { ascending: true })
-
-      if (allProfiles) {
-        setProfiles(allProfiles)
       }
     } catch (error) {
       console.error('Error fetching event credits:', error)
@@ -246,8 +239,8 @@ function EventCreditsPageComponent() {
       <DataTable
         columns={columns}
         data={eventCredits}
-        searchKey="username"
-        searchPlaceholder="Search by username..."
+        searchKeys={[...ADMIN_USER_USERNAME_EMAIL_SEARCH_KEYS]}
+        searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
       />
 
       {selectedEventCredit && (
@@ -262,7 +255,6 @@ function EventCreditsPageComponent() {
       <AddEventCreditDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        profiles={profiles}
         onSuccess={fetchData}
       />
     </PageLayout>

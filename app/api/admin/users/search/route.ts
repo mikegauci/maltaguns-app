@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ users }, { status: 200 })
   } catch (error) {
-    console.error('[ADMIN NOTIFICATIONS USERS] Unexpected error:', error)
+    console.error('[ADMIN USERS SEARCH] Unexpected error:', error)
     return NextResponse.json(
       { error: 'An unexpected error occurred' },
       { status: 500 }

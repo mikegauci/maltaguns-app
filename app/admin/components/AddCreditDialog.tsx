@@ -22,54 +22,31 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
+import { AdminUserPicker } from '@/app/admin/components/AdminUserPicker'
 import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
-import { Check, ChevronsUpDown, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import type { AdminSearchUser } from '@/lib/admin-user-types'
 
-// Define the form schema
 const formSchema = z.object({
   user_id: z.string().min(1, 'User is required'),
   amount: z.string().min(1, 'Amount is required'),
 })
 
-interface Profile {
-  id: string
-  username?: string
-  email?: string
-  full_name?: string
-}
-
 interface AddCreditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  profiles: Profile[]
   onSuccess?: () => void
 }
 
 export function AddCreditDialog({
   open, // eslint-disable-line unused-imports/no-unused-vars
   onOpenChange,
-  profiles,
   onSuccess,
 }: AddCreditDialogProps) {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
-  const [userPickerOpen, setUserPickerOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<AdminSearchUser | null>(null)
 
-  // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -78,13 +55,13 @@ export function AddCreditDialog({
     },
   })
 
-  // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       form.reset({
         user_id: '',
         amount: '',
       })
+      setSelectedUser(null)
     }
   }, [open, form])
 
@@ -92,7 +69,6 @@ export function AddCreditDialog({
     try {
       setIsLoading(true)
 
-      // Use the admin API endpoint to create the credit
       const response = await fetch(`/api/admin/credits/create`, {
         method: 'POST',
         headers: {
@@ -109,9 +85,8 @@ export function AddCreditDialog({
         throw new Error(error.message || 'Failed to create credit')
       }
 
-      const selectedProfile = profiles.find(p => p.id === values.user_id)
       const profileName =
-        selectedProfile?.username || selectedProfile?.email || 'user'
+        selectedUser?.username || selectedUser?.email || 'user'
 
       toast({
         title: 'Credits Added',
@@ -145,84 +120,19 @@ export function AddCreditDialog({
             <FormField
               control={form.control}
               name="user_id"
-              render={({ field }) => {
-                const selectedProfile = profiles.find(p => p.id === field.value)
-                const formatProfileLabel = (profile: Profile) => {
-                  const name = profile.username || profile.email || profile.id
-                  const suffix =
-                    profile.email && profile.username
-                      ? ` (${profile.email})`
-                      : ''
-                  return `${name}${suffix}`
-                }
-
-                return (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>User</FormLabel>
-                    <Popover
-                      open={userPickerOpen}
-                      onOpenChange={setUserPickerOpen}
-                    >
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={userPickerOpen}
-                            className={cn(
-                              'w-full justify-between font-normal',
-                              !field.value && 'text-muted-foreground'
-                            )}
-                          >
-                            {selectedProfile
-                              ? formatProfileLabel(selectedProfile)
-                              : 'Select a user'}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        className="w-[--radix-popover-trigger-width] p-0"
-                        align="start"
-                      >
-                        <Command>
-                          <CommandInput placeholder="Search user..." />
-                          <CommandList>
-                            <CommandEmpty>No user found.</CommandEmpty>
-                            <CommandGroup>
-                              {profiles.map(profile => {
-                                const label = formatProfileLabel(profile)
-                                return (
-                                  <CommandItem
-                                    key={profile.id}
-                                    value={`${profile.username ?? ''} ${profile.email ?? ''} ${profile.full_name ?? ''} ${profile.id}`}
-                                    onSelect={() => {
-                                      field.onChange(profile.id)
-                                      setUserPickerOpen(false)
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        'mr-2 h-4 w-4',
-                                        field.value === profile.id
-                                          ? 'opacity-100'
-                                          : 'opacity-0'
-                                      )}
-                                    />
-                                    {label}
-                                  </CommandItem>
-                                )
-                              })}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )
-              }}
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>User</FormLabel>
+                  <FormControl>
+                    <AdminUserPicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      onUserSelect={setSelectedUser}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <FormField

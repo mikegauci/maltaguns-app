@@ -22,46 +22,31 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { AdminUserPicker } from '@/app/admin/components/AdminUserPicker'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
+import type { AdminSearchUser } from '@/lib/admin-user-types'
 
-// Define the form schema
 const formSchema = z.object({
   user_id: z.string().min(1, 'User is required'),
   amount: z.string().min(1, 'Amount is required'),
 })
 
-interface Profile {
-  id: string
-  username?: string
-  email?: string
-  full_name?: string
-}
-
 interface AddEventCreditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  profiles: Profile[]
   onSuccess?: () => void
 }
 
 export function AddEventCreditDialog({
   open, // eslint-disable-line unused-imports/no-unused-vars
   onOpenChange,
-  profiles,
   onSuccess,
 }: AddEventCreditDialogProps) {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<AdminSearchUser | null>(null)
 
-  // Initialize form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -70,13 +55,13 @@ export function AddEventCreditDialog({
     },
   })
 
-  // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       form.reset({
         user_id: '',
         amount: '',
       })
+      setSelectedUser(null)
     }
   }, [open, form])
 
@@ -84,7 +69,6 @@ export function AddEventCreditDialog({
     try {
       setIsLoading(true)
 
-      // Use the admin API endpoint to create the event credit
       const response = await fetch(`/api/admin/event-credits/create`, {
         method: 'POST',
         headers: {
@@ -101,9 +85,8 @@ export function AddEventCreditDialog({
         throw new Error(error.message || 'Failed to create event credit')
       }
 
-      const selectedProfile = profiles.find(p => p.id === values.user_id)
       const profileName =
-        selectedProfile?.username || selectedProfile?.email || 'user'
+        selectedUser?.username || selectedUser?.email || 'user'
 
       toast({
         title: 'Event Credits Added',
@@ -140,28 +123,15 @@ export function AddEventCreditDialog({
               control={form.control}
               name="user_id"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>User</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a user" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {profiles.map(profile => (
-                        <SelectItem key={profile.id} value={profile.id}>
-                          {profile.username || profile.email || profile.id}
-                          {profile.email && profile.username
-                            ? ` (${profile.email})`
-                            : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <AdminUserPicker
+                      value={field.value}
+                      onChange={field.onChange}
+                      onUserSelect={setSelectedUser}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

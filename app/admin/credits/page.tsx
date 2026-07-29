@@ -17,6 +17,10 @@ import { AddCreditDialog } from '@/app/admin/components/AddCreditDialog'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
+import {
+  ADMIN_USER_USERNAME_EMAIL_SEARCH_KEYS,
+  ADMIN_USER_SEARCH_PLACEHOLDER,
+} from '@/lib/admin-user-types'
 
 const DataTable = nextDynamic(
   () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
@@ -37,7 +41,6 @@ function CreditsPageComponent() {
   const router = useRouter()
   const { toast } = useToast()
   const [credits, setCredits] = useState<Credit[]>([])
-  const [profiles, setProfiles] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -90,16 +93,6 @@ function CreditsPageComponent() {
       } else {
         setError('Unexpected data format received')
         setCredits([])
-      }
-
-      // Also fetch all profiles for the add dialog
-      const { data: allProfiles } = await supabase
-        .from('profiles')
-        .select('id, username, email')
-        .order('username', { ascending: true })
-
-      if (allProfiles) {
-        setProfiles(allProfiles)
       }
     } catch (error) {
       console.error('Error fetching credits:', error)
@@ -228,8 +221,8 @@ function CreditsPageComponent() {
       <DataTable
         columns={columns}
         data={credits}
-        searchKey="username"
-        searchPlaceholder="Search by username..."
+        searchKeys={[...ADMIN_USER_USERNAME_EMAIL_SEARCH_KEYS]}
+        searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
       />
 
       {selectedCredit && (
@@ -244,7 +237,6 @@ function CreditsPageComponent() {
       <AddCreditDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        profiles={profiles}
         onSuccess={fetchData}
       />
     </PageLayout>

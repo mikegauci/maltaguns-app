@@ -21,6 +21,10 @@ import { BackButton } from '@/components/ui/back-button'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
 import {
+  ADMIN_USER_FULL_SEARCH_KEYS,
+  ADMIN_USER_SEARCH_PLACEHOLDER,
+} from '@/lib/admin-user-types'
+import {
   createAllLicenseTypes,
   createEmptyLicenseTypes,
   formatLicenseName,
@@ -1199,8 +1203,8 @@ function UsersPageComponent() {
       <DataTable
         columns={columns}
         data={users}
-        searchKey="username"
-        searchPlaceholder="Search users..."
+        searchKeys={[...ADMIN_USER_FULL_SEARCH_KEYS]}
+        searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
         onCreateNew={handleCreate}
         createButtonText="Create User"
       />
