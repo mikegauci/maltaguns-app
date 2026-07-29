@@ -333,10 +333,7 @@ export default function EditListing(props: {
 
     const files = Array.from(event.target.files)
 
-    const validationError = validateListingImageFiles(
-      files,
-      previewUrls.length
-    )
+    const validationError = validateListingImageFiles(files, previewUrls.length)
     if (validationError) {
       toast({
         variant: 'destructive',

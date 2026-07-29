@@ -37,7 +37,9 @@ export function validateListingImageFiles(
   return null
 }
 
-export function listingImageValidationToast(error: ListingImageValidationError): {
+export function listingImageValidationToast(
+  error: ListingImageValidationError
+): {
   title: string
   description: string
 } {

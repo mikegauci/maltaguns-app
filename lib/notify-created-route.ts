@@ -12,18 +12,18 @@ type NotificationPayload = {
   dedupeKey: string
 }
 
-export function createNotifyCreatedRoute<TBody extends Record<string, unknown>>(
-  config: {
-    logLabel: string
-    bodySchema: z.ZodType<TBody>
-    getResourceId: (body: TBody) => string
-    table: string
-    select: string
-    getOwnerId: (resource: Record<string, unknown>) => string
-    notFoundMessage: string
-    buildNotification: (resource: Record<string, unknown>) => NotificationPayload
-  }
-) {
+export function createNotifyCreatedRoute<
+  TBody extends Record<string, unknown>,
+>(config: {
+  logLabel: string
+  bodySchema: z.ZodType<TBody>
+  getResourceId: (body: TBody) => string
+  table: string
+  select: string
+  getOwnerId: (resource: Record<string, unknown>) => string
+  notFoundMessage: string
+  buildNotification: (resource: Record<string, unknown>) => NotificationPayload
+}) {
   return async function POST(request: Request) {
     try {
       const auth = await requireAuthenticatedUser()

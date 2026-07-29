@@ -3,7 +3,12 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { UseFormSetValue } from 'react-hook-form'
-import { moveImageToPrimary, listingImageValidationToast, uploadListingImages, validateListingImageFiles } from '@/lib/listing-images'
+import {
+  moveImageToPrimary,
+  listingImageValidationToast,
+  uploadListingImages,
+  validateListingImageFiles,
+} from '@/lib/listing-images'
 
 interface UseImageUploadProps {
   toast: (_options: {
