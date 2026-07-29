@@ -146,13 +146,7 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
   )
 }
 
-function CreatedSuccessBanner({
-  listingTitle,
-  isOwner,
-}: {
-  listingTitle: string
-  isOwner: boolean
-}) {
+function CreatedSuccessBanner({ listingTitle }: { listingTitle: string }) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [dismissed, setDismissed] = useState(false)
@@ -161,7 +155,7 @@ function CreatedSuccessBanner({
   const createdParam = searchParams.get('created') === '1'
 
   useEffect(() => {
-    if (!createdParam || !isOwner) return
+    if (!createdParam) return
 
     const failed = searchParams.get('notify') === '0'
     startTransition(() => {
@@ -169,9 +163,9 @@ function CreatedSuccessBanner({
       setShowBanner(true)
     })
     router.replace(`/marketplace/listing/${slugify(listingTitle)}`)
-  }, [createdParam, isOwner, router, listingTitle, searchParams])
+  }, [createdParam, router, listingTitle, searchParams])
 
-  if (!showBanner || !isOwner || dismissed) return null
+  if (!showBanner || dismissed) return null
 
   return (
     <Alert
@@ -871,7 +865,7 @@ export default function ListingClient({
   return (
     <PageLayout>
       <Suspense fallback={null}>
-        <CreatedSuccessBanner listingTitle={listing.title} isOwner={isOwner} />
+        <CreatedSuccessBanner listingTitle={listing.title} />
       </Suspense>
 
       <div className="mb-6 flex items-center justify-between">

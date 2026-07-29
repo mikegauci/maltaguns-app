@@ -2,11 +2,10 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
 import { createAndEmailNotification } from '@/lib/notify-created'
-import { slugify } from '@/app/marketplace/create/utils'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 const bodySchema = z.object({
-  listingId: z.string().uuid(),
+  eventId: z.string().uuid(),
 })
 
 export async function POST(request: Request) {
@@ -24,37 +23,37 @@ export async function POST(request: Request) {
       )
     }
 
-    const { listingId } = parsed.data
+    const { eventId } = parsed.data
 
-    const { data: listing, error: listingError } = await supabaseAdmin
-      .from('listings')
-      .select('id, seller_id, title')
-      .eq('id', listingId)
+    const { data: event, error: eventError } = await supabaseAdmin
+      .from('events')
+      .select('id, created_by, title, slug')
+      .eq('id', eventId)
       .single()
 
-    if (listingError || !listing) {
-      return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
+    if (eventError || !event) {
+      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
     }
 
-    if (listing.seller_id !== user.id) {
+    if (event.created_by !== user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const listingPath = `/marketplace/listing/${slugify(listing.title)}`
-    const dedupeKey = `listing_created:${listing.id}`
+    const eventPath = `/events/${event.slug || event.id}`
+    const dedupeKey = `event_created:${event.id}`
 
     const result = await createAndEmailNotification({
       userId: user.id,
-      type: 'listing_created',
-      title: 'Listing successfully created',
-      body: `Your listing "${listing.title}" is now live on MaltaGuns. You can manage all your listings from your profile.`,
-      linkUrl: listingPath,
+      type: 'event_created',
+      title: 'Event successfully created',
+      body: `Your event "${event.title}" is now live on MaltaGuns. You can manage your events from your profile.`,
+      linkUrl: eventPath,
       dedupeKey,
     })
 
     return NextResponse.json({ ok: result.ok })
   } catch (error) {
-    console.error('[NOTIFY CREATED] Unexpected error:', error)
+    console.error('[NOTIFY EVENT CREATED] Unexpected error:', error)
     return NextResponse.json(
       {
         error:

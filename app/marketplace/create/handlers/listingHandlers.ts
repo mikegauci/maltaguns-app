@@ -2,6 +2,7 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
 import { slugify } from '../utils'
 import { formatImageUrls, resolveThumbnail } from '@/lib/listing-images'
+import { postNotifyCreated } from '@/lib/notify-created-client'
 
 interface CreateListingDependencies {
   supabase: SupabaseClient
@@ -11,33 +12,14 @@ interface CreateListingDependencies {
     description?: string
     variant?: 'default' | 'destructive'
   }) => void
-  setIsSubmitting: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setIsSubmitting: (value: boolean) => void
 }
 
 export function createListingHandlers(deps: CreateListingDependencies) {
   const { supabase, router, toast, setIsSubmitting } = deps
 
   async function notifyListingCreated(listingId: string): Promise<boolean> {
-    try {
-      const res = await fetch('/api/listings/notify-created', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        console.error(
-          'Failed to send listing created notification:',
-          res.status,
-          body
-        )
-        return false
-      }
-      return true
-    } catch (error) {
-      console.error('Failed to send listing created notification:', error)
-      return false
-    }
+    return postNotifyCreated('/api/listings/notify-created', { listingId })
   }
 
   function redirectAfterCreate(listingPath: string, notifyOk: boolean) {
@@ -54,7 +36,7 @@ export function createListingHandlers(deps: CreateListingDependencies) {
     price: number
     images: any[]
     credits: number
-    setCredits: (credits: number) => void // eslint-disable-line unused-imports/no-unused-vars
+    setCredits: (credits: number) => void
   }) {
     try {
       setIsSubmitting(true)

@@ -34,6 +34,7 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { resizeImageForUpload } from '@/lib/image-resize'
+import { postNotifyCreated } from '@/lib/notify-created-client'
 import { BackButton } from '@/components/ui/back-button'
 import { Loader2 } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -403,8 +404,7 @@ export default function CreateEventPage() {
       // Generate slug from title
       const slug = slugify(data.title)
 
-      // Create the event with correct column names
-      const { error: eventError } = await supabase
+      const { data: createdEvent, error: eventError } = await supabase
         .from('events')
         .insert({
           title: data.title,
@@ -423,10 +423,11 @@ export default function CreateEventPage() {
           created_by: session.user.id,
           slug: slug,
         })
-        .select()
+        .select('id, title, slug')
         .single()
 
       if (eventError) throw eventError
+      if (!createdEvent) throw new Error('Event was not created')
 
       // Deduct one credit
       const { error: creditError } = await supabase
@@ -458,14 +459,14 @@ export default function CreateEventPage() {
       setCredits(credits - 1)
       setHasCredits(credits - 1 > 0)
 
-      toast({
-        title: 'Event created',
-        description: 'Your event has been created successfully',
+      const eventSlug = createdEvent.slug || createdEvent.id
+      const notifyOk = await postNotifyCreated('/api/events/notify-created', {
+        eventId: createdEvent.id,
       })
 
-      // Keep isSubmitting true during redirection
-      // Redirect to the slug instead of ID
-      router.push(`/events/${slug}`)
+      const params = new URLSearchParams({ created: '1' })
+      if (!notifyOk) params.set('notify', '0')
+      router.push(`/events/${eventSlug}?${params.toString()}`)
     } catch (error) {
       console.error('Submit error:', error)
       toast({

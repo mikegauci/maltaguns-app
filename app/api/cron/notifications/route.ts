@@ -6,11 +6,14 @@ import {
 } from '@/lib/notification-email'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { signUnsubscribeToken } from '@/lib/unsubscribe'
+import { PERMANENT_EMAIL_FAILURE } from '@/lib/notify-created'
 
 type PendingNotification = NotificationEmailPayload & {
   id: string
   user_id: string
   created_at: string
+  email_status: string
+  email_error: string | null
 }
 
 function startOfUtcDay(d: Date): Date {
@@ -166,16 +169,24 @@ async function sendPendingEmails(): Promise<{
   sent: number
   failed: number
 }> {
-  const { data: pending, error: pendingErr } = await supabaseAdmin
+  const { data: rows, error: pendingErr } = await supabaseAdmin
     .from('notifications')
-    .select('id, user_id, type, title, body, link_url, created_at')
-    .eq('email_status', 'pending')
+    .select(
+      'id, user_id, type, title, body, link_url, created_at, email_status, email_error'
+    )
     .is('email_sent_at', null)
+    .in('email_status', ['pending', 'failed'])
     .order('created_at', { ascending: true })
     .limit(50)
 
   if (pendingErr) throw pendingErr
-  const pendingNotifications = (pending || []) as PendingNotification[]
+  const pendingNotifications = ((rows || []) as PendingNotification[]).filter(
+    n =>
+      n.email_error !== 'sending' &&
+      !(
+        n.email_status === 'failed' && n.email_error === PERMANENT_EMAIL_FAILURE
+      )
+  )
 
   if (pendingNotifications.length === 0) {
     return { attempted: 0, sent: 0, failed: 0 }
@@ -240,9 +251,9 @@ async function sendPendingEmails(): Promise<{
       await supabaseAdmin
         .from('notifications')
         .update({
-          email_status: 'failed',
+          email_status: 'pending',
           email_error: result.error ?? 'Resend error',
-          email_sent_at: new Date().toISOString(),
+          email_sent_at: null,
         })
         .eq('id', n.id)
       continue

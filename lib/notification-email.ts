@@ -38,6 +38,9 @@ export function ctaLabelForType(type: string): string {
     case 'listing_expiring':
     case 'listing_expired':
       return 'View listing'
+    case 'event_created':
+    case 'event_new':
+      return 'View event'
     case 'license_expiring':
     case 'license_approved':
     case 'id_card_approved':
