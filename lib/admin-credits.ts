@@ -149,9 +149,9 @@ export function createCreditsUpdateHandler(config: {
       const body = await req.json()
       const { amount } = body
 
-      let query = admin.from(config.table).select(
-        config.identifyBy === 'id' ? 'id' : '*'
-      )
+      let query = admin
+        .from(config.table)
+        .select(config.identifyBy === 'id' ? 'id' : '*')
 
       if (config.identifyBy === 'id') {
         const { id } = body
