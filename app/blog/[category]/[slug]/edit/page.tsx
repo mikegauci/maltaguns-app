@@ -25,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { resizeImageForUpload } from '@/lib/image-resize'
+import { useFeaturedImageUpload } from '@/hooks/useFeaturedImageUpload'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import { Loader2 } from 'lucide-react'
@@ -46,14 +46,6 @@ const BlogEditor = dynamic(() => import('@/components/blog/BlogEditor'), {
     </div>
   ),
 })
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024
-const ACCEPTED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-]
 
 const formSchema = z.object({
   title: z.string().min(1, { message: 'Title is required' }),
@@ -77,7 +69,6 @@ export default function EditBlogPost(props: {
   const { toast } = useToast()
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
-  const [uploadingImage, setUploadingImage] = useState(false)
   const [postId, setPostId] = useState<string | null>(null)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -207,85 +198,11 @@ export default function EditBlogPost(props: {
     }
   }, [params.slug, router, form, supabase, toast])
 
-  async function handleImageUpload(event: React.ChangeEvent<HTMLInputElement>) {
-    try {
-      const file = event.target.files?.[0]
-      if (!file) return
-
-      if (file.size > MAX_FILE_SIZE) {
-        toast({
-          variant: 'destructive',
-          title: 'File too large',
-          description: 'Featured image must be less than 5MB',
-        })
-        return
-      }
-
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid file type',
-          description: 'Please upload a valid image file (JPEG, PNG, or WebP)',
-        })
-        return
-      }
-
-      setUploadingImage(true)
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (sessionError) {
-        console.error('Session error:', sessionError)
-        throw new Error('Authentication error: ' + sessionError.message)
-      }
-
-      if (!session?.user.id) {
-        throw new Error('Not authenticated')
-      }
-
-      // Downscale + re-encode to WebP before upload to cut Storage egress.
-      const resized = await resizeImageForUpload(file)
-      const fileExt = resized.name.split('.').pop()
-      const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-      const filePath = `blog/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('blog')
-        .upload(filePath, resized, {
-          // Unique filename per upload (never overwritten) - cache for 1 year.
-          cacheControl: '31536000',
-          upsert: false,
-          contentType: resized.type,
-        })
-
-      if (uploadError) {
-        throw uploadError
-      }
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('blog').getPublicUrl(filePath)
-
-      form.setValue('featuredImage', publicUrl)
-
-      toast({
-        title: 'Image uploaded',
-        description: 'Your featured image has been uploaded successfully',
-      })
-    } catch (error) {
-      console.error('Image upload error:', error)
-      toast({
-        variant: 'destructive',
-        title: 'Upload failed',
-        description:
-          error instanceof Error ? error.message : 'Failed to upload image',
-      })
-    } finally {
-      setUploadingImage(false)
-    }
-  }
+  const { uploadingImage, handleImageUpload } = useFeaturedImageUpload({
+    supabase,
+    toast,
+    onUploaded: url => form.setValue('featuredImage', url),
+  })
 
   async function onSubmit(data: FormData) {
     if (!postId) return

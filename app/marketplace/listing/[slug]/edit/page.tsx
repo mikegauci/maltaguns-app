@@ -32,14 +32,16 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { resizeImageForUpload } from '@/lib/image-resize'
 import {
   DEFAULT_LISTING_IMAGE,
   formatImageUrls,
   getListingStoragePathFromUrl,
+  listingImageValidationToast,
   moveImageToPrimary,
   parseImageUrls,
   resolveThumbnail,
+  uploadListingImages,
+  validateListingImageFiles,
   withoutDefaultListingImage,
 } from '@/lib/listing-images'
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
@@ -332,33 +334,16 @@ export default function EditListing(props: {
 
     const files = Array.from(event.target.files)
 
-    if (files.length + previewUrls.length > MAX_FILES) {
+    const validationError = validateListingImageFiles(
+      files,
+      previewUrls.length
+    )
+    if (validationError) {
       toast({
-        title: 'Too many files',
-        description: `Maximum ${MAX_FILES} images allowed`,
         variant: 'destructive',
+        ...listingImageValidationToast(validationError),
       })
       return
-    }
-
-    for (const file of files) {
-      if (file.size > MAX_FILE_SIZE) {
-        toast({
-          title: 'File too large',
-          description: `${file.name} exceeds 5MB limit`,
-          variant: 'destructive',
-        })
-        return
-      }
-
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        toast({
-          title: 'Invalid file type',
-          description: `${file.name} is not a supported image format`,
-          variant: 'destructive',
-        })
-        return
-      }
     }
 
     setIsUploading(true)
@@ -379,30 +364,13 @@ export default function EditListing(props: {
         throw new Error('Not authenticated')
       }
 
-      for (const file of files) {
-        const resized = await resizeImageForUpload(file)
-        const fileExt = resized.name.split('.').pop()
-        const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-        const filePath = `listings/${listingId}/${fileName}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('listings')
-          .upload(filePath, resized, {
-            cacheControl: '31536000',
-            upsert: false,
-            contentType: resized.type,
-          })
-
-        if (uploadError) {
-          throw uploadError
-        }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('listings').getPublicUrl(filePath)
-
-        uploadedUrls.push(publicUrl)
-      }
+      const urls = await uploadListingImages({
+        supabase,
+        files,
+        userId: session.user.id,
+        listingId,
+      })
+      uploadedUrls.push(...urls)
 
       setPreviewUrls(prev => [...prev, ...uploadedUrls])
 

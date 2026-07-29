@@ -3,9 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { UseFormSetValue } from 'react-hook-form'
-import { MAX_FILE_SIZE, MAX_FILES, ACCEPTED_IMAGE_TYPES } from '../constants'
-import { resizeImageForUpload } from '@/lib/image-resize'
-import { moveImageToPrimary } from '@/lib/listing-images'
+import { moveImageToPrimary, listingImageValidationToast, uploadListingImages, validateListingImageFiles } from '@/lib/listing-images'
 
 interface UseImageUploadProps {
   toast: (_options: {
@@ -27,33 +25,16 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
     try {
       const files = Array.from(event.target.files || [])
 
-      if (files.length + uploadedImages.length > MAX_FILES) {
+      const validationError = validateListingImageFiles(
+        files,
+        uploadedImages.length
+      )
+      if (validationError) {
         toast({
           variant: 'destructive',
-          title: 'Too many files',
-          description: `Maximum ${MAX_FILES} images allowed`,
+          ...listingImageValidationToast(validationError),
         })
         return
-      }
-
-      for (const file of files) {
-        if (file.size > MAX_FILE_SIZE) {
-          toast({
-            variant: 'destructive',
-            title: 'File too large',
-            description: `${file.name} exceeds 5MB limit`,
-          })
-          return
-        }
-
-        if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-          toast({
-            variant: 'destructive',
-            title: 'Invalid file type',
-            description: `${file.name} is not a supported image format`,
-          })
-          return
-        }
       }
 
       setUploading(true)
@@ -69,35 +50,11 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
         throw new Error('Not authenticated')
       }
 
-      const uploadedUrls: string[] = []
-
-      for (const file of files) {
-        const resized = await resizeImageForUpload(file)
-        const fileExt = resized.name.split('.').pop()
-        const fileName = `${sessionData.session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-        const filePath = `listings/${fileName}`
-
-        console.log('Attempting to upload file:', filePath)
-
-        const { error: uploadError } = await supabase.storage
-          .from('listings')
-          .upload(filePath, resized, {
-            cacheControl: '31536000',
-            upsert: false,
-            contentType: resized.type,
-          })
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError)
-          throw new Error('Upload failed: ' + uploadError.message)
-        }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('listings').getPublicUrl(filePath)
-
-        uploadedUrls.push(publicUrl)
-      }
+      const uploadedUrls = await uploadListingImages({
+        supabase,
+        files,
+        userId: sessionData.session.user.id,
+      })
 
       const newImages = [...uploadedImages, ...uploadedUrls]
       setUploadedImages(newImages)

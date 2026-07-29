@@ -34,11 +34,13 @@ import { cn } from '@/lib/utils'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { createClient } from '@/lib/supabase/client'
-import { resizeImageForUpload } from '@/lib/image-resize'
 import {
   getListingStoragePathFromUrl,
+  listingImageValidationToast,
   moveImageToPrimary,
   parseImageUrls,
+  uploadListingImages,
+  validateListingImageFiles,
   withoutDefaultListingImage,
 } from '@/lib/listing-images'
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
@@ -396,33 +398,13 @@ function ListingsPageComponent() {
     const listingId = selectedListing.id
     const files = Array.from(event.target.files)
 
-    if (files.length + imageUrls.length > MAX_FILES) {
+    const validationError = validateListingImageFiles(files, imageUrls.length)
+    if (validationError) {
       toast({
         variant: 'destructive',
-        title: 'Too many files',
-        description: `Maximum ${MAX_FILES} images allowed`,
+        ...listingImageValidationToast(validationError),
       })
       return
-    }
-
-    for (const file of files) {
-      if (file.size > MAX_FILE_SIZE) {
-        toast({
-          variant: 'destructive',
-          title: 'File too large',
-          description: `${file.name} exceeds 5MB limit`,
-        })
-        return
-      }
-
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        toast({
-          variant: 'destructive',
-          title: 'Invalid file type',
-          description: `${file.name} is not a supported image format`,
-        })
-        return
-      }
     }
 
     setIsUploading(true)
@@ -442,34 +424,14 @@ function ListingsPageComponent() {
         throw new Error('Not authenticated')
       }
 
-      for (const file of files) {
-        if (editListingIdRef.current !== listingId) {
-          break
-        }
-
-        const resized = await resizeImageForUpload(file)
-        const fileExt = resized.name.split('.').pop()
-        const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-        const filePath = `listings/${listingId}/${fileName}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('listings')
-          .upload(filePath, resized, {
-            cacheControl: '31536000',
-            upsert: false,
-            contentType: resized.type,
-          })
-
-        if (uploadError) {
-          throw uploadError
-        }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('listings').getPublicUrl(filePath)
-
-        uploadedUrls.push(publicUrl)
-      }
+      const urls = await uploadListingImages({
+        supabase,
+        files,
+        userId: session.user.id,
+        listingId,
+        shouldContinue: () => editListingIdRef.current === listingId,
+      })
+      uploadedUrls.push(...urls)
 
       if (editListingIdRef.current !== listingId) {
         await removeStorageImages(uploadedUrls)
