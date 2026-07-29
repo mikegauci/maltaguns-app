@@ -251,6 +251,7 @@ export default function ListingClient({
         .from('stores')
         .select('id')
         .eq('owner_id', listing.seller_id)
+        .eq('status', 'active')
         .limit(1)
 
       if (error) {

@@ -3,7 +3,8 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Phone, Mail, Globe, BookOpen } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Phone, Mail, Globe, BookOpen, Clock, XCircle } from 'lucide-react'
 import Link from 'next/link'
 import { StorageImage } from '@/components/ui/storage-image'
 import { useEffect, useState } from 'react'
@@ -51,6 +52,7 @@ export default function EstablishmentClient({
 
   const config = getEstablishmentConfig(type)
   const Icon = config.icon
+  const isLive = establishment.status === 'active'
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -122,6 +124,27 @@ export default function EstablishmentClient({
         title={establishment.business_name}
         description={establishment.location}
       />
+
+      {!isLive && (
+        <Alert
+          className={
+            establishment.status === 'pending'
+              ? 'mb-6 border-amber-200 bg-amber-50 text-amber-900'
+              : 'mb-6 border-red-200 bg-red-50 text-red-900'
+          }
+        >
+          {establishment.status === 'pending' ? (
+            <Clock className="h-4 w-4" />
+          ) : (
+            <XCircle className="h-4 w-4" />
+          )}
+          <AlertDescription>
+            {establishment.status === 'pending'
+              ? 'This establishment is pending approval and is not visible to the public yet. You will be notified once it is approved.'
+              : 'This establishment was not approved and is not visible to the public.'}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {isOwner && (
         <EditButton
@@ -246,7 +269,7 @@ export default function EstablishmentClient({
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold mb-2">Latest Posts</h2>
 
-          {isOwner && (
+          {isOwner && isLive && (
             <Link
               href={`/blog/create?${config.createQueryParam}=${establishment.id}`}
             >

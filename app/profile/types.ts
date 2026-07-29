@@ -39,6 +39,8 @@ export interface Listing {
   is_expired: boolean
 }
 
+export type EstablishmentStatus = 'pending' | 'active' | 'rejected'
+
 export interface Store {
   id: string
   business_name: string
@@ -50,6 +52,7 @@ export interface Store {
   description: string | null
   owner_id: string
   slug: string
+  status: EstablishmentStatus
 }
 
 export interface Club extends Store {}

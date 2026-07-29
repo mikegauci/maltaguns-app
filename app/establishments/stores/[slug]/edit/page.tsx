@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
+import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 
@@ -236,29 +237,12 @@ export default function EditStorePage(props: {
         throw new Error('Not authenticated')
       }
 
-      // Create a unique file name
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-      const filePath = `stores/${fileName}`
+      const publicUrl = await uploadEstablishmentLogo(
+        supabase,
+        file,
+        session.user.id
+      )
 
-      // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('stores')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-
-      if (uploadError) {
-        throw uploadError
-      }
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('stores').getPublicUrl(filePath)
-
-      // Update form
       form.setValue('logoUrl', publicUrl)
 
       toast({

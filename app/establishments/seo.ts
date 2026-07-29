@@ -26,5 +26,6 @@ export async function generateEstablishmentMetadata(
     image: establishment.logo_url || undefined,
     path: `/establishments/${type}/${slug}`,
     siteSettings,
+    noIndex: establishment.status !== 'active',
   })
 }

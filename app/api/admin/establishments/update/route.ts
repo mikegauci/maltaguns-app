@@ -30,20 +30,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (currentType === newType) {
-      const sourceTable = `${currentType}s`
+      const sourceTable =
+        currentType === 'servicing' ? 'servicing' : `${currentType}s`
 
-      const nameField =
-        currentType === 'store' || currentType === 'servicing'
-          ? 'business_name'
-          : 'name'
-
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
+        business_name: name,
         location,
         logo_url: logo_url || null,
-        ...otherFields,
+        email: otherFields.email ?? null,
+        phone: otherFields.phone ?? null,
+        description: otherFields.description ?? null,
+        website: otherFields.website ?? null,
+        meta_title: otherFields.meta_title ?? null,
+        meta_description: otherFields.meta_description ?? null,
       }
-
-      updateData[nameField] = name
 
       console.log(`Updating ${sourceTable} with:`, updateData)
 
@@ -72,20 +72,8 @@ export async function POST(req: NextRequest) {
 
     console.log(`Moving record from ${sourceTable} to ${targetTable}`)
 
-    const sourceNameField =
-      currentType === 'store' ||
-      currentType === 'servicing' ||
-      currentType === 'range'
-        ? 'business_name'
-        : 'name'
-
-    const targetNameField =
-      newType === 'store' ||
-      newType === 'servicing' ||
-      newType === 'club' ||
-      newType === 'range'
-        ? 'business_name'
-        : 'name'
+    const sourceNameField = 'business_name'
+    const targetNameField = 'business_name'
 
     console.log(
       `Source name field: ${sourceNameField}, Target name field: ${targetNameField}`
@@ -116,10 +104,22 @@ export async function POST(req: NextRequest) {
     const commonFields = {
       owner_id: currentRecord.owner_id,
       location: location || currentRecord.location,
-      phone: currentRecord.phone,
-      email: currentRecord.email,
-      description: currentRecord.description,
-      website: currentRecord.website,
+      phone:
+        otherFields.phone !== undefined
+          ? otherFields.phone
+          : currentRecord.phone,
+      email:
+        otherFields.email !== undefined
+          ? otherFields.email
+          : currentRecord.email,
+      description:
+        otherFields.description !== undefined
+          ? otherFields.description
+          : currentRecord.description,
+      website:
+        otherFields.website !== undefined
+          ? otherFields.website
+          : currentRecord.website,
       slug: currentRecord.slug,
       logo_url: logo_url !== undefined ? logo_url : currentRecord.logo_url,
       meta_title:
@@ -130,11 +130,8 @@ export async function POST(req: NextRequest) {
         otherFields.meta_description !== undefined
           ? otherFields.meta_description
           : currentRecord.meta_description,
+      status: currentRecord.status || 'active',
       created_at: new Date().toISOString(),
-    }
-
-    if (newType !== 'club' && currentRecord.status) {
-      commonFields['status' as keyof typeof commonFields] = currentRecord.status
     }
 
     const newRecord: any = {

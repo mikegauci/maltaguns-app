@@ -58,10 +58,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .from('blog_posts')
       .select('slug, category, updated_at, created_at')
       .eq('published', true),
-    supabase.from('stores').select('slug, updated_at, created_at'),
-    supabase.from('clubs').select('slug, created_at'),
-    supabase.from('ranges').select('slug, created_at'),
-    supabase.from('servicing').select('slug, created_at'),
+    supabase
+      .from('stores')
+      .select('slug, updated_at, created_at')
+      .eq('status', 'active'),
+    supabase.from('clubs').select('slug, created_at').eq('status', 'active'),
+    supabase.from('ranges').select('slug, created_at').eq('status', 'active'),
+    supabase
+      .from('servicing')
+      .select('slug, created_at')
+      .eq('status', 'active'),
   ])
 
   const nowIso = new Date().toISOString()

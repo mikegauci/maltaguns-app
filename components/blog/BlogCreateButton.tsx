@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Plus } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { userHasActiveEstablishment } from '@/lib/establishments'
 
 export function BlogCreateButton() {
   const { supabase, session } = useSupabase()
@@ -16,43 +17,15 @@ export function BlogCreateButton() {
     queryFn: async () => {
       if (!userId) return false
 
-      const [profileRes, storeRes, clubRes, rangeRes, servicingRes] =
-        await Promise.all([
-          supabase
-            .from('profiles')
-            .select('is_admin')
-            .eq('id', userId)
-            .single(),
-          supabase
-            .from('stores')
-            .select('id')
-            .eq('owner_id', userId)
-            .maybeSingle(),
-          supabase
-            .from('clubs')
-            .select('id')
-            .eq('owner_id', userId)
-            .maybeSingle(),
-          supabase
-            .from('ranges')
-            .select('id')
-            .eq('owner_id', userId)
-            .maybeSingle(),
-          supabase
-            .from('servicing')
-            .select('id')
-            .eq('owner_id', userId)
-            .maybeSingle(),
-        ])
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', userId)
+        .single()
 
-      const isAdmin = !!profileRes.data?.is_admin
-      const hasEstablishment =
-        !!storeRes.data ||
-        !!clubRes.data ||
-        !!rangeRes.data ||
-        !!servicingRes.data
+      if (profile?.is_admin) return true
 
-      return isAdmin || hasEstablishment
+      return userHasActiveEstablishment(supabase, userId)
     },
   })
 

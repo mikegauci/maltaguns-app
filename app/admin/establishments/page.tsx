@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/app/admin/components/ConfirmDialog'
 import { ActionCell } from '@/app/admin/components/ActionCell'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -20,7 +21,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { resizeImageForUpload } from '@/lib/image-resize'
+import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { Store, Building, Wrench, Target, Upload, X } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
@@ -41,6 +42,8 @@ interface Establishment {
   location: string
   email: string
   phone: string
+  description: string | null
+  website: string | null
   created_at: string
   slug: string
   status: string
@@ -66,6 +69,11 @@ function EstablishmentsPageComponent() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    establishment: Establishment
+    status: 'active' | 'rejected'
+  } | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [selectedEstablishment, setSelectedEstablishment] =
@@ -85,6 +93,10 @@ function EstablishmentsPageComponent() {
     name: '',
     type: '',
     location: '',
+    email: '',
+    phone: '',
+    description: '',
+    website: '',
     logo_url: '',
     meta_title: '',
     meta_description: '',
@@ -95,7 +107,14 @@ function EstablishmentsPageComponent() {
     servicing: 0,
     ranges: 0,
   })
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'pending' | 'active' | 'rejected'
+  >('all')
   const supabase = createClient()
+
+  function getTypePath(type: string) {
+    return type === 'servicing' ? 'servicing' : `${type}s`
+  }
 
   const columns: ColumnDef<Establishment>[] = [
     {
@@ -204,18 +223,24 @@ function EstablishmentsPageComponent() {
       enableSorting: true,
       cell: ({ row }) => {
         const status = row.getValue('status') as string
+        if (status === 'pending') {
+          return (
+            <span className="px-2 py-1 rounded text-xs bg-amber-100 text-amber-800">
+              Pending
+            </span>
+          )
+        }
+        if (status === 'rejected') {
+          return (
+            <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800">
+              Rejected
+            </span>
+          )
+        }
         return (
-          <div className="flex items-center">
-            {status === 'active' ? (
-              <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
-                Active
-              </span>
-            ) : (
-              <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800">
-                Inactive
-              </span>
-            )}
-          </div>
+          <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
+            Active
+          </span>
         )
       },
     },
@@ -223,21 +248,46 @@ function EstablishmentsPageComponent() {
       id: 'actions',
       cell: ({ row }) => {
         const establishment = row.original
+        const extraActions = []
+
+        if (establishment.status === 'pending') {
+          extraActions.push(
+            {
+              label: 'Approve',
+              onClick: () => openStatusChangeDialog(establishment, 'active'),
+            },
+            {
+              label: 'Reject',
+              onClick: () => openStatusChangeDialog(establishment, 'rejected'),
+              variant: 'destructive',
+            }
+          )
+        }
+
+        if (establishment.status === 'rejected') {
+          extraActions.push({
+            label: 'Approve',
+            onClick: () => openStatusChangeDialog(establishment, 'active'),
+          })
+        }
+
+        if (establishment.status === 'active') {
+          extraActions.push({
+            label: 'View Details',
+            onClick: () =>
+              window.open(
+                `/establishments/${getTypePath(establishment.type)}/${establishment.slug}`,
+                '_blank'
+              ),
+            variant: 'outline',
+          })
+        }
+
         return (
           <ActionCell
             onEdit={() => handleEdit(establishment)}
             onDelete={() => handleDelete(establishment)}
-            extraActions={[
-              {
-                label: 'View Details',
-                onClick: () =>
-                  window.open(
-                    `/establishments/${establishment.type}s/${establishment.slug}`,
-                    '_blank'
-                  ),
-                variant: 'outline',
-              },
-            ]}
+            extraActions={extraActions}
           />
         )
       },
@@ -373,34 +423,12 @@ function EstablishmentsPageComponent() {
         throw new Error('Authentication error')
       }
 
-      // Use retailers bucket as seen in existing data
-      const bucketName = 'retailers'
+      const publicUrl = await uploadEstablishmentLogo(
+        supabase,
+        file,
+        session.user.id
+      )
 
-      // Downscale + re-encode to WebP before upload to cut Storage egress.
-      const resized = await resizeImageForUpload(file)
-
-      // Create unique filename following existing pattern
-      const fileExt = resized.name.split('.').pop()
-      const fileName = `${session.user.id}-${Date.now()}.${fileExt}`
-      const filePath = `retailers/${fileName}` // Path structure matches existing data
-
-      const { error: uploadError } = await supabase.storage
-        .from(bucketName)
-        .upload(filePath, resized, {
-          // Unique filename per upload (never overwritten) - cache for 1 year.
-          cacheControl: '31536000',
-          upsert: false,
-          contentType: resized.type,
-        })
-
-      if (uploadError) throw uploadError
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from(bucketName).getPublicUrl(filePath)
-
-      // Update appropriate form
       if (isEdit) {
         setEditFormData({ ...editFormData, logo_url: publicUrl })
       } else {
@@ -454,6 +482,10 @@ function EstablishmentsPageComponent() {
       name: establishment.name,
       type: establishment.type,
       location: establishment.location,
+      email: establishment.email || '',
+      phone: establishment.phone || '',
+      description: establishment.description || '',
+      website: establishment.website || '',
       logo_url: establishment.logo_url || '',
       meta_title: establishment.meta_title || '',
       meta_description: establishment.meta_description || '',
@@ -464,6 +496,69 @@ function EstablishmentsPageComponent() {
   function handleDelete(establishment: Establishment) {
     setSelectedEstablishment(establishment)
     setIsDeleteDialogOpen(true)
+  }
+
+  function openStatusChangeDialog(
+    establishment: Establishment,
+    status: 'active' | 'rejected'
+  ) {
+    setPendingStatusChange({ establishment, status })
+    setIsStatusDialogOpen(true)
+  }
+
+  async function handleStatusChange(
+    establishment: Establishment,
+    status: 'active' | 'rejected'
+  ) {
+    try {
+      setIsSubmitting(true)
+
+      const response = await fetch('/api/admin/establishments/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: establishment.id,
+          type: establishment.type,
+          status,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update status')
+      }
+
+      toast({
+        title: 'Success',
+        description: result.message || 'Status updated successfully',
+      })
+
+      fetchEstablishments()
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to update establishment status',
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleStatusChangeSubmit() {
+    if (!pendingStatusChange) return
+    await handleStatusChange(
+      pendingStatusChange.establishment,
+      pendingStatusChange.status
+    )
+    setIsStatusDialogOpen(false)
+    setPendingStatusChange(null)
   }
 
   async function handleCreateSubmit() {
@@ -529,6 +624,10 @@ function EstablishmentsPageComponent() {
           newType: editFormData.type,
           name: editFormData.name,
           location: editFormData.location,
+          email: editFormData.email || null,
+          phone: editFormData.phone || null,
+          description: editFormData.description || null,
+          website: editFormData.website || null,
           logo_url: editFormData.logo_url || null,
           meta_title: editFormData.meta_title || null,
           meta_description: editFormData.meta_description || null,
@@ -647,9 +746,36 @@ function EstablishmentsPageComponent() {
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            { value: 'all', label: 'All' },
+            {
+              value: 'pending',
+              label: `Pending (${establishments.filter(e => e.status === 'pending').length})`,
+            },
+            { value: 'active', label: 'Active' },
+            { value: 'rejected', label: 'Rejected' },
+          ] as const
+        ).map(option => (
+          <Button
+            key={option.value}
+            variant={statusFilter === option.value ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setStatusFilter(option.value)}
+          >
+            {option.label}
+          </Button>
+        ))}
+      </div>
+
       <DataTable
         columns={columns}
-        data={establishments}
+        data={
+          statusFilter === 'all'
+            ? establishments
+            : establishments.filter(e => e.status === statusFilter)
+        }
         searchKey="name"
         searchPlaceholder="Search establishments..."
         onCreateNew={handleCreate}
@@ -946,6 +1072,59 @@ function EstablishmentsPageComponent() {
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input
+                id="edit-email"
+                type="email"
+                value={editFormData.email}
+                onChange={e =>
+                  setEditFormData({ ...editFormData, email: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-phone">Phone</Label>
+              <Input
+                id="edit-phone"
+                value={editFormData.phone}
+                onChange={e =>
+                  setEditFormData({ ...editFormData, phone: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-website">Website</Label>
+            <Input
+              id="edit-website"
+              type="url"
+              value={editFormData.website}
+              onChange={e =>
+                setEditFormData({ ...editFormData, website: e.target.value })
+              }
+              placeholder="https://..."
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-description">Description</Label>
+            <Textarea
+              id="edit-description"
+              value={editFormData.description}
+              onChange={e =>
+                setEditFormData({
+                  ...editFormData,
+                  description: e.target.value,
+                })
+              }
+              placeholder="Brief description of the establishment..."
+              rows={3}
+            />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="edit-meta-title">Meta Title (optional)</Label>
             <Input
@@ -983,7 +1162,7 @@ function EstablishmentsPageComponent() {
 
           {/* Logo Upload Section */}
           <div className="space-y-2">
-            <Label>Business Logo (optional)</Label>
+            <Label>Business Logo</Label>
             <div className="space-y-4">
               {editFormData.logo_url && (
                 <div className="relative inline-block">
@@ -1034,6 +1213,32 @@ function EstablishmentsPageComponent() {
         isLoading={isSubmitting}
         confirmLabel="Delete"
         variant="destructive"
+      />
+
+      <ConfirmDialog
+        title={
+          pendingStatusChange?.status === 'active'
+            ? 'Approve Establishment'
+            : 'Reject Establishment'
+        }
+        description={
+          pendingStatusChange?.status === 'active'
+            ? `Approve "${pendingStatusChange?.establishment.name}" and make it live on MaltaGuns?`
+            : `Reject "${pendingStatusChange?.establishment.name}"? The owner will be notified.`
+        }
+        isOpen={isStatusDialogOpen}
+        onClose={() => {
+          setIsStatusDialogOpen(false)
+          setPendingStatusChange(null)
+        }}
+        onConfirm={handleStatusChangeSubmit}
+        isLoading={isSubmitting}
+        confirmLabel={
+          pendingStatusChange?.status === 'active' ? 'Approve' : 'Reject'
+        }
+        variant={
+          pendingStatusChange?.status === 'rejected' ? 'destructive' : 'default'
+        }
       />
     </PageLayout>
   )

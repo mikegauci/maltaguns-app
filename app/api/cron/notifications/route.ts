@@ -88,7 +88,10 @@ function ctaLabelForType(type: string): string {
     case 'license_expiring':
     case 'license_approved':
     case 'id_card_approved':
+    case 'establishment_rejected':
       return 'Go to profile'
+    case 'establishment_approved':
+      return 'View establishment'
     default:
       return 'View'
   }

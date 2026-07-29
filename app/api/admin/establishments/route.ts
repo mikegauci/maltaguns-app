@@ -30,20 +30,7 @@ export async function GET() {
       .select('*')
       .order('created_at', { ascending: false })
 
-    console.log('Raw data counts:', {
-      stores: stores?.length || 0,
-      clubs: clubs?.length || 0,
-      servicing: servicing?.length || 0,
-      ranges: ranges?.length || 0,
-    })
-
     if (storesError || clubsError || servicingError || rangesError) {
-      console.error('Error fetching establishments:', {
-        storesError,
-        clubsError,
-        servicingError,
-        rangesError,
-      })
       return NextResponse.json(
         { error: 'Failed to fetch establishment data' },
         { status: 500 }
@@ -68,14 +55,10 @@ export async function GET() {
       if (range.owner_id) ownerIds.add(range.owner_id)
     })
 
-    const { data: ownerProfiles, error: profilesError } = await supabaseAdmin
+    const { data: ownerProfiles } = await supabaseAdmin
       .from('profiles')
       .select('id, username, email')
       .in('id', Array.from(ownerIds))
-
-    if (profilesError) {
-      console.error('Error fetching owner profiles:', profilesError)
-    }
 
     const ownerProfileMap = new Map()
     ownerProfiles?.forEach(profile => {
@@ -95,6 +78,8 @@ export async function GET() {
           location: store.location,
           email: store.email,
           phone: store.phone,
+          description: store.description,
+          website: store.website,
           created_at: store.created_at,
           slug: store.slug,
           status: store.status || 'active',
@@ -117,6 +102,8 @@ export async function GET() {
           location: club.location,
           email: club.email,
           phone: club.phone,
+          description: club.description,
+          website: club.website,
           created_at: club.created_at,
           slug: club.slug,
           status: club.status || 'active',
@@ -139,6 +126,8 @@ export async function GET() {
           location: service.location,
           email: service.email,
           phone: service.phone,
+          description: service.description,
+          website: service.website,
           created_at: service.created_at,
           slug: service.slug,
           status: service.status || 'active',
@@ -161,6 +150,8 @@ export async function GET() {
           location: range.location,
           email: range.email,
           phone: range.phone,
+          description: range.description,
+          website: range.website,
           created_at: range.created_at,
           slug: range.slug,
           status: range.status || 'active',
@@ -178,6 +169,8 @@ export async function GET() {
     ]
 
     allEstablishments.sort((a, b) => {
+      if (a.status === 'pending' && b.status !== 'pending') return -1
+      if (a.status !== 'pending' && b.status === 'pending') return 1
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
 
@@ -192,7 +185,6 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('Error in establishments endpoint:', error)
     return NextResponse.json(
       {
         error:

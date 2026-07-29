@@ -62,6 +62,7 @@ export async function POST(req: Request) {
       description: description || null,
       website: website || null,
       logo_url: logo_url || null,
+      status: 'active',
     }
 
     const { data: newEstablishment, error: insertError } = await supabaseAdmin

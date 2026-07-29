@@ -5,10 +5,10 @@ export const revalidate = 30
 
 export async function GET() {
   const [storesRes, clubsRes, servicingRes, rangesRes] = await Promise.all([
-    supabase.from('stores').select('*'),
-    supabase.from('clubs').select('*'),
-    supabase.from('servicing').select('*'),
-    supabase.from('ranges').select('*'),
+    supabase.from('stores').select('*').eq('status', 'active'),
+    supabase.from('clubs').select('*').eq('status', 'active'),
+    supabase.from('servicing').select('*').eq('status', 'active'),
+    supabase.from('ranges').select('*').eq('status', 'active'),
   ])
 
   const anyError =

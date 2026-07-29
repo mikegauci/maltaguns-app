@@ -19,6 +19,10 @@ export function EstablishmentJsonLd({
   establishment: EstablishmentWithDetails
   type: EstablishmentType
 }) {
+  if (establishment.status !== 'active') {
+    return null
+  }
+
   const path = `/establishments/${type}/${establishment.slug}`
 
   return (
