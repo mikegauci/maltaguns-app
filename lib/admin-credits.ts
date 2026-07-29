@@ -128,6 +128,109 @@ export function createCreditsCreateHandler(config: {
   }
 }
 
+export type CreditIdentifyBy = 'id' | 'user_created_at'
+
+export function createCreditsUpdateHandler(config: {
+  table: CreditsTable
+  identifyBy: CreditIdentifyBy
+  amountPolicy: CreditAmountPolicy
+  successMessage: string
+  failureMessage: string
+  notFoundMessage: string
+  missingIdentityMessage: string
+  logLabel?: string
+}) {
+  return async function PATCH(req: NextRequest) {
+    try {
+      const auth = await requireAdmin()
+      if ('error' in auth) return auth.error
+
+      const { supabaseAdmin: admin } = auth
+      const body = await req.json()
+      const { amount } = body
+
+      let query = admin.from(config.table).select(
+        config.identifyBy === 'id' ? 'id' : '*'
+      )
+
+      if (config.identifyBy === 'id') {
+        const { id } = body
+        if (!id) {
+          return NextResponse.json(
+            { message: config.missingIdentityMessage },
+            { status: 400 }
+          )
+        }
+        query = query.eq('id', id)
+      } else {
+        const { user_id, created_at } = body
+        if (!user_id || !created_at) {
+          return NextResponse.json(
+            { message: config.missingIdentityMessage },
+            { status: 400 }
+          )
+        }
+        query = query.eq('user_id', user_id).eq('created_at', created_at)
+      }
+
+      const parsedAmount = parseCreditAmount(amount, config.amountPolicy)
+      if (!parsedAmount.ok) {
+        return NextResponse.json(
+          { message: parsedAmount.message },
+          { status: 400 }
+        )
+      }
+
+      const { data: creditExists, error: creditError } = await query.single()
+
+      if (creditError || !creditExists) {
+        return NextResponse.json(
+          { message: config.notFoundMessage },
+          { status: 404 }
+        )
+      }
+
+      let updateQuery = admin.from(config.table).update({
+        amount: parsedAmount.value,
+        updated_at: new Date().toISOString(),
+      })
+
+      if (config.identifyBy === 'id') {
+        updateQuery = updateQuery.eq('id', body.id)
+      } else {
+        updateQuery = updateQuery
+          .eq('user_id', body.user_id)
+          .eq('created_at', body.created_at)
+      }
+
+      const { data, error } = await updateQuery.select()
+
+      if (error) {
+        if (config.logLabel) {
+          console.error(`Error updating ${config.logLabel}:`, error)
+        }
+        return NextResponse.json(
+          { message: config.failureMessage, error: error.message },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        message: config.successMessage,
+        data,
+      })
+    } catch (error) {
+      if (config.logLabel) {
+        console.error(`Error in ${config.logLabel} update:`, error)
+      }
+      return NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
+    }
+  }
+}
+
 type CreditRow = {
   id: string
   user_id: string

@@ -25,21 +25,18 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { resizeImageForUpload } from '@/lib/image-resize'
+import {
+  deleteEventPoster,
+  eventPosterValidationToast,
+  uploadEventPoster,
+  validateEventPoster,
+} from '@/lib/event-posters'
 import { Calendar as CalendarIcon, Clock, Trash2 } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { format } from 'date-fns'
 import { PageLayout } from '@/components/ui/page-layout'
 import { slugify } from '@/lib/format'
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ACCEPTED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-]
 
 const eventSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters' }),
@@ -237,20 +234,14 @@ export default function EditEvent(props: {
     const file = event.target.files?.[0]
     if (!file) return
 
-    if (file.size > MAX_FILE_SIZE) {
+    const validationError = validateEventPoster(file)
+    if (validationError) {
       toast({
-        title: 'File too large',
-        description: `${file.name} exceeds 5MB limit`,
         variant: 'destructive',
-      })
-      return
-    }
-
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      toast({
-        title: 'Invalid file type',
-        description: `${file.name} is not a supported image format`,
-        variant: 'destructive',
+        ...eventPosterValidationToast(validationError, {
+          includeFileName: true,
+          fileName: file.name,
+        }),
       })
       return
     }
@@ -279,7 +270,6 @@ export default function EditEvent(props: {
     setUploadProgress(0)
 
     try {
-      // Get session
       const {
         data: { session },
         error: sessionError,
@@ -296,54 +286,20 @@ export default function EditEvent(props: {
 
       let finalPosterUrl = posterUrl
 
-      // 1. Upload new poster if provided
       if (newPoster) {
         setUploadProgress(10)
-        // Downscale + re-encode to WebP before upload to cut Storage egress.
-        const resizedPoster = await resizeImageForUpload(newPoster)
-        const fileExt = resizedPoster.name.split('.').pop()
-        const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-        const filePath = `events/${eventId}/${fileName}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('events')
-          .upload(filePath, resizedPoster, {
-            // Unique filename per upload (never overwritten) - cache 1 year.
-            cacheControl: '31536000',
-            upsert: false,
-            contentType: resizedPoster.type,
-          })
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError)
-          throw uploadError
-        }
-
-        const { data: urlData } = supabase.storage
-          .from('events')
-          .getPublicUrl(filePath)
-        finalPosterUrl = urlData.publicUrl
+        finalPosterUrl = await uploadEventPoster(supabase, newPoster, {
+          userId: session.user.id,
+          pathMode: 'eventScoped',
+          eventId,
+        })
         setUploadProgress(50)
       } else {
         setUploadProgress(50)
       }
 
-      // 2. Delete old poster if it was replaced or removed
       if (posterUrl && (newPoster || !posterPreview)) {
-        // Extract the path from the URL
-        const urlParts = posterUrl.split('/')
-        const bucketIndex = urlParts.findIndex(part => part === 'events')
-        if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
-          const path = urlParts.slice(bucketIndex + 1).join('/')
-          const { error: deleteError } = await supabase.storage
-            .from('events')
-            .remove([path])
-
-          if (deleteError) {
-            console.error('Delete error:', deleteError)
-            // Continue with update even if delete fails
-          }
-        }
+        await deleteEventPoster(supabase, posterUrl)
       }
 
       // 3. Update the event in the database
@@ -427,24 +383,10 @@ export default function EditEvent(props: {
         throw new Error('Not authenticated')
       }
 
-      // 1. Delete poster if exists
       if (posterUrl) {
-        const urlParts = posterUrl.split('/')
-        const bucketIndex = urlParts.findIndex(part => part === 'events')
-        if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
-          const path = urlParts.slice(bucketIndex + 1).join('/')
-          const { error: deleteError } = await supabase.storage
-            .from('events')
-            .remove([path])
-
-          if (deleteError) {
-            console.error('Delete error:', deleteError)
-            // Continue with deletion even if poster delete fails
-          }
-        }
+        await deleteEventPoster(supabase, posterUrl)
       }
 
-      // 2. Delete event from database
       const { error } = await supabase.from('events').delete().eq('id', eventId)
 
       if (error) {

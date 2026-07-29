@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import { Database } from '@/lib/database.types'
 import {
   Card,
@@ -63,54 +63,12 @@ interface BlogAnalytics {
 }
 
 export default function BlogAnalyticsPage() {
-  const router = useRouter()
   const { toast } = useToast()
   const supabase = createClient()
+  const { isAuthorized } = useRequireAdmin({ preset: 'admin-toast' })
 
   const [analytics, setAnalytics] = useState<BlogAnalytics | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isAuthorized, setIsAuthorized] = useState(false)
-
-  // Check authorization
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession()
-
-        if (error || !session) {
-          router.push('/login')
-          return
-        }
-
-        // Check if user is admin using database field
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single()
-
-        if (profileError || !profile || !profile.is_admin) {
-          toast({
-            variant: 'destructive',
-            title: 'Unauthorized',
-            description: "You don't have permission to access this page.",
-          })
-          router.push('/admin')
-          return
-        }
-
-        setIsAuthorized(true)
-      } catch (error) {
-        console.error('Auth error:', error)
-        router.push('/login')
-      }
-    }
-
-    checkAuth()
-  }, [router, supabase, toast])
 
   // Fetch analytics data
   useEffect(() => {
