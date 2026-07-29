@@ -34,16 +34,15 @@ import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import {
   DEFAULT_LISTING_IMAGE,
-  formatImageUrls,
   getListingStoragePathFromUrl,
   listingImageValidationToast,
   moveImageToPrimary,
   parseImageUrls,
-  resolveThumbnail,
   uploadListingImages,
   validateListingImageFiles,
   withoutDefaultListingImage,
 } from '@/lib/listing-images'
+import { buildListingContentUpdatePayload } from '@/lib/listing-update-payload'
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
 import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
@@ -475,20 +474,24 @@ export default function EditListing(props: {
       const allImages =
         previewUrls.length > 0 ? previewUrls : [DEFAULT_LISTING_IMAGE]
 
+      const contentResult = buildListingContentUpdatePayload({
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        type: data.type,
+        category: data.category,
+        subcategory: data.subcategory,
+        calibre: data.calibre,
+        images: allImages,
+      })
+
+      if (!contentResult.ok) {
+        throw new Error(contentResult.error)
+      }
+
       const { error: updateError } = await supabase
         .from('listings')
-        .update({
-          title: data.title,
-          description: data.description,
-          price: data.price,
-          type: data.type,
-          category: data.category,
-          subcategory: data.subcategory || null,
-          calibre: data.calibre || null,
-          images: formatImageUrls(allImages),
-          thumbnail: resolveThumbnail(allImages),
-          updated_at: new Date().toISOString(),
-        })
+        .update(contentResult.payload)
         .eq('id', listingId)
 
       if (updateError) {

@@ -2,11 +2,8 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
 import { getFeatureEndDate } from '@/lib/featured-listings'
 import { MAX_FILES } from '@/app/marketplace/create/constants'
-import {
-  formatImageUrls,
-  isAllowedListingImageUrl,
-  resolveThumbnail,
-} from '@/lib/listing-images'
+import { isAllowedListingImageUrl } from '@/lib/listing-images'
+import { buildListingContentUpdatePayload } from '@/lib/listing-update-payload'
 
 type UpdateListingBody = {
   listingId: string
@@ -25,13 +22,6 @@ type UpdateListingBody = {
   meta_title?: string | null
   meta_description?: string | null
   images?: string[]
-}
-
-function parsePrice(price: string | number | undefined): number | undefined {
-  if (price === undefined) return undefined
-  if (typeof price === 'number') return price
-  const parsed = Number(price)
-  return Number.isFinite(parsed) ? parsed : undefined
 }
 
 export async function POST(request: Request) {
@@ -55,68 +45,6 @@ export async function POST(request: Request) {
 
     if (existingError || !existingListing) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 })
-    }
-
-    const updatePayload: Record<string, unknown> = {
-      updated_at: new Date().toISOString(),
-    }
-
-    if (body.title !== undefined) updatePayload.title = body.title
-    if (body.description !== undefined)
-      updatePayload.description = body.description
-    if (body.type !== undefined) updatePayload.type = body.type
-    if (body.category !== undefined) updatePayload.category = body.category
-    if (body.subcategory !== undefined)
-      updatePayload.subcategory = body.subcategory || null
-    if (body.calibre !== undefined) updatePayload.calibre = body.calibre || null
-    if (body.status !== undefined) updatePayload.status = body.status
-    if (body.meta_title !== undefined)
-      updatePayload.meta_title = body.meta_title || null
-    if (body.meta_description !== undefined)
-      updatePayload.meta_description = body.meta_description || null
-
-    const parsedPrice = parsePrice(body.price)
-    if (body.price !== undefined && parsedPrice === undefined) {
-      return NextResponse.json(
-        { error: 'Invalid price. Must be a number.' },
-        { status: 400 }
-      )
-    }
-    if (parsedPrice !== undefined) updatePayload.price = parsedPrice
-
-    if (body.expires_at !== undefined) {
-      // Allow clearing by sending null; otherwise validate it parses
-      if (body.expires_at === null) {
-        updatePayload.expires_at = null
-      } else {
-        const ts = Date.parse(body.expires_at)
-        if (Number.isNaN(ts)) {
-          return NextResponse.json(
-            { error: 'Invalid expires_at. Must be an ISO date string.' },
-            { status: 400 }
-          )
-        }
-        updatePayload.expires_at = new Date(ts).toISOString()
-      }
-    }
-
-    if (body.refresh_edit_window) {
-      updatePayload.editable_until = new Date(
-        Date.now() + 48 * 60 * 60 * 1000
-      ).toISOString()
-    } else if (body.editable_until !== undefined) {
-      if (body.editable_until === null) {
-        updatePayload.editable_until = null
-      } else {
-        const ts = Date.parse(body.editable_until)
-        if (Number.isNaN(ts)) {
-          return NextResponse.json(
-            { error: 'Invalid editable_until. Must be an ISO date string.' },
-            { status: 400 }
-          )
-        }
-        updatePayload.editable_until = new Date(ts).toISOString()
-      }
     }
 
     if (body.images !== undefined) {
@@ -150,8 +78,64 @@ export async function POST(request: Request) {
           { status: 400 }
         )
       }
-      updatePayload.images = formatImageUrls(imageUrls)
-      updatePayload.thumbnail = resolveThumbnail(imageUrls)
+      body.images = imageUrls
+    }
+
+    const contentResult = buildListingContentUpdatePayload({
+      title: body.title,
+      description: body.description,
+      price: body.price,
+      type: body.type,
+      category: body.category,
+      subcategory: body.subcategory,
+      calibre: body.calibre,
+      images: body.images,
+    })
+
+    if (!contentResult.ok) {
+      return NextResponse.json({ error: contentResult.error }, { status: 400 })
+    }
+
+    const updatePayload = contentResult.payload
+
+    if (body.status !== undefined) updatePayload.status = body.status
+    if (body.meta_title !== undefined)
+      updatePayload.meta_title = body.meta_title || null
+    if (body.meta_description !== undefined)
+      updatePayload.meta_description = body.meta_description || null
+
+    if (body.expires_at !== undefined) {
+      if (body.expires_at === null) {
+        updatePayload.expires_at = null
+      } else {
+        const ts = Date.parse(body.expires_at)
+        if (Number.isNaN(ts)) {
+          return NextResponse.json(
+            { error: 'Invalid expires_at. Must be an ISO date string.' },
+            { status: 400 }
+          )
+        }
+        updatePayload.expires_at = new Date(ts).toISOString()
+      }
+    }
+
+    if (body.refresh_edit_window) {
+      updatePayload.editable_until = new Date(
+        Date.now() + 48 * 60 * 60 * 1000
+      ).toISOString()
+    } else if (body.editable_until !== undefined) {
+      if (body.editable_until === null) {
+        updatePayload.editable_until = null
+      } else {
+        const ts = Date.parse(body.editable_until)
+        if (Number.isNaN(ts)) {
+          return NextResponse.json(
+            { error: 'Invalid editable_until. Must be an ISO date string.' },
+            { status: 400 }
+          )
+        }
+        updatePayload.editable_until = new Date(ts).toISOString()
+      }
     }
 
     const { data: updatedListing, error: updateError } = await supabaseAdmin
@@ -168,7 +152,6 @@ export async function POST(request: Request) {
       )
     }
 
-    // Handle featured status via featured_listings table (admin bypasses RLS)
     if (body.featured !== undefined) {
       if (body.featured) {
         const { data: existingFeature } = await supabaseAdmin

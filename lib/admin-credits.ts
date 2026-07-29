@@ -1,8 +1,132 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/api-auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 type AdminClient = typeof supabaseAdmin
 
 export type CreditsTable = 'credits' | 'credits_events'
+
+export type CreditAmountPolicy = 'positive' | 'nonNegative'
+
+export function parseCreditAmount(
+  amount: unknown,
+  policy: CreditAmountPolicy
+): { ok: true; value: number } | { ok: false; message: string } {
+  const numeric = Number(amount)
+  if (!amount || isNaN(numeric)) {
+    return {
+      ok: false,
+      message:
+        policy === 'positive'
+          ? 'A valid positive amount is required'
+          : 'A valid non-negative amount is required',
+    }
+  }
+
+  if (policy === 'positive' && numeric <= 0) {
+    return { ok: false, message: 'A valid positive amount is required' }
+  }
+
+  if (policy === 'nonNegative' && numeric < 0) {
+    return { ok: false, message: 'A valid non-negative amount is required' }
+  }
+
+  return { ok: true, value: numeric }
+}
+
+export function createCreditsListHandler(table: CreditsTable) {
+  return async function GET() {
+    try {
+      const auth = await requireAdmin()
+      if ('error' in auth) return auth.error
+
+      const result = await listCreditsWithProfiles(auth.supabaseAdmin, table)
+
+      if ('error' in result && result.error) {
+        return NextResponse.json({ error: result.error }, { status: 500 })
+      }
+
+      return NextResponse.json({ data: result.data ?? [] })
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Unknown error' },
+        { status: 500 }
+      )
+    }
+  }
+}
+
+export function createCreditsCreateHandler(config: {
+  table: CreditsTable
+  incrementExisting: boolean
+  amountPolicy: CreditAmountPolicy
+  successMessage: string
+  failureMessage: string
+  logLabel?: string
+}) {
+  return async function POST(req: NextRequest) {
+    try {
+      const auth = await requireAdmin()
+      if ('error' in auth) return auth.error
+
+      const { supabaseAdmin: admin } = auth
+      const { user_id, amount } = await req.json()
+
+      if (!user_id) {
+        return NextResponse.json(
+          { message: 'User ID is required' },
+          { status: 400 }
+        )
+      }
+
+      const parsedAmount = parseCreditAmount(amount, config.amountPolicy)
+      if (!parsedAmount.ok) {
+        return NextResponse.json(
+          { message: parsedAmount.message },
+          { status: 400 }
+        )
+      }
+
+      const userCheck = await ensureUserExists(admin, user_id)
+      if ('error' in userCheck) {
+        return NextResponse.json(
+          { message: userCheck.error },
+          { status: userCheck.status }
+        )
+      }
+
+      const { data, error } = await addOrIncrementCredits(admin, {
+        table: config.table,
+        userId: user_id,
+        amount: parsedAmount.value,
+        incrementExisting: config.incrementExisting,
+      })
+
+      if (error) {
+        if (config.logLabel) {
+          console.error(`Error adding ${config.logLabel}:`, error)
+        }
+        return NextResponse.json(
+          { message: config.failureMessage, error: error.message },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        message: config.successMessage,
+        data,
+      })
+    } catch (error) {
+      if (config.logLabel) {
+        console.error(`Error in ${config.logLabel} create:`, error)
+      }
+      return NextResponse.json(
+        { message: 'Internal server error' },
+        { status: 500 }
+      )
+    }
+  }
+}
 
 type CreditRow = {
   id: string
