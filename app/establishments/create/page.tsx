@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
+import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { Store, Users, Wrench, MapPin } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
@@ -65,8 +66,10 @@ export default function CreateEstablishmentPage() {
   const { toast } = useToast()
   const supabase = createClient()
   const [isLoading, setIsLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
 
   const form = useForm<EstablishmentForm>({
     resolver: zodResolver(establishmentSchema),
@@ -196,29 +199,12 @@ export default function CreateEstablishmentPage() {
         throw new Error('Not authenticated')
       }
 
-      // Create a unique file name
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-      const filePath = `establishments/${fileName}`
+      const publicUrl = await uploadEstablishmentLogo(
+        supabase,
+        file,
+        session.user.id
+      )
 
-      // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('establishments')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false,
-        })
-
-      if (uploadError) {
-        throw uploadError
-      }
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('establishments').getPublicUrl(filePath)
-
-      // Update form
       form.setValue('logoUrl', publicUrl)
 
       toast({
@@ -239,9 +225,8 @@ export default function CreateEstablishmentPage() {
 
   async function onSubmit(data: EstablishmentForm) {
     try {
-      setIsLoading(true)
+      setIsSubmitting(true)
 
-      // Get user session
       const {
         data: { session },
         error: sessionError,
@@ -251,14 +236,12 @@ export default function CreateEstablishmentPage() {
         throw new Error('Authentication error. Please log in again.')
       }
 
-      // Create slug from business name
       const slug = data.businessName
         .toLowerCase()
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/--+/g, '-')
 
-      // Determine which table to insert into based on establishment type
       const tableName =
         data.establishmentType === 'store'
           ? 'stores'
@@ -268,7 +251,6 @@ export default function CreateEstablishmentPage() {
               ? 'servicing'
               : 'ranges'
 
-      // Insert new establishment
       const { error } = await supabase
         .from(tableName)
         .insert({
@@ -281,20 +263,14 @@ export default function CreateEstablishmentPage() {
           logo_url: data.logoUrl || null,
           owner_id: session.user.id,
           slug: slug,
+          status: 'pending',
         })
         .select()
         .single()
 
       if (error) throw error
 
-      toast({
-        title: 'Establishment created',
-        description:
-          'Your establishment profile has been created successfully.',
-      })
-
-      // Redirect to the appropriate establishment page
-      router.push(`/establishments/${tableName}/${slug}`)
+      setIsSubmitted(true)
     } catch (error) {
       console.error('Create error:', error)
       toast({
@@ -304,7 +280,7 @@ export default function CreateEstablishmentPage() {
         variant: 'destructive',
       })
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -336,9 +312,42 @@ export default function CreateEstablishmentPage() {
     )
   }
 
+  if (isSubmitted) {
+    return (
+      <PageLayout>
+        <BackButton
+          label="Back"
+          href="/profile"
+          hideLabelOnMobile={false}
+          className="mb-6"
+        />
+        <Card>
+          <CardHeader>
+            <CardTitle>Request Submitted</CardTitle>
+            <CardDescription>
+              Thank you for creating an establishment on Maltaguns.com. Your
+              request is pending approval. You will be notified once this is
+              approved
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/profile">
+              <Button>Go to Profile</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </PageLayout>
+    )
+  }
+
   return (
     <PageLayout>
-      <BackButton label="Back" href="/" className="mb-6" />
+      <BackButton
+        label="Back"
+        href="/"
+        hideLabelOnMobile={false}
+        className="mb-6"
+      />
 
       <Card>
         <CardHeader>
@@ -550,9 +559,9 @@ export default function CreateEstablishmentPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading || uploadingLogo}
+                disabled={isSubmitting || uploadingLogo}
               >
-                {isLoading
+                {isSubmitting
                   ? 'Creating establishment...'
                   : 'Create Establishment'}
               </Button>

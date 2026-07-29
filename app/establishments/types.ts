@@ -4,6 +4,8 @@
 
 export type EstablishmentType = 'stores' | 'clubs' | 'ranges' | 'servicing'
 
+export type EstablishmentStatus = 'pending' | 'active' | 'rejected'
+
 export interface BaseEstablishment {
   id: string
   business_name: string
@@ -15,6 +17,7 @@ export interface BaseEstablishment {
   website: string | null
   owner_id: string
   slug: string
+  status: EstablishmentStatus
   meta_title?: string | null
   meta_description?: string | null
 }

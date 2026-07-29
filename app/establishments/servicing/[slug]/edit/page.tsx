@@ -25,7 +25,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { resizeImageForUpload } from '@/lib/image-resize'
+import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 
@@ -239,34 +239,12 @@ export default function EditServicingPage(props: {
         throw new Error('Not authenticated')
       }
 
-      // Downscale + re-encode to WebP before upload to cut Storage egress.
-      const resized = await resizeImageForUpload(file)
+      const publicUrl = await uploadEstablishmentLogo(
+        supabase,
+        file,
+        session.user.id
+      )
 
-      // Create a unique file name
-      const fileExt = resized.name.split('.').pop()
-      const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-      const filePath = `servicing/${fileName}`
-
-      // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('servicing')
-        .upload(filePath, resized, {
-          // Unique filename per upload (never overwritten) - cache for 1 year.
-          cacheControl: '31536000',
-          upsert: false,
-          contentType: resized.type,
-        })
-
-      if (uploadError) {
-        throw uploadError
-      }
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('servicing').getPublicUrl(filePath)
-
-      // Update form
       form.setValue('logoUrl', publicUrl)
 
       toast({

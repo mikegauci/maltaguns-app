@@ -7,6 +7,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from('ranges')
     .select('*')
+    .eq('status', 'active')
     .order('business_name', { ascending: true })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

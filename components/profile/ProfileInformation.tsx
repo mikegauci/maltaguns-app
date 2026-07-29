@@ -39,24 +39,22 @@ export const ProfileInformation = ({
 }: ProfileInformationProps) => {
   return (
     <Card>
-      <CardHeader className="space-y-4">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-4">
         <div>
           <CardTitle className="mb-2 sm:mb-0">Profile Information</CardTitle>
           <CardDescription>
             Your personal information and account details
           </CardDescription>
         </div>
-        <div className="flex justify-end">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditing(!isEditing)}
-            className="w-full sm:w-auto"
-          >
-            <Pencil className="h-4 w-4 mr-2" />
-            {isEditing ? 'Cancel' : 'Edit'}
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsEditing(!isEditing)}
+          className="w-full sm:w-auto shrink-0"
+        >
+          <Pencil className="h-4 w-4 mr-2" />
+          {isEditing ? 'Cancel' : 'Edit'}
+        </Button>
       </CardHeader>
       <CardContent>
         {isEditing ? (

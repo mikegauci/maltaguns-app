@@ -60,21 +60,25 @@ export async function GET() {
     supabaseAdmin
       .from('stores')
       .select('*')
+      .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(10),
     supabaseAdmin
       .from('ranges')
       .select('*')
+      .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(10),
     supabaseAdmin
       .from('servicing')
       .select('*')
+      .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(10),
     supabaseAdmin
       .from('clubs')
       .select('*')
+      .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(10),
   ])

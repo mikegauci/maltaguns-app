@@ -1,7 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import {
+  useState,
+  useEffect,
+  useCallback,
+  Suspense,
+  startTransition,
+} from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +24,7 @@ import {
   Store,
   CheckCircle,
   ShieldAlert,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
@@ -38,6 +45,7 @@ import {
 } from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import type { ListingDetails } from './types'
 
 // Default image to use when no images are provided
@@ -135,6 +143,72 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
   return (
     categorySubcategories[subcategory as keyof typeof categorySubcategories] ||
     subcategory
+  )
+}
+
+function CreatedSuccessBanner({ listingTitle }: { listingTitle: string }) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [dismissed, setDismissed] = useState(false)
+  const [showBanner, setShowBanner] = useState(false)
+  const [notifyFailed, setNotifyFailed] = useState(false)
+  const createdParam = searchParams.get('created') === '1'
+
+  useEffect(() => {
+    if (!createdParam) return
+
+    const failed = searchParams.get('notify') === '0'
+    startTransition(() => {
+      setNotifyFailed(failed)
+      setShowBanner(true)
+    })
+    router.replace(`/marketplace/listing/${slugify(listingTitle)}`)
+  }, [createdParam, router, listingTitle, searchParams])
+
+  if (!showBanner || dismissed) return null
+
+  return (
+    <Alert
+      className={
+        notifyFailed
+          ? 'mb-6 border-amber-200 bg-amber-50 text-amber-950 pr-12'
+          : 'mb-6 border-green-200 bg-green-50 text-green-900 pr-12'
+      }
+    >
+      <CheckCircle
+        className={
+          notifyFailed ? 'h-4 w-4 text-amber-700' : 'h-4 w-4 text-green-700'
+        }
+      />
+      <AlertTitle>Listing successfully created</AlertTitle>
+      <AlertDescription>
+        {notifyFailed ? (
+          <>
+            Your listing is now live on MaltaGuns, but we couldn&apos;t send the
+            confirmation notification. You can still manage it from your{' '}
+            <Link href="/profile" className="font-medium underline">
+              profile
+            </Link>
+            .
+          </>
+        ) : (
+          <>
+            Your listing is now live on MaltaGuns.{' '}
+            <Link href="/profile" className="font-medium underline">
+              View all your listings
+            </Link>
+          </>
+        )}
+      </AlertDescription>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100"
+        aria-label="Dismiss"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </Alert>
   )
 }
 
@@ -251,6 +325,7 @@ export default function ListingClient({
         .from('stores')
         .select('id')
         .eq('owner_id', listing.seller_id)
+        .eq('status', 'active')
         .limit(1)
 
       if (error) {
@@ -789,6 +864,10 @@ export default function ListingClient({
 
   return (
     <PageLayout>
+      <Suspense fallback={null}>
+        <CreatedSuccessBanner listingTitle={listing.title} />
+      </Suspense>
+
       <div className="mb-6 flex items-center justify-between">
         <BackButton
           label="Back"

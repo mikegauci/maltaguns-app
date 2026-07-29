@@ -56,6 +56,18 @@ export function resolveThumbnail(urls: string[]): string {
   return urls[0] || DEFAULT_LISTING_IMAGE
 }
 
+export function withoutDefaultListingImage(urls: string[]): string[] {
+  return urls.filter(url => url !== DEFAULT_LISTING_IMAGE)
+}
+
+export function moveImageToPrimary(urls: string[], index: number): string[] {
+  if (index <= 0 || index >= urls.length) return urls
+  const next = [...urls]
+  const [selected] = next.splice(index, 1)
+  next.unshift(selected)
+  return next
+}
+
 export function isAllowedListingImageUrl(url: string): boolean {
   if (!url || typeof url !== 'string') return false
   const trimmed = url.trim()

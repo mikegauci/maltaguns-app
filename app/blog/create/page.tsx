@@ -25,6 +25,11 @@ import {
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
+import {
+  findFirstActiveEstablishment,
+  isActiveEstablishmentOwnedByUser,
+  userHasActiveEstablishment,
+} from '@/lib/establishments'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -88,99 +93,84 @@ export default function CreateBlogPost() {
         } = await supabase.auth.getSession()
 
         if (sessionError || !session) {
-          console.log('No session found')
           return
         }
 
-        // First check URL parameter (for backward compatibility)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single()
+
+        const isAdmin = !!profile?.is_admin
         const searchParams = new URLSearchParams(window.location.search)
-        const urlStoreId = searchParams.get('store_id')
-        const urlServicingId = searchParams.get('servicing_id')
-        const urlClubId = searchParams.get('club_id')
-        const urlRangeId = searchParams.get('range_id')
+        const urlMappings = [
+          { param: 'store_id', table: 'stores' as const, setId: setStoreId },
+          {
+            param: 'servicing_id',
+            table: 'servicing' as const,
+            setId: setServicingId,
+          },
+          { param: 'club_id', table: 'clubs' as const, setId: setClubId },
+          { param: 'range_id', table: 'ranges' as const, setId: setRangeId },
+        ]
 
-        if (urlStoreId) {
-          console.log('Store ID from URL:', urlStoreId)
-          setStoreId(urlStoreId)
-          return
-        } else if (urlServicingId) {
-          console.log('Servicing ID from URL:', urlServicingId)
-          setServicingId(urlServicingId)
-          return
-        } else if (urlClubId) {
-          console.log('Club ID from URL:', urlClubId)
-          setClubId(urlClubId)
-          return
-        } else if (urlRangeId) {
-          console.log('Range ID from URL:', urlRangeId)
-          setRangeId(urlRangeId)
-          return
-        }
+        for (const { param, table, setId } of urlMappings) {
+          const establishmentId = searchParams.get(param)
+          if (!establishmentId) continue
 
-        // If no ID in URL, check if user owns an establishment
-        const { data: stores, error: storesError } = await supabase
-          .from('stores')
-          .select('id, business_name, slug')
-          .eq('owner_id', session.user.id)
-          .limit(1)
-          .single()
+          if (isAdmin) {
+            setId(establishmentId)
+            return
+          }
 
-        if (!storesError && stores) {
-          console.log('User store found:', stores)
-          setStoreId(stores.id)
-          return
-        }
+          const isValid = await isActiveEstablishmentOwnedByUser(
+            supabase,
+            table,
+            establishmentId,
+            session.user.id
+          )
 
-        // If no store found, check if user owns a servicing business
-        const { data: servicing, error: servicingError } = await supabase
-          .from('servicing')
-          .select('id, business_name, slug')
-          .eq('owner_id', session.user.id)
-          .limit(1)
-          .single()
+          if (isValid) {
+            setId(establishmentId)
+            return
+          }
 
-        if (!servicingError && servicing) {
-          console.log('User servicing business found:', servicing)
-          setServicingId(servicing.id)
+          toast({
+            variant: 'destructive',
+            title: 'Invalid establishment',
+            description:
+              'You can only create blog posts for your active establishments.',
+          })
+          router.push('/blog')
           return
         }
 
-        // If no servicing found, check if user owns a club
-        const { data: club, error: clubError } = await supabase
-          .from('clubs')
-          .select('id, business_name, slug')
-          .eq('owner_id', session.user.id)
-          .limit(1)
-          .single()
+        if (isAdmin) return
 
-        if (!clubError && club) {
-          console.log('User club found:', club)
-          setClubId(club.id)
-          return
+        const activeEstablishment = await findFirstActiveEstablishment(
+          supabase,
+          session.user.id
+        )
+
+        if (!activeEstablishment) return
+
+        if (activeEstablishment.table === 'stores') {
+          setStoreId(activeEstablishment.id)
+        } else if (activeEstablishment.table === 'servicing') {
+          setServicingId(activeEstablishment.id)
+        } else if (activeEstablishment.table === 'clubs') {
+          setClubId(activeEstablishment.id)
+        } else {
+          setRangeId(activeEstablishment.id)
         }
-
-        // If no club found, check if user owns a range
-        const { data: range, error: rangeError } = await supabase
-          .from('ranges')
-          .select('id, business_name, slug')
-          .eq('owner_id', session.user.id)
-          .limit(1)
-          .single()
-
-        if (!rangeError && range) {
-          console.log('User range found:', range)
-          setRangeId(range.id)
-          return
-        }
-
-        console.log('User does not own any establishment')
       } catch (error) {
         console.error('Error checking user establishments:', error)
       }
     }
 
     checkUserStore()
-  }, [supabase])
+  }, [router, supabase, toast])
 
   useEffect(() => {
     let mounted = true
@@ -223,106 +213,33 @@ export default function CreateBlogPost() {
           }
         }
 
-        // Check if user is an admin using database field
         let isAdmin = false
-        let hasEstablishment = false
 
-        // Check admin status from database
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_admin')
           .eq('id', session.user.id)
           .single()
 
-        if (!profileError && profile && profile.is_admin) {
+        if (!profileError && profile?.is_admin) {
           isAdmin = true
-          console.log('User is admin (from database)')
         }
 
-        if (!isAdmin) {
-          // Check if user has any establishment
-          console.log('Checking if user has establishments...')
+        const hasActiveEstablishment = isAdmin
+          ? true
+          : await userHasActiveEstablishment(supabase, session.user.id)
 
-          // Check if user has a store
-          const { data: store, error: storeError } = await supabase
-            .from('stores')
-            .select('id')
-            .eq('owner_id', session.user.id)
-            .maybeSingle()
-
-          if (storeError) {
-            console.error('Error checking store ownership:', storeError)
-          } else if (store) {
-            console.log('User has a store')
-            hasEstablishment = true
-          }
-
-          // Check if user has a club
-          if (!hasEstablishment) {
-            const { data: club, error: clubError } = await supabase
-              .from('clubs')
-              .select('id')
-              .eq('owner_id', session.user.id)
-              .maybeSingle()
-
-            if (clubError) {
-              console.error('Error checking club ownership:', clubError)
-            } else if (club) {
-              console.log('User has a club')
-              hasEstablishment = true
-            }
-          }
-
-          // Check if user has a range
-          if (!hasEstablishment) {
-            const { data: range, error: rangeError } = await supabase
-              .from('ranges')
-              .select('id')
-              .eq('owner_id', session.user.id)
-              .maybeSingle()
-
-            if (rangeError) {
-              console.error('Error checking range ownership:', rangeError)
-            } else if (range) {
-              console.log('User has a range')
-              hasEstablishment = true
-            }
-          }
-
-          // Check if user has a servicing business
-          if (!hasEstablishment) {
-            const { data: servicing, error: servicingError } = await supabase
-              .from('servicing')
-              .select('id')
-              .eq('owner_id', session.user.id)
-              .maybeSingle()
-
-            if (servicingError) {
-              console.error(
-                'Error checking servicing ownership:',
-                servicingError
-              )
-            } else if (servicing) {
-              console.log('User has a servicing business')
-              hasEstablishment = true
-            }
-          }
-        }
-
-        if (isAdmin || hasEstablishment) {
-          console.log(
-            `User authorized: ${isAdmin ? 'Admin' : 'Establishment owner'}`
-          )
+        if (hasActiveEstablishment) {
           if (mounted) {
             setIsAuthorized(true)
             setIsLoading(false)
           }
         } else {
-          console.log('User not authorized')
           toast({
             variant: 'destructive',
             title: 'Unauthorized',
-            description: 'You are not authorized to create blog posts.',
+            description:
+              'You need an active establishment before you can create blog posts.',
           })
           router.push('/blog')
         }
@@ -341,31 +258,6 @@ export default function CreateBlogPost() {
       mounted = false
     }
   }, [router, supabase, toast])
-
-  // Get store_id from URL if present
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search)
-    const storeIdParam = searchParams.get('store_id')
-    const servicingIdParam = searchParams.get('servicing_id')
-    const clubIdParam = searchParams.get('club_id')
-    const rangeIdParam = searchParams.get('range_id')
-
-    if (storeIdParam) {
-      console.log('Store ID from URL:', storeIdParam)
-      setStoreId(storeIdParam)
-    } else if (servicingIdParam) {
-      console.log('Servicing ID from URL:', servicingIdParam)
-      setServicingId(servicingIdParam)
-    } else if (clubIdParam) {
-      console.log('Club ID from URL:', clubIdParam)
-      setClubId(clubIdParam)
-    } else if (rangeIdParam) {
-      console.log('Range ID from URL:', rangeIdParam)
-      setRangeId(rangeIdParam)
-    } else {
-      console.log('No establishment ID found in URL')
-    }
-  }, [])
 
   const form = useForm<BlogPostForm>({
     resolver: zodResolver(blogPostSchema),

@@ -7,7 +7,7 @@ interface CTASectionProps {
 
 export const CTASection = ({ isAuthenticated }: CTASectionProps) => {
   return (
-    <section className="py-16 bg-primary">
+    <section className="py-8 md:py-12 bg-primary">
       <div className="container mx-auto px-6 text-center">
         <h2 className="text-3xl font-bold text-primary-foreground mb-4">
           Join the MaltaGuns Community Today

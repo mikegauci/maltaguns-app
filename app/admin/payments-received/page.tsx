@@ -11,6 +11,10 @@ import { ExternalLink, Copy } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import {
+  ADMIN_USER_FULL_SEARCH_KEYS,
+  ADMIN_USER_SEARCH_PLACEHOLDER,
+} from '@/lib/admin-user-types'
 
 const DataTable = nextDynamic(
   () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
@@ -251,8 +255,8 @@ function PaymentsReceivedPageComponent() {
         <DataTable
           columns={columns}
           data={payments}
-          searchKey="username"
-          searchPlaceholder="Search by username..."
+          searchKeys={[...ADMIN_USER_FULL_SEARCH_KEYS]}
+          searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
         />
       )}
     </PageLayout>

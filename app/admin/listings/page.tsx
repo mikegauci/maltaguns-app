@@ -36,8 +36,11 @@ import { createClient } from '@/lib/supabase/client'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import {
   getListingStoragePathFromUrl,
+  moveImageToPrimary,
   parseImageUrls,
+  withoutDefaultListingImage,
 } from '@/lib/listing-images'
+import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
 import {
   ACCEPTED_IMAGE_TYPES,
   MAX_FILE_SIZE,
@@ -337,7 +340,9 @@ function ListingsPageComponent() {
   }, [fetchListings])
 
   function handleEdit(listing: Listing) {
-    const parsedImages = parseImageUrls(listing.images)
+    const parsedImages = withoutDefaultListingImage(
+      parseImageUrls(listing.images)
+    )
     editListingIdRef.current = listing.id
     initialImageUrlsRef.current = parsedImages
     uploadedDuringEditRef.current = []
@@ -531,6 +536,10 @@ function ListingsPageComponent() {
     })
   }
 
+  function handleSetPrimaryImage(index: number) {
+    setImageUrls(prev => moveImageToPrimary(prev, index))
+  }
+
   function handleDelete(listing: Listing) {
     setSelectedListing(listing)
     setIsDeleteDialogOpen(true)
@@ -712,55 +721,19 @@ function ListingsPageComponent() {
           <div className="space-y-2">
             <Label>Images</Label>
             <p className="text-sm text-muted-foreground">
-              Upload up to {MAX_FILES} images. First image will be used as
-              thumbnail.
+              Upload up to {MAX_FILES} images. Tap &quot;Set as main&quot; to
+              choose the display image shown on listings.
             </p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {imageUrls.map((url, index) => (
-                <div
-                  key={`${url}-${index}`}
-                  className="relative aspect-square rounded-md overflow-hidden border"
-                >
-                  <img
-                    src={url}
-                    alt={`Listing image ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="absolute top-2 right-2 h-7 w-7 p-0 rounded-full"
-                    onClick={() => handleRemoveImage(index)}
-                    disabled={isUploading || isSubmitting}
-                  >
-                    ✕
-                  </Button>
-                  {index === 0 && (
-                    <span className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                      Thumbnail
-                    </span>
-                  )}
-                </div>
-              ))}
-
-              {imageUrls.length < MAX_FILES && (
-                <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-square hover:bg-muted/50 transition-colors">
-                  <span className="text-3xl mb-1">+</span>
-                  <span className="text-sm text-center text-muted-foreground px-2">
-                    {isUploading ? 'Uploading...' : 'Add Image'}
-                  </span>
-                  <input
-                    type="file"
-                    accept={ACCEPTED_IMAGE_TYPES.join(',')}
-                    className="hidden"
-                    onChange={handleImageUpload}
-                    disabled={isUploading || isSubmitting}
-                    multiple
-                  />
-                </label>
-              )}
-            </div>
+            <ListingImageGrid
+              images={imageUrls}
+              uploading={isUploading}
+              disabled={isSubmitting}
+              maxFiles={MAX_FILES}
+              accept={ACCEPTED_IMAGE_TYPES.join(',')}
+              onUpload={handleImageUpload}
+              onRemove={handleRemoveImage}
+              onSetPrimary={handleSetPrimaryImage}
+            />
           </div>
 
           <div className="space-y-2">

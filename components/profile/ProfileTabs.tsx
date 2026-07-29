@@ -135,7 +135,7 @@ export function ProfileTabs({
     stores.length + clubs.length + servicing.length + ranges.length
 
   return (
-    <Tabs defaultValue="profile" className="space-y-6">
+    <Tabs defaultValue="profile" className="space-y-4">
       <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
         <TabsTrigger
           value="profile"

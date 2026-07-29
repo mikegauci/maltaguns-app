@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   ColumnDef,
   ColumnFiltersState,
+  FilterFn,
   SortingState,
   VisibilityState,
   flexRender,
@@ -34,7 +35,8 @@ import {
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  searchKey: string
+  searchKey?: string
+  searchKeys?: string[]
   searchPlaceholder?: string
   onCreateNew?: () => void
   createButtonText?: string
@@ -44,6 +46,7 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   searchKey,
+  searchKeys,
   searchPlaceholder = 'Search...',
   onCreateNew,
   createButtonText = 'Create New',
@@ -51,10 +54,28 @@ export function DataTable<TData, TValue>({
   const [isMounted, setIsMounted] = useState(false)
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [globalFilter, setGlobalFilter] = useState('')
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = useState({})
 
-  // Prevent hydration issues by only rendering after component is mounted
+  const useMultiFieldSearch = Boolean(searchKeys?.length)
+
+  const multiFieldFilter = useMemo<FilterFn<TData>>(
+    () => (row, _columnId, filterValue) => {
+      const search = String(filterValue).toLowerCase().trim()
+      if (!search || !searchKeys?.length) return true
+
+      const original = row.original as Record<string, unknown>
+      return searchKeys.some(key => {
+        const value = original[key]
+        return String(value ?? '')
+          .toLowerCase()
+          .includes(search)
+      })
+    },
+    [searchKeys]
+  )
+
   useEffect(() => {
     setIsMounted(true)
   }, [])
@@ -64,21 +85,35 @@ export function DataTable<TData, TValue>({
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    globalFilterFn: useMultiFieldSearch ? multiFieldFilter : undefined,
     state: {
       sorting,
       columnFilters,
+      globalFilter: useMultiFieldSearch ? globalFilter : undefined,
       columnVisibility,
       rowSelection,
     },
   })
 
-  // Return null during server-side rendering or before mounting
+  const searchValue = useMultiFieldSearch
+    ? (table.getState().globalFilter ?? '')
+    : ((table.getColumn(searchKey ?? '')?.getFilterValue() as string) ?? '')
+
+  const handleSearchChange = (value: string) => {
+    if (useMultiFieldSearch) {
+      setGlobalFilter(value)
+      return
+    }
+    table.getColumn(searchKey ?? '')?.setFilterValue(value)
+  }
+
   if (!isMounted) {
     return null
   }
@@ -89,12 +124,8 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center gap-2">
           <Input
             placeholder={searchPlaceholder}
-            value={
-              (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
-            }
-            onChange={event =>
-              table.getColumn(searchKey)?.setFilterValue(event.target.value)
-            }
+            value={searchValue}
+            onChange={event => handleSearchChange(event.target.value)}
             className="max-w-sm"
           />
           <DropdownMenu>

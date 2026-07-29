@@ -1,7 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
-import { DEFAULT_LISTING_IMAGE } from '../constants'
 import { slugify } from '../utils'
+import { formatImageUrls, resolveThumbnail } from '@/lib/listing-images'
+import { postNotifyCreated } from '@/lib/notify-created-client'
 
 interface CreateListingDependencies {
   supabase: SupabaseClient
@@ -11,11 +12,21 @@ interface CreateListingDependencies {
     description?: string
     variant?: 'default' | 'destructive'
   }) => void
-  setIsSubmitting: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setIsSubmitting: (value: boolean) => void
 }
 
 export function createListingHandlers(deps: CreateListingDependencies) {
   const { supabase, router, toast, setIsSubmitting } = deps
+
+  async function notifyListingCreated(listingId: string): Promise<boolean> {
+    return postNotifyCreated('/api/listings/notify-created', { listingId })
+  }
+
+  function redirectAfterCreate(listingPath: string, notifyOk: boolean) {
+    const params = new URLSearchParams({ created: '1' })
+    if (!notifyOk) params.set('notify', '0')
+    router.push(`${listingPath}?${params.toString()}`)
+  }
 
   async function createFirearmsListing(data: {
     category: string
@@ -25,7 +36,7 @@ export function createListingHandlers(deps: CreateListingDependencies) {
     price: number
     images: any[]
     credits: number
-    setCredits: (credits: number) => void // eslint-disable-line unused-imports/no-unused-vars
+    setCredits: (credits: number) => void
   }) {
     try {
       setIsSubmitting(true)
@@ -78,14 +89,12 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         )
       }
 
-      // Get all image URLs
       const imageUrls = data.images.map(img =>
         typeof img === 'string' ? img : img.toString()
       )
 
       console.log('Attempting to create firearms listing with simplified data')
 
-      // Create a simplified listing object
       const listingData = {
         seller_id: session.user.id,
         type: 'firearms',
@@ -94,11 +103,8 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         title: data.title,
         description: data.description,
         price: data.price,
-        images:
-          imageUrls.length > 0
-            ? `{${imageUrls.map(url => `"${url}"`).join(',')}}`
-            : `{"${DEFAULT_LISTING_IMAGE}"}`,
-        thumbnail: imageUrls[0] || DEFAULT_LISTING_IMAGE,
+        images: formatImageUrls(imageUrls),
+        thumbnail: resolveThumbnail(imageUrls),
         status: 'active',
         expires_at: new Date(
           Date.now() + 30 * 24 * 60 * 60 * 1000
@@ -135,12 +141,9 @@ export function createListingHandlers(deps: CreateListingDependencies) {
 
       data.setCredits(data.credits - 1)
 
-      toast({
-        title: 'Listing created',
-        description: 'Your listing has been created successfully',
-      })
-
-      router.push(`/marketplace/listing/${slugify(listing.title)}`)
+      const listingPath = `/marketplace/listing/${slugify(listing.title)}`
+      const notifyOk = await notifyListingCreated(listing.id)
+      redirectAfterCreate(listingPath, notifyOk)
     } catch (error) {
       console.error('Error creating listing:', error)
       toast({
@@ -178,14 +181,12 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         throw new Error('Not authenticated')
       }
 
-      // Get all image URLs
       const imageUrls = data.images.map(img =>
         typeof img === 'string' ? img : img.toString()
       )
 
       console.log('Attempting to create non-firearms listing')
 
-      // Create a simplified listing object
       const listingData = {
         seller_id: session.user.id,
         type: 'non_firearms',
@@ -194,11 +195,8 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         title: data.title,
         description: data.description,
         price: data.price,
-        images:
-          imageUrls.length > 0
-            ? `{${imageUrls.map(url => `"${url}"`).join(',')}}`
-            : `{"${DEFAULT_LISTING_IMAGE}"}`,
-        thumbnail: imageUrls[0] || DEFAULT_LISTING_IMAGE,
+        images: formatImageUrls(imageUrls),
+        thumbnail: resolveThumbnail(imageUrls),
         status: 'active',
         expires_at: new Date(
           Date.now() + 30 * 24 * 60 * 60 * 1000
@@ -219,12 +217,9 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         throw listingError
       }
 
-      toast({
-        title: 'Listing created',
-        description: 'Your listing has been created successfully',
-      })
-
-      router.push(`/marketplace/listing/${slugify(listing.title)}`)
+      const listingPath = `/marketplace/listing/${slugify(listing.title)}`
+      const notifyOk = await notifyListingCreated(listing.id)
+      redirectAfterCreate(listingPath, notifyOk)
     } catch (error) {
       console.error('Error creating listing:', error)
       toast({

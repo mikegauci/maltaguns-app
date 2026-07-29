@@ -18,6 +18,7 @@ import {
   Club,
   Servicing,
   Range,
+  EstablishmentStatus,
 } from '../../app/profile/types'
 
 interface MyEstablishmentsProps {
@@ -28,6 +29,74 @@ interface MyEstablishmentsProps {
   handleDeleteStore: (storeId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
   establishmentInfoOpen: boolean
   setEstablishmentInfoOpen: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+}
+
+function StatusBadge({ status }: { status: EstablishmentStatus }) {
+  if (status === 'pending') {
+    return (
+      <Badge className="mt-1 bg-amber-100 text-amber-800 hover:bg-amber-100">
+        Pending approval
+      </Badge>
+    )
+  }
+  if (status === 'rejected') {
+    return (
+      <Badge className="mt-1 bg-red-100 text-red-800 hover:bg-red-100">
+        Rejected
+      </Badge>
+    )
+  }
+  return (
+    <Badge className="mt-1 bg-green-100 text-green-800 hover:bg-green-100">
+      Live
+    </Badge>
+  )
+}
+
+function EstablishmentActions({
+  typePath,
+  slug,
+  id,
+  status,
+  onDelete,
+  showBlog,
+}: {
+  typePath: string
+  slug: string | null
+  id: string
+  status: EstablishmentStatus
+  onDelete: () => void
+  showBlog?: boolean
+}) {
+  const pathSegment = slug || id
+  const isActive = status === 'active'
+
+  return (
+    <div className="flex flex-wrap gap-2 mt-4">
+      {isActive && (
+        <Link href={`/establishments/${typePath}/${pathSegment}`} passHref>
+          <Button size="sm" variant="outline">
+            View Profile
+          </Button>
+        </Link>
+      )}
+      <Link href={`/establishments/${typePath}/${pathSegment}/edit`} passHref>
+        <Button size="sm" variant="outline">
+          Edit Profile
+        </Button>
+      </Link>
+      {showBlog && isActive && (
+        <Link href={`/blog/create?store_id=${id}`} passHref>
+          <Button size="sm" variant="outline">
+            Add Blog Post
+          </Button>
+        </Link>
+      )}
+      <Button size="sm" variant="destructive" onClick={onDelete}>
+        Delete Profile
+      </Button>
+    </div>
+  )
 }
 
 export const MyEstablishments = ({
@@ -91,7 +160,6 @@ export const MyEstablishments = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Stores */}
         {stores.length > 0 && (
           <>
             <h3 className="text-lg font-semibold mb-3">Stores</h3>
@@ -116,54 +184,27 @@ export const MyEstablishments = ({
                     <p className="text-muted-foreground text-sm">
                       {storeItem.location || 'No location specified'}
                     </p>
-                    {!storeItem.slug && (
-                      <Badge variant="outline" className="mt-1">
-                        No slug
-                      </Badge>
-                    )}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <StatusBadge status={storeItem.status || 'active'} />
+                      {!storeItem.slug && (
+                        <Badge variant="outline">No slug</Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Link
-                    href={`/establishments/stores/${
-                      storeItem.slug || storeItem.id
-                    }`}
-                    passHref
-                  >
-                    <Button size="sm" variant="outline">
-                      View Profile
-                    </Button>
-                  </Link>
-                  <Link
-                    href={`/establishments/stores/${
-                      storeItem.slug || storeItem.id
-                    }/edit`}
-                    passHref
-                  >
-                    <Button size="sm" variant="outline">
-                      Edit Profile
-                    </Button>
-                  </Link>
-                  <Link href={`/blog/create?store_id=${storeItem.id}`} passHref>
-                    <Button size="sm" variant="outline">
-                      Add Blog Post
-                    </Button>
-                  </Link>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteStore(storeItem.id)}
-                  >
-                    Delete Profile
-                  </Button>
-                </div>
+                <EstablishmentActions
+                  typePath="stores"
+                  slug={storeItem.slug}
+                  id={storeItem.id}
+                  status={storeItem.status || 'active'}
+                  onDelete={() => handleDeleteStore(storeItem.id)}
+                  showBlog
+                />
               </div>
             ))}
           </>
         )}
 
-        {/* Clubs */}
         {clubs.length > 0 && (
           <>
             <h3 className="text-lg font-semibold mb-3">Clubs</h3>
@@ -188,45 +229,24 @@ export const MyEstablishments = ({
                     <p className="text-muted-foreground text-sm">
                       {club.location || 'No location specified'}
                     </p>
-                    {!club.slug && (
-                      <Badge variant="outline" className="mt-1">
-                        No slug
-                      </Badge>
-                    )}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <StatusBadge status={club.status || 'active'} />
+                      {!club.slug && <Badge variant="outline">No slug</Badge>}
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Link
-                    href={`/establishments/clubs/${club.slug || club.id}`}
-                    passHref
-                  >
-                    <Button size="sm" variant="outline">
-                      View Profile
-                    </Button>
-                  </Link>
-                  <Link
-                    href={`/establishments/clubs/${club.slug || club.id}/edit`}
-                    passHref
-                  >
-                    <Button size="sm" variant="outline">
-                      Edit Profile
-                    </Button>
-                  </Link>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteStore(club.id)}
-                  >
-                    Delete Profile
-                  </Button>
-                </div>
+                <EstablishmentActions
+                  typePath="clubs"
+                  slug={club.slug}
+                  id={club.id}
+                  status={club.status || 'active'}
+                  onDelete={() => handleDeleteStore(club.id)}
+                />
               </div>
             ))}
           </>
         )}
 
-        {/* Servicing */}
         {servicing.length > 0 && (
           <>
             <h3 className="text-lg font-semibold mb-3">Servicing & Repair</h3>
@@ -251,49 +271,26 @@ export const MyEstablishments = ({
                     <p className="text-muted-foreground text-sm">
                       {service.location || 'No location specified'}
                     </p>
-                    {!service.slug && (
-                      <Badge variant="outline" className="mt-1">
-                        No slug
-                      </Badge>
-                    )}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <StatusBadge status={service.status || 'active'} />
+                      {!service.slug && (
+                        <Badge variant="outline">No slug</Badge>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Link
-                    href={`/establishments/servicing/${
-                      service.slug || service.id
-                    }`}
-                    passHref
-                  >
-                    <Button size="sm" variant="outline">
-                      View Profile
-                    </Button>
-                  </Link>
-                  <Link
-                    href={`/establishments/servicing/${
-                      service.slug || service.id
-                    }/edit`}
-                    passHref
-                  >
-                    <Button size="sm" variant="outline">
-                      Edit Profile
-                    </Button>
-                  </Link>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteStore(service.id)}
-                  >
-                    Delete Profile
-                  </Button>
-                </div>
+                <EstablishmentActions
+                  typePath="servicing"
+                  slug={service.slug}
+                  id={service.id}
+                  status={service.status || 'active'}
+                  onDelete={() => handleDeleteStore(service.id)}
+                />
               </div>
             ))}
           </>
         )}
 
-        {/* Ranges */}
         {ranges.length > 0 && (
           <>
             <h3 className="text-lg font-semibold mb-3">Shooting Ranges</h3>
@@ -318,47 +315,24 @@ export const MyEstablishments = ({
                     <p className="text-muted-foreground text-sm">
                       {range.location || 'No location specified'}
                     </p>
-                    {!range.slug && (
-                      <Badge variant="outline" className="mt-1">
-                        No slug
-                      </Badge>
-                    )}
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      <StatusBadge status={range.status || 'active'} />
+                      {!range.slug && <Badge variant="outline">No slug</Badge>}
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex flex-wrap gap-2 mt-4">
-                  <Link
-                    href={`/establishments/ranges/${range.slug || range.id}`}
-                    passHref
-                  >
-                    <Button size="sm" variant="outline">
-                      View Profile
-                    </Button>
-                  </Link>
-                  <Link
-                    href={`/establishments/ranges/${
-                      range.slug || range.id
-                    }/edit`}
-                    passHref
-                  >
-                    <Button size="sm" variant="outline">
-                      Edit Profile
-                    </Button>
-                  </Link>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteStore(range.id)}
-                  >
-                    Delete Profile
-                  </Button>
-                </div>
+                <EstablishmentActions
+                  typePath="ranges"
+                  slug={range.slug}
+                  id={range.id}
+                  status={range.status || 'active'}
+                  onDelete={() => handleDeleteStore(range.id)}
+                />
               </div>
             ))}
           </>
         )}
 
-        {/* Common messages */}
         {(stores.length > 1 ||
           clubs.length > 0 ||
           servicing.length > 0 ||

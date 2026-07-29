@@ -4,9 +4,9 @@ import Link from 'next/link'
 
 export const ResourcesSection = () => {
   return (
-    <section className="py-16">
+    <section className="py-8 md:py-12">
       <div className="container mx-auto max-w-5xl px-6">
-        <div className="text-center mb-8 md:mb-12">
+        <div className="text-center mb-6 md:mb-8">
           <h2 className="text-2xl md:text-3xl font-bold mb-2">Need Help?</h2>
           <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
             Need help? Check out our comprehensive <strong>guides</strong> and

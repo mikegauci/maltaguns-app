@@ -1,21 +1,15 @@
-import { supabase } from '@/lib/supabase/public'
+import { createClient } from '@/lib/supabase/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { EstablishmentWithDetails, EstablishmentType } from './types'
 import { getEstablishmentConfig } from './config'
 
-/**
- * Fetch establishment details with listings and blog posts
- * @param type - The type of establishment
- * @param slug - The establishment slug
- * @returns Establishment with details or null if not found
- */
 export async function fetchEstablishmentBySlug(
   type: EstablishmentType,
   slug: string
 ): Promise<EstablishmentWithDetails | null> {
   const config = getEstablishmentConfig(type)
+  const supabase = await createClient()
 
-  // Fetch establishment details
   const { data: establishment, error: establishmentError } = await supabase
     .from(config.tableName)
     .select('*')
@@ -34,7 +28,6 @@ export async function fetchEstablishmentBySlug(
     `Found ${config.label}: ${establishment.business_name} (ID: ${establishment.id})`
   )
 
-  // Fetch establishment's listings - only show active and non-expired listings
   const { data: listings, error: listingsError } = await supabase
     .from('listings')
     .select('*')
@@ -47,7 +40,6 @@ export async function fetchEstablishmentBySlug(
     console.error('Error fetching listings:', listingsError)
   }
 
-  // Fetch blog posts with the specific foreign key
   console.log(
     `Fetching blog posts for ${config.label} ID: ${establishment.id} using ${config.blogForeignKey}`
   )
@@ -85,7 +77,6 @@ export async function fetchEstablishmentBySlug(
     )
   }
 
-  // If there's an error or no posts found, try with admin client as fallback
   if (blogPostsError || !blogPosts || blogPosts.length === 0) {
     try {
       console.log(
@@ -131,7 +122,6 @@ export async function fetchEstablishmentBySlug(
     }
   }
 
-  // Process blog posts to ensure they have the correct structure
   const processedBlogPosts = (blogPosts || []).map(post => ({
     ...post,
     author: post.author || { username: 'Author' },
