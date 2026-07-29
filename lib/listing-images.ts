@@ -56,6 +56,10 @@ export function resolveThumbnail(urls: string[]): string {
   return urls[0] || DEFAULT_LISTING_IMAGE
 }
 
+export function withoutDefaultListingImage(urls: string[]): string[] {
+  return urls.filter(url => url !== DEFAULT_LISTING_IMAGE)
+}
+
 export function moveImageToPrimary(urls: string[], index: number): string[] {
   if (index <= 0 || index >= urls.length) return urls
   const next = [...urls]

@@ -38,6 +38,7 @@ import {
   getListingStoragePathFromUrl,
   moveImageToPrimary,
   parseImageUrls,
+  withoutDefaultListingImage,
 } from '@/lib/listing-images'
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
 import {
@@ -339,7 +340,9 @@ function ListingsPageComponent() {
   }, [fetchListings])
 
   function handleEdit(listing: Listing) {
-    const parsedImages = parseImageUrls(listing.images)
+    const parsedImages = withoutDefaultListingImage(
+      parseImageUrls(listing.images)
+    )
     editListingIdRef.current = listing.id
     initialImageUrlsRef.current = parsedImages
     uploadedDuringEditRef.current = []
@@ -718,7 +721,7 @@ function ListingsPageComponent() {
           <div className="space-y-2">
             <Label>Images</Label>
             <p className="text-sm text-muted-foreground">
-              Upload up to {MAX_FILES} images. Tap &quot;Set as main&quot; to
+              Upload up to{" "}{MAX_FILES}{" "}images. Tap &quot;Set as main&quot; to
               choose the display image shown on listings.
             </p>
             <ListingImageGrid

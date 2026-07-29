@@ -77,7 +77,7 @@ export function ListingImageGrid({
         <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-square hover:bg-muted/50 transition-colors">
           <span className="text-3xl mb-1">+</span>
           <span className="text-sm text-center text-muted-foreground px-2">
-            {uploading ? 'Uploading...' : 'Add Image'}
+            {uploading ? 'Uploading...' : 'Add Image/s'}
           </span>
           <input
             ref={fileInputRef}

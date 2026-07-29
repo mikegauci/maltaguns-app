@@ -40,6 +40,7 @@ import {
   moveImageToPrimary,
   parseImageUrls,
   resolveThumbnail,
+  withoutDefaultListingImage,
 } from '@/lib/listing-images'
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
 import { BackButton } from '@/components/ui/back-button'
@@ -282,7 +283,9 @@ export default function EditListing(props: {
           setIsAuthorized(true)
 
           // Parse the images from PostgreSQL format
-          const parsedImages = parseImageUrls(listing.images)
+          const parsedImages = withoutDefaultListingImage(
+            parseImageUrls(listing.images)
+          )
           setExistingImages(parsedImages)
 
           // Set form values
@@ -880,7 +883,7 @@ export default function EditListing(props: {
                     Images
                   </FormLabel>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Upload up to {MAX_FILES} images. Tap &quot;Set as main&quot;
+                    Upload up to{" "}{MAX_FILES}{" "}images. Tap &quot;Set as main&quot;
                     to choose the display image shown on listings.
                   </p>
 
@@ -889,7 +892,6 @@ export default function EditListing(props: {
                     uploading={isUploading}
                     maxFiles={MAX_FILES}
                     accept={ACCEPTED_IMAGE_TYPES.join(',')}
-                    multiple={false}
                     onUpload={handleImageUpload}
                     onRemove={handleRemoveImage}
                     onSetPrimary={handleSetPrimaryImage}
