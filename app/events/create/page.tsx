@@ -38,6 +38,7 @@ import { postNotifyCreated } from '@/lib/notify-created-client'
 import { BackButton } from '@/components/ui/back-button'
 import { Loader2 } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
+import { slugify } from '@/lib/format'
 
 const EventCreditDialog = nextDynamic(
   () =>
@@ -93,15 +94,6 @@ function getMaxDateString() {
   const maxDate = new Date()
   maxDate.setFullYear(maxDate.getFullYear() + 5)
   return maxDate.toISOString().split('T')[0]
-}
-
-// Add slugify function
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
 }
 
 const eventSchema = z

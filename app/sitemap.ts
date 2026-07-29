@@ -1,14 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase/public'
 import { getAppUrl } from '@/lib/seo'
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-}
+import { slugify } from '@/lib/format'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const appUrl = getAppUrl()

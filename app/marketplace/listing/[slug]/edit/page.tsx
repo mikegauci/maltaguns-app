@@ -47,6 +47,7 @@ import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
+import { slugify } from '@/lib/format'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
@@ -117,15 +118,6 @@ const subcategories = {
     other: 'Other',
   },
 } as const
-
-// Helper function to slugify text
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-}
 
 const listingSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),

@@ -5,20 +5,13 @@ import { stripe } from '@/lib/credit-checkout'
 import { STRIPE_PRICE_IDS } from '@/lib/stripe-prices'
 import { getAppUrl } from '@/lib/seo'
 import { FEATURE_RENEW_WITHIN_DAYS } from '@/lib/featured-listings'
+import { slugify } from '@/lib/format'
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not defined')
 }
 
 const FEATURE_LISTING_PRICE_ID = STRIPE_PRICE_IDS.featuredListing
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-}
 
 export async function POST(request: Request) {
   try {

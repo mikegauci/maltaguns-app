@@ -1,13 +1,6 @@
 import { supabase } from '@/lib/supabase/public'
 import type { ListingDetails } from './types'
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-}
+import { slugify } from '@/lib/format'
 
 function parseImageUrls(images: string): string[] {
   if (images.startsWith('{') && images.endsWith('}')) {

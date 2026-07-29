@@ -1,7 +1,7 @@
 'use client'
 
-import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
+import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format, parseISO } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -25,11 +25,6 @@ import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
-
-const DataTable = nextDynamic(
-  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
-  { ssr: false }
-) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface Event {
   id: string

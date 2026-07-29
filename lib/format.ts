@@ -12,3 +12,8 @@ export function formatPrice(price: number) {
     currency: 'EUR',
   }).format(price)
 }
+
+export function formatPriceOrFree(price: number | null) {
+  if (price === null) return 'Free'
+  return formatPrice(price)
+}

@@ -1,7 +1,7 @@
 'use client'
 
-import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
+import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -35,11 +35,6 @@ import {
   hasAllLicenseTypes,
   hasAnyLicenseType,
 } from '@/lib/license-utils'
-
-const DataTable = nextDynamic(
-  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
-  { ssr: false }
-) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface Establishment {
   type: 'store' | 'club' | 'servicing' | 'range'

@@ -1,7 +1,7 @@
 'use client'
 
-import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
+import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import { useRouter } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
@@ -21,11 +21,6 @@ import {
   ADMIN_USER_USERNAME_EMAIL_SEARCH_KEYS,
   ADMIN_USER_SEARCH_PLACEHOLDER,
 } from '@/lib/admin-user-types'
-
-const DataTable = nextDynamic(
-  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
-  { ssr: false }
-) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface Credit {
   id: string

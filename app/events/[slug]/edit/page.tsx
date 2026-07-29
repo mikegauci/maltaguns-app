@@ -31,6 +31,7 @@ import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { format } from 'date-fns'
 import { PageLayout } from '@/components/ui/page-layout'
+import { slugify } from '@/lib/format'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ACCEPTED_IMAGE_TYPES = [
@@ -39,14 +40,6 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/png',
   'image/webp',
 ]
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-}
 
 const eventSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters' }),

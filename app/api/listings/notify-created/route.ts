@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
 import { createAndEmailNotification } from '@/lib/notify-created'
-import { slugify } from '@/app/marketplace/create/utils'
+import { slugify } from '@/lib/format'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 const bodySchema = z.object({

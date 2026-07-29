@@ -1,7 +1,8 @@
 'use client'
 
-import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
+import { slugify } from '@/lib/format'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format, parseISO } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -46,11 +47,6 @@ import {
   MAX_FILE_SIZE,
   MAX_FILES,
 } from '@/app/marketplace/create/constants'
-
-const DataTable = nextDynamic(
-  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
-  { ssr: false }
-) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface Listing {
   id: string
@@ -109,15 +105,6 @@ function ListingsPageComponent() {
     meta_title: '',
     meta_description: '',
   })
-
-  // Helper function to create URL-friendly slugs from titles
-  function slugify(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/--+/g, '-')
-  }
 
   function isListingExpired(expiresAt: string | null | undefined): boolean {
     if (!expiresAt) return false

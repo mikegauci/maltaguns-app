@@ -11,6 +11,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
 import { PageLayout } from '@/components/ui/page-layout'
+import { formatPrice, slugify } from '@/lib/format'
 
 interface Listing {
   id: string
@@ -25,21 +26,6 @@ interface Listing {
   created_at: string
   status: string
   is_featured?: boolean
-}
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-MT', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(price)
-}
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
 }
 
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {

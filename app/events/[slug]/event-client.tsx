@@ -31,6 +31,7 @@ import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
 import { StorageImage } from '@/components/ui/storage-image'
 import { ImageLightbox } from '@/components/marketplace/ImageLightbox'
+import { formatPriceOrFree } from '@/lib/format'
 
 interface Event {
   id: string
@@ -177,14 +178,6 @@ export default function EventClient({ event }: EventClientProps) {
     return time.substring(0, 5)
   }
 
-  const formatPrice = (price: number | null) => {
-    if (price === null) return 'Free'
-    return new Intl.NumberFormat('en-MT', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(price)
-  }
-
   const eventSlug = event.slug || event.id
   const isOwner = currentUserId === event.created_by
   const dateLabel = `${format(new Date(event.start_date), 'MMMM d, yyyy')}${
@@ -285,7 +278,7 @@ export default function EventClient({ event }: EventClientProps) {
               </DetailRow>
 
               <DetailRow icon={<Coins className="h-4 w-4" />} label="Price">
-                {formatPrice(event.price)}
+                {formatPriceOrFree(event.price)}
               </DetailRow>
 
               <DetailRow icon={<User className="h-4 w-4" />} label="Organizer">
