@@ -1,8 +1,11 @@
+'use client'
+
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { UseFormSetValue } from 'react-hook-form'
 import { MAX_FILE_SIZE, MAX_FILES, ACCEPTED_IMAGE_TYPES } from '../constants'
 import { resizeImageForUpload } from '@/lib/image-resize'
+import { moveImageToPrimary } from '@/lib/listing-images'
 
 interface UseImageUploadProps {
   toast: (_options: {
@@ -69,7 +72,6 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
       const uploadedUrls: string[] = []
 
       for (const file of files) {
-        // Downscale + re-encode to WebP before upload to cut Storage egress.
         const resized = await resizeImageForUpload(file)
         const fileExt = resized.name.split('.').pop()
         const fileName = `${sessionData.session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
@@ -80,7 +82,6 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
         const { error: uploadError } = await supabase.storage
           .from('listings')
           .upload(filePath, resized, {
-            // Unique filename per upload (never overwritten) → cache for 1 year.
             cacheControl: '31536000',
             upsert: false,
             contentType: resized.type,
@@ -116,6 +117,7 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
       })
     } finally {
       setUploading(false)
+      event.target.value = ''
     }
   }
 
@@ -131,10 +133,18 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
     })
   }
 
+  function handleSetPrimaryImage(index: number): void {
+    const next = moveImageToPrimary(uploadedImages, index)
+    if (next === uploadedImages) return
+    setUploadedImages(next)
+    setValue('images', next)
+  }
+
   return {
     uploadedImages,
     uploading,
     handleImageUpload,
     handleDeleteImage,
+    handleSetPrimaryImage,
   }
 }

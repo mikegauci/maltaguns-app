@@ -33,6 +33,15 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
 import { resizeImageForUpload } from '@/lib/image-resize'
+import {
+  DEFAULT_LISTING_IMAGE,
+  formatImageUrls,
+  getListingStoragePathFromUrl,
+  moveImageToPrimary,
+  parseImageUrls,
+  resolveThumbnail,
+} from '@/lib/listing-images'
+import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
 import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
@@ -46,7 +55,6 @@ const ACCEPTED_IMAGE_TYPES = [
   'image/png',
   'image/webp',
 ]
-const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
 
 const firearmsCategories = {
   airguns: 'Airguns',
@@ -130,50 +138,6 @@ const listingSchema = z.object({
 
 type ListingForm = z.infer<typeof listingSchema>
 
-// Add this helper function to parse image URLs from PostgreSQL array string
-function parseImageUrls(images: string): string[] {
-  try {
-    // Handle PostgreSQL array format: {"url1","url2"}
-    if (
-      typeof images === 'string' &&
-      images.startsWith('{') &&
-      images.endsWith('}')
-    ) {
-      // Remove the curly braces and split by commas
-      const content = images.substring(1, images.length - 1)
-      // Handle empty array
-      if (!content) return []
-
-      // Split by commas, but respect quotes
-      return content
-        .split(',')
-        .map(url => url.trim())
-        .map(url =>
-          url.startsWith('"') && url.endsWith('"')
-            ? url.substring(1, url.length - 1)
-            : url
-        )
-    }
-
-    // If it's already an array, return it
-    if (Array.isArray(images)) {
-      return images
-    }
-
-    // Try parsing as JSON if it's not in PostgreSQL format
-    try {
-      const parsed = JSON.parse(images)
-      return Array.isArray(parsed) ? parsed : []
-    } catch {
-      // If all else fails, return an empty array
-      return []
-    }
-  } catch (error) {
-    console.error('Error parsing image URLs:', error)
-    return []
-  }
-}
-
 export default function EditListing(props: {
   params: Promise<{ slug: string }>
 }) {
@@ -189,7 +153,6 @@ export default function EditListing(props: {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [existingImages, setExistingImages] = useState<string[]>([])
   const [imagesToDelete, setImagesToDelete] = useState<string[]>([])
-  const [newImages, setNewImages] = useState<File[]>([])
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
@@ -448,10 +411,7 @@ export default function EditListing(props: {
           data: { publicUrl },
         } = supabase.storage.from('listings').getPublicUrl(filePath)
 
-        // Add to preview URLs. Store the already-resized file so the final
-        // upload on submit reuses it without re-encoding.
         setPreviewUrls(prev => [...prev, publicUrl])
-        setNewImages(prev => [...prev, resized])
       }
 
       toast({
@@ -467,21 +427,30 @@ export default function EditListing(props: {
       })
     } finally {
       setIsUploading(false)
+      event.target.value = ''
     }
   }
 
   function handleRemoveImage(index: number) {
-    if (index < existingImages.length) {
-      // It's an existing image
-      const imageUrl = existingImages[index]
-      setImagesToDelete(prev => [...prev, imageUrl])
-      setPreviewUrls(prev => prev.filter((_, i) => i !== index))
+    const imageUrl = previewUrls[index]
+    if (!imageUrl) return
+
+    if (existingImages.includes(imageUrl)) {
+      setImagesToDelete(prev =>
+        prev.includes(imageUrl) ? prev : [...prev, imageUrl]
+      )
     } else {
-      // It's a new image
-      const newIndex = index - existingImages.length
-      setNewImages(prev => prev.filter((_, i) => i !== newIndex))
-      setPreviewUrls(prev => prev.filter((_, i) => i !== index))
+      const path = getListingStoragePathFromUrl(imageUrl)
+      if (path) {
+        void supabase.storage.from('listings').remove([path])
+      }
     }
+
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index))
+  }
+
+  function handleSetPrimaryImage(index: number) {
+    setPreviewUrls(prev => moveImageToPrimary(prev, index))
   }
 
   async function onSubmit(data: ListingForm) {
@@ -498,7 +467,6 @@ export default function EditListing(props: {
     setUploadProgress(0)
 
     try {
-      // Get session
       const {
         data: { session },
         error: sessionError,
@@ -513,79 +481,31 @@ export default function EditListing(props: {
         throw new Error('Not authenticated')
       }
 
-      // 1. Upload new images
-      const uploadedImageUrls: string[] = []
+      setUploadProgress(40)
 
-      if (newImages.length > 0) {
-        for (let i = 0; i < newImages.length; i++) {
-          // Files in newImages were already resized on selection.
-          const file = newImages[i]
-          const fileExt = file.name.split('.').pop()
-          const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-          const filePath = `listings/${listingId}/${fileName}`
-
-          const { error: uploadError } = await supabase.storage
-            .from('listings')
-            .upload(filePath, file, {
-              // Unique filename per upload (never overwritten) → cache 1 year.
-              cacheControl: '31536000',
-              upsert: false,
-              contentType: file.type,
-            })
-
-          if (uploadError) {
-            console.error('Upload error:', uploadError)
-            throw uploadError
-          }
-
-          const { data: urlData } = supabase.storage
-            .from('listings')
-            .getPublicUrl(filePath)
-          uploadedImageUrls.push(urlData.publicUrl)
-
-          // Update progress
-          setUploadProgress(Math.round(((i + 1) / newImages.length) * 50))
-        }
-      } else {
-        setUploadProgress(50)
-      }
-
-      // 2. Delete images marked for deletion
       if (imagesToDelete.length > 0) {
         for (const imageUrl of imagesToDelete) {
-          // Don't delete the default image
           if (imageUrl === DEFAULT_LISTING_IMAGE) continue
+          if (previewUrls.includes(imageUrl)) continue
 
-          // Extract the path from the URL
-          const urlParts = imageUrl.split('/')
-          const bucketIndex = urlParts.findIndex(part => part === 'listings')
-          if (bucketIndex !== -1 && bucketIndex < urlParts.length - 1) {
-            const path = urlParts.slice(bucketIndex + 1).join('/')
-            const { error: deleteError } = await supabase.storage
-              .from('listings')
-              .remove([path])
+          const path = getListingStoragePathFromUrl(imageUrl)
+          if (!path) continue
 
-            if (deleteError) {
-              console.error('Delete error:', deleteError)
-              // Continue with other deletions even if one fails
-            }
+          const { error: deleteError } = await supabase.storage
+            .from('listings')
+            .remove([path])
+
+          if (deleteError) {
+            console.error('Delete error:', deleteError)
           }
         }
       }
 
-      // 3. Combine remaining existing images with new uploaded images
-      const remainingExistingImages = Array.isArray(existingImages)
-        ? existingImages.filter(url => !imagesToDelete.includes(url))
-        : []
-      const allImages = [...remainingExistingImages, ...uploadedImageUrls]
+      setUploadProgress(70)
 
-      // 4. Format the images as a PostgreSQL array literal, use default image if no images
-      const formattedImages =
-        allImages.length > 0
-          ? `{${allImages.map(url => `"${url}"`).join(',')}}`
-          : `{"${DEFAULT_LISTING_IMAGE}"}`
+      const allImages =
+        previewUrls.length > 0 ? previewUrls : [DEFAULT_LISTING_IMAGE]
 
-      // 5. Update the listing in the database
       const { error: updateError } = await supabase
         .from('listings')
         .update({
@@ -596,8 +516,8 @@ export default function EditListing(props: {
           category: data.category,
           subcategory: data.subcategory || null,
           calibre: data.calibre || null,
-          images: formattedImages,
-          thumbnail: allImages[0] || DEFAULT_LISTING_IMAGE,
+          images: formatImageUrls(allImages),
+          thumbnail: resolveThumbnail(allImages),
           updated_at: new Date().toISOString(),
         })
         .eq('id', listingId)
@@ -960,55 +880,20 @@ export default function EditListing(props: {
                     Images
                   </FormLabel>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Upload up to {MAX_FILES} images. First image will be used as
-                    thumbnail.
+                    Upload up to {MAX_FILES} images. Tap &quot;Set as main&quot;
+                    to choose the display image shown on listings.
                   </p>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-                    {previewUrls.map((url, index) => (
-                      <div
-                        key={index}
-                        className="relative aspect-square rounded-md overflow-hidden border shadow-sm"
-                      >
-                        <img
-                          src={url}
-                          alt={`Preview ${index}`}
-                          className="w-full h-full object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2 h-7 w-7 p-0 rounded-full shadow-md"
-                          onClick={() => handleRemoveImage(index)}
-                          disabled={isUploading}
-                        >
-                          ✕
-                        </Button>
-                        {index === 0 && (
-                          <span className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded shadow-md">
-                            Thumbnail
-                          </span>
-                        )}
-                      </div>
-                    ))}
-
-                    {previewUrls.length < MAX_FILES && (
-                      <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-square hover:bg-muted/50 transition-colors">
-                        <span className="text-3xl mb-1">+</span>
-                        <span className="text-sm text-center text-muted-foreground px-2">
-                          Add Image
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageUpload}
-                          disabled={isUploading}
-                        />
-                      </label>
-                    )}
-                  </div>
+                  <ListingImageGrid
+                    images={previewUrls}
+                    uploading={isUploading}
+                    maxFiles={MAX_FILES}
+                    accept={ACCEPTED_IMAGE_TYPES.join(',')}
+                    multiple={false}
+                    onUpload={handleImageUpload}
+                    onRemove={handleRemoveImage}
+                    onSetPrimary={handleSetPrimaryImage}
+                  />
                 </div>
 
                 {isUploading && (

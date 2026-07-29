@@ -59,8 +59,13 @@ export default function CreateNonFirearmsListing() {
 
   // Use shared hooks
   const { isLoading } = useAuthSession()
-  const { uploadedImages, uploading, handleImageUpload, handleDeleteImage } =
-    useImageUpload({ toast, setValue: form.setValue })
+  const {
+    uploadedImages,
+    uploading,
+    handleImageUpload,
+    handleDeleteImage,
+    handleSetPrimaryImage,
+  } = useImageUpload({ toast, setValue: form.setValue })
 
   // Create handlers
   const { createNonFirearmsListing } = createListingHandlers({
@@ -161,6 +166,7 @@ export default function CreateNonFirearmsListing() {
             uploading={uploading}
             handleImageUpload={handleImageUpload}
             handleDeleteImage={handleDeleteImage}
+            handleSetPrimaryImage={handleSetPrimaryImage}
           />
 
           <Button

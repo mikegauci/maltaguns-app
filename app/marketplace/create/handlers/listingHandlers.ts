@@ -1,7 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
-import { DEFAULT_LISTING_IMAGE } from '../constants'
 import { slugify } from '../utils'
+import { formatImageUrls, resolveThumbnail } from '@/lib/listing-images'
 
 interface CreateListingDependencies {
   supabase: SupabaseClient
@@ -98,14 +98,12 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         )
       }
 
-      // Get all image URLs
       const imageUrls = data.images.map(img =>
         typeof img === 'string' ? img : img.toString()
       )
 
       console.log('Attempting to create firearms listing with simplified data')
 
-      // Create a simplified listing object
       const listingData = {
         seller_id: session.user.id,
         type: 'firearms',
@@ -114,11 +112,8 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         title: data.title,
         description: data.description,
         price: data.price,
-        images:
-          imageUrls.length > 0
-            ? `{${imageUrls.map(url => `"${url}"`).join(',')}}`
-            : `{"${DEFAULT_LISTING_IMAGE}"}`,
-        thumbnail: imageUrls[0] || DEFAULT_LISTING_IMAGE,
+        images: formatImageUrls(imageUrls),
+        thumbnail: resolveThumbnail(imageUrls),
         status: 'active',
         expires_at: new Date(
           Date.now() + 30 * 24 * 60 * 60 * 1000
@@ -195,14 +190,12 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         throw new Error('Not authenticated')
       }
 
-      // Get all image URLs
       const imageUrls = data.images.map(img =>
         typeof img === 'string' ? img : img.toString()
       )
 
       console.log('Attempting to create non-firearms listing')
 
-      // Create a simplified listing object
       const listingData = {
         seller_id: session.user.id,
         type: 'non_firearms',
@@ -211,11 +204,8 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         title: data.title,
         description: data.description,
         price: data.price,
-        images:
-          imageUrls.length > 0
-            ? `{${imageUrls.map(url => `"${url}"`).join(',')}}`
-            : `{"${DEFAULT_LISTING_IMAGE}"}`,
-        thumbnail: imageUrls[0] || DEFAULT_LISTING_IMAGE,
+        images: formatImageUrls(imageUrls),
+        thumbnail: resolveThumbnail(imageUrls),
         status: 'active',
         expires_at: new Date(
           Date.now() + 30 * 24 * 60 * 60 * 1000

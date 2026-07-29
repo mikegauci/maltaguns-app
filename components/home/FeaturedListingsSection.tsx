@@ -22,9 +22,9 @@ export const FeaturedListingsSection = ({
   listings,
 }: FeaturedListingsSectionProps) => {
   return (
-    <section className="py-16">
+    <section className="py-8 md:py-12">
       <div className="container mx-auto px-6">
-        <div className="text-center mb-8 md:mb-12">
+        <div className="text-center mb-6 md:mb-8">
           <h2 className="text-2xl md:text-3xl font-bold mb-2">
             Featured Listings
           </h2>
