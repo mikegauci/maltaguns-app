@@ -1,7 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import {
+  useState,
+  useEffect,
+  useCallback,
+  Suspense,
+  startTransition,
+} from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -18,6 +24,7 @@ import {
   Store,
   CheckCircle,
   ShieldAlert,
+  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
@@ -38,6 +45,7 @@ import {
 } from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import type { ListingDetails } from './types'
 
 // Default image to use when no images are provided
@@ -135,6 +143,52 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
   return (
     categorySubcategories[subcategory as keyof typeof categorySubcategories] ||
     subcategory
+  )
+}
+
+function CreatedSuccessBanner({
+  listingTitle,
+  isOwner,
+}: {
+  listingTitle: string
+  isOwner: boolean
+}) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [dismissed, setDismissed] = useState(false)
+  const [showBanner, setShowBanner] = useState(false)
+  const createdParam = searchParams.get('created') === '1'
+
+  useEffect(() => {
+    if (!createdParam || !isOwner) return
+
+    startTransition(() => {
+      setShowBanner(true)
+    })
+    router.replace(`/marketplace/listing/${slugify(listingTitle)}`)
+  }, [createdParam, isOwner, router, listingTitle])
+
+  if (!showBanner || !isOwner || dismissed) return null
+
+  return (
+    <Alert className="mb-6 border-green-200 bg-green-50 text-green-900 pr-12">
+      <CheckCircle className="h-4 w-4 text-green-700" />
+      <AlertTitle>Listing successfully created</AlertTitle>
+      <AlertDescription>
+        Your listing is now live on MaltaGuns.{' '}
+        <Link href="/profile" className="font-medium underline">
+          View all your listings
+        </Link>
+      </AlertDescription>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100"
+        aria-label="Dismiss"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </Alert>
   )
 }
 
@@ -790,6 +844,10 @@ export default function ListingClient({
 
   return (
     <PageLayout>
+      <Suspense fallback={null}>
+        <CreatedSuccessBanner listingTitle={listing.title} isOwner={isOwner} />
+      </Suspense>
+
       <div className="mb-6 flex items-center justify-between">
         <BackButton
           label="Back"

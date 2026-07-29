@@ -1,19 +1,17 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-
-type NotificationRow = {
-  id: string
-  title: string
-  body: string
-  link_url: string | null
-  created_at: string
-  read_at: string | null
-}
+import {
+  markAllNotificationsReadInCache,
+  markNotificationReadInCache,
+  notificationsListQueryKey,
+  type NotificationRow,
+} from '@/lib/notifications-query'
 
 function formatDate(iso: string): string {
   const d = new Date(iso)
@@ -23,19 +21,19 @@ function formatDate(iso: string): string {
 export default function NotificationsPage() {
   const { supabase, session } = useSupabase()
   const userId = session?.user?.id
+  const queryClient = useQueryClient()
 
-  const [loading, setLoading] = useState(false)
-  const [items, setItems] = useState<NotificationRow[]>([])
-
-  const unreadCount = useMemo(
-    () => items.filter(n => !n.read_at).length,
-    [items]
-  )
-
-  const refresh = useCallback(async () => {
-    if (!userId) return
-    setLoading(true)
-    try {
+  const notificationsQuery = useQuery({
+    queryKey: userId
+      ? notificationsListQueryKey(userId)
+      : ['notifications-list'],
+    enabled: !!userId,
+    staleTime: Number.POSITIVE_INFINITY,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    queryFn: async () => {
+      if (!userId) return [] as NotificationRow[]
       const { data } = await supabase
         .from('notifications')
         .select('id,title,body,link_url,created_at,read_at')
@@ -43,45 +41,42 @@ export default function NotificationsPage() {
         .order('created_at', { ascending: false })
         .limit(100)
 
-      setItems((data as NotificationRow[]) || [])
-    } finally {
-      setLoading(false)
-    }
-  }, [supabase, userId])
+      return (data as NotificationRow[]) || []
+    },
+  })
 
-  useEffect(() => {
-    if (!userId) return
-    refresh()
-  }, [refresh, userId])
+  const items = notificationsQuery.data ?? []
+  const loading = notificationsQuery.isFetching
+
+  const unreadCount = useMemo(
+    () => items.filter(n => !n.read_at).length,
+    [items]
+  )
 
   const markRead = useCallback(
     async (id: string) => {
       if (!userId) return
       const now = new Date().toISOString()
+      markNotificationReadInCache(queryClient, userId, id, now)
       await supabase
         .from('notifications')
         .update({ read_at: now })
         .eq('id', id)
         .eq('user_id', userId)
-
-      setItems(prev =>
-        prev.map(n => (n.id === id ? { ...n, read_at: now } : n))
-      )
     },
-    [supabase, userId]
+    [queryClient, supabase, userId]
   )
 
   const markAllRead = useCallback(async () => {
     if (!userId) return
     const now = new Date().toISOString()
+    markAllNotificationsReadInCache(queryClient, userId, now)
     await supabase
       .from('notifications')
       .update({ read_at: now })
       .eq('user_id', userId)
       .is('read_at', null)
-
-    setItems(prev => prev.map(n => ({ ...n, read_at: n.read_at ?? now })))
-  }, [supabase, userId])
+  }, [queryClient, supabase, userId])
 
   if (!session?.user) {
     return (

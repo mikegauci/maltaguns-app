@@ -13,15 +13,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-
-type NotificationRow = {
-  id: string
-  title: string
-  body: string
-  link_url: string | null
-  created_at: string
-  read_at: string | null
-}
+import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime'
+import {
+  invalidateNotifications,
+  markAllNotificationsReadInCache,
+  markNotificationReadInCache,
+  notificationsBellQueryKey,
+  type NotificationRow,
+} from '@/lib/notifications-query'
 
 function formatRelativeTime(iso: string): string {
   const then = new Date(iso).getTime()
@@ -37,26 +36,28 @@ function formatRelativeTime(iso: string): string {
   return `${diffDay}d ago`
 }
 
-function isDocumentVisible() {
-  return (
-    typeof document === 'undefined' || document.visibilityState === 'visible'
-  )
-}
-
 export function NotificationsBell() {
   const { supabase, session } = useSupabase()
   const userId = session?.user?.id
+  const queryClient = useQueryClient()
 
   const [open, setOpen] = useState(false)
-  const queryClient = useQueryClient()
   const [shakeToken, setShakeToken] = useState(0)
   const lastUnreadRef = useRef(0)
   const inFlightMutationRef = useRef(false)
 
+  const refreshNotifications = useCallback(() => {
+    if (!userId) return
+    invalidateNotifications(queryClient, userId)
+  }, [queryClient, userId])
+
+  useNotificationsRealtime(userId, refreshNotifications)
+
   const notificationsQuery = useQuery({
-    queryKey: ['notifications-bell', userId],
+    queryKey: userId
+      ? notificationsBellQueryKey(userId)
+      : ['notifications-bell'],
     enabled: !!userId,
-    // Fetch once per session; refresh only when we explicitly invalidate (Realtime INSERT / mark read).
     staleTime: Number.POSITIVE_INFINITY,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -99,80 +100,23 @@ export function NotificationsBell() {
     setShakeToken(t => t + 1)
   }, [])
 
-  // Shake only when unread increases (new notifications), not on every render/navigation.
   useEffect(() => {
     if (unreadCount > lastUnreadRef.current) triggerShake()
     lastUnreadRef.current = unreadCount
   }, [triggerShake, unreadCount])
-
-  useEffect(() => {
-    if (!userId) return
-
-    const channel = supabase
-      .channel(`notifications:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          if (!isDocumentVisible()) return
-          void queryClient.invalidateQueries({
-            queryKey: ['notifications-bell', userId],
-          })
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          if (!isDocumentVisible()) return
-          void queryClient.invalidateQueries({
-            queryKey: ['notifications-bell', userId],
-          })
-        }
-      )
-      .subscribe()
-
-    const onVisibilityChange = () => {
-      if (!isDocumentVisible()) return
-      void queryClient.invalidateQueries({
-        queryKey: ['notifications-bell', userId],
-      })
-    }
-    document.addEventListener('visibilitychange', onVisibilityChange)
-
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange)
-      void supabase.removeChannel(channel)
-    }
-  }, [queryClient, supabase, triggerShake, userId])
-
-  // No "refetch on open" — the dropdown should not cause network traffic by itself.
 
   const markRead = useCallback(
     async (id: string) => {
       if (!userId) return
       inFlightMutationRef.current = true
       const now = new Date().toISOString()
+      markNotificationReadInCache(queryClient, userId, id, now)
       await supabase
         .from('notifications')
         .update({ read_at: now })
         .eq('id', id)
         .eq('user_id', userId)
       inFlightMutationRef.current = false
-
-      void queryClient.invalidateQueries({
-        queryKey: ['notifications-bell', userId],
-      })
     },
     [queryClient, supabase, userId]
   )
@@ -181,16 +125,13 @@ export function NotificationsBell() {
     if (!userId) return
     inFlightMutationRef.current = true
     const now = new Date().toISOString()
+    markAllNotificationsReadInCache(queryClient, userId, now)
     await supabase
       .from('notifications')
       .update({ read_at: now })
       .eq('user_id', userId)
       .is('read_at', null)
     inFlightMutationRef.current = false
-
-    void queryClient.invalidateQueries({
-      queryKey: ['notifications-bell', userId],
-    })
   }, [queryClient, supabase, userId])
 
   if (!userId) return null

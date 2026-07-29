@@ -17,6 +17,26 @@ interface CreateListingDependencies {
 export function createListingHandlers(deps: CreateListingDependencies) {
   const { supabase, router, toast, setIsSubmitting } = deps
 
+  async function notifyListingCreated(listingId: string) {
+    try {
+      const res = await fetch('/api/listings/notify-created', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        console.error(
+          'Failed to send listing created notification:',
+          res.status,
+          body
+        )
+      }
+    } catch (error) {
+      console.error('Failed to send listing created notification:', error)
+    }
+  }
+
   async function createFirearmsListing(data: {
     category: string
     calibre: string
@@ -135,12 +155,9 @@ export function createListingHandlers(deps: CreateListingDependencies) {
 
       data.setCredits(data.credits - 1)
 
-      toast({
-        title: 'Listing created',
-        description: 'Your listing has been created successfully',
-      })
-
-      router.push(`/marketplace/listing/${slugify(listing.title)}`)
+      const listingPath = `/marketplace/listing/${slugify(listing.title)}`
+      await notifyListingCreated(listing.id)
+      router.push(`${listingPath}?created=1`)
     } catch (error) {
       console.error('Error creating listing:', error)
       toast({
@@ -219,12 +236,9 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         throw listingError
       }
 
-      toast({
-        title: 'Listing created',
-        description: 'Your listing has been created successfully',
-      })
-
-      router.push(`/marketplace/listing/${slugify(listing.title)}`)
+      const listingPath = `/marketplace/listing/${slugify(listing.title)}`
+      await notifyListingCreated(listing.id)
+      router.push(`${listingPath}?created=1`)
     } catch (error) {
       console.error('Error creating listing:', error)
       toast({
