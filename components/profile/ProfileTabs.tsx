@@ -134,9 +134,17 @@ export function ProfileTabs({
   const totalEstablishments =
     stores.length + clubs.length + servicing.length + ranges.length
 
+  const canAccessBlog =
+    !!profile.is_admin ||
+    [stores, clubs, servicing, ranges].some(list =>
+      list.some(e => e.status === 'active')
+    )
+
   return (
     <Tabs defaultValue="profile" className="space-y-4">
-      <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 h-auto">
+      <TabsList
+        className={`grid w-full grid-cols-3 h-auto ${canAccessBlog ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`}
+      >
         <TabsTrigger
           value="profile"
           className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-3"
@@ -158,20 +166,22 @@ export function ProfileTabs({
             )}
           </span>
         </TabsTrigger>
-        <TabsTrigger
-          value="blog"
-          className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-3"
-        >
-          <BookOpen className="h-4 w-4" />
-          <span className="text-xs sm:text-sm flex items-center gap-1">
-            Blog
-            {blogPosts.length > 0 && (
-              <span className="hidden sm:inline rounded-full bg-primary px-1.5 py-0.5 text-xs text-primary-foreground leading-none">
-                {blogPosts.length}
-              </span>
-            )}
-          </span>
-        </TabsTrigger>
+        {canAccessBlog && (
+          <TabsTrigger
+            value="blog"
+            className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-3"
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="text-xs sm:text-sm flex items-center gap-1">
+              Blog
+              {blogPosts.length > 0 && (
+                <span className="hidden sm:inline rounded-full bg-primary px-1.5 py-0.5 text-xs text-primary-foreground leading-none">
+                  {blogPosts.length}
+                </span>
+              )}
+            </span>
+          </TabsTrigger>
+        )}
         <TabsTrigger
           value="events"
           className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-3"
@@ -248,31 +258,35 @@ export function ProfileTabs({
         />
       </TabsContent>
 
-      {/* Blog Tab */}
-      <TabsContent value="blog">
-        {blogPosts.length > 0 ? (
-          <MyBlogPosts
-            blogPosts={blogPosts}
-            handleDeletePost={handleDeletePost}
-          />
-        ) : (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No blog posts yet</h3>
-              <p className="text-muted-foreground text-center mb-4">
-                Start sharing your knowledge and experiences with the community
-              </p>
-              <Link href="/blog/create">
-                <Button>
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Write Your First Post
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
-      </TabsContent>
+      {canAccessBlog && (
+        <TabsContent value="blog">
+          {blogPosts.length > 0 ? (
+            <MyBlogPosts
+              blogPosts={blogPosts}
+              handleDeletePost={handleDeletePost}
+            />
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">
+                  No blog posts yet
+                </h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  Start sharing your knowledge and experiences with the
+                  community
+                </p>
+                <Link href="/blog/create">
+                  <Button>
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Write Your First Post
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      )}
 
       {/* Events Tab */}
       <TabsContent value="events">
