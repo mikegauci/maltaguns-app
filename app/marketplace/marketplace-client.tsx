@@ -21,6 +21,7 @@ import { WishlistButton } from '@/components/marketplace/WishlistButton'
 import { MarketplaceCategoryNav } from '@/components/marketplace/MarketplaceCategoryNav'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 interface Listing {
   id: string
@@ -90,6 +91,7 @@ export default function MarketplaceClient({
   regularListings,
 }: MarketplaceClientProps) {
   const router = useRouter()
+  const { session } = useSupabase()
   const error = null
 
   const renderListingCard = (listing: Listing) => {
@@ -200,12 +202,14 @@ export default function MarketplaceClient({
             Create Listing
           </Button>
         </Link>
-        <Link href="/wishlist">
-          <Button variant="outline">
-            <Heart className="mr-2 h-4 w-4" />
-            My Wishlist
-          </Button>
-        </Link>
+        {session?.user && (
+          <Link href="/wishlist">
+            <Button variant="outline">
+              <Heart className="mr-2 h-4 w-4" />
+              My Wishlist
+            </Button>
+          </Link>
+        )}
       </div>
 
       <Suspense fallback={null}>

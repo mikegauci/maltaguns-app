@@ -1,20 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Heart } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 
 interface WishlistButtonProps {
   listingId: string
@@ -34,17 +25,7 @@ export function WishlistButton({
   const [isInWishlist, setIsInWishlist] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isCheckingStatus, setIsCheckingStatus] = useState(true)
-  const [showAuthDialog, setShowAuthDialog] = useState(false)
   const { session } = useSupabase()
-
-  function saveRedirect() {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(
-        'redirectAfterLogin',
-        window.location.pathname + window.location.search
-      )
-    }
-  }
 
   const checkWishlistStatus = useCallback(async () => {
     if (!session?.user) {
@@ -57,7 +38,7 @@ export function WishlistButton({
       if (response.ok) {
         const data = await response.json()
         const isWishlisted = data.wishlistItems?.some(
-          (item: any) => item.listing_id === listingId
+          (item: { listing_id: string }) => item.listing_id === listingId
         )
         setIsInWishlist(isWishlisted)
       }
@@ -68,14 +49,12 @@ export function WishlistButton({
     }
   }, [session?.user, listingId])
 
-  // Check if item is in wishlist when component mounts
   useEffect(() => {
     checkWishlistStatus()
   }, [checkWishlistStatus])
 
   async function handleWishlistToggle() {
     if (!session?.user) {
-      setShowAuthDialog(true)
       return
     }
 
@@ -83,7 +62,6 @@ export function WishlistButton({
 
     try {
       if (isInWishlist) {
-        // Remove from wishlist
         const response = await fetch(
           `/api/wishlist/remove?listingId=${listingId}`,
           {
@@ -99,7 +77,6 @@ export function WishlistButton({
           toast.error(error.error || 'Failed to remove from wishlist')
         }
       } else {
-        // Add to wishlist
         const response = await fetch('/api/wishlist/add', {
           method: 'POST',
           headers: {
@@ -124,58 +101,35 @@ export function WishlistButton({
     }
   }
 
-  // Don't show button while checking status
-  if (isCheckingStatus) {
+  if (!session?.user || isCheckingStatus) {
     return null
   }
 
   return (
-    <>
-      <Button
-        variant={variant}
-        size={size}
-        onClick={handleWishlistToggle}
-        disabled={isLoading}
-        className={cn(
-          'gap-2',
-          isInWishlist &&
-            'text-red-600 border-red-200 bg-red-50 hover:bg-red-100',
-          className
-        )}
-      >
-        <Heart
-          className={cn('h-4 w-4', isInWishlist && 'fill-current text-red-600')}
-        />
-        {showText && (
-          <span>
-            {isLoading
-              ? '...'
-              : isInWishlist
-                ? 'Remove from Wishlist'
-                : 'Add to Wishlist'}
-          </span>
-        )}
-      </Button>
-
-      <Dialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Save to your wishlist</DialogTitle>
-            <DialogDescription>
-              Log in or create a free account to save listings to your wishlist
-              and access them anytime.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="outline" asChild onClick={saveRedirect}>
-              <Link href="/register">Create account</Link>
-            </Button>
-            <Button asChild onClick={saveRedirect}>
-              <Link href="/login">Log in</Link>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+    <Button
+      variant={variant}
+      size={size}
+      onClick={handleWishlistToggle}
+      disabled={isLoading}
+      className={cn(
+        'gap-2',
+        isInWishlist &&
+          'text-red-600 border-red-200 bg-red-50 hover:bg-red-100',
+        className
+      )}
+    >
+      <Heart
+        className={cn('h-4 w-4', isInWishlist && 'fill-current text-red-600')}
+      />
+      {showText && (
+        <span>
+          {isLoading
+            ? '...'
+            : isInWishlist
+              ? 'Remove from Wishlist'
+              : 'Add to Wishlist'}
+        </span>
+      )}
+    </Button>
   )
 }
