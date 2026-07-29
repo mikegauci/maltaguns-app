@@ -370,9 +370,9 @@ export default function EditListing(props: {
     }
 
     setIsUploading(true)
+    const uploadedUrls: string[] = []
 
     try {
-      // Get session
       const {
         data: { session },
         error: sessionError,
@@ -388,18 +388,14 @@ export default function EditListing(props: {
       }
 
       for (const file of files) {
-        // Downscale + re-encode to WebP before upload to cut Storage egress.
         const resized = await resizeImageForUpload(file)
-        // Create a unique file name
         const fileExt = resized.name.split('.').pop()
         const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
         const filePath = `listings/${listingId}/${fileName}`
 
-        // Upload file to Supabase Storage
         const { error: uploadError } = await supabase.storage
           .from('listings')
           .upload(filePath, resized, {
-            // Unique filename per upload (never overwritten) → cache for 1 year.
             cacheControl: '31536000',
             upsert: false,
             contentType: resized.type,
@@ -409,13 +405,14 @@ export default function EditListing(props: {
           throw uploadError
         }
 
-        // Get public URL
         const {
           data: { publicUrl },
         } = supabase.storage.from('listings').getPublicUrl(filePath)
 
-        setPreviewUrls(prev => [...prev, publicUrl])
+        uploadedUrls.push(publicUrl)
       }
+
+      setPreviewUrls(prev => [...prev, ...uploadedUrls])
 
       toast({
         title: 'Images uploaded',
@@ -423,11 +420,20 @@ export default function EditListing(props: {
       })
     } catch (error) {
       console.error('Image upload error:', error)
-      toast({
-        title: 'Upload failed',
-        description: 'Failed to upload images. Please try again.',
-        variant: 'destructive',
-      })
+      if (uploadedUrls.length > 0) {
+        setPreviewUrls(prev => [...prev, ...uploadedUrls])
+        toast({
+          title: 'Partial upload',
+          description: `${uploadedUrls.length} of ${files.length} images uploaded. Please try again for the rest.`,
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: 'Upload failed',
+          description: 'Failed to upload images. Please try again.',
+          variant: 'destructive',
+        })
+      }
     } finally {
       setIsUploading(false)
       event.target.value = ''
@@ -883,7 +889,7 @@ export default function EditListing(props: {
                     Images
                   </FormLabel>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Upload up to{" "}{MAX_FILES}{" "}images. Tap &quot;Set as main&quot;
+                    Upload up to {MAX_FILES} images. Tap &quot;Set as main&quot;
                     to choose the display image shown on listings.
                   </p>
 

@@ -721,7 +721,7 @@ function ListingsPageComponent() {
           <div className="space-y-2">
             <Label>Images</Label>
             <p className="text-sm text-muted-foreground">
-              Upload up to{" "}{MAX_FILES}{" "}images. Tap &quot;Set as main&quot; to
+              Upload up to {MAX_FILES} images. Tap &quot;Set as main&quot; to
               choose the display image shown on listings.
             </p>
             <ListingImageGrid

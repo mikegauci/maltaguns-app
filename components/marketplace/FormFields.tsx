@@ -140,7 +140,7 @@ export function ImageUploadField<T extends FieldValues>({
                 onSetPrimary={handleSetPrimaryImage}
               />
               <p className="text-sm text-muted-foreground">
-                Upload up to{" "}{MAX_FILES}{" "}images (max 5MB each). Tap &quot;Set as
+                Upload up to {MAX_FILES} images (max 5MB each). Tap &quot;Set as
                 main&quot; to choose the display image shown on listings. If no
                 image is uploaded, a default image will be used.
               </p>

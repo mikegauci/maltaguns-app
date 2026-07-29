@@ -77,6 +77,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true })
     }
 
+    const { data: claimed, error: claimError } = await supabaseAdmin
+      .from('notifications')
+      .update({ email_error: 'sending' })
+      .eq('id', notification.id)
+      .eq('email_status', 'pending')
+      .is('email_error', null)
+      .select('id')
+      .maybeSingle()
+
+    if (claimError) throw claimError
+    if (!claimed) {
+      return NextResponse.json({ ok: true })
+    }
+
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('email')

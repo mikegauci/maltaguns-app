@@ -157,28 +157,54 @@ function CreatedSuccessBanner({
   const router = useRouter()
   const [dismissed, setDismissed] = useState(false)
   const [showBanner, setShowBanner] = useState(false)
+  const [notifyFailed, setNotifyFailed] = useState(false)
   const createdParam = searchParams.get('created') === '1'
 
   useEffect(() => {
     if (!createdParam || !isOwner) return
 
+    const failed = searchParams.get('notify') === '0'
     startTransition(() => {
+      setNotifyFailed(failed)
       setShowBanner(true)
     })
     router.replace(`/marketplace/listing/${slugify(listingTitle)}`)
-  }, [createdParam, isOwner, router, listingTitle])
+  }, [createdParam, isOwner, router, listingTitle, searchParams])
 
   if (!showBanner || !isOwner || dismissed) return null
 
   return (
-    <Alert className="mb-6 border-green-200 bg-green-50 text-green-900 pr-12">
-      <CheckCircle className="h-4 w-4 text-green-700" />
+    <Alert
+      className={
+        notifyFailed
+          ? 'mb-6 border-amber-200 bg-amber-50 text-amber-950 pr-12'
+          : 'mb-6 border-green-200 bg-green-50 text-green-900 pr-12'
+      }
+    >
+      <CheckCircle
+        className={
+          notifyFailed ? 'h-4 w-4 text-amber-700' : 'h-4 w-4 text-green-700'
+        }
+      />
       <AlertTitle>Listing successfully created</AlertTitle>
       <AlertDescription>
-        Your listing is now live on MaltaGuns.{' '}
-        <Link href="/profile" className="font-medium underline">
-          View all your listings
-        </Link>
+        {notifyFailed ? (
+          <>
+            Your listing is now live on MaltaGuns, but we couldn&apos;t send the
+            confirmation notification. You can still manage it from your{' '}
+            <Link href="/profile" className="font-medium underline">
+              profile
+            </Link>
+            .
+          </>
+        ) : (
+          <>
+            Your listing is now live on MaltaGuns.{' '}
+            <Link href="/profile" className="font-medium underline">
+              View all your listings
+            </Link>
+          </>
+        )}
       </AlertDescription>
       <button
         type="button"

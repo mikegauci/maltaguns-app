@@ -26,7 +26,8 @@ function shouldRefreshOnUpdate(
 
 export function useNotificationsRealtime(
   userId: string | undefined,
-  onChange: () => void
+  onChange: () => void,
+  channelKey = 'default'
 ) {
   const { supabase } = useSupabase()
   const onChangeRef = useRef(onChange)
@@ -41,7 +42,7 @@ export function useNotificationsRealtime(
     }
 
     const channel = supabase
-      .channel(`notifications:${userId}`)
+      .channel(`notifications:${channelKey}:${userId}`)
       .on(
         'postgres_changes',
         {
@@ -77,5 +78,5 @@ export function useNotificationsRealtime(
       document.removeEventListener('visibilitychange', onVisibilityChange)
       void supabase.removeChannel(channel)
     }
-  }, [supabase, userId])
+  }, [supabase, userId, channelKey])
 }

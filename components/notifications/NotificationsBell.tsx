@@ -51,7 +51,7 @@ export function NotificationsBell() {
     invalidateNotifications(queryClient, userId)
   }, [queryClient, userId])
 
-  useNotificationsRealtime(userId, refreshNotifications)
+  useNotificationsRealtime(userId, refreshNotifications, 'bell')
 
   const notificationsQuery = useQuery({
     queryKey: userId

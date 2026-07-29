@@ -6,7 +6,9 @@ import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime'
 import {
+  invalidateNotifications,
   markAllNotificationsReadInCache,
   markNotificationReadInCache,
   notificationsListQueryKey,
@@ -22,6 +24,13 @@ export default function NotificationsPage() {
   const { supabase, session } = useSupabase()
   const userId = session?.user?.id
   const queryClient = useQueryClient()
+
+  const refreshNotifications = useCallback(() => {
+    if (!userId) return
+    invalidateNotifications(queryClient, userId)
+  }, [queryClient, userId])
+
+  useNotificationsRealtime(userId, refreshNotifications, 'page')
 
   const notificationsQuery = useQuery({
     queryKey: userId

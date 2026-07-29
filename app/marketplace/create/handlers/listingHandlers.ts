@@ -17,7 +17,7 @@ interface CreateListingDependencies {
 export function createListingHandlers(deps: CreateListingDependencies) {
   const { supabase, router, toast, setIsSubmitting } = deps
 
-  async function notifyListingCreated(listingId: string) {
+  async function notifyListingCreated(listingId: string): Promise<boolean> {
     try {
       const res = await fetch('/api/listings/notify-created', {
         method: 'POST',
@@ -31,10 +31,19 @@ export function createListingHandlers(deps: CreateListingDependencies) {
           res.status,
           body
         )
+        return false
       }
+      return true
     } catch (error) {
       console.error('Failed to send listing created notification:', error)
+      return false
     }
+  }
+
+  function redirectAfterCreate(listingPath: string, notifyOk: boolean) {
+    const params = new URLSearchParams({ created: '1' })
+    if (!notifyOk) params.set('notify', '0')
+    router.push(`${listingPath}?${params.toString()}`)
   }
 
   async function createFirearmsListing(data: {
@@ -151,8 +160,8 @@ export function createListingHandlers(deps: CreateListingDependencies) {
       data.setCredits(data.credits - 1)
 
       const listingPath = `/marketplace/listing/${slugify(listing.title)}`
-      await notifyListingCreated(listing.id)
-      router.push(`${listingPath}?created=1`)
+      const notifyOk = await notifyListingCreated(listing.id)
+      redirectAfterCreate(listingPath, notifyOk)
     } catch (error) {
       console.error('Error creating listing:', error)
       toast({
@@ -227,8 +236,8 @@ export function createListingHandlers(deps: CreateListingDependencies) {
       }
 
       const listingPath = `/marketplace/listing/${slugify(listing.title)}`
-      await notifyListingCreated(listing.id)
-      router.push(`${listingPath}?created=1`)
+      const notifyOk = await notifyListingCreated(listing.id)
+      redirectAfterCreate(listingPath, notifyOk)
     } catch (error) {
       console.error('Error creating listing:', error)
       toast({
