@@ -1,24 +1,7 @@
-import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase/public'
+import { getActiveEstablishmentsResponse } from '@/lib/public-establishments'
 
 export const revalidate = 60
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from('stores')
-    .select('*')
-    .eq('status', 'active')
-    .order('business_name', { ascending: true })
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  return NextResponse.json(
-    { stores: data || [] },
-    {
-      headers: {
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
-      },
-    }
-  )
+  return getActiveEstablishmentsResponse('stores', 'stores')
 }
-

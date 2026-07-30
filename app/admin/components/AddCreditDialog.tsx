@@ -32,17 +32,63 @@ const formSchema = z.object({
   amount: z.string().min(1, 'Amount is required'),
 })
 
+type CreditKind = 'credits' | 'event-credits'
+
+const CREDIT_KIND_CONFIG: Record<
+  CreditKind,
+  {
+    createPath: string
+    title: string
+    description: string
+    amountPlaceholder: string
+    submitLabel: string
+    successTitle: string
+    successDescription: (name: string) => string
+    failureTitle: string
+    failureFallback: string
+    createErrorFallback: string
+  }
+> = {
+  credits: {
+    createPath: '/api/admin/credits/create',
+    title: 'Add Credits',
+    description: 'Add credits for a user',
+    amountPlaceholder: 'Enter credit amount',
+    submitLabel: 'Add Credits',
+    successTitle: 'Credits Added',
+    successDescription: name => `Successfully added credits for ${name}`,
+    failureTitle: 'Adding Credits Failed',
+    failureFallback: 'Failed to add credits',
+    createErrorFallback: 'Failed to create credit',
+  },
+  'event-credits': {
+    createPath: '/api/admin/event-credits/create',
+    title: 'Add Event Credits',
+    description: 'Add event credits for a user',
+    amountPlaceholder: 'Enter event credit amount',
+    submitLabel: 'Add Event Credits',
+    successTitle: 'Event Credits Added',
+    successDescription: name => `Successfully added event credits for ${name}`,
+    failureTitle: 'Adding Event Credits Failed',
+    failureFallback: 'Failed to add event credits',
+    createErrorFallback: 'Failed to create event credit',
+  },
+}
+
 interface AddCreditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
   onSuccess?: () => void
+  kind?: CreditKind
 }
 
 export function AddCreditDialog({
   open, // eslint-disable-line unused-imports/no-unused-vars
   onOpenChange,
   onSuccess,
+  kind = 'credits',
 }: AddCreditDialogProps) {
+  const config = CREDIT_KIND_CONFIG[kind]
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [selectedUser, setSelectedUser] = useState<AdminSearchUser | null>(null)
@@ -69,7 +115,7 @@ export function AddCreditDialog({
     try {
       setIsLoading(true)
 
-      const response = await fetch(`/api/admin/credits/create`, {
+      const response = await fetch(config.createPath, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,25 +128,25 @@ export function AddCreditDialog({
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message || 'Failed to create credit')
+        throw new Error(error.message || config.createErrorFallback)
       }
 
       const profileName =
         selectedUser?.username || selectedUser?.email || 'user'
 
       toast({
-        title: 'Credits Added',
-        description: `Successfully added credits for ${profileName}`,
+        title: config.successTitle,
+        description: config.successDescription(profileName),
       })
 
       onOpenChange(false)
       if (onSuccess) onSuccess()
     } catch (error) {
-      console.error('Failed to add credits:', error)
+      console.error(config.failureFallback + ':', error)
       toast({
-        title: 'Adding Credits Failed',
+        title: config.failureTitle,
         description:
-          error instanceof Error ? error.message : 'Failed to add credits',
+          error instanceof Error ? error.message : config.failureFallback,
         variant: 'destructive',
       })
     } finally {
@@ -112,8 +158,8 @@ export function AddCreditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Credits</DialogTitle>
-          <DialogDescription>Add credits for a user</DialogDescription>
+          <DialogTitle>{config.title}</DialogTitle>
+          <DialogDescription>{config.description}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -143,7 +189,7 @@ export function AddCreditDialog({
                   <FormLabel>Amount</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Enter credit amount"
+                      placeholder={config.amountPlaceholder}
                       {...field}
                       type="number"
                     />
@@ -169,7 +215,7 @@ export function AddCreditDialog({
                     Adding...
                   </>
                 ) : (
-                  'Add Credits'
+                  config.submitLabel
                 )}
               </Button>
             </DialogFooter>

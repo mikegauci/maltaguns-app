@@ -1,9 +1,68 @@
-import { sendNotificationEmail } from '@/lib/notification-email'
+import {
+  sendNotificationEmail,
+  type NotificationEmailPayload,
+} from '@/lib/notification-email'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 const PERMANENT_EMAIL_FAILURE = 'No email on profile'
 
 export { PERMANENT_EMAIL_FAILURE }
+
+export type DeliverNotificationEmailResult =
+  | { status: 'sent' }
+  | { status: 'failed'; error: string }
+  | { status: 'permanent_failure' }
+
+export async function deliverNotificationEmail(params: {
+  notification: NotificationEmailPayload
+  to: string | null | undefined
+  unsubscribeUrl?: string
+}): Promise<DeliverNotificationEmailResult> {
+  const { notification, to, unsubscribeUrl } = params
+
+  if (!to) {
+    await supabaseAdmin
+      .from('notifications')
+      .update({
+        email_status: 'failed',
+        email_error: PERMANENT_EMAIL_FAILURE,
+        email_sent_at: new Date().toISOString(),
+      })
+      .eq('id', notification.id)
+
+    return { status: 'permanent_failure' }
+  }
+
+  const emailResult = await sendNotificationEmail({
+    notification,
+    to,
+    unsubscribeUrl,
+  })
+
+  if (!emailResult.success) {
+    await supabaseAdmin
+      .from('notifications')
+      .update({
+        email_status: 'pending',
+        email_error: emailResult.error,
+        email_sent_at: null,
+      })
+      .eq('id', notification.id)
+
+    return { status: 'failed', error: emailResult.error ?? 'Send failed' }
+  }
+
+  await supabaseAdmin
+    .from('notifications')
+    .update({
+      email_status: 'sent',
+      email_error: null,
+      email_sent_at: new Date().toISOString(),
+    })
+    .eq('id', notification.id)
+
+  return { status: 'sent' }
+}
 
 export async function createAndEmailNotification(params: {
   userId: string
@@ -84,46 +143,10 @@ export async function createAndEmailNotification(params: {
 
   if (profileError) throw profileError
 
-  const to = profile?.email
-  if (!to) {
-    await supabaseAdmin
-      .from('notifications')
-      .update({
-        email_status: 'failed',
-        email_error: PERMANENT_EMAIL_FAILURE,
-        email_sent_at: new Date().toISOString(),
-      })
-      .eq('id', notification.id)
-
-    return { ok: true }
-  }
-
-  const emailResult = await sendNotificationEmail({
+  const result = await deliverNotificationEmail({
     notification,
-    to,
+    to: profile?.email,
   })
 
-  if (!emailResult.success) {
-    await supabaseAdmin
-      .from('notifications')
-      .update({
-        email_status: 'pending',
-        email_error: emailResult.error,
-        email_sent_at: null,
-      })
-      .eq('id', notification.id)
-
-    return { ok: false }
-  }
-
-  await supabaseAdmin
-    .from('notifications')
-    .update({
-      email_status: 'sent',
-      email_error: null,
-      email_sent_at: new Date().toISOString(),
-    })
-    .eq('id', notification.id)
-
-  return { ok: true }
+  return { ok: result.status !== 'failed' }
 }

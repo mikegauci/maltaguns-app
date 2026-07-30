@@ -1,8 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
@@ -12,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 
 type UserRow = {
   id: string
@@ -28,11 +27,9 @@ function displayName(u: UserRow): string {
 }
 
 export default function AdminNotificationsPage() {
-  const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { isAuthorized } = useRequireAdmin({ preset: 'admin-silent' })
 
-  const [isAuthorized, setIsAuthorized] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const [sendToAll, setSendToAll] = useState(false)
@@ -58,40 +55,6 @@ export default function AdminNotificationsPage() {
       description.trim().length > 0
     )
   }, [description, selectedCount, sendToAll, title])
-
-  // Auth gate
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-
-        if (!session) {
-          router.push('/login')
-          return
-        }
-
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('is_admin')
-          .eq('id', session.user.id)
-          .single()
-
-        if (!profile?.is_admin) {
-          router.push('/admin')
-          return
-        }
-
-        setIsAuthorized(true)
-      } catch (e) {
-        console.error('Admin auth error', e)
-        router.push('/login')
-      }
-    }
-
-    checkAuth()
-  }, [router, supabase])
 
   const fetchUsers = useCallback(async () => {
     if (!isAuthorized) return

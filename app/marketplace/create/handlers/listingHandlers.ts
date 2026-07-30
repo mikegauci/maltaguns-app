@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
-import { slugify } from '../utils'
+import { slugify } from '@/lib/format'
 import { formatImageUrls, resolveThumbnail } from '@/lib/listing-images'
 import { postNotifyCreated } from '@/lib/notify-created-client'
 

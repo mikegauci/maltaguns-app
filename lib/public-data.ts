@@ -16,7 +16,7 @@ export async function getHomePageData() {
   }
 }
 
-async function fetchHomePageData() {
+export async function fetchHomePageData() {
   const now = new Date().toISOString()
 
   const [
@@ -141,7 +141,7 @@ export async function getMarketplacePageData() {
   }
 }
 
-async function fetchMarketplacePageData() {
+export async function fetchMarketplacePageData() {
   const now = new Date().toISOString()
 
   const [{ data: listingsData, error: listingsError }, featuredRes] =

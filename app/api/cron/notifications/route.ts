@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import {
   getSiteBaseUrl,
-  sendNotificationEmail,
   type NotificationEmailPayload,
 } from '@/lib/notification-email'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { signUnsubscribeToken } from '@/lib/unsubscribe'
-import { PERMANENT_EMAIL_FAILURE } from '@/lib/notify-created'
+import {
+  deliverNotificationEmail,
+  PERMANENT_EMAIL_FAILURE,
+} from '@/lib/notify-created'
 
 type PendingNotification = NotificationEmailPayload & {
   id: string
@@ -224,50 +226,21 @@ async function sendPendingEmails(): Promise<{
     }
 
     const to = emailByUserId.get(n.user_id)
-    if (!to) {
-      failed++
-      await supabaseAdmin
-        .from('notifications')
-        .update({
-          email_status: 'failed',
-          email_error: 'No email on profile',
-          email_sent_at: new Date().toISOString(),
-        })
-        .eq('id', n.id)
-      continue
-    }
-
     const unsubscribeUrl =
       n.type === 'article_new' ? getUnsubscribeUrl(n.user_id) : undefined
 
-    const result = await sendNotificationEmail({
+    const result = await deliverNotificationEmail({
       notification: n,
       to,
       unsubscribeUrl,
     })
 
-    if (!result.success) {
-      failed++
-      await supabaseAdmin
-        .from('notifications')
-        .update({
-          email_status: 'pending',
-          email_error: result.error ?? 'Resend error',
-          email_sent_at: null,
-        })
-        .eq('id', n.id)
+    if (result.status === 'sent') {
+      sent++
       continue
     }
 
-    sent++
-    await supabaseAdmin
-      .from('notifications')
-      .update({
-        email_status: 'sent',
-        email_error: null,
-        email_sent_at: new Date().toISOString(),
-      })
-      .eq('id', n.id)
+    failed++
   }
 
   return { attempted: pendingNotifications.length, sent, failed }

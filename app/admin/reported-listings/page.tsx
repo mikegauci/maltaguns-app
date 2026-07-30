@@ -1,7 +1,8 @@
 'use client'
 
-import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
+import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
+import { slugify } from '@/lib/format'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -24,11 +25,6 @@ import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
-
-const DataTable = nextDynamic(
-  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
-  { ssr: false }
-) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface ReportedListing {
   id: string
@@ -70,16 +66,6 @@ function ReportedListingsPageComponent() {
   const [newStatus, setNewStatus] = useState('')
   const supabase = createClient()
 
-  // Helper function to create URL-friendly slugs from titles
-  function slugify(text: string): string {
-    return text
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/--+/g, '-')
-  }
-
-  // Helper function to format reason text
   function formatReason(reason: string): string {
     return reason.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
   }

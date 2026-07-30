@@ -1,4 +1,110 @@
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { resizeImageForUpload } from '@/lib/image-resize'
+import {
+  ACCEPTED_IMAGE_TYPES,
+  MAX_FILE_SIZE,
+  MAX_FILES,
+} from '@/app/marketplace/create/constants'
+
 const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
+
+const LISTINGS_BUCKET = 'listings'
+
+export type ListingImageValidationError =
+  | { code: 'too_many'; max: number }
+  | { code: 'file_too_large'; fileName: string }
+  | { code: 'invalid_type'; fileName: string }
+
+export function validateListingImageFiles(
+  files: File[],
+  currentCount: number,
+  maxFiles: number = MAX_FILES
+): ListingImageValidationError | null {
+  if (files.length + currentCount > maxFiles) {
+    return { code: 'too_many', max: maxFiles }
+  }
+
+  for (const file of files) {
+    if (file.size > MAX_FILE_SIZE) {
+      return { code: 'file_too_large', fileName: file.name }
+    }
+
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      return { code: 'invalid_type', fileName: file.name }
+    }
+  }
+
+  return null
+}
+
+export function listingImageValidationToast(
+  error: ListingImageValidationError
+): {
+  title: string
+  description: string
+} {
+  switch (error.code) {
+    case 'too_many':
+      return {
+        title: 'Too many files',
+        description: `Maximum ${error.max} images allowed`,
+      }
+    case 'file_too_large':
+      return {
+        title: 'File too large',
+        description: `${error.fileName} exceeds 5MB limit`,
+      }
+    case 'invalid_type':
+      return {
+        title: 'Invalid file type',
+        description: `${error.fileName} is not a supported image format`,
+      }
+  }
+}
+
+export async function uploadListingImages(params: {
+  supabase: SupabaseClient
+  files: File[]
+  userId: string
+  listingId?: string
+  shouldContinue?: () => boolean
+}): Promise<string[]> {
+  const { supabase, files, userId, listingId, shouldContinue } = params
+  const uploadedUrls: string[] = []
+
+  for (const file of files) {
+    if (shouldContinue && !shouldContinue()) {
+      break
+    }
+
+    const resized = await resizeImageForUpload(file)
+    const fileExt = resized.name.split('.').pop()
+    const fileName = `${userId}-${Date.now()}-${Math.random()}.${fileExt}`
+    const filePath = listingId
+      ? `listings/${listingId}/${fileName}`
+      : `listings/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from(LISTINGS_BUCKET)
+      .upload(filePath, resized, {
+        cacheControl: '31536000',
+        upsert: false,
+        contentType: resized.type,
+      })
+
+    if (uploadError) {
+      throw uploadError
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(LISTINGS_BUCKET).getPublicUrl(filePath)
+
+    uploadedUrls.push(publicUrl)
+  }
+
+  return uploadedUrls
+}
 
 function escapePostgresArrayElement(value: string): string {
   return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')

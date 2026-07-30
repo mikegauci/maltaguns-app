@@ -32,21 +32,23 @@ import {
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { createClient } from '@/lib/supabase/client'
-import { resizeImageForUpload } from '@/lib/image-resize'
 import {
   DEFAULT_LISTING_IMAGE,
-  formatImageUrls,
   getListingStoragePathFromUrl,
+  listingImageValidationToast,
   moveImageToPrimary,
   parseImageUrls,
-  resolveThumbnail,
+  uploadListingImages,
+  validateListingImageFiles,
   withoutDefaultListingImage,
 } from '@/lib/listing-images'
+import { buildListingContentUpdatePayload } from '@/lib/listing-update-payload'
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
 import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
+import { slugify } from '@/lib/format'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_FILES = 6
@@ -117,15 +119,6 @@ const subcategories = {
     other: 'Other',
   },
 } as const
-
-// Helper function to slugify text
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-}
 
 const listingSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
@@ -340,33 +333,13 @@ export default function EditListing(props: {
 
     const files = Array.from(event.target.files)
 
-    if (files.length + previewUrls.length > MAX_FILES) {
+    const validationError = validateListingImageFiles(files, previewUrls.length)
+    if (validationError) {
       toast({
-        title: 'Too many files',
-        description: `Maximum ${MAX_FILES} images allowed`,
         variant: 'destructive',
+        ...listingImageValidationToast(validationError),
       })
       return
-    }
-
-    for (const file of files) {
-      if (file.size > MAX_FILE_SIZE) {
-        toast({
-          title: 'File too large',
-          description: `${file.name} exceeds 5MB limit`,
-          variant: 'destructive',
-        })
-        return
-      }
-
-      if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        toast({
-          title: 'Invalid file type',
-          description: `${file.name} is not a supported image format`,
-          variant: 'destructive',
-        })
-        return
-      }
     }
 
     setIsUploading(true)
@@ -387,30 +360,13 @@ export default function EditListing(props: {
         throw new Error('Not authenticated')
       }
 
-      for (const file of files) {
-        const resized = await resizeImageForUpload(file)
-        const fileExt = resized.name.split('.').pop()
-        const fileName = `${session.user.id}-${Date.now()}-${Math.random()}.${fileExt}`
-        const filePath = `listings/${listingId}/${fileName}`
-
-        const { error: uploadError } = await supabase.storage
-          .from('listings')
-          .upload(filePath, resized, {
-            cacheControl: '31536000',
-            upsert: false,
-            contentType: resized.type,
-          })
-
-        if (uploadError) {
-          throw uploadError
-        }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('listings').getPublicUrl(filePath)
-
-        uploadedUrls.push(publicUrl)
-      }
+      const urls = await uploadListingImages({
+        supabase,
+        files,
+        userId: session.user.id,
+        listingId,
+      })
+      uploadedUrls.push(...urls)
 
       setPreviewUrls(prev => [...prev, ...uploadedUrls])
 
@@ -515,20 +471,24 @@ export default function EditListing(props: {
       const allImages =
         previewUrls.length > 0 ? previewUrls : [DEFAULT_LISTING_IMAGE]
 
+      const contentResult = buildListingContentUpdatePayload({
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        type: data.type,
+        category: data.category,
+        subcategory: data.subcategory,
+        calibre: data.calibre,
+        images: allImages,
+      })
+
+      if (!contentResult.ok) {
+        throw new Error(contentResult.error)
+      }
+
       const { error: updateError } = await supabase
         .from('listings')
-        .update({
-          title: data.title,
-          description: data.description,
-          price: data.price,
-          type: data.type,
-          category: data.category,
-          subcategory: data.subcategory || null,
-          calibre: data.calibre || null,
-          images: formatImageUrls(allImages),
-          thumbnail: resolveThumbnail(allImages),
-          updated_at: new Date().toISOString(),
-        })
+        .update(contentResult.payload)
         .eq('id', listingId)
 
       if (updateError) {

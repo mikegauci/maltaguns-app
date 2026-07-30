@@ -1,12 +1,11 @@
 'use client'
 
-import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
+import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import { useRouter } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
@@ -17,15 +16,11 @@ import { AddCreditDialog } from '@/app/admin/components/AddCreditDialog'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   ADMIN_USER_USERNAME_EMAIL_SEARCH_KEYS,
   ADMIN_USER_SEARCH_PLACEHOLDER,
 } from '@/lib/admin-user-types'
-
-const DataTable = nextDynamic(
-  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
-  { ssr: false }
-) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface Credit {
   id: string
@@ -40,43 +35,19 @@ interface Credit {
 function CreditsPageComponent() {
   const router = useRouter()
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({ preset: 'home-toast' })
   const [credits, setCredits] = useState<Credit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [selectedCredit, setSelectedCredit] = useState<Credit | null>(null)
-  const supabase = createClient()
 
   const fetchData = useCallback(async () => {
     try {
-      // Check if we're authenticated as admin
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      // Get admin status for the current user
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user?.id)
-        .single()
-
-      // Only proceed if user is admin
-      if (!profileData?.is_admin) {
-        toast({
-          title: 'Access Denied',
-          description: 'You must be an admin to view this page',
-          variant: 'destructive',
-        })
-        router.push('/')
-        return
-      }
-
       setIsLoading(true)
       console.log('Fetching credits data from API...')
 
-      // Fetch data from direct API endpoint
       const response = await fetch('/api/admin/credits/direct')
 
       if (!response.ok) {
@@ -87,7 +58,6 @@ function CreditsPageComponent() {
       const responseData = await response.json()
       console.log('API response:', responseData)
 
-      // Handle the response format
       if (responseData.data && Array.isArray(responseData.data)) {
         setCredits(responseData.data)
       } else {
@@ -110,11 +80,13 @@ function CreditsPageComponent() {
     } finally {
       setIsLoading(false)
     }
-  }, [supabase, toast, router])
+  }, [toast])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (isAuthorized) {
+      void fetchData()
+    }
+  }, [isAuthorized, fetchData])
 
   const handleEditCredit = (credit: Credit) => {
     setSelectedCredit(credit)
@@ -187,7 +159,7 @@ function CreditsPageComponent() {
     },
   ]
 
-  if (isLoading) {
+  if (isChecking || isLoading) {
     return <AdminLoadingState message="Loading credits data..." />
   }
 

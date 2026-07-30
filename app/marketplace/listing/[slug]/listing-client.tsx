@@ -47,24 +47,9 @@ import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import type { ListingDetails } from './types'
+import { formatPrice, slugify } from '@/lib/format'
 
-// Default image to use when no images are provided
 const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-}
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-MT', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(price)
-}
 
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
   const firearmsCategories: Record<string, string> = {

@@ -18,6 +18,7 @@ import { StorageImage } from '@/components/ui/storage-image'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '../ui/back-button'
+import { formatPrice, slugify } from '@/lib/format'
 
 interface Listing {
   id: string
@@ -41,21 +42,6 @@ interface CategoryListingsProps {
   subcategory?: string
   title: string
   description?: string
-}
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-}
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-MT', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(price)
 }
 
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {

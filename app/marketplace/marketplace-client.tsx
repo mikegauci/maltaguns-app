@@ -22,6 +22,7 @@ import { MarketplaceCategoryNav } from '@/components/marketplace/MarketplaceCate
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { formatPrice, slugify } from '@/lib/format'
 
 interface Listing {
   id: string
@@ -37,21 +38,6 @@ interface Listing {
   status: string
   updated_at: string
   is_featured?: boolean
-}
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/--+/g, '-')
-}
-
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('en-MT', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(price)
 }
 
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {

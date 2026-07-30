@@ -1,28 +1,23 @@
 'use client'
 
-import nextDynamic from 'next/dynamic'
 import { useState, useEffect, useCallback } from 'react'
+import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import { useRouter } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { EditEventCreditDialog } from '@/app/admin/components/EditEventCreditDialog'
 import { AddEventCreditDialog } from '@/app/admin/components/AddEventCreditDialog'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
 import { BackButton } from '@/components/ui/back-button'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   ADMIN_USER_USERNAME_EMAIL_SEARCH_KEYS,
   ADMIN_USER_SEARCH_PLACEHOLDER,
 } from '@/lib/admin-user-types'
-
-const DataTable = nextDynamic(
-  () => import('@/app/admin/components/DataTable').then(m => m.DataTable),
-  { ssr: false }
-) as typeof import('@/app/admin/components/DataTable').DataTable
 
 interface EventCredit {
   id: string
@@ -37,6 +32,7 @@ interface EventCredit {
 function EventCreditsPageComponent() {
   const router = useRouter()
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({ preset: 'home-toast' })
   const [eventCredits, setEventCredits] = useState<EventCredit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,37 +40,12 @@ function EventCreditsPageComponent() {
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [selectedEventCredit, setSelectedEventCredit] =
     useState<EventCredit | null>(null)
-  const supabase = createClient()
 
   const fetchData = useCallback(async () => {
     try {
-      // Check if we're authenticated as admin
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-
-      // Get admin status for the current user
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', user?.id)
-        .single()
-
-      // Only proceed if user is admin
-      if (!profileData?.is_admin) {
-        toast({
-          title: 'Access Denied',
-          description: 'You must be an admin to view this page',
-          variant: 'destructive',
-        })
-        router.push('/')
-        return
-      }
-
       setIsLoading(true)
       console.log('Fetching event credits data from API...')
 
-      // Fetch data from direct API endpoint
       const response = await fetch('/api/admin/event-credits/direct')
 
       if (!response.ok) {
@@ -84,7 +55,6 @@ function EventCreditsPageComponent() {
 
       const responseData = await response.json()
 
-      // Handle the response format
       if (responseData.data && Array.isArray(responseData.data)) {
         setEventCredits(responseData.data)
       } else {
@@ -109,11 +79,13 @@ function EventCreditsPageComponent() {
     } finally {
       setIsLoading(false)
     }
-  }, [supabase, toast, router])
+  }, [toast])
 
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (isAuthorized) {
+      void fetchData()
+    }
+  }, [isAuthorized, fetchData])
 
   const handleEditEventCredit = (eventCredit: EventCredit) => {
     setSelectedEventCredit(eventCredit)
@@ -186,7 +158,7 @@ function EventCreditsPageComponent() {
     },
   ]
 
-  if (isLoading) {
+  if (isChecking || isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="text-center">
