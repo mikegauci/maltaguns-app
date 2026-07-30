@@ -21,6 +21,7 @@ export interface UploadDependencies {
 export interface LicenseUploadResult {
   success: boolean
   publicUrl?: string
+  previewBlob?: Blob
   isVerified: boolean
   licenseTypes: LicenseTypes
   expiryDate: string | null
@@ -31,6 +32,7 @@ export interface LicenseUploadResult {
 export interface IdCardUploadResult {
   success: boolean
   publicUrl?: string
+  previewBlob?: Blob
   isVerified: boolean
 }
 
@@ -299,6 +301,7 @@ export async function uploadAndVerifyLicense(
     return {
       success: true,
       publicUrl,
+      previewBlob: resized,
       isVerified,
       licenseTypes,
       expiryDate,
@@ -454,6 +457,7 @@ export async function uploadAndVerifyIdCard(
     return {
       success: true,
       publicUrl,
+      previewBlob: resized,
       isVerified,
     }
   } catch (error) {

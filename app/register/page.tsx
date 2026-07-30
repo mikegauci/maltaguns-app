@@ -131,16 +131,25 @@ const registerSchema = z
     message: 'Passwords do not match',
     path: ['confirmPassword'],
   })
-  .refine(
-    data =>
-      data.interestedInSelling !== true ||
-      (data.idCardImage && data.licenseImage),
-    {
-      message:
-        'Identification and license images are required if you want to sell firearms, otherwise choose No above',
-      path: ['licenseImage'],
+  .superRefine((data, ctx) => {
+    if (data.interestedInSelling !== true) return
+    if (!data.idCardImage) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Identification and license images are required if you want to sell firearms, otherwise choose No above',
+        path: ['idCardImage'],
+      })
     }
-  )
+    if (!data.licenseImage) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'Identification and license images are required if you want to sell firearms, otherwise choose No above',
+        path: ['licenseImage'],
+      })
+    }
+  })
 
 type RegisterForm = z.infer<typeof registerSchema>
 
@@ -203,21 +212,6 @@ export default function Register() {
     }
   }
 
-  async function fetchSignedPreview(storedUrl: string): Promise<string> {
-    try {
-      const res = await fetch('/api/register/document-preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: storedUrl }),
-      })
-      if (!res.ok) return ''
-      const data = await res.json()
-      return typeof data.previewUrl === 'string' ? data.previewUrl : ''
-    } catch {
-      return ''
-    }
-  }
-
   useEffect(() => {
     let cancelled = false
 
@@ -230,27 +224,31 @@ export default function Register() {
             values?: Partial<RegisterForm>
           }
           if (draft.values) {
+            const {
+              password: _p,
+              confirmPassword: _c,
+              idCardImage: _id,
+              licenseImage: _lic,
+              isVerified: _iv,
+              idCardVerified: _icv,
+              licenseTypes: _lt,
+              licenseExpiryDate: _led,
+              ...safeValues
+            } = draft.values
+
             form.reset({
               ...registerDefaultValues,
-              ...draft.values,
+              ...safeValues,
               password: '',
               confirmPassword: '',
+              idCardImage: '',
+              licenseImage: '',
+              isVerified: false,
+              idCardVerified: false,
+              licenseExpiryDate: null,
+              licenseTypes: registerDefaultValues.licenseTypes,
               interestedInSelling: draft.values.interestedInSelling === true,
             })
-
-            const [idPreview, licensePreview] = await Promise.all([
-              draft.values.idCardImage
-                ? fetchSignedPreview(String(draft.values.idCardImage))
-                : Promise.resolve(''),
-              draft.values.licenseImage
-                ? fetchSignedPreview(String(draft.values.licenseImage))
-                : Promise.resolve(''),
-            ])
-
-            if (!cancelled) {
-              setIdCardPreviewUrl(idPreview)
-              setLicensePreviewUrl(licensePreview)
-            }
           }
           if (!cancelled) {
             setStep(1)
@@ -287,13 +285,23 @@ export default function Register() {
     if (!hasRestoredDraft) return
 
     const subscription = form.watch(values => {
-      const { password: _password, confirmPassword: _confirm, ...rest } = values
+      const {
+        password: _password,
+        confirmPassword: _confirm,
+        idCardImage: _idCardImage,
+        licenseImage: _licenseImage,
+        isVerified: _isVerified,
+        idCardVerified: _idCardVerified,
+        licenseTypes: _licenseTypes,
+        licenseExpiryDate: _licenseExpiryDate,
+        ...draftValues
+      } = values
       try {
         sessionStorage.setItem(
           REGISTER_DRAFT_KEY,
           JSON.stringify({
             step,
-            values: rest,
+            values: draftValues,
           })
         )
       } catch (error) {
@@ -361,7 +369,8 @@ export default function Register() {
     setIsCheckingAvailability(true)
     try {
       const username = form.getValues('username').trim()
-      const email = form.getValues('email').trim()
+      const email = form.getValues('email').trim().toLowerCase()
+      form.setValue('email', email)
 
       const [{ data: existingUsername }, { data: existingEmail }] =
         await Promise.all([
@@ -373,7 +382,7 @@ export default function Register() {
           supabase
             .from('profiles')
             .select('id')
-            .eq('email', email)
+            .ilike('email', email)
             .maybeSingle(),
         ])
 
@@ -436,7 +445,7 @@ export default function Register() {
         form.setValue('isVerified', result.isVerified)
         form.setValue('licenseTypes', result.licenseTypes)
         form.setValue('licenseExpiryDate', result.expiryDate)
-        const preview = URL.createObjectURL(originalFile)
+        const preview = URL.createObjectURL(result.previewBlob ?? originalFile)
         setLicensePreviewUrl(prev => {
           revokePreviewUrl(prev)
           return preview
@@ -474,7 +483,7 @@ export default function Register() {
       if (result.success && result.publicUrl) {
         form.setValue('idCardImage', result.publicUrl)
         form.setValue('idCardVerified', result.isVerified)
-        const preview = URL.createObjectURL(originalFile)
+        const preview = URL.createObjectURL(result.previewBlob ?? originalFile)
         setIdCardPreviewUrl(prev => {
           revokePreviewUrl(prev)
           return preview
@@ -499,6 +508,8 @@ export default function Register() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...data,
+          email: data.email.trim().toLowerCase(),
+          username: data.username.trim(),
           interestedInSelling: data.interestedInSelling === true,
         }),
       })
@@ -533,7 +544,7 @@ export default function Register() {
 
   return (
     <PageLayout>
-      <Card className="w-full max-w-md md:max-w-2xl mx-auto">
+      <Card className="w-full max-w-md md:max-w-2xl mx-auto [&_label]:!text-foreground">
         <CardHeader>
           <CardTitle>Create an Account</CardTitle>
           <CardDescription>
@@ -1052,14 +1063,14 @@ export default function Register() {
 
                                       <div className="space-y-2">
                                         <div className="relative w-full h-48 rounded-lg overflow-hidden border">
-                                          <img
-                                            id="id-card-preview"
-                                            src={
-                                              idCardPreviewUrl || field.value
-                                            }
-                                            alt="Uploaded ID card"
-                                            className="w-full h-full object-cover"
-                                          />
+                                          {idCardPreviewUrl ? (
+                                            <img
+                                              id="id-card-preview"
+                                              src={idCardPreviewUrl}
+                                              alt="Uploaded ID card"
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : null}
                                         </div>
                                       </div>
                                     </div>
@@ -1177,14 +1188,14 @@ export default function Register() {
 
                                       <div className="space-y-2">
                                         <div className="relative w-full h-48 rounded-lg overflow-hidden border">
-                                          <img
-                                            id="license-preview"
-                                            src={
-                                              licensePreviewUrl || field.value
-                                            }
-                                            alt="Uploaded license"
-                                            className="w-full h-full object-cover"
-                                          />
+                                          {licensePreviewUrl ? (
+                                            <img
+                                              id="license-preview"
+                                              src={licensePreviewUrl}
+                                              alt="Uploaded license"
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : null}
                                         </div>
                                       </div>
                                     </div>
