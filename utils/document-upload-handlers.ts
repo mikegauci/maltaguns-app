@@ -236,7 +236,7 @@ export async function uploadAndVerifyLicense(
     const licensesMessage =
       detectedLicenses.length > 0
         ? `Detected licenses: ${detectedLicenses.join(', ')}`
-        : 'No license types detected. Please contact support.'
+        : 'No license types detected. Please contact support after registration.'
 
     // Show appropriate toast
     if (!hasVerificationIssues) {
