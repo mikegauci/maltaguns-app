@@ -20,6 +20,7 @@ export interface Database {
           address: string | null
           is_seller: boolean
           is_verified: boolean
+          is_admin: boolean | null
           license_image: string | null
           id_card_image: string | null
           id_card_verified: boolean
@@ -41,6 +42,7 @@ export interface Database {
           address?: string | null
           is_seller?: boolean
           is_verified?: boolean
+          is_admin?: boolean | null
           license_image?: string | null
           id_card_image?: string | null
           id_card_verified?: boolean
@@ -62,6 +64,7 @@ export interface Database {
           address?: string | null
           is_seller?: boolean
           is_verified?: boolean
+          is_admin?: boolean | null
           license_image?: string | null
           id_card_image?: string | null
           id_card_verified?: boolean
