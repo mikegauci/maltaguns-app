@@ -18,12 +18,12 @@ export default function TermsAndConditions() {
         </h2>
         <p>
           These Terms and Conditions ("Terms") govern access to and use of the
-          website www.maltaguns.com (the "Platform") operated by Strawberry
-          Orange Digital, a private limited company registered in Cyprus, with
-          registered offices at:
+          website www.maltaguns.com (the "Platform") operated by Matchlock Group
+          Ltd, a private limited company registered in Malta (Company number C
+          116325), with registered offices at:
         </p>
         <p className="pl-6">
-          Spyrou Kyprianou, 10, Office 22, Mesa Geitonia, 4001, Limassol, Cyprus
+          22, Clare Belvedere Street, Gzira, GZR 1112, Malta
         </p>
         <p>
           (hereinafter referred to as "Maltaguns", "we", "our", or "the
@@ -162,7 +162,7 @@ export default function TermsAndConditions() {
             platforms.
           </li>
           <li>
-            Chang the entire content of a paid listing to market a second item
+            Change the entire content of a paid listing to market a second item
             utilizing a singular paid listing credit.
           </li>
           <li>
@@ -183,47 +183,43 @@ export default function TermsAndConditions() {
         <h2 className="text-xl font-semibold mt-8 mb-4">
           5. Contact Information Sharing
         </h2>
-        <ul className="list-disc pl-6 space-y-1">
-          <li>
-            Maltaguns displays the contact information provided by sellers
-            directly within each listing only to verified user accounts.
-          </li>
-          <li>
-            It is the responsibility of interested buyers to contact sellers
-            independently using this information.
-          </li>
-          <li>
-            Maltaguns does not provide messaging tools or a communication relay
-            system.
-          </li>
-          <li>
-            We do not monitor, record, or interfere with communications between
-            users.
-          </li>
-        </ul>
+        <p>
+          Maltaguns displays the contact information provided by sellers
+          directly within each listing only to verified user accounts.
+        </p>
+        <p>
+          It is the responsibility of interested buyers to contact sellers
+          independently using this information.
+        </p>
+        <p>
+          Maltaguns does not provide messaging tools or a communication relay
+          system.
+        </p>
+        <p>
+          We do not monitor, record, or interfere with communications between
+          users.
+        </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
           6. Verification and Licensing
         </h2>
-        <ul className="list-disc pl-6 space-y-1">
-          <li>
-            Maltaguns may request proof of firearms licenses, club memberships,
-            or business registration before allowing listings or enterprises to
-            set up accounts or post listings.
-          </li>
-          <li>
-            Only verified commercial sellers may list regulated goods like
-            ammunition or gunpowder.
-          </li>
-          <li>
-            Even if a user does not wish to sell firearms, Maltaguns reserves
-            the right to request identity verification documentation.
-          </li>
-          <li>
-            Failure to comply or provide documentation may result in listing
-            removal or account suspension.
-          </li>
-        </ul>
+        <p>
+          Maltaguns may request proof of firearms licenses, club memberships, or
+          business registration before allowing listings or enterprises to set
+          up accounts or post listings.
+        </p>
+        <p>
+          Only verified commercial sellers may list regulated goods like
+          ammunition or gunpowder.
+        </p>
+        <p>
+          Even if a user does not wish to sell firearms, Maltaguns reserves the
+          right to request identity verification documentation.
+        </p>
+        <p>
+          Failure to comply or provide documentation may result in listing
+          removal or account suspension.
+        </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
           7. Commercial Sellers and Establishments
@@ -293,26 +289,149 @@ export default function TermsAndConditions() {
         </ul>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
-          10. Liability and Disclaimers
+          10. Disclaimer of Warranties
         </h2>
+        <p>
+          The Platform is provided on an "as is" and "as available" basis. To
+          the fullest extent permitted by applicable law, Maltaguns disclaims all
+          warranties of any kind, whether express, implied, or statutory,
+          including but not limited to warranties of merchantability, fitness for
+          a particular purpose, title, non-infringement, accuracy of content, and
+          uninterrupted, secure, or error-free availability of the Platform. We
+          do not warrant that the Platform will be free of viruses or other
+          harmful components, or that any defects will be corrected.
+        </p>
+
+        <h2 className="text-xl font-semibold mt-8 mb-4">
+          11. Intermediary Status and Notice-and-Takedown
+        </h2>
+        <p>
+          Maltaguns operates as a hosting service provider within the meaning of
+          Regulation (EU) 2022/2065 (the Digital Services Act). We host content
+          provided by users and are under no general obligation to monitor the
+          information we store or transmit, nor to actively seek facts or
+          circumstances indicating illegal activity.
+        </p>
+        <p>
+          If you believe that content on the Platform is illegal or infringes
+          these Terms, you may notify us at info@maltaguns.com. A valid notice
+          should include:
+        </p>
         <ul className="list-disc pl-6 space-y-1">
           <li>
-            Maltaguns is not responsible for the accuracy, legality, or outcome
-            of user-generated listings or any communication or transaction
-            resulting from the Platform.
+            An explanation of why you consider the content to be illegal or in
+            breach of these Terms;
           </li>
           <li>
-            We do not verify items, buyers, conditions, images or claims made in
-            listings.
+            The exact location of the content (URL or listing reference);
           </li>
+          <li>Your name and email address; and</li>
           <li>
-            Users act at their own risk. The Operator is not liable for any
-            disputes, losses, or damage arising from use of the Platform.
+            A statement confirming your good-faith belief that the information
+            in the notice is accurate and complete.
+          </li>
+        </ul>
+        <p>
+          We will process valid notices without undue delay and may remove or
+          disable access to the content concerned. Acting on a notice does not
+          constitute an admission of knowledge of, or liability for, the content
+          concerned.
+        </p>
+
+        <h2 className="text-xl font-semibold mt-8 mb-4">
+          12. Assumption of Risk and Transactions Between Users
+        </h2>
+        <p>
+          Users expressly acknowledge that transactions involving firearms and
+          related items carry inherent legal and safety risks. Verifying the
+          counterparty's licence, and the legality, condition, and authenticity
+          of any item, is solely the responsibility of the parties to the
+          transaction.
+        </p>
+        <p>
+          If you have a dispute with one or more users, you release Matchlock
+          Group Ltd and its officers, directors, employees, and agents from any
+          and all claims, demands, and damages (actual and consequential) of
+          every kind and nature, known and unknown, arising out of or in any way
+          connected with such disputes.
+        </p>
+        <p>
+          Nothing in these Terms creates any agency, partnership, joint venture,
+          employment, or franchise relationship between the Operator and any
+          user. The Operator is at no time the seller, buyer, broker, or agent in
+          any transaction conducted between users.
+        </p>
+
+        <h2 className="text-xl font-semibold mt-8 mb-4">
+          13. Liability and Disclaimers
+        </h2>
+        <p>
+          Maltaguns is not responsible for the accuracy, legality, or outcome of
+          user-generated listings or any communication or transaction resulting
+          from the Platform.
+        </p>
+        <p>
+          We do not verify items, buyers, conditions, images or claims made in
+          listings.
+        </p>
+        <p>
+          Users act at their own risk. The Operator is not liable for any
+          disputes, losses, or damage arising from use of the Platform.
+        </p>
+        <p>
+          The Platform may contain links to third-party websites, events, or
+          content posted by users or Establishments. Maltaguns does not endorse,
+          and is not responsible for, any third-party content, websites, or
+          services.
+        </p>
+        <p>
+          Maltaguns shall not be liable for any failure or delay in performance,
+          downtime, loss of data, or inability to access the Platform caused by
+          events beyond our reasonable control, including but not limited to acts
+          of God, network or hosting failures, cyber-attacks, power outages,
+          industrial action, or acts of any government or authority. We reserve
+          the right to modify, suspend, or discontinue the Platform, in whole or
+          in part, at any time without liability.
+        </p>
+        <p>
+          To the extent liability cannot be excluded under applicable law, the
+          total aggregate liability of Matchlock Group Ltd arising out of or in
+          connection with the Platform shall not exceed the total fees paid by
+          the user to Maltaguns in the twelve (12) months preceding the event
+          giving rise to the claim, or one hundred euro (€100), whichever is
+          greater.
+        </p>
+        <p>
+          Nothing in these Terms excludes or limits any liability that cannot be
+          excluded or limited under applicable law, including liability for
+          death or personal injury caused by negligence, or for fraud or
+          fraudulent misrepresentation.
+        </p>
+
+        <h2 className="text-xl font-semibold mt-8 mb-4">
+          14. Indemnification
+        </h2>
+        <p>
+          You agree to indemnify, defend, and hold harmless Matchlock Group Ltd
+          and its officers, directors, employees, and agents from and against
+          any and all claims, liabilities, damages, losses, fines, penalties,
+          and expenses (including reasonable legal fees) arising out of or in any
+          way connected with:
+        </p>
+        <ul className="list-disc pl-6 space-y-1">
+          <li>Your listings, content, or use of the Platform;</li>
+          <li>
+            Any transaction, communication, or dispute with another user;
+          </li>
+          <li>Your breach of these Terms; or</li>
+          <li>
+            Your violation of any law or regulation, including firearms and
+            licensing laws, or of the rights of any third party.
           </li>
         </ul>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
-          11. Enforcement, Sanctions, and Termination
+          15. Enforcement, Sanctions, and Termination
         </h2>
         <p>Maltaguns reserves the right to:</p>
         <ul className="list-disc pl-6 space-y-1">
@@ -327,7 +446,7 @@ export default function TermsAndConditions() {
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
-          12. Amendments to These Terms
+          16. Amendments to These Terms
         </h2>
         <p>
           We may update these Terms to reflect legal or operational changes.
@@ -336,32 +455,45 @@ export default function TermsAndConditions() {
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
-          13. Governing Law and Jurisdiction
+          17. Severability and Survival
         </h2>
         <p>
-          These Terms are governed by the laws of the Republic of Cyprus,
-          without regard to conflict of laws principles. Any disputes arising
-          from or relating to the use of this Platform shall be subject to the
-          exclusive jurisdiction of the courts of Limassol, Cyprus. Users are
-          solely responsible for complying with local laws and regulations,
-          including but not limited to Maltese firearms and licensing laws, when
-          using the Platform or engaging in transactions.
+          If any provision of these Terms is held to be invalid or
+          unenforceable, that provision shall be enforced to the maximum extent
+          permissible and the remaining provisions shall remain in full force and
+          effect. The provisions of these Terms concerning intellectual
+          property, disclaimers of warranties, limitation of liability,
+          indemnification, release, and governing law shall survive the
+          termination of your account or of these Terms.
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
-          14. Contact Information
+          18. Governing Law and Jurisdiction
+        </h2>
+        <p>
+          These Terms are governed by the laws of Malta, without regard to
+          conflict of laws principles. Any disputes arising from or relating to
+          the use of this Platform shall be subject to the exclusive jurisdiction
+          of the courts of Malta. Users are solely responsible for complying with
+          local laws and regulations, including but not limited to Maltese
+          firearms and licensing laws, when using the Platform or engaging in
+          transactions.
+        </p>
+
+        <h2 className="text-xl font-semibold mt-8 mb-4">
+          19. Contact Information
         </h2>
         <p>For support, legal queries, or data protection concerns, contact:</p>
         <p className="pl-6">
-          Strawberry Orange Digital
+          Matchlock Group Ltd
           <br />
-          Spyrou Kyprianou, 10
+          22, Clare Belvedere Street
           <br />
-          Office 22
+          Gzira, GZR 1112
           <br />
-          Mesa Geitonia, 4001
+          Malta
           <br />
-          Limassol, Cyprus
+          Company number: C 116325
           <br />
           Email: info@maltaguns.com
         </p>
