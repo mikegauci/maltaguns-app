@@ -12,13 +12,14 @@ export default function PrivacyPolicy() {
     <PageLayout>
       <PageHeader title="Privacy Policy" className="mb-4" />
 
-      <p className="text-muted-foreground mb-8">Effective Date: 15/04/2025</p>
+      <p className="text-muted-foreground mb-1">Effective Date: 15/04/2025</p>
+      <p className="text-muted-foreground mb-8">Last Updated: 25/08/2026</p>
 
       <div className="prose prose-sm max-w-none text-foreground">
         <p>
-          Maltaguns.com ("Platform") is owned and operated by Strawberry Orange
-          Digital, a Cyprus-based company with registered offices at Spyrou
-          Kyprianou, 10, Office 22, Mesa Geitonia, 4001, Limassol, Cyprus ("we",
+          Maltaguns.com ("Platform") is owned and operated by Matchlock Group
+          Ltd, a Malta-based company (Company number C 116325) with registered
+          offices at 22, Clare Belvedere Street, Gzira, GZR 1112, Malta ("we",
           "us", or "our"). This Privacy Policy explains how we collect, use, and
           protect your personal data when you use our Platform.
         </p>
@@ -112,27 +113,6 @@ export default function PrivacyPolicy() {
         </p>
         <p>Our lead supervisory authority is the:</p>
         <p className="font-medium">
-          Office of the Commissioner for Personal Data Protection (Cyprus)
-        </p>
-        <ul className="pl-6 space-y-1">
-          <li>
-            Website:{' '}
-            <a
-              href="https://www.dataprotection.gov.cy"
-              className="text-primary hover:underline"
-            >
-              https://www.dataprotection.gov.cy
-            </a>
-          </li>
-          <li>Email: commissioner@dataprotection.gov.cy</li>
-          <li>Address: Iasonos 1, 1082 Nicosia, Cyprus</li>
-          <li>Tel: +357 22 818 456</li>
-        </ul>
-        <p className="mt-4">
-          Alternatively, if you are based in Malta or believe the issue concerns
-          Maltese jurisdiction, you may also contact:
-        </p>
-        <p className="font-medium">
           Information and Data Protection Commissioner (Malta)
         </p>
         <ul className="pl-6 space-y-1">
@@ -151,6 +131,11 @@ export default function PrivacyPolicy() {
           </li>
           <li>Tel: +356 2328 7100</li>
         </ul>
+        <p className="mt-4">
+          You may also lodge a complaint with the supervisory authority of the
+          EU Member State in which you reside or work, or where the alleged
+          infringement occurred.
+        </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
           6. Cookies and Tracking
@@ -190,8 +175,8 @@ export default function PrivacyPolicy() {
         <ul className="pl-6 space-y-1">
           <li>Email: info@maltaguns.com</li>
           <li>
-            Postal: Strawberry Orange Digital, Spyrou Kyprianou, 10, Office 22,
-            Mesa Geitonia, 4001, Limassol, Cyprus
+            Postal: Matchlock Group Ltd, 22, Clare Belvedere Street, Gzira, GZR
+            1112, Malta
           </li>
         </ul>
       </div>
