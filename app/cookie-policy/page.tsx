@@ -14,12 +14,18 @@ export default function CookiePolicy() {
     <PageLayout>
       <PageHeader title="Cookie Policy" className="mb-4" />
 
+      <p className="text-muted-foreground mb-1">
+        Maltaguns.com — operated by Matchlock Group Ltd (C 116325)
+      </p>
       <p className="text-muted-foreground mb-8">Effective Date: 17/07/2026</p>
 
       <div className="prose prose-sm max-w-none text-foreground">
         <p>
           This Cookie Policy explains how Maltaguns.com (&quot;Platform&quot;),
-          operated by Strawberry Orange Digital, uses cookies and similar
+          owned and operated by Matchlock Group Ltd, a Malta-based company
+          (Company number C 116325) with registered offices at 22, Clare
+          Belvedere Street, Gzira, GZR 1112, Malta (&quot;we&quot;,
+          &quot;us&quot;, or &quot;our&quot;), uses cookies and similar
           technologies. For broader information about personal data, see our{' '}
           <Link href="/privacy" className="underline">
             Privacy Policy
@@ -198,10 +204,19 @@ export default function CookiePolicy() {
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">4. Contact</h2>
-        <p>
-          For questions about cookies or privacy, contact us at{' '}
-          <a href="mailto:info@maltaguns.com">info@maltaguns.com</a>.
-        </p>
+        <p>For questions about cookies or privacy:</p>
+        <ul className="pl-6 space-y-1">
+          <li>
+            Email:{' '}
+            <a href="mailto:info@maltaguns.com" className="underline">
+              info@maltaguns.com
+            </a>
+          </li>
+          <li>
+            Postal: Matchlock Group Ltd, 22, Clare Belvedere Street, Gzira,
+            GZR 1112, Malta
+          </li>
+        </ul>
       </div>
     </PageLayout>
   )
