@@ -142,6 +142,14 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <Link
+                    href="/refunds-policy"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Refunds Policy
+                  </Link>
+                </li>
+                <li>
                   <button
                     type="button"
                     onClick={openPreferences}
