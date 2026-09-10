@@ -17,6 +17,8 @@ export type SectionKey =
   | 'privacy'
   | 'terms'
   | 'cookies'
+  | 'prohibited_items'
+  | 'refunds'
 
 export type PageSeoEntry = {
   title?: string | null
@@ -148,6 +150,20 @@ export const SECTION_SEO_DEFAULTS: Record<
     description:
       'Cookie Policy for MaltaGuns — how we use essential and analytics cookies, and how to manage your preferences.',
     path: '/cookie-policy',
+    group: 'Legal',
+  },
+  prohibited_items: {
+    title: 'Prohibited Items Policy | MaltaGuns',
+    description:
+      'Prohibited Items Policy for MaltaGuns — items and practices that may not be listed on the platform, and enforcement under the Arms Act.',
+    path: '/prohibited-items',
+    group: 'Legal',
+  },
+  refunds: {
+    title: 'Refunds Policy | MaltaGuns',
+    description:
+      'Refunds Policy for MaltaGuns — refunds for listing credits, featured listings, event listings and Establishment subscriptions.',
+    path: '/refunds-policy',
     group: 'Legal',
   },
 }
