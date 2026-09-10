@@ -247,10 +247,17 @@ export function Footer() {
         <div className="mt-8 pt-6 border-t text-center text-sm text-muted-foreground space-y-3">
           <p className="max-w-4xl mx-auto text-xs leading-relaxed">
             © {currentYear} MaltaGuns. All rights reserved. <br />{' '}
-            Maltaguns.com operates under Licence No. SB/WO/03521/2010 issued by
-            the competent Maltese authorities, in accordance with the Arms Act
-            (Chapter 480 of the Laws of Malta). The platform strictly adheres to
-            all applicable legal and regulatory requirements governing firearms.
+            Maltaguns.com is operated by Matchlock Group Ltd (C 116325), a
+            Malta-registered company. The platform operates as a verified
+            listings marketplace in accordance with the Arms Act (Chapter 480 of
+            the Laws of Malta) and does not itself sell, hold or transfer
+            firearms; it is therefore not subject to licensing under the Act.
+            Platform compliance is overseen by a firearms dealer licensed by the
+            Commissioner of Police (Licence No. SB/WO/03521/2010). All firearm
+            listings may be posted only by, and are visible only to, verified
+            holders of licences issued under the Arms Act, and all transfers
+            are completed through the Malta Police Weapons Office in accordance
+            with law.
           </p>
         </div>
       </div>
