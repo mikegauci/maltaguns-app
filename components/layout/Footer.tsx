@@ -134,6 +134,14 @@ export function Footer() {
                   </Link>
                 </li>
                 <li>
+                  <Link
+                    href="/prohibited-items"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Prohibited Items Policy
+                  </Link>
+                </li>
+                <li>
                   <button
                     type="button"
                     onClick={openPreferences}
