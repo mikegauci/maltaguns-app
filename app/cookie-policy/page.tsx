@@ -19,8 +19,9 @@ export default function CookiePolicy() {
       <div className="prose prose-sm max-w-none text-foreground">
         <p>
           This Cookie Policy explains how Maltaguns.com (&quot;Platform&quot;),
-          operated by Strawberry Orange Digital, uses cookies and similar
-          technologies. For broader information about personal data, see our{' '}
+          operated by Matchlock Group Ltd, a Malta-based company (Company
+          number C 116325), uses cookies and similar technologies. For broader
+          information about personal data, see our{' '}
           <Link href="/privacy" className="underline">
             Privacy Policy
           </Link>
