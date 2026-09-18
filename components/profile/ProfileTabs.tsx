@@ -72,6 +72,7 @@ interface ProfileTabsProps {
     identity_first_name: string | null
     identity_last_name: string | null
     identity_document_type: string | null
+    identity_review_notes: string[] | null
   }) => void
   handleListingStatusChange: (
     listingId: string,

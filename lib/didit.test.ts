@@ -2,10 +2,13 @@ import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 import { describe, it } from 'node:test'
 import {
+  buildProfileUpdateFromDidit,
   canonicaliseWebhookPayload,
   extractIdentityDetails,
+  extractReviewNotes,
   hasIdentityVerificationDecision,
   isDiditVerificationUrl,
+  isIdentityPendingReview,
   isProfileUserId,
   isWebhookTimestampFresh,
   resolveWebhookEventId,
@@ -59,6 +62,52 @@ describe('isProfileUserId', () => {
 
   it('rejects placeholders', () => {
     assert.equal(isProfileUserId('your-vendor-reference-id'), false)
+  })
+})
+
+describe('extractReviewNotes', () => {
+  it('collects warning descriptions from feature arrays', () => {
+    assert.deepEqual(
+      extractReviewNotes({
+        id_verifications: [
+          {
+            warnings: [
+              {
+                short_description:
+                  'Date of birth mismatch with provided information',
+              },
+            ],
+          },
+        ],
+      }),
+      ['Date of birth mismatch with provided information']
+    )
+  })
+})
+
+describe('isIdentityPendingReview', () => {
+  it('treats In Review as pending', () => {
+    assert.equal(isIdentityPendingReview(false, 'In Review'), true)
+    assert.equal(isIdentityPendingReview(true, 'In Review'), false)
+  })
+})
+
+describe('buildProfileUpdateFromDidit', () => {
+  it('stores review notes for In Review', () => {
+    assert.deepEqual(
+      buildProfileUpdateFromDidit('In Review', {
+        id_verifications: [
+          {
+            warnings: [{ short_description: 'Needs manual review' }],
+          },
+        ],
+      }),
+      {
+        identity_status: 'In Review',
+        identity_verified: false,
+        identity_review_notes: ['Needs manual review'],
+      }
+    )
   })
 })
 

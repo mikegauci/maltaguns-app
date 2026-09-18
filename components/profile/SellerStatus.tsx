@@ -22,6 +22,7 @@ interface IdentityChange {
   identity_first_name: string | null
   identity_last_name: string | null
   identity_document_type: string | null
+  identity_review_notes: string[] | null
 }
 
 interface SellerStatusProps {
@@ -113,6 +114,7 @@ export const SellerStatus = ({
                 identityFirstName={profile.identity_first_name}
                 identityLastName={profile.identity_last_name}
                 identityDocumentType={profile.identity_document_type}
+                identityReviewNotes={profile.identity_review_notes}
                 onVerificationChange={onIdentityChange}
               />
             </div>

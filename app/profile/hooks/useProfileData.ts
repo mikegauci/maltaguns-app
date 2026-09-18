@@ -99,12 +99,34 @@ export function useProfileData({
           }
         }
 
-        setProfile(profileData)
+        let resolvedProfile = profileData
+
+        if (profileData.didit_session_id && !profileData.identity_verified) {
+          try {
+            const statusRes = await fetch('/api/verification/status')
+            if (statusRes.ok) {
+              const status = await statusRes.json()
+              resolvedProfile = {
+                ...profileData,
+                identity_verified: status.verified,
+                identity_status: status.status,
+                identity_first_name: status.firstName,
+                identity_last_name: status.lastName,
+                identity_document_type: status.documentType,
+                identity_review_notes: status.reviewNotes ?? null,
+              }
+            }
+          } catch (syncError) {
+            console.error('Failed to sync identity verification status:', syncError)
+          }
+        }
+
+        setProfile(resolvedProfile)
         form.reset({
-          first_name: profileData.first_name || '',
-          last_name: profileData.last_name || '',
-          phone: profileData.phone || '',
-          address: profileData.address || '',
+          first_name: resolvedProfile.first_name || '',
+          last_name: resolvedProfile.last_name || '',
+          phone: resolvedProfile.phone || '',
+          address: resolvedProfile.address || '',
         })
 
         // Fetch everything else in parallel for better performance

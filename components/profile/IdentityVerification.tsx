@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,7 +14,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
-import { BadgeCheck, Loader2, ShieldCheck } from 'lucide-react'
+import { BadgeCheck, Clock, Loader2, ShieldCheck } from 'lucide-react'
+
+const PENDING_IDENTITY_STATUSES = new Set([
+  'In Review',
+  'In Progress',
+  'Awaiting User',
+  'Resubmitted',
+])
+
+const POLL_INTERVAL_MS = 5000
+const POLL_ATTEMPTS = 24
 
 interface IdentityVerificationProps {
   identityVerified: boolean
@@ -22,12 +32,14 @@ interface IdentityVerificationProps {
   identityFirstName: string | null
   identityLastName: string | null
   identityDocumentType: string | null
+  identityReviewNotes: string[] | null
   onVerificationChange: (update: {
     identity_verified: boolean
     identity_status: string | null
     identity_first_name: string | null
     identity_last_name: string | null
     identity_document_type: string | null
+    identity_review_notes: string[] | null
   }) => void
 }
 
@@ -58,6 +70,12 @@ function describeStatus(
   }
 }
 
+function hasDateOfBirthMismatch(notes: string[]): boolean {
+  return notes.some(note =>
+    /date of birth|dob|birth.*mismatch/i.test(note)
+  )
+}
+
 const TONE_CLASSES: Record<StatusTone, string> = {
   verified: 'border-green-600 text-green-600',
   pending: 'border-amber-500 text-amber-500',
@@ -71,11 +89,73 @@ export const IdentityVerification = ({
   identityFirstName,
   identityLastName,
   identityDocumentType,
+  identityReviewNotes,
   onVerificationChange,
 }: IdentityVerificationProps) => {
   const { toast } = useToast()
   const [consentOpen, setConsentOpen] = useState(false)
   const [starting, setStarting] = useState(false)
+  const isMounted = useRef(true)
+
+  const pendingReview =
+    !identityVerified &&
+    !!identityStatus &&
+    PENDING_IDENTITY_STATUSES.has(identityStatus)
+  const reviewNotes = identityReviewNotes ?? []
+  const inManualReview = identityStatus === 'In Review'
+
+  const refreshStatus = useCallback(async () => {
+    try {
+      const response = await fetch('/api/verification/status')
+      if (!response.ok) return
+
+      const result = await response.json()
+      if (!isMounted.current) return
+
+      onVerificationChange({
+        identity_verified: result.verified,
+        identity_status: result.status,
+        identity_first_name: result.firstName,
+        identity_last_name: result.lastName,
+        identity_document_type: result.documentType,
+        identity_review_notes: result.reviewNotes ?? [],
+      })
+
+      if (result.verified) {
+        toast({
+          variant: 'success',
+          title: 'Identity verified',
+          description: 'Your identity has been verified successfully.',
+        })
+      }
+    } catch {
+      return
+    }
+  }, [onVerificationChange, toast])
+
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!pendingReview) return
+
+    void refreshStatus()
+
+    let attempt = 0
+    const intervalId = window.setInterval(() => {
+      attempt += 1
+      void refreshStatus()
+      if (attempt >= POLL_ATTEMPTS) {
+        window.clearInterval(intervalId)
+      }
+    }, POLL_INTERVAL_MS)
+
+    return () => window.clearInterval(intervalId)
+  }, [pendingReview, refreshStatus])
 
   async function startVerification() {
     setConsentOpen(false)
@@ -118,6 +198,8 @@ export const IdentityVerification = ({
     .filter(Boolean)
     .join(' ')
   const busy = starting
+  const canStartVerification =
+    !identityVerified && !pendingReview && !busy
 
   return (
     <>
@@ -142,11 +224,55 @@ export const IdentityVerification = ({
             </p>
           )}
         </div>
+      ) : inManualReview ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
+          <div className="flex items-start gap-2 text-sm font-medium text-amber-900">
+            <Clock className="h-4 w-4 flex-shrink-0 mt-0.5" />
+            <span>Your verification is being reviewed</span>
+          </div>
+          <p className="text-xs text-amber-800">
+            Didit flagged your submission for manual review. This usually takes
+            a short time and your profile will update automatically once a
+            decision is made.
+          </p>
+          {reviewNotes.length > 0 && (
+            <ul className="text-xs text-amber-800 list-disc pl-5 space-y-1">
+              {reviewNotes.map(note => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+          )}
+          {hasDateOfBirthMismatch(reviewNotes) && (
+            <p className="text-xs text-amber-800">
+              Check that your date of birth on your profile matches your ID
+              exactly. If it is wrong, update it in your profile details and
+              contact{' '}
+              <a
+                href="mailto:Info@maltaguns.com"
+                className="underline font-medium"
+              >
+                Info@maltaguns.com
+              </a>{' '}
+              if you need help.
+            </p>
+          )}
+        </div>
+      ) : pendingReview ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
+          <div className="flex items-start gap-2 text-sm font-medium text-amber-900">
+            <Loader2 className="h-4 w-4 flex-shrink-0 mt-0.5 animate-spin" />
+            <span>Verification in progress</span>
+          </div>
+          <p className="text-xs text-amber-800">
+            We are waiting for Didit to finish processing your submission. This
+            page will update automatically.
+          </p>
+        </div>
       ) : (
         <>
           <Button
             onClick={() => setConsentOpen(true)}
-            disabled={busy}
+            disabled={!canStartVerification}
             className="w-full sm:w-auto"
           >
             {busy ? (
@@ -170,9 +296,10 @@ export const IdentityVerification = ({
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p>
-                  You will be redirected to <strong>Didit</strong>, our identity
-                  verification provider, to photograph your government-issued ID
-                  and take a short selfie for a liveness and face match check.
+                  You will be redirected to <strong>Didit</strong>, our
+                  identity verification provider, to photograph your
+                  government-issued ID and take a short selfie for a liveness
+                  and face match check.
                 </p>
                 <p>
                   Didit processes your document and biometric data as our
@@ -182,8 +309,8 @@ export const IdentityVerification = ({
                   document images.
                 </p>
                 <p>
-                  The name on your document must match the first and last name
-                  on your MaltaGuns profile.
+                  The name and date of birth on your document must match your
+                  MaltaGuns profile.
                 </p>
                 <p className="text-muted-foreground">
                   See our{' '}

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import {
-  extractIdentityDetails,
-  hasIdentityVerificationDecision,
+  buildProfileUpdateFromDidit,
   isProfileUserId,
   isWebhookTimestampFresh,
   resolveWebhookEventId,
@@ -13,50 +12,6 @@ import {
 
 const LOG_PREFIX = '[WEBHOOK-DIDIT]'
 const UNIQUE_VIOLATION = '23505'
-
-type ProfileIdentityUpdate = {
-  identity_status: string
-  identity_verified?: boolean
-  identity_verified_at?: string | null
-  identity_first_name?: string | null
-  identity_last_name?: string | null
-  identity_document_type?: string | null
-  didit_session_url?: string | null
-}
-
-function buildProfileUpdate(
-  payload: DiditWebhookPayload
-): ProfileIdentityUpdate | null {
-  const update: ProfileIdentityUpdate = { identity_status: payload.status }
-
-  switch (payload.status) {
-    case 'Approved': {
-      if (!hasIdentityVerificationDecision(payload.decision)) {
-        return null
-      }
-
-      const details = extractIdentityDetails(payload.decision)
-      update.identity_verified = true
-      update.identity_verified_at = new Date().toISOString()
-      update.identity_first_name = details.firstName
-      update.identity_last_name = details.lastName
-      update.identity_document_type = details.documentType
-      update.didit_session_url = null
-      break
-    }
-    case 'Declined':
-    case 'Expired':
-    case 'Kyc Expired':
-      update.identity_verified = false
-      update.identity_verified_at = null
-      update.didit_session_url = null
-      break
-    default:
-      break
-  }
-
-  return update
-}
 
 export async function POST(request: Request) {
   const raw = await request.text()
@@ -149,7 +104,10 @@ export async function POST(request: Request) {
     })
   }
 
-  const profileUpdate = buildProfileUpdate(payload)
+  const profileUpdate = buildProfileUpdateFromDidit(
+    payload.status,
+    payload.decision
+  )
 
   if (!profileUpdate) {
     console.warn(

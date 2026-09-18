@@ -243,6 +243,155 @@ export function shouldApplyWebhookForSession(
   return profileSessionId === payloadSessionId
 }
 
+const DECISION_FEATURE_ARRAYS = [
+  'id_verifications',
+  'nfc_verifications',
+  'liveness_checks',
+  'face_matches',
+  'poa_verifications',
+] as const
+
+export const IDENTITY_PENDING_REVIEW_STATUSES = [
+  'In Review',
+  'In Progress',
+  'Awaiting User',
+  'Resubmitted',
+] as const
+
+export function isIdentityPendingReview(
+  verified: boolean,
+  status: string | null | undefined
+): boolean {
+  if (verified) return false
+  return (
+    typeof status === 'string' &&
+    (IDENTITY_PENDING_REVIEW_STATUSES as readonly string[]).includes(status)
+  )
+}
+
+export function extractReviewNotes(decision: unknown): string[] {
+  if (!decision || typeof decision !== 'object') return []
+
+  const record = decision as Record<string, unknown>
+  const notes: string[] = []
+  const seen = new Set<string>()
+
+  for (const key of DECISION_FEATURE_ARRAYS) {
+    const features = record[key]
+    if (!Array.isArray(features)) continue
+
+    for (const feature of features) {
+      if (!feature || typeof feature !== 'object') continue
+
+      const warnings = (feature as Record<string, unknown>).warnings
+      if (!Array.isArray(warnings)) continue
+
+      for (const warning of warnings) {
+        if (!warning || typeof warning !== 'object') continue
+
+        const entry = warning as Record<string, unknown>
+        const message =
+          typeof entry.short_description === 'string'
+            ? entry.short_description
+            : typeof entry.long_description === 'string'
+              ? entry.long_description
+              : null
+
+        if (message && !seen.has(message)) {
+          seen.add(message)
+          notes.push(message)
+        }
+      }
+    }
+  }
+
+  return notes
+}
+
+export interface ProfileIdentityUpdate {
+  identity_status: string
+  identity_verified?: boolean
+  identity_verified_at?: string | null
+  identity_first_name?: string | null
+  identity_last_name?: string | null
+  identity_document_type?: string | null
+  identity_review_notes?: string[] | null
+  didit_session_url?: string | null
+}
+
+export function buildProfileUpdateFromDidit(
+  status: string,
+  decision?: unknown
+): ProfileIdentityUpdate | null {
+  const update: ProfileIdentityUpdate = { identity_status: status }
+
+  switch (status) {
+    case 'Approved': {
+      if (!hasIdentityVerificationDecision(decision)) return null
+
+      const details = extractIdentityDetails(decision)
+      update.identity_verified = true
+      update.identity_verified_at = new Date().toISOString()
+      update.identity_first_name = details.firstName
+      update.identity_last_name = details.lastName
+      update.identity_document_type = details.documentType
+      update.identity_review_notes = null
+      update.didit_session_url = null
+      break
+    }
+    case 'In Review':
+      update.identity_verified = false
+      update.identity_review_notes = extractReviewNotes(decision)
+      break
+    case 'Declined':
+    case 'Expired':
+    case 'Kyc Expired':
+      update.identity_verified = false
+      update.identity_verified_at = null
+      update.identity_review_notes = extractReviewNotes(decision)
+      update.didit_session_url = null
+      break
+    default:
+      break
+  }
+
+  return update
+}
+
+export async function fetchDiditSessionDecision(sessionId: string): Promise<{
+  status: string
+  decision: unknown
+}> {
+  const response = await fetch(
+    `${DIDIT_API_BASE}/v3/session/${sessionId}/decision/`,
+    {
+      headers: {
+        'x-api-key': requireDiditEnv('DIDIT_API_KEY'),
+      },
+    }
+  )
+
+  if (!response.ok) {
+    const detail = await response.text()
+    throw new Error(
+      `Didit decision fetch failed (${response.status}): ${detail}`
+    )
+  }
+
+  const decision = await response.json()
+
+  if (!decision || typeof decision !== 'object') {
+    throw new Error('Didit decision response was invalid')
+  }
+
+  const status = (decision as Record<string, unknown>).status
+  if (typeof status !== 'string') {
+    throw new Error('Didit decision response was missing status')
+  }
+
+  return { status, decision }
+}
+
 export function extractIdentityDetails(
   decision: unknown
 ): DiditIdentityDetails {

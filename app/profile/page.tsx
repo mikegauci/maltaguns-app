@@ -137,6 +137,7 @@ export default function ProfilePage() {
     identity_first_name: string | null
     identity_last_name: string | null
     identity_document_type: string | null
+    identity_review_notes: string[] | null
   }) => {
     setProfile(prev => (prev ? { ...prev, ...update } : null))
   }

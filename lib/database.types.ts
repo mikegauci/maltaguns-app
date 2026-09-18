@@ -28,6 +28,7 @@ export interface Database {
           identity_first_name: string | null
           identity_last_name: string | null
           identity_document_type: string | null
+          identity_review_notes: string[] | null
           didit_session_id: string | null
           didit_session_url: string | null
           didit_session_created_at: string | null
@@ -57,6 +58,7 @@ export interface Database {
           identity_first_name?: string | null
           identity_last_name?: string | null
           identity_document_type?: string | null
+          identity_review_notes?: string[] | null
           didit_session_id?: string | null
           didit_session_url?: string | null
           didit_session_created_at?: string | null
@@ -86,6 +88,7 @@ export interface Database {
           identity_first_name?: string | null
           identity_last_name?: string | null
           identity_document_type?: string | null
+          identity_review_notes?: string[] | null
           didit_session_id?: string | null
           didit_session_url?: string | null
           didit_session_created_at?: string | null

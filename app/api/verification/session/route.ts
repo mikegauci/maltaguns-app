@@ -18,6 +18,13 @@ const TERMINAL_STATUSES = new Set([
   'Abandoned',
 ])
 
+const ACTIVE_STATUSES = new Set([
+  'In Review',
+  'In Progress',
+  'Awaiting User',
+  'Resubmitted',
+])
+
 export async function POST() {
   try {
     const auth = await requireAuthenticatedUser()
@@ -44,6 +51,16 @@ export async function POST() {
     if (profile.identity_verified) {
       return NextResponse.json(
         { error: 'Your identity is already verified.' },
+        { status: 409 }
+      )
+    }
+
+    if (ACTIVE_STATUSES.has(profile.identity_status ?? '')) {
+      return NextResponse.json(
+        {
+          error:
+            'Your identity verification is already in progress or under review.',
+        },
         { status: 409 }
       )
     }

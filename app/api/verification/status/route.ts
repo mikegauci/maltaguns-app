@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import {
+  buildProfileUpdateFromDidit,
+  fetchDiditSessionDecision,
+  isDiditSessionStatus,
+} from '@/lib/didit'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,12 +15,11 @@ export async function GET() {
     if ('error' in auth) return auth.error
 
     const { user } = auth
-    const supabase = await createClient()
 
-    const { data: profile, error } = await supabase
+    const { data: profile, error } = await supabaseAdmin
       .from('profiles')
       .select(
-        'identity_verified, identity_status, identity_verified_at, identity_first_name, identity_last_name, identity_document_type'
+        'identity_verified, identity_status, identity_verified_at, identity_first_name, identity_last_name, identity_document_type, identity_review_notes, didit_session_id'
       )
       .eq('id', user.id)
       .single()
@@ -27,13 +31,74 @@ export async function GET() {
       )
     }
 
+    let current = profile
+
+    if (profile.didit_session_id && !profile.identity_verified) {
+      try {
+        const remote = await fetchDiditSessionDecision(profile.didit_session_id)
+
+        if (
+          isDiditSessionStatus(remote.status) &&
+          remote.status !== profile.identity_status
+        ) {
+          const profileUpdate = buildProfileUpdateFromDidit(
+            remote.status,
+            remote.decision
+          )
+
+          if (profileUpdate) {
+            const { data: updated, error: updateError } = await supabaseAdmin
+              .from('profiles')
+              .update(profileUpdate)
+              .eq('id', user.id)
+              .select(
+                'identity_verified, identity_status, identity_verified_at, identity_first_name, identity_last_name, identity_document_type, identity_review_notes'
+              )
+              .single()
+
+            if (!updateError && updated) {
+              current = { ...profile, ...updated }
+            }
+          }
+        } else if (
+          remote.status === 'In Review' &&
+          profile.identity_status === 'In Review'
+        ) {
+          const profileUpdate = buildProfileUpdateFromDidit(
+            remote.status,
+            remote.decision
+          )
+
+          if (profileUpdate?.identity_review_notes?.length) {
+            const { data: updated, error: updateError } = await supabaseAdmin
+              .from('profiles')
+              .update({
+                identity_review_notes: profileUpdate.identity_review_notes,
+              })
+              .eq('id', user.id)
+              .select(
+                'identity_verified, identity_status, identity_verified_at, identity_first_name, identity_last_name, identity_document_type, identity_review_notes'
+              )
+              .single()
+
+            if (!updateError && updated) {
+              current = { ...profile, ...updated }
+            }
+          }
+        }
+      } catch (syncError) {
+        console.error('Didit status sync failed:', syncError)
+      }
+    }
+
     return NextResponse.json({
-      verified: profile.identity_verified,
-      status: profile.identity_status,
-      verifiedAt: profile.identity_verified_at,
-      firstName: profile.identity_first_name,
-      lastName: profile.identity_last_name,
-      documentType: profile.identity_document_type,
+      verified: current.identity_verified,
+      status: current.identity_status,
+      verifiedAt: current.identity_verified_at,
+      firstName: current.identity_first_name,
+      lastName: current.identity_last_name,
+      documentType: current.identity_document_type,
+      reviewNotes: current.identity_review_notes ?? [],
     })
   } catch (error) {
     console.error('Error loading verification status:', error)
