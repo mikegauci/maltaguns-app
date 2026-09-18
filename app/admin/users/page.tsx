@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { createClient } from '@/lib/supabase/client'
@@ -119,7 +120,6 @@ function UsersPageComponent() {
     is_admin: false,
     is_seller: false,
     is_verified: false,
-    identity_verified: false,
     license_image: null as string | null,
     is_disabled: false,
     first_name: '' as string | null,
@@ -440,13 +440,6 @@ function UsersPageComponent() {
                 onClick: () => handleToggleVerification(user),
                 variant: user.is_verified ? 'destructive' : 'default',
               },
-              {
-                label: user.identity_verified
-                  ? 'Unverify Identity'
-                  : 'Verify Identity',
-                onClick: () => handleToggleIdentityVerification(user),
-                variant: user.identity_verified ? 'destructive' : 'default',
-              },
               ...(!user.is_admin &&
               !user.is_disabled &&
               user.id !== currentUserId
@@ -543,7 +536,6 @@ function UsersPageComponent() {
       is_admin: false,
       is_seller: false,
       is_verified: false,
-      identity_verified: false,
       license_image: null,
       is_disabled: false,
       first_name: '',
@@ -563,7 +555,6 @@ function UsersPageComponent() {
       is_admin: user.is_admin,
       is_seller: user.is_seller,
       is_verified: user.is_verified,
-      identity_verified: user.identity_verified,
       license_image: user.license_image,
       is_disabled: user.is_disabled,
       first_name: user.first_name,
@@ -786,7 +777,6 @@ function UsersPageComponent() {
       setFormData({
         ...formData,
         is_verified: true,
-        identity_verified: true,
         license_types: createAllLicenseTypes(),
       })
       return
@@ -795,7 +785,6 @@ function UsersPageComponent() {
     setFormData({
       ...formData,
       is_verified: false,
-      identity_verified: false,
       license_types: createEmptyLicenseTypes(),
     })
   }
@@ -819,7 +808,6 @@ function UsersPageComponent() {
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
           is_verified: formData.is_verified,
-          identity_verified: formData.identity_verified,
           is_disabled: formData.is_disabled,
           notes: formData.notes,
           license_types: hasAnyLicenseType(formData.license_types)
@@ -1036,6 +1024,16 @@ function UsersPageComponent() {
         title: 'Success',
         description: `Identity ${user.identity_verified ? 'unverified' : 'verified'} successfully`,
       })
+
+      const nextVerified = !user.identity_verified
+      if (selectedUser?.id === user.id) {
+        setSelectedUser({
+          ...selectedUser,
+          identity_verified: nextVerified,
+          identity_status: nextVerified ? 'Approved' : 'Not Started',
+          identity_verified_at: nextVerified ? new Date().toISOString() : null,
+        })
+      }
 
       fetchUsers()
     } catch (error) {
@@ -1433,8 +1431,26 @@ function UsersPageComponent() {
               )}
               <p className="text-xs text-muted-foreground pt-1">
                 Document images are held by Didit and are not stored by
-                MaltaGuns. Use the Verify/Unverify Identity action to override.
+                MaltaGuns. Use the buttons below to override.
               </p>
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    selectedUser?.identity_verified ? 'destructive' : 'default'
+                  }
+                  disabled={isSubmitting || !selectedUser}
+                  onClick={() =>
+                    selectedUser &&
+                    handleToggleIdentityVerification(selectedUser)
+                  }
+                >
+                  {selectedUser?.identity_verified
+                    ? 'Unverify Identity'
+                    : 'Verify Identity'}
+                </Button>
+              </div>
             </div>
           </div>
           <div className="space-y-2">
@@ -1473,7 +1489,7 @@ function UsersPageComponent() {
             <div className="flex items-center space-x-2">
               <Switch
                 id="edit-is_verified"
-                checked={formData.is_verified && formData.identity_verified}
+                checked={formData.is_verified}
                 onCheckedChange={handleVerifiedToggle}
               />
               <Label htmlFor="edit-is_verified">Verified</Label>

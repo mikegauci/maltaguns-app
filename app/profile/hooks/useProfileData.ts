@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 import { useToast } from '@/hooks/use-toast'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { shouldSyncDiditIdentity } from '@/lib/identity-status'
 import {
   Profile,
   Listing,
@@ -101,7 +102,13 @@ export function useProfileData({
 
         let resolvedProfile = profileData
 
-        if (profileData.didit_session_id && !profileData.identity_verified) {
+        if (
+          shouldSyncDiditIdentity(
+            profileData.identity_verified,
+            profileData.identity_status,
+            profileData.didit_session_id
+          )
+        ) {
           try {
             const statusRes = await fetch('/api/verification/status')
             if (statusRes.ok) {

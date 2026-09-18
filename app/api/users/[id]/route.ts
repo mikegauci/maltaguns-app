@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
+import { buildAdminIdentityOverride } from '@/lib/identity-status'
 
 const PROFILE_FIELDS = [
   'username',
@@ -54,16 +55,11 @@ export async function PATCH(
       }
     }
 
-    // Identity verification is normally owned by the Didit webhook. An admin
-    // override has to carry the matching timestamp and status.
     if (typeof body.identity_verified === 'boolean') {
-      updateData.identity_verified = body.identity_verified
-      updateData.identity_verified_at = body.identity_verified
-        ? new Date().toISOString()
-        : null
-      updateData.identity_status = body.identity_verified
-        ? 'Approved'
-        : 'Declined'
+      Object.assign(
+        updateData,
+        buildAdminIdentityOverride(body.identity_verified)
+      )
     }
 
     if (Object.keys(updateData).length === 0 && !body.password) {

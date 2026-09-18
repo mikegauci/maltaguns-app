@@ -3,6 +3,7 @@ import {
   fetchDiditSessionDecision,
   isDiditSessionStatus,
 } from '@/lib/didit'
+import { shouldSyncDiditIdentity } from '@/lib/identity-status'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export async function syncIdentityVerificationForUser(
@@ -22,7 +23,13 @@ export async function syncIdentityVerificationForUser(
     return { identity_verified: true }
   }
 
-  if (!profile.didit_session_id) {
+  if (
+    !shouldSyncDiditIdentity(
+      profile.identity_verified,
+      profile.identity_status,
+      profile.didit_session_id
+    )
+  ) {
     return { identity_verified: profile.identity_verified ?? false }
   }
 

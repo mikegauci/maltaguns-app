@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
+import { buildAdminIdentityOverride } from '@/lib/identity-status'
 
 export async function PATCH(
   request: Request,
@@ -24,11 +25,7 @@ export async function PATCH(
 
     const { error: updateError } = await supabaseAdmin
       .from('profiles')
-      .update({
-        identity_verified: verified,
-        identity_verified_at: verified ? new Date().toISOString() : null,
-        identity_status: verified ? 'Approved' : 'Declined',
-      })
+      .update(buildAdminIdentityOverride(verified))
       .eq('id', userId)
 
     if (updateError) {

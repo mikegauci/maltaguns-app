@@ -5,6 +5,7 @@ import {
   fetchDiditSessionDecision,
   isDiditSessionStatus,
 } from '@/lib/didit'
+import { shouldSyncDiditIdentity } from '@/lib/identity-status'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export const dynamic = 'force-dynamic'
@@ -33,7 +34,13 @@ export async function GET() {
 
     let current = profile
 
-    if (profile.didit_session_id && !profile.identity_verified) {
+    if (
+      shouldSyncDiditIdentity(
+        profile.identity_verified,
+        profile.identity_status,
+        profile.didit_session_id
+      )
+    ) {
       try {
         const remote = await fetchDiditSessionDecision(profile.didit_session_id)
 
