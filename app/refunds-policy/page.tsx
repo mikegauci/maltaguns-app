@@ -66,12 +66,12 @@ export default function RefundsPolicy() {
           3. Establishment subscriptions
         </h2>
         <p>
-          Annual Establishment subscriptions are invoiced and payable in advance.
-          Consumers benefit from the 14-day withdrawal period from the date of
-          payment, provided the Establishment profile has not yet been activated
-          at the subscriber&apos;s request. Once activated, subscriptions are
-          non-refundable except where required by law. Business subscribers&apos;
-          statutory rights are unaffected.
+          Annual Establishment subscriptions are invoiced and payable in
+          advance. Consumers benefit from the 14-day withdrawal period from the
+          date of payment, provided the Establishment profile has not yet been
+          activated at the subscriber&apos;s request. Once activated,
+          subscriptions are non-refundable except where required by law.
+          Business subscribers&apos; statutory rights are unaffected.
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
@@ -110,8 +110,8 @@ export default function RefundsPolicy() {
         </h2>
         <p>
           Approved refunds are made to the original payment method within 14
-          days of approval. Nothing in this policy affects your statutory
-          rights under Maltese and EU consumer protection law.
+          days of approval. Nothing in this policy affects your statutory rights
+          under Maltese and EU consumer protection law.
         </p>
         <p>
           For refund requests or questions, contact{' '}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
@@ -15,7 +15,7 @@ import {
 
 interface LegalWarningDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
   onConfirm: () => void
   isLoading?: boolean
 }
@@ -28,16 +28,15 @@ export function LegalWarningDialog({
 }: LegalWarningDialogProps) {
   const [agreed, setAgreed] = useState(false)
 
-  // Reset the acknowledgement whenever the dialog is closed so re-opening
-  // always requires the user to check the box again.
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
       setAgreed(false)
     }
-  }, [open])
+    onOpenChange(nextOpen)
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Before you list</DialogTitle>

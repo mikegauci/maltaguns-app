@@ -9,7 +9,7 @@ interface DocumentUploadButtonProps {
   uploadProgress: number
   hasExistingDocument: boolean
   acceptedFormats?: string
-  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void // eslint-disable-line unused-imports/no-unused-vars
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void
 }
 
 export const DocumentUploadButton = ({
@@ -22,7 +22,7 @@ export const DocumentUploadButton = ({
   acceptedFormats = 'image/*,.heic,.heif',
   onChange,
 }: DocumentUploadButtonProps) => {
-  // Check if we're in the verification phase (ID card is 40-70%, License is 30-70%)
+  // Check if we're in the verification phase (License OCR runs at 30-70%)
   const isVerifying = isUploading && uploadProgress >= 30 && uploadProgress < 90
 
   return (

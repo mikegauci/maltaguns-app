@@ -71,9 +71,9 @@ export function getAllCategories(): string[] {
 
 export function isFullyVerified(
   isVerified: boolean,
-  idCardVerified: boolean
+  identityVerified: boolean
 ): boolean {
-  return isVerified && idCardVerified
+  return isVerified && identityVerified
 }
 
 // Firearm categories - must match the display labels from getCategoryLabel

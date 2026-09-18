@@ -75,12 +75,6 @@ export function useProfileData({
         let needsUpdate = false
         const updates: any = {}
 
-        if (profileData.id_card_verified && !profileData.id_card_image) {
-          updates.id_card_verified = false
-          profileData.id_card_verified = false
-          needsUpdate = true
-        }
-
         if (profileData.is_verified && !profileData.license_image) {
           updates.is_verified = false
           profileData.is_verified = false
@@ -93,15 +87,12 @@ export function useProfileData({
 
         // The licenses bucket is private - swap the stored identifiers for
         // short-lived signed URLs so the previews in SellerStatus render.
-        if (profileData.license_image || profileData.id_card_image) {
+        if (profileData.license_image) {
           try {
             const res = await fetch('/api/profile/document-urls')
             if (res.ok) {
-              const { licenseUrl, idCardUrl } = await res.json()
-              if (profileData.license_image)
-                profileData.license_image = licenseUrl
-              if (profileData.id_card_image)
-                profileData.id_card_image = idCardUrl
+              const { licenseUrl } = await res.json()
+              profileData.license_image = licenseUrl
             }
           } catch (err) {
             console.error('Failed to resolve signed document URLs:', err)
@@ -294,7 +285,7 @@ export function useProfileData({
     } catch (error) {
       console.error('Error refreshing credits:', error)
     }
-  }, [session?.user, supabase])
+  }, [session, supabase])
 
   return {
     profile,

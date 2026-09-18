@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { createClient } from '@/lib/supabase/client'
 import { BackButton } from '@/components/ui/back-button'
 import {
@@ -251,7 +252,9 @@ function EventsPageComponent() {
   }, [supabase, toast])
 
   useEffect(() => {
-    fetchEvents()
+    scheduleEffectWork(() => {
+      fetchEvents()
+    })
   }, [fetchEvents])
 
   function handleEdit(event: Event) {

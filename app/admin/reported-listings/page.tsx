@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { createClient } from '@/lib/supabase/client'
 import { BackButton } from '@/components/ui/back-button'
 import { Badge } from '@/components/ui/badge'
@@ -280,7 +281,9 @@ function ReportedListingsPageComponent() {
   }, [supabase, toast])
 
   useEffect(() => {
-    fetchReportedListings()
+    scheduleEffectWork(() => {
+      fetchReportedListings()
+    })
   }, [fetchReportedListings])
 
   function handleStatusChange(report: ReportedListing) {

@@ -87,10 +87,6 @@ export async function POST(req: Request) {
         license_expiry_date: data.interestedInSelling
           ? data.licenseExpiryDate
           : null,
-        id_card_image: data.interestedInSelling ? data.idCardImage : null,
-        id_card_verified: data.interestedInSelling
-          ? data.idCardVerified
-          : false,
         license_types: data.interestedInSelling ? data.licenseTypes : null,
         contact_preference: data.contactPreference,
         registration_ip: registrationIp,

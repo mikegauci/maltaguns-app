@@ -5,6 +5,7 @@ import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTab
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, Copy } from 'lucide-react'
@@ -225,7 +226,9 @@ function PaymentsReceivedPageComponent() {
   }, [toast])
 
   useEffect(() => {
-    fetchPayments()
+    scheduleEffectWork(() => {
+      fetchPayments()
+    })
   }, [fetchPayments])
 
   return (

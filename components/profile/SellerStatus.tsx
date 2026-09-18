@@ -13,34 +13,35 @@ import { AlertCircle, X, Info, Maximize2 } from 'lucide-react'
 import { Profile } from '../../app/profile/types'
 import { LicenseTypes } from '@/lib/license-utils'
 import { DocumentUploadButton } from '@/components/DocumentUploadButton'
+import { IdentityVerification } from '@/components/profile/IdentityVerification'
 import { useState } from 'react'
+
+interface IdentityChange {
+  identity_verified: boolean
+  identity_status: string | null
+  identity_first_name: string | null
+  identity_last_name: string | null
+  identity_document_type: string | null
+}
 
 interface SellerStatusProps {
   profile: Profile
   uploadingLicense: boolean
-  uploadingIdCard: boolean
   licenseUploadProgress: number
-  idCardUploadProgress: number
   handleLicenseUpload: (
-    event: React.ChangeEvent<HTMLInputElement> // eslint-disable-line unused-imports/no-unused-vars
-  ) => Promise<void>
-  handleIdCardUpload: (
-    event: React.ChangeEvent<HTMLInputElement> // eslint-disable-line unused-imports/no-unused-vars
+    event: React.ChangeEvent<HTMLInputElement>
   ) => Promise<void>
   handleRemoveLicense: () => Promise<void>
-  handleRemoveIdCard: () => Promise<void>
+  onIdentityChange: (update: IdentityChange) => void
 }
 
 export const SellerStatus = ({
   profile,
   uploadingLicense,
-  uploadingIdCard,
   licenseUploadProgress,
-  idCardUploadProgress,
   handleLicenseUpload,
-  handleIdCardUpload,
   handleRemoveLicense,
-  handleRemoveIdCard,
+  onIdentityChange,
 }: SellerStatusProps) => {
   const [fullscreenImage, setFullscreenImage] = useState<{
     url: string
@@ -62,8 +63,7 @@ export const SellerStatus = ({
           {profile.is_seller &&
             profile.is_verified &&
             profile.license_image &&
-            profile.id_card_verified &&
-            profile.id_card_image && (
+            profile.identity_verified && (
               <div className="flex items-center gap-2 mb-4">
                 <Badge
                   variant="default"
@@ -79,8 +79,7 @@ export const SellerStatus = ({
             profile.is_seller &&
             profile.is_verified &&
             profile.license_image &&
-            profile.id_card_verified &&
-            profile.id_card_image
+            profile.identity_verified
           ) && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex gap-3">
@@ -108,71 +107,14 @@ export const SellerStatus = ({
               <h3 className="text-base font-semibold flex items-center gap-2">
                 <span>Identification</span>
               </h3>
-              {/* Identification Status */}
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className={`text-xs ${
-                    profile.id_card_verified && profile.id_card_image
-                      ? 'border-green-600 text-green-600'
-                      : profile.id_card_image
-                        ? 'border-amber-500 text-amber-500'
-                        : 'border-gray-400 text-gray-400'
-                  }`}
-                >
-                  {profile.id_card_verified && profile.id_card_image
-                    ? 'Verified'
-                    : profile.id_card_image
-                      ? 'Pending'
-                      : 'Not Uploaded'}
-                </Badge>
-              </div>
-
-              {profile.id_card_image && (
-                <div className="space-y-2">
-                  <div className="relative w-full max-w-sm">
-                    <img
-                      id="profile-id-card-preview"
-                      src={profile.id_card_image}
-                      alt="Identification"
-                      className="w-[100%] h-[220px] object-cover rounded-md border"
-                    />
-                    <button
-                      onClick={() =>
-                        setFullscreenImage({
-                          url: profile.id_card_image!,
-                          title: 'Identification',
-                        })
-                      }
-                      className="absolute top-2 left-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
-                      title="View full screen"
-                    >
-                      <Maximize2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={handleRemoveIdCard}
-                      className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
-                      title="Remove identification"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <DocumentUploadButton
-                id="id-card-upload"
-                label="Upload ID Card or Passport"
-                replaceLabel="Replace ID Card or Passport"
-                isUploading={uploadingIdCard}
-                uploadProgress={idCardUploadProgress}
-                hasExistingDocument={!!profile.id_card_image}
-                onChange={handleIdCardUpload}
+              <IdentityVerification
+                identityVerified={profile.identity_verified}
+                identityStatus={profile.identity_status}
+                identityFirstName={profile.identity_first_name}
+                identityLastName={profile.identity_last_name}
+                identityDocumentType={profile.identity_document_type}
+                onVerificationChange={onIdentityChange}
               />
-              <p className="text-xs text-muted-foreground">
-                Upload your Maltese ID card or passport. Verification is
-                automatic based on your profile name.
-              </p>
             </div>
 
             {/* License Section */}

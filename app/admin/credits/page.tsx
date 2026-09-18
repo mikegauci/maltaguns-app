@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
@@ -84,7 +85,9 @@ function CreditsPageComponent() {
 
   useEffect(() => {
     if (isAuthorized) {
-      void fetchData()
+      scheduleEffectWork(() => {
+        void fetchData()
+      })
     }
   }, [isAuthorized, fetchData])
 

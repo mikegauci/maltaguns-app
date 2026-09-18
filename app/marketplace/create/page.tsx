@@ -38,14 +38,8 @@ export default function CreateListing() {
   })
 
   // Use custom hook for seller status checking
-  const {
-    isLoading,
-    isSeller,
-    isVerified,
-    isIdCardVerified,
-    hasLicense,
-    hasIdCard,
-  } = useSellerStatus()
+  const { isLoading, isSeller, isVerified, isIdentityVerified, hasLicense } =
+    useSellerStatus()
 
   // Create navigation handlers
   const { handleFirearmsClick, handleNonFirearmsClick, handleGoToProfile } =
@@ -53,9 +47,8 @@ export default function CreateListing() {
       router,
       isSeller,
       isVerified,
-      isIdCardVerified,
+      isIdentityVerified,
       hasLicense,
-      hasIdCard,
       setShowLicenseDialog,
       setDialogMessage,
     })

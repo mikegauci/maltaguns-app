@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import {
   Card,
   CardContent,
@@ -189,7 +190,9 @@ function SeoPageComponent() {
   }, [toast])
 
   useEffect(() => {
-    fetchSettings()
+    scheduleEffectWork(() => {
+      fetchSettings()
+    })
   }, [fetchSettings])
 
   function updateGlobal(field: keyof GlobalForm, value: string) {

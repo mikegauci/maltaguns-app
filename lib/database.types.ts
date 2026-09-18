@@ -22,8 +22,15 @@ export interface Database {
           is_verified: boolean
           is_admin: boolean | null
           license_image: string | null
-          id_card_image: string | null
-          id_card_verified: boolean
+          identity_verified: boolean
+          identity_verified_at: string | null
+          identity_status: string | null
+          identity_first_name: string | null
+          identity_last_name: string | null
+          identity_document_type: string | null
+          didit_session_id: string | null
+          didit_session_url: string | null
+          didit_session_created_at: string | null
           license_types: Json | null
           contact_preference: string | null
           license_expiry_date: string | null
@@ -44,8 +51,15 @@ export interface Database {
           is_verified?: boolean
           is_admin?: boolean | null
           license_image?: string | null
-          id_card_image?: string | null
-          id_card_verified?: boolean
+          identity_verified?: boolean
+          identity_verified_at?: string | null
+          identity_status?: string | null
+          identity_first_name?: string | null
+          identity_last_name?: string | null
+          identity_document_type?: string | null
+          didit_session_id?: string | null
+          didit_session_url?: string | null
+          didit_session_created_at?: string | null
           license_types?: Json | null
           contact_preference?: string | null
           license_expiry_date?: string | null
@@ -66,8 +80,15 @@ export interface Database {
           is_verified?: boolean
           is_admin?: boolean | null
           license_image?: string | null
-          id_card_image?: string | null
-          id_card_verified?: boolean
+          identity_verified?: boolean
+          identity_verified_at?: string | null
+          identity_status?: string | null
+          identity_first_name?: string | null
+          identity_last_name?: string | null
+          identity_document_type?: string | null
+          didit_session_id?: string | null
+          didit_session_url?: string | null
+          didit_session_created_at?: string | null
           license_types?: Json | null
           contact_preference?: string | null
           license_expiry_date?: string | null
@@ -75,6 +96,29 @@ export interface Database {
           email?: string | null
           registration_ip?: string | null
           article_email_opt_out?: boolean
+        }
+      }
+      didit_webhook_events: {
+        Row: {
+          event_id: string
+          session_id: string | null
+          status: string | null
+          vendor_data: string | null
+          received_at: string
+        }
+        Insert: {
+          event_id: string
+          session_id?: string | null
+          status?: string | null
+          vendor_data?: string | null
+          received_at?: string
+        }
+        Update: {
+          event_id?: string
+          session_id?: string | null
+          status?: string | null
+          vendor_data?: string | null
+          received_at?: string
         }
       }
       notifications: {

@@ -22,8 +22,8 @@ const FEATURE_PRICE = 10
 
 interface FeatureListingDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  userId: string // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
+  userId: string
   listingId: string
   onSuccess?: () => void
 }

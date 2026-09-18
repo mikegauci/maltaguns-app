@@ -85,14 +85,14 @@ const CREDIT_EDIT_KIND_CONFIG: Record<
 
 interface EditCreditDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
   credit: EditCreditRecord
   onSuccess?: () => void
   kind?: CreditKind
 }
 
 export function EditCreditDialog({
-  open, // eslint-disable-line unused-imports/no-unused-vars
+  open,
   onOpenChange,
   credit,
   onSuccess,

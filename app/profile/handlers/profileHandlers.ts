@@ -1,9 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { FEATURE_DAYS, LISTING_EXTEND_DAYS } from '@/lib/featured-listings'
-import {
-  uploadAndVerifyLicense,
-  uploadAndVerifyIdCard,
-} from '@/utils/document-upload-handlers'
+import { uploadAndVerifyLicense } from '@/utils/document-upload-handlers'
 import { Profile, Listing, ProfileForm } from '../types'
 import React from 'react'
 
@@ -15,27 +12,21 @@ interface HandlerDependencies {
   supabase: SupabaseClient
   toast: any
   setProfile: (
-    // eslint-disable-line unused-imports/no-unused-vars
-    profile: Profile | null | ((prev: Profile | null) => Profile | null) // eslint-disable-line unused-imports/no-unused-vars
+    profile: Profile | null | ((prev: Profile | null) => Profile | null)
   ) => void
-  setListings: (listings: Listing[] | ((prev: Listing[]) => Listing[])) => void // eslint-disable-line unused-imports/no-unused-vars
+  setListings: (listings: Listing[] | ((prev: Listing[]) => Listing[])) => void
   profile: Profile | null
-  setLicenseUploadProgress?: (progress: number) => void // eslint-disable-line unused-imports/no-unused-vars
-  setIdCardUploadProgress?: (progress: number) => void // eslint-disable-line unused-imports/no-unused-vars
+  setLicenseUploadProgress?: (progress: number) => void
 }
 
 // Helper: The licenses bucket is private, so the raw stored URL from an
 // upload can't be rendered directly - fetch a freshly signed one instead.
-async function resolveSignedUrl(
-  kind: 'license' | 'idCard',
-  fallbackUrl: string
-): Promise<string> {
+async function resolveSignedLicenseUrl(fallbackUrl: string): Promise<string> {
   try {
     const res = await fetch('/api/profile/document-urls')
     if (!res.ok) return fallbackUrl
-    const { licenseUrl, idCardUrl } = await res.json()
-    const signedUrl = kind === 'license' ? licenseUrl : idCardUrl
-    return signedUrl || fallbackUrl
+    const { licenseUrl } = await res.json()
+    return licenseUrl || fallbackUrl
   } catch {
     return fallbackUrl
   }
@@ -60,13 +51,12 @@ export function createProfileHandlers(deps: HandlerDependencies) {
     setListings,
     profile,
     setLicenseUploadProgress,
-    setIdCardUploadProgress,
   } = deps
 
   async function handleLicenseUpload(
     event: React.ChangeEvent<HTMLInputElement>,
     uploadingLicense: boolean,
-    setUploadingLicense: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+    setUploadingLicense: (value: boolean) => void
   ) {
     const originalFile = event.target.files?.[0]
     if (!originalFile) return
@@ -101,10 +91,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
         // The licenses bucket is private - resolve a signed URL for the
         // freshly uploaded file so the preview renders immediately.
-        const signedLicenseUrl = await resolveSignedUrl(
-          'license',
-          result.publicUrl
-        )
+        const signedLicenseUrl = await resolveSignedLicenseUrl(result.publicUrl)
 
         setProfile(prev =>
           prev
@@ -128,70 +115,6 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       })
     } finally {
       setUploadingLicense(false)
-    }
-  }
-
-  async function handleIdCardUpload(
-    event: React.ChangeEvent<HTMLInputElement>,
-    uploadingIdCard: boolean,
-    setUploadingIdCard: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  ) {
-    const originalFile = event.target.files?.[0]
-    if (!originalFile) return
-
-    setUploadingIdCard(true)
-
-    try {
-      const result = await uploadAndVerifyIdCard(
-        originalFile,
-        profile?.first_name ?? '',
-        profile?.last_name ?? '',
-        {
-          supabase,
-          toast,
-          setProgress: setIdCardUploadProgress,
-        }
-      )
-
-      if (result.success && result.publicUrl) {
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            id_card_image: result.publicUrl,
-            id_card_verified: result.isVerified,
-          })
-          .eq('id', profile?.id)
-
-        if (updateError) throw updateError
-
-        // The licenses bucket is private - resolve a signed URL for the
-        // freshly uploaded file so the preview renders immediately.
-        const signedIdCardUrl = await resolveSignedUrl(
-          'idCard',
-          result.publicUrl
-        )
-
-        setProfile(prev =>
-          prev
-            ? {
-                ...prev,
-                id_card_image: signedIdCardUrl,
-                id_card_verified: result.isVerified,
-              }
-            : null
-        )
-      }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Upload failed',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to upload identification.',
-      })
-    } finally {
-      setUploadingIdCard(false)
     }
   }
 
@@ -239,49 +162,9 @@ export function createProfileHandlers(deps: HandlerDependencies) {
     }
   }
 
-  async function handleRemoveIdCard() {
-    try {
-      if (!profile?.id) return
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          id_card_image: null,
-          id_card_verified: false,
-        })
-        .eq('id', profile.id)
-
-      if (error) throw error
-
-      setProfile(prev =>
-        prev
-          ? {
-              ...prev,
-              id_card_image: null,
-              id_card_verified: false,
-            }
-          : null
-      )
-
-      toast({
-        title: 'Identification removed',
-        description: 'Your identification has been removed successfully.',
-      })
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Remove failed',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to remove identification.',
-      })
-    }
-  }
-
   async function onSubmit(
     data: ProfileForm,
-    setIsEditing: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+    setIsEditing: (value: boolean) => void
   ) {
     try {
       if (!profile?.id) return
@@ -366,8 +249,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
   async function handleDeleteListing(
     listingId: string,
-    setDeleteDialogOpen: (value: boolean) => void, // eslint-disable-line unused-imports/no-unused-vars
-    setListingToDelete: (value: string | null) => void // eslint-disable-line unused-imports/no-unused-vars
+    setDeleteDialogOpen: (value: boolean) => void,
+    setListingToDelete: (value: string | null) => void
   ) {
     try {
       const { data: session } = await supabase.auth.getSession()
@@ -460,7 +343,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
   async function handleRenewalSuccess(
     listingToFeature: string | null,
-    setListingToFeature: (value: string | null) => void, // eslint-disable-line unused-imports/no-unused-vars
+    setListingToFeature: (value: string | null) => void,
     refreshCredits: () => Promise<void>
   ): Promise<void> {
     try {
@@ -534,9 +417,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
 
   return {
     handleLicenseUpload,
-    handleIdCardUpload,
     handleRemoveLicense,
-    handleRemoveIdCard,
     onSubmit,
     handleListingStatusChange,
     handleDeleteListing,

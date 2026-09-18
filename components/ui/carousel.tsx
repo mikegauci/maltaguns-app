@@ -7,6 +7,7 @@ import useEmblaCarousel, {
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Button } from '@/components/ui/button'
 
 type CarouselApi = UseEmblaCarouselType[1]
@@ -18,7 +19,7 @@ type CarouselProps = {
   opts?: CarouselOptions
   plugins?: CarouselPlugin
   orientation?: 'horizontal' | 'vertical'
-  setApi?: (api: CarouselApi) => void // eslint-disable-line unused-imports/no-unused-vars
+  setApi?: (api: CarouselApi) => void
 }
 
 type CarouselContextProps = {
@@ -114,7 +115,9 @@ const Carousel = React.forwardRef<
         return
       }
 
-      onSelect(api)
+      scheduleEffectWork(() => {
+        onSelect(api)
+      })
       api.on('reInit', onSelect)
       api.on('select', onSelect)
 

@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
-import { Database } from '@/lib/database.types'
 import {
   Card,
   CardContent,
@@ -100,7 +99,6 @@ export default function AdminBlogsPage() {
   const { isAuthorized } = useRequireAdmin({ preset: 'admin-toast' })
 
   const [posts, setPosts] = useState<BlogPost[]>([])
-  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -224,8 +222,7 @@ export default function AdminBlogsPage() {
     fetchPosts()
   }, [isAuthorized, supabase, toast])
 
-  // Filter and sort posts
-  useEffect(() => {
+  const filteredPosts = useMemo(() => {
     let filtered = [...posts]
 
     // Search filter
@@ -309,7 +306,7 @@ export default function AdminBlogsPage() {
       }
     })
 
-    setFilteredPosts(filtered)
+    return filtered
   }, [
     posts,
     searchTerm,

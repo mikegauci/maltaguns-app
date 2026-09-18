@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { BackButton } from '@/components/ui/back-button'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -96,7 +97,9 @@ export default function AdminNotificationsPage() {
 
   useEffect(() => {
     if (!isAuthorized) return
-    void fetchUsers()
+    scheduleEffectWork(() => {
+      void fetchUsers()
+    })
   }, [fetchUsers, isAuthorized])
 
   const toggleSelected = useCallback((u: UserRow, checked: boolean) => {

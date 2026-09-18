@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -77,13 +77,13 @@ const CREDIT_KIND_CONFIG: Record<
 
 interface AddCreditDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
   onSuccess?: () => void
   kind?: CreditKind
 }
 
 export function AddCreditDialog({
-  open, // eslint-disable-line unused-imports/no-unused-vars
+  open,
   onOpenChange,
   onSuccess,
   kind = 'credits',
@@ -101,15 +101,16 @@ export function AddCreditDialog({
     },
   })
 
-  useEffect(() => {
-    if (open) {
+  function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
       form.reset({
         user_id: '',
         amount: '',
       })
       setSelectedUser(null)
     }
-  }, [open, form])
+    onOpenChange(nextOpen)
+  }
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
@@ -155,7 +156,7 @@ export function AddCreditDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{config.title}</DialogTitle>

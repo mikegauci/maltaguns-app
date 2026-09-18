@@ -25,9 +25,9 @@ import { NotificationPreferences } from './NotificationPreferences'
 interface ProfileInformationProps {
   profile: Profile
   isEditing: boolean
-  setIsEditing: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setIsEditing: (value: boolean) => void
   form: UseFormReturn<ProfileForm>
-  onSubmit: (data: ProfileForm) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  onSubmit: (data: ProfileForm) => Promise<void>
 }
 
 export const ProfileInformation = ({

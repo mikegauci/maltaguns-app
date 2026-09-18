@@ -9,7 +9,6 @@ const PROFILE_FIELDS = [
   'is_admin',
   'is_seller',
   'is_verified',
-  'id_card_verified',
   'is_disabled',
   'notes',
   'license_types',
@@ -53,6 +52,18 @@ export async function PATCH(
       if (field in body) {
         updateData[field] = body[field]
       }
+    }
+
+    // Identity verification is normally owned by the Didit webhook. An admin
+    // override has to carry the matching timestamp and status.
+    if (typeof body.identity_verified === 'boolean') {
+      updateData.identity_verified = body.identity_verified
+      updateData.identity_verified_at = body.identity_verified
+        ? new Date().toISOString()
+        : null
+      updateData.identity_status = body.identity_verified
+        ? 'Approved'
+        : 'Declined'
     }
 
     if (Object.keys(updateData).length === 0 && !body.password) {

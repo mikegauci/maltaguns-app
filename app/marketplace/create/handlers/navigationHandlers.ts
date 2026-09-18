@@ -4,11 +4,10 @@ interface NavigationHandlerDependencies {
   router: AppRouterInstance
   isSeller: boolean
   isVerified: boolean
-  isIdCardVerified: boolean
+  isIdentityVerified: boolean
   hasLicense: boolean
-  hasIdCard: boolean
-  setShowLicenseDialog: (show: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  setDialogMessage: (message: { title: string; description: string }) => void // eslint-disable-line unused-imports/no-unused-vars
+  setShowLicenseDialog: (show: boolean) => void
+  setDialogMessage: (message: { title: string; description: string }) => void
 }
 
 export function createNavigationHandlers(deps: NavigationHandlerDependencies) {
@@ -16,42 +15,41 @@ export function createNavigationHandlers(deps: NavigationHandlerDependencies) {
     router,
     isSeller,
     isVerified,
-    isIdCardVerified,
+    isIdentityVerified,
     hasLicense,
-    hasIdCard,
     setShowLicenseDialog,
     setDialogMessage,
   } = deps
 
   function handleFirearmsClick() {
-    // Check if user has uploaded neither ID card nor license
-    if (!hasIdCard && !hasLicense) {
+    // Check if user has neither a verified identity nor a license
+    if (!isIdentityVerified && !hasLicense) {
       setDialogMessage({
-        title: 'Identification & License Required',
+        title: 'Identity & License Required',
         description:
-          'To sell firearms, you must upload both your identification and firearms license. Please go to your profile and upload both documents in the Seller Status section.',
+          'To sell firearms, you must verify your identity and upload your firearms license. Please go to your profile to complete both in the Seller Status section.',
       })
       setShowLicenseDialog(true)
       return
     }
 
-    // Check if user has uploaded ID card only (no license)
-    if (hasIdCard && !hasLicense) {
+    // Check if identity is verified but no license was uploaded
+    if (isIdentityVerified && !hasLicense) {
       setDialogMessage({
         title: 'Firearms License Required',
         description:
-          'You have uploaded your ID card, but you still need to upload your firearms license. Please go to your profile and upload a valid license in the Seller Status section.',
+          'Your identity is verified, but you still need to upload your firearms license. Please go to your profile and upload a valid license in the Seller Status section.',
       })
       setShowLicenseDialog(true)
       return
     }
 
-    // Check if user has uploaded license only (no ID card)
-    if (hasLicense && !hasIdCard) {
+    // Check if a license was uploaded but the identity is not verified
+    if (hasLicense && !isIdentityVerified) {
       setDialogMessage({
-        title: 'ID Card Required',
+        title: 'Identity Verification Required',
         description:
-          'You have uploaded your firearms license, but you still need to upload your ID card. Please go to your profile and upload your ID card in the Seller Status section.',
+          'You have uploaded your firearms license, but you still need to verify your identity. Please go to your profile and complete identity verification in the Seller Status section.',
       })
       setShowLicenseDialog(true)
       return
@@ -63,17 +61,6 @@ export function createNavigationHandlers(deps: NavigationHandlerDependencies) {
         title: 'License Verification Failed',
         description:
           'Your firearms license could not be verified. This may be because it has expired, the image quality is poor, or the name does not match your profile. Please upload a clear photo of a valid, current license.',
-      })
-      setShowLicenseDialog(true)
-      return
-    }
-
-    // Check if ID card is not verified (uploaded but failed OCR)
-    if (hasIdCard && !isIdCardVerified) {
-      setDialogMessage({
-        title: 'ID Card Verification Failed',
-        description:
-          'Your ID card could not be verified. This may be because the image quality is poor or the name does not match your profile. Please upload a clear photo of your Malta ID card.',
       })
       setShowLicenseDialog(true)
       return

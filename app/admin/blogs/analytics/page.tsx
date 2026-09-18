@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
-import { Database } from '@/lib/database.types'
 import {
   Card,
   CardContent,

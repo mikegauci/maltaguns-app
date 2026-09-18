@@ -16,11 +16,11 @@ import {
 
 interface LinkDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
   linkUrl: string
-  setLinkUrl: (url: string) => void // eslint-disable-line unused-imports/no-unused-vars
+  setLinkUrl: (url: string) => void
   openInNewTab: boolean
-  setOpenInNewTab: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setOpenInNewTab: (value: boolean) => void
   onApply: () => void
 }
 

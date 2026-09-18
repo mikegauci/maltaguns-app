@@ -15,7 +15,7 @@ export async function GET() {
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('license_image, id_card_image')
+      .select('license_image')
       .eq('id', user.id)
       .single()
 
@@ -26,12 +26,9 @@ export async function GET() {
       )
     }
 
-    const [licenseUrl, idCardUrl] = await Promise.all([
-      signLicenseUrl(profile.license_image),
-      signLicenseUrl(profile.id_card_image),
-    ])
+    const licenseUrl = await signLicenseUrl(profile.license_image)
 
-    return NextResponse.json({ licenseUrl, idCardUrl })
+    return NextResponse.json({ licenseUrl })
   } catch (error) {
     console.error('Error signing document URLs:', error)
     return NextResponse.json(

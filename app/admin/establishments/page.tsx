@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { createClient } from '@/lib/supabase/client'
 import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { Store, Building, Wrench, Target, Upload, X } from 'lucide-react'
@@ -366,8 +367,10 @@ function EstablishmentsPageComponent() {
   }, [toast])
 
   useEffect(() => {
-    fetchEstablishments()
-    fetchUsers()
+    scheduleEffectWork(() => {
+      fetchEstablishments()
+      fetchUsers()
+    })
   }, [fetchEstablishments, fetchUsers])
 
   // Logo upload handler

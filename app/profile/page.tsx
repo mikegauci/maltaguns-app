@@ -50,9 +50,7 @@ export default function ProfilePage() {
   // UI State
   const [isEditing, setIsEditing] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
-  const [uploadingIdCard, setUploadingIdCard] = useState(false)
   const [licenseUploadProgress, setLicenseUploadProgress] = useState(0)
-  const [idCardUploadProgress, setIdCardUploadProgress] = useState(0)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [listingToDelete, setListingToDelete] = useState<string | null>(null)
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
@@ -109,7 +107,6 @@ export default function ProfilePage() {
     setListings,
     profile,
     setLicenseUploadProgress,
-    setIdCardUploadProgress,
   })
 
   const contentHandlers = createContentHandlers({
@@ -134,14 +131,14 @@ export default function ProfilePage() {
     )
   }
 
-  const handleIdCardUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    await profileHandlers.handleIdCardUpload(
-      event,
-      uploadingIdCard,
-      setUploadingIdCard
-    )
+  const handleIdentityChange = (update: {
+    identity_verified: boolean
+    identity_status: string | null
+    identity_first_name: string | null
+    identity_last_name: string | null
+    identity_document_type: string | null
+  }) => {
+    setProfile(prev => (prev ? { ...prev, ...update } : null))
   }
 
   const handleDeleteListing = (listingId: string) =>
@@ -234,16 +231,13 @@ export default function ProfilePage() {
         isEditing={isEditing}
         setIsEditing={setIsEditing}
         uploadingLicense={uploadingLicense}
-        uploadingIdCard={uploadingIdCard}
         licenseUploadProgress={licenseUploadProgress}
-        idCardUploadProgress={idCardUploadProgress}
         establishmentInfoOpen={establishmentInfoOpen}
         setEstablishmentInfoOpen={setEstablishmentInfoOpen}
         onSubmit={onSubmit}
         handleLicenseUpload={handleLicenseUpload}
-        handleIdCardUpload={handleIdCardUpload}
         handleRemoveLicense={profileHandlers.handleRemoveLicense}
-        handleRemoveIdCard={profileHandlers.handleRemoveIdCard}
+        onIdentityChange={handleIdentityChange}
         handleListingStatusChange={profileHandlers.handleListingStatusChange}
         handleRenewListing={profileHandlers.handleRenewListing}
         confirmDeleteListing={confirmDeleteListing}

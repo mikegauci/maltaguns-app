@@ -31,7 +31,10 @@ export function useNotificationsRealtime(
 ) {
   const { supabase } = useSupabase()
   const onChangeRef = useRef(onChange)
-  onChangeRef.current = onChange
+
+  useEffect(() => {
+    onChangeRef.current = onChange
+  }, [onChange])
 
   useEffect(() => {
     if (!userId) return

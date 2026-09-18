@@ -42,10 +42,7 @@ import {
 } from '@/components/ui/tooltip'
 import { Info, Eye, EyeOff } from 'lucide-react'
 import React from 'react'
-import {
-  uploadAndVerifyLicense,
-  uploadAndVerifyIdCard,
-} from '@/utils/document-upload-handlers'
+import { uploadAndVerifyLicense } from '@/utils/document-upload-handlers'
 import { DocumentUploadButton } from '@/components/DocumentUploadButton'
 import { useClickableTooltip } from '@/hooks/useClickableTooltip'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -116,8 +113,6 @@ const registerSchema = z
         collectorsASpecial: z.boolean().default(false),
       })
       .optional(),
-    idCardImage: z.any().optional(),
-    idCardVerified: z.boolean().default(false),
     licenseImage: z.any().optional(),
     licenseExpiryDate: z.string().nullable().optional(),
     isVerified: z.boolean().default(false),
@@ -133,19 +128,11 @@ const registerSchema = z
   })
   .superRefine((data, ctx) => {
     if (data.interestedInSelling !== true) return
-    if (!data.idCardImage) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          'Identification and license images are required if you want to sell firearms, otherwise choose No above',
-        path: ['idCardImage'],
-      })
-    }
     if (!data.licenseImage) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message:
-          'Identification and license images are required if you want to sell firearms, otherwise choose No above',
+          'A license image is required if you want to sell firearms, otherwise choose No above',
         path: ['licenseImage'],
       })
     }
@@ -166,10 +153,8 @@ const registerDefaultValues: RegisterForm = {
   phone: '',
   address: '',
   interestedInSelling: false,
-  idCardImage: '',
   licenseImage: '',
   isVerified: false,
-  idCardVerified: false,
   licenseTypes: {
     tslA: false,
     tslASpecial: false,
@@ -191,13 +176,10 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
-  const [uploadingIdCard, setUploadingIdCard] = useState(false)
   const [licenseUploadProgress, setLicenseUploadProgress] = useState(0)
-  const [idCardUploadProgress, setIdCardUploadProgress] = useState(0)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
-  const [idCardPreviewUrl, setIdCardPreviewUrl] = useState('')
   const [licensePreviewUrl, setLicensePreviewUrl] = useState('')
   const { isOpen, triggerProps, contentProps } = useClickableTooltip()
 
@@ -227,10 +209,8 @@ export default function Register() {
             const {
               password: _p,
               confirmPassword: _c,
-              idCardImage: _id,
               licenseImage: _lic,
               isVerified: _iv,
-              idCardVerified: _icv,
               licenseTypes: _lt,
               licenseExpiryDate: _led,
               ...safeValues
@@ -241,10 +221,8 @@ export default function Register() {
               ...safeValues,
               password: '',
               confirmPassword: '',
-              idCardImage: '',
               licenseImage: '',
               isVerified: false,
-              idCardVerified: false,
               licenseExpiryDate: null,
               licenseTypes: registerDefaultValues.licenseTypes,
               interestedInSelling: draft.values.interestedInSelling === true,
@@ -271,12 +249,6 @@ export default function Register() {
 
   useEffect(() => {
     return () => {
-      revokePreviewUrl(idCardPreviewUrl)
-    }
-  }, [idCardPreviewUrl])
-
-  useEffect(() => {
-    return () => {
       revokePreviewUrl(licensePreviewUrl)
     }
   }, [licensePreviewUrl])
@@ -288,10 +260,8 @@ export default function Register() {
       const {
         password: _password,
         confirmPassword: _confirm,
-        idCardImage: _idCardImage,
         licenseImage: _licenseImage,
         isVerified: _isVerified,
-        idCardVerified: _idCardVerified,
         licenseTypes: _licenseTypes,
         licenseExpiryDate: _licenseExpiryDate,
         ...draftValues
@@ -331,9 +301,7 @@ export default function Register() {
 
   function clearSellerDocuments() {
     form.setValue('licenseImage', '')
-    form.setValue('idCardImage', '')
     form.setValue('isVerified', false)
-    form.setValue('idCardVerified', false)
     form.setValue('licenseExpiryDate', null)
     form.setValue('licenseTypes', {
       tslA: false,
@@ -342,10 +310,6 @@ export default function Register() {
       hunting: false,
       collectorsA: false,
       collectorsASpecial: false,
-    })
-    setIdCardPreviewUrl(prev => {
-      revokePreviewUrl(prev)
-      return ''
     })
     setLicensePreviewUrl(prev => {
       revokePreviewUrl(prev)
@@ -456,44 +420,6 @@ export default function Register() {
       console.error('License upload error:', error)
     } finally {
       setUploadingLicense(false)
-    }
-  }
-
-  async function handleIdCardUpload(
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
-    const originalFile = event.target.files?.[0]
-    if (!originalFile) return
-
-    setUploadingIdCard(true)
-
-    try {
-      const formValues = form.getValues()
-      const result = await uploadAndVerifyIdCard(
-        originalFile,
-        formValues.first_name,
-        formValues.last_name,
-        {
-          supabase,
-          toast,
-          setProgress: setIdCardUploadProgress,
-        }
-      )
-
-      if (result.success && result.publicUrl) {
-        form.setValue('idCardImage', result.publicUrl)
-        form.setValue('idCardVerified', result.isVerified)
-        const preview = URL.createObjectURL(result.previewBlob ?? originalFile)
-        setIdCardPreviewUrl(prev => {
-          revokePreviewUrl(prev)
-          return preview
-        })
-      }
-    } catch (error) {
-      // Error handling is done in the shared function
-      console.error('ID card upload error:', error)
-    } finally {
-      setUploadingIdCard(false)
     }
   }
 
@@ -962,126 +888,7 @@ export default function Register() {
                         </TooltipProvider>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="idCardImage"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>ID Card or Passport</FormLabel>
-                              <FormControl>
-                                <div className="space-y-4">
-                                  {!field.value && (
-                                    <DocumentUploadButton
-                                      id="id-card-upload"
-                                      label="Upload ID Card or Passport"
-                                      replaceLabel="Replace ID Card or Passport"
-                                      isUploading={uploadingIdCard}
-                                      uploadProgress={idCardUploadProgress}
-                                      hasExistingDocument={false}
-                                      onChange={handleIdCardUpload}
-                                    />
-                                  )}
-                                  <Input type="hidden" {...field} />
-                                  {field.value && (
-                                    <div className="mt-4 space-y-2">
-                                      <div className="flex items-center justify-between">
-                                        <div
-                                          className={`flex items-center gap-2 ${
-                                            form.watch('idCardVerified')
-                                              ? 'text-green-600'
-                                              : 'text-amber-600'
-                                          }`}
-                                        >
-                                          {form.watch('idCardVerified') ? (
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              width="24"
-                                              height="24"
-                                              viewBox="0 0 24 24"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              strokeWidth="2"
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              className="w-5 h-5"
-                                            >
-                                              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                              <polyline points="22 4 12 14.01 9 11.01" />
-                                            </svg>
-                                          ) : (
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              width="24"
-                                              height="24"
-                                              viewBox="0 0 24 24"
-                                              fill="none"
-                                              stroke="currentColor"
-                                              strokeWidth="2"
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              className="w-5 h-5"
-                                            >
-                                              <circle cx="12" cy="12" r="10" />
-                                              <line
-                                                x1="12"
-                                                y1="16"
-                                                x2="12"
-                                                y2="12"
-                                              />
-                                              <line
-                                                x1="12"
-                                                y1="8"
-                                                x2="12.01"
-                                                y2="8"
-                                              />
-                                            </svg>
-                                          )}
-                                          <span className="text-sm font-medium">
-                                            {form.watch('idCardVerified')
-                                              ? 'ID card uploaded successfully'
-                                              : 'Image uploaded successfully, however requires manual verification after registration'}
-                                          </span>
-                                        </div>
-                                        <Button
-                                          type="button"
-                                          variant="destructive"
-                                          size="sm"
-                                          className="text-xs"
-                                          onClick={() => {
-                                            form.setValue('idCardImage', '')
-                                            form.trigger('idCardImage')
-                                            setIdCardPreviewUrl(prev => {
-                                              revokePreviewUrl(prev)
-                                              return ''
-                                            })
-                                          }}
-                                        >
-                                          Remove
-                                        </Button>
-                                      </div>
-
-                                      <div className="space-y-2">
-                                        <div className="relative w-full h-48 rounded-lg overflow-hidden border">
-                                          {idCardPreviewUrl ? (
-                                            <img
-                                              id="id-card-preview"
-                                              src={idCardPreviewUrl}
-                                              alt="Uploaded ID card"
-                                              className="w-full h-full object-cover"
-                                            />
-                                          ) : null}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
+                      <div className="grid grid-cols-1 gap-4">
                         {/* License Upload */}
                         <FormField
                           control={form.control}
@@ -1287,7 +1094,7 @@ export default function Register() {
                   <Button
                     type="submit"
                     className="w-full flex-1 bg-[#4CAF50] hover:bg-[#45a049] text-white font-semibold py-6 rounded-lg"
-                    disabled={isLoading || uploadingLicense || uploadingIdCard}
+                    disabled={isLoading || uploadingLicense}
                   >
                     {isLoading ? 'Creating account...' : 'Create account'}
                   </Button>

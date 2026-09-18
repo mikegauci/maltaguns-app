@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { Database } from '@/lib/database.types'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
 
 export async function POST(request: Request) {

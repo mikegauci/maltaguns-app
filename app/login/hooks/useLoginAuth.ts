@@ -9,24 +9,20 @@ export function useLoginAuth(supabase: SupabaseClient) {
   const searchParams = useSearchParams()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [isDisabled, setIsDisabled] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const urlError = searchParams.get('error')
+  const [manualError, setError] = useState<string | null>(null)
+  const error = manualError ?? urlError
+  const [manualDisabled, setIsDisabled] = useState(false)
+  const isDisabledFromUrl = Boolean(urlError?.includes('disabled'))
+  const isDisabled = manualDisabled || isDisabledFromUrl
 
-  // Check for error in URL params on mount
   useEffect(() => {
-    const errorMsg = searchParams.get('error')
-    if (errorMsg) {
-      setError(errorMsg)
-
-      if (errorMsg.includes('disabled')) {
-        setIsDisabled(true)
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('supabase.auth.token')
-          void forceLogout()
-        }
-      }
+    if (!isDisabledFromUrl) return
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('supabase.auth.token')
+      void forceLogout()
     }
-  }, [searchParams])
+  }, [isDisabledFromUrl])
 
   // Check session and authentication state
   useEffect(() => {

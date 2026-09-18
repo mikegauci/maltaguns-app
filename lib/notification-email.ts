@@ -43,7 +43,7 @@ export function ctaLabelForType(type: string): string {
       return 'View event'
     case 'license_expiring':
     case 'license_approved':
-    case 'id_card_approved':
+    case 'identity_approved':
     case 'establishment_rejected':
       return 'Go to profile'
     case 'establishment_approved':

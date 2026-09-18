@@ -213,8 +213,8 @@ export default function CookiePolicy() {
             </a>
           </li>
           <li>
-            Postal: Matchlock Group Ltd, 22, Clare Belvedere Street, Gzira,
-            GZR 1112, Malta
+            Postal: Matchlock Group Ltd, 22, Clare Belvedere Street, Gzira, GZR
+            1112, Malta
           </li>
         </ul>
       </div>

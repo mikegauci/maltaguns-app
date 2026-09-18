@@ -8,9 +8,8 @@ export function useSellerStatus() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSeller, setIsSeller] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
-  const [isIdCardVerified, setIsIdCardVerified] = useState(false)
+  const [isIdentityVerified, setIsIdentityVerified] = useState(false)
   const [hasLicense, setHasLicense] = useState(false)
-  const [hasIdCard, setHasIdCard] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -55,9 +54,7 @@ export function useSellerStatus() {
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select(
-            'is_seller, is_verified, id_card_verified, license_image, id_card_image'
-          )
+          .select('is_seller, is_verified, identity_verified, license_image')
           .eq('id', session.user.id)
           .single()
 
@@ -69,9 +66,8 @@ export function useSellerStatus() {
         if (mounted) {
           setIsSeller(profile?.is_seller || false)
           setIsVerified(profile?.is_verified || false)
-          setIsIdCardVerified(profile?.id_card_verified || false)
+          setIsIdentityVerified(profile?.identity_verified || false)
           setHasLicense(!!profile?.license_image)
-          setHasIdCard(!!profile?.id_card_image)
           setIsLoading(false)
         }
       } catch (error) {
@@ -93,8 +89,7 @@ export function useSellerStatus() {
     isLoading,
     isSeller,
     isVerified,
-    isIdCardVerified,
+    isIdentityVerified,
     hasLicense,
-    hasIdCard,
   }
 }

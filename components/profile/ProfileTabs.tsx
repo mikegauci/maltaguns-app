@@ -54,41 +54,42 @@ interface ProfileTabsProps {
   // Form & UI State
   form: UseFormReturn<ProfileForm>
   isEditing: boolean
-  setIsEditing: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setIsEditing: (value: boolean) => void
   uploadingLicense: boolean
-  uploadingIdCard: boolean
   licenseUploadProgress: number
-  idCardUploadProgress: number
   establishmentInfoOpen: boolean
-  setEstablishmentInfoOpen: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setEstablishmentInfoOpen: (value: boolean) => void
 
   // Handlers
-  onSubmit: (data: ProfileForm) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  onSubmit: (data: ProfileForm) => Promise<void>
   handleLicenseUpload: (
-    event: React.ChangeEvent<HTMLInputElement> // eslint-disable-line unused-imports/no-unused-vars
-  ) => Promise<void>
-  handleIdCardUpload: (
-    event: React.ChangeEvent<HTMLInputElement> // eslint-disable-line unused-imports/no-unused-vars
+    event: React.ChangeEvent<HTMLInputElement>
   ) => Promise<void>
   handleRemoveLicense: () => Promise<void>
-  handleRemoveIdCard: () => Promise<void>
+  onIdentityChange: (update: {
+    identity_verified: boolean
+    identity_status: string | null
+    identity_first_name: string | null
+    identity_last_name: string | null
+    identity_document_type: string | null
+  }) => void
   handleListingStatusChange: (
-    listingId: string, // eslint-disable-line unused-imports/no-unused-vars
-    newStatus: string // eslint-disable-line unused-imports/no-unused-vars
+    listingId: string,
+    newStatus: string
   ) => Promise<void>
-  handleRenewListing: (listingId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
-  confirmDeleteListing: (listingId: string) => void // eslint-disable-line unused-imports/no-unused-vars
-  handleDeletePost: (postId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
-  handleDeleteEvent: (eventId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
-  handleDeleteStore: (storeId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  handleRenewListing: (listingId: string) => Promise<void>
+  confirmDeleteListing: (listingId: string) => void
+  handleDeletePost: (postId: string) => Promise<void>
+  handleDeleteEvent: (eventId: string) => Promise<void>
+  handleDeleteStore: (storeId: string) => Promise<void>
 
   // Dialog setters
-  setListingToFeature: (id: string | null) => void // eslint-disable-line unused-imports/no-unused-vars
-  setFeatureDialogOpen: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  setListingToRemoveFeature: (id: string | null) => void // eslint-disable-line unused-imports/no-unused-vars
-  setRemoveFeatureDialogOpen: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  setShowCreditDialog: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  setShowEventCreditDialog: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setListingToFeature: (id: string | null) => void
+  setFeatureDialogOpen: (open: boolean) => void
+  setListingToRemoveFeature: (id: string | null) => void
+  setRemoveFeatureDialogOpen: (open: boolean) => void
+  setShowCreditDialog: (open: boolean) => void
+  setShowEventCreditDialog: (open: boolean) => void
 }
 
 export function ProfileTabs({
@@ -108,16 +109,13 @@ export function ProfileTabs({
   isEditing,
   setIsEditing,
   uploadingLicense,
-  uploadingIdCard,
   licenseUploadProgress,
-  idCardUploadProgress,
   establishmentInfoOpen,
   setEstablishmentInfoOpen,
   onSubmit,
   handleLicenseUpload,
-  handleIdCardUpload,
   handleRemoveLicense,
-  handleRemoveIdCard,
+  onIdentityChange,
   handleListingStatusChange,
   handleRenewListing,
   confirmDeleteListing,
@@ -232,13 +230,10 @@ export function ProfileTabs({
         <SellerStatus
           profile={profile}
           uploadingLicense={uploadingLicense}
-          uploadingIdCard={uploadingIdCard}
           licenseUploadProgress={licenseUploadProgress}
-          idCardUploadProgress={idCardUploadProgress}
           handleLicenseUpload={handleLicenseUpload}
-          handleIdCardUpload={handleIdCardUpload}
           handleRemoveLicense={handleRemoveLicense}
-          handleRemoveIdCard={handleRemoveIdCard}
+          onIdentityChange={onIdentityChange}
         />
       </TabsContent>
 

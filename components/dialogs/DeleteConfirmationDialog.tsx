@@ -13,7 +13,7 @@ import {
 
 interface DeleteConfirmationDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
   title: string
   description: string
   onConfirm: () => void

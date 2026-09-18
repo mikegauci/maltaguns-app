@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { BackButton } from '@/components/ui/back-button'
 import {
   Popover,
@@ -46,7 +47,6 @@ import {
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
 import {
   ACCEPTED_IMAGE_TYPES,
-  MAX_FILE_SIZE,
   MAX_FILES,
 } from '@/app/marketplace/create/constants'
 
@@ -325,7 +325,9 @@ function ListingsPageComponent() {
   }, [toast])
 
   useEffect(() => {
-    fetchListings()
+    scheduleEffectWork(() => {
+      fetchListings()
+    })
   }, [fetchListings])
 
   function handleEdit(listing: Listing) {

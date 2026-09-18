@@ -101,7 +101,7 @@ export default function CreateFirearmsListing() {
       try {
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('license_types, is_verified, id_card_verified')
+          .select('license_types, is_verified, identity_verified')
           .eq('id', userId)
           .single()
 
@@ -115,7 +115,7 @@ export default function CreateFirearmsListing() {
         const allowed = getAllowedCategories(licenseTypes, {
           isFullyVerified: isFullyVerified(
             profile?.is_verified ?? false,
-            profile?.id_card_verified ?? false
+            profile?.identity_verified ?? false
           ),
         })
         setAllowedCategories(allowed)

@@ -16,10 +16,10 @@ function getAdminClient() {
 }
 
 /**
- * `license_image`/`id_card_image` were historically stored as full public
- * Storage URLs (`.../storage/v1/object/public/licenses/<path>`). The bucket
- * is now private, so those URLs no longer resolve directly - this extracts
- * the underlying object path so a signed URL can be requested instead.
+ * `license_image` was historically stored as a full public Storage URL
+ * (`.../storage/v1/object/public/licenses/<path>`). The bucket is now
+ * private, so those URLs no longer resolve directly - this extracts the
+ * underlying object path so a signed URL can be requested instead.
  */
 export function extractLicenseObjectPath(stored: string | null): string | null {
   if (!stored) return null
@@ -41,9 +41,9 @@ export function extractLicenseObjectPath(stored: string | null): string | null {
 }
 
 /**
- * Signs a stored license/id-card reference (public-URL-shaped or bare path)
- * into a short-lived URL using the service role key. Callers are responsible
- * for authorizing the caller (admin or document owner) before invoking this.
+ * Signs a stored license reference (public-URL-shaped or bare path) into a
+ * short-lived URL using the service role key. Callers are responsible for
+ * authorizing the caller (admin or document owner) before invoking this.
  */
 export async function signLicenseUrl(
   stored: string | null

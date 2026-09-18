@@ -8,6 +8,7 @@ import { format } from 'date-fns'
 import { EditEventCreditDialog } from '@/app/admin/components/EditEventCreditDialog'
 import { AddEventCreditDialog } from '@/app/admin/components/AddEventCreditDialog'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { BackButton } from '@/components/ui/back-button'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
@@ -83,7 +84,9 @@ function EventCreditsPageComponent() {
 
   useEffect(() => {
     if (isAuthorized) {
-      void fetchData()
+      scheduleEffectWork(() => {
+        void fetchData()
+      })
     }
   }, [isAuthorized, fetchData])
 

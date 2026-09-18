@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useIsClient } from '@/hooks/useIsClient'
 import { Edit, MoreHorizontal, Trash } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,17 +37,10 @@ export function ActionCell({
   customActions = [],
   extraActions = [],
 }: ActionCellProps) {
-  const [isMounted, setIsMounted] = useState(false)
+  const isMounted = useIsClient()
 
-  // Combine customActions and extraActions for backward compatibility
   const allCustomActions = [...customActions, ...extraActions]
 
-  // Prevent hydration issues by only rendering after component is mounted
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  // Return null during server-side rendering or before mounting
   if (!isMounted) {
     return null
   }
