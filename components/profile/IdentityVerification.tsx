@@ -71,9 +71,7 @@ function describeStatus(
 }
 
 function hasDateOfBirthMismatch(notes: string[]): boolean {
-  return notes.some(note =>
-    /date of birth|dob|birth.*mismatch/i.test(note)
-  )
+  return notes.some(note => /date of birth|dob|birth.*mismatch/i.test(note))
 }
 
 const TONE_CLASSES: Record<StatusTone, string> = {
@@ -198,8 +196,7 @@ export const IdentityVerification = ({
     .filter(Boolean)
     .join(' ')
   const busy = starting
-  const canStartVerification =
-    !identityVerified && !pendingReview && !busy
+  const canStartVerification = !identityVerified && !pendingReview && !busy
 
   return (
     <>
@@ -296,10 +293,9 @@ export const IdentityVerification = ({
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p>
-                  You will be redirected to <strong>Didit</strong>, our
-                  identity verification provider, to photograph your
-                  government-issued ID and take a short selfie for a liveness
-                  and face match check.
+                  You will be redirected to <strong>Didit</strong>, our identity
+                  verification provider, to photograph your government-issued ID
+                  and take a short selfie for a liveness and face match check.
                 </p>
                 <p>
                   Didit processes your document and biometric data as our

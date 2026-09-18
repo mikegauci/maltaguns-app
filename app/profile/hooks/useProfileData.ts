@@ -117,7 +117,10 @@ export function useProfileData({
               }
             }
           } catch (syncError) {
-            console.error('Failed to sync identity verification status:', syncError)
+            console.error(
+              'Failed to sync identity verification status:',
+              syncError
+            )
           }
         }
 
