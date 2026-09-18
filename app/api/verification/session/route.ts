@@ -1,7 +1,12 @@
+import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import {
+  createDiditSession,
+  getVerificationCallbackUrl,
+  isDiditVerificationUrl,
+} from '@/lib/didit'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { createDiditSession } from '@/lib/didit'
 
 const SESSION_REUSE_WINDOW_MS = 15 * 60 * 1000
 
@@ -61,9 +66,17 @@ export async function POST() {
       Date.now() - createdAt < SESSION_REUSE_WINDOW_MS &&
       !TERMINAL_STATUSES.has(profile.identity_status ?? '')
 
-    if (isReusable) {
+    if (isReusable && isDiditVerificationUrl(profile.didit_session_url)) {
       return NextResponse.json({ url: profile.didit_session_url })
     }
+
+    const headerList = await headers()
+    const host =
+      headerList.get('x-forwarded-host') ?? headerList.get('host')
+    const proto = headerList.get('x-forwarded-proto') ?? 'https'
+    const requestOrigin = host
+      ? `${proto}://${host.split(',')[0].trim()}`
+      : null
 
     const session = await createDiditSession({
       vendorData: user.id,
@@ -72,6 +85,7 @@ export async function POST() {
         lastName: profile.last_name,
         dateOfBirth: profile.birthday,
       },
+      callbackUrl: getVerificationCallbackUrl(requestOrigin),
     })
 
     const { error: updateError } = await supabaseAdmin

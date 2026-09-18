@@ -87,10 +87,26 @@ function requireDiditEnv(
   return value
 }
 
-export function getVerificationCallbackUrl(): string {
+export const DIDIT_VERIFICATION_URL_PATTERN =
+  /^https:\/\/verify\.didit\.me\//
+
+export function isDiditVerificationUrl(
+  url: string | null | undefined
+): url is string {
+  return typeof url === 'string' && DIDIT_VERIFICATION_URL_PATTERN.test(url)
+}
+
+export function getVerificationCallbackUrl(origin?: string | null): string {
+  if (origin) {
+    return `${origin.replace(/\/$/, '')}/verification/complete`
+  }
+
   const base = (
-    process.env.NEXT_PUBLIC_APP_URL || 'https://maltaguns.com'
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    'https://www.maltaguns.com'
   ).replace(/\/$/, '')
+
   return `${base}/verification/complete`
 }
 
@@ -110,9 +126,11 @@ function buildExpectedDetails(
 export async function createDiditSession({
   vendorData,
   expectedDetails,
+  callbackUrl,
 }: {
   vendorData: string
   expectedDetails?: ExpectedIdentityDetails
+  callbackUrl?: string
 }): Promise<DiditSession> {
   const expected = buildExpectedDetails(expectedDetails)
 
@@ -125,7 +143,7 @@ export async function createDiditSession({
     body: JSON.stringify({
       workflow_id: DIDIT_WORKFLOW_ID,
       vendor_data: vendorData,
-      callback: getVerificationCallbackUrl(),
+      callback: callbackUrl ?? getVerificationCallbackUrl(),
       language: 'en',
       ...(expected ? { expected_details: expected } : {}),
     }),

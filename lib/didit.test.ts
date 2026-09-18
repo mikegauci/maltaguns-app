@@ -5,12 +5,29 @@ import {
   canonicaliseWebhookPayload,
   extractIdentityDetails,
   hasIdentityVerificationDecision,
+  isDiditVerificationUrl,
   isProfileUserId,
   isWebhookTimestampFresh,
   resolveWebhookEventId,
   shouldApplyWebhookForSession,
   verifyWebhookSignature,
 } from './didit.ts'
+
+describe('isDiditVerificationUrl', () => {
+  it('accepts verify.didit.me session URLs', () => {
+    assert.equal(
+      isDiditVerificationUrl(
+        'https://verify.didit.me/en/session/D8YcOBalmUag'
+      ),
+      true
+    )
+  })
+
+  it('rejects other origins', () => {
+    assert.equal(isDiditVerificationUrl('https://vercel.com/login'), false)
+    assert.equal(isDiditVerificationUrl(null), false)
+  })
+})
 
 describe('resolveWebhookEventId', () => {
   it('uses event_id when present', () => {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,9 +15,6 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/hooks/use-toast'
 import { BadgeCheck, Loader2, ShieldCheck } from 'lucide-react'
-
-const POLL_INTERVAL_MS = 2500
-const POLL_ATTEMPTS = 12
 
 interface IdentityVerificationProps {
   identityVerified: boolean
@@ -79,79 +76,6 @@ export const IdentityVerification = ({
   const { toast } = useToast()
   const [consentOpen, setConsentOpen] = useState(false)
   const [starting, setStarting] = useState(false)
-  const [waiting, setWaiting] = useState(false)
-  const isMounted = useRef(true)
-  const pollStatusRef = useRef<() => Promise<void>>(async () => {})
-
-  useEffect(() => {
-    isMounted.current = true
-    return () => {
-      isMounted.current = false
-    }
-  }, [])
-
-  const pollStatus = useCallback(async () => {
-    setWaiting(true)
-
-    for (let attempt = 0; attempt < POLL_ATTEMPTS; attempt++) {
-      await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
-      if (!isMounted.current) return
-
-      try {
-        const response = await fetch('/api/verification/status')
-        if (!response.ok) continue
-
-        const result = await response.json()
-        if (!isMounted.current) return
-
-        onVerificationChange({
-          identity_verified: result.verified,
-          identity_status: result.status,
-          identity_first_name: result.firstName,
-          identity_last_name: result.lastName,
-          identity_document_type: result.documentType,
-        })
-
-        if (result.verified) {
-          setWaiting(false)
-          toast({
-            variant: 'success',
-            title: 'Identity verified',
-            description: 'Your identity has been verified successfully.',
-          })
-          return
-        }
-
-        if (result.status === 'Declined') {
-          setWaiting(false)
-          toast({
-            variant: 'destructive',
-            title: 'Verification declined',
-            description:
-              'Your identity could not be verified. Please contact Info@maltaguns.com.',
-          })
-          return
-        }
-      } catch {
-        continue
-      }
-    }
-
-    if (!isMounted.current) return
-
-    setWaiting(false)
-    toast({
-      variant: 'warning',
-      title: 'Verification still processing',
-      description:
-        'We are still waiting on the result. This page will update once it completes.',
-      duration: 12000,
-    })
-  }, [onVerificationChange, toast])
-
-  useEffect(() => {
-    pollStatusRef.current = pollStatus
-  }, [pollStatus])
 
   async function startVerification() {
     setConsentOpen(false)
@@ -167,26 +91,14 @@ export const IdentityVerification = ({
         throw new Error(result.error || 'Failed to start verification')
       }
 
-      const { DiditSdk } = await import('@didit-protocol/sdk-web')
-
-      DiditSdk.shared.onComplete = outcome => {
-        if (outcome.type === 'completed') {
-          void pollStatusRef.current()
-          return
-        }
-
-        if (outcome.type === 'failed') {
-          toast({
-            variant: 'destructive',
-            title: 'Verification failed',
-            description:
-              outcome.error?.message ??
-              'Something went wrong during verification. Please try again.',
-          })
-        }
+      if (
+        typeof result.url !== 'string' ||
+        !/^https:\/\/verify\.didit\.me\//.test(result.url)
+      ) {
+        throw new Error('Invalid verification URL received')
       }
 
-      await DiditSdk.shared.startVerification({ url: result.url })
+      window.location.assign(result.url)
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -205,7 +117,7 @@ export const IdentityVerification = ({
   const verifiedName = [identityFirstName, identityLastName]
     .filter(Boolean)
     .join(' ')
-  const busy = starting || waiting
+  const busy = starting
 
   return (
     <>
@@ -242,11 +154,7 @@ export const IdentityVerification = ({
             ) : (
               <ShieldCheck className="h-4 w-4 mr-2" />
             )}
-            {waiting
-              ? 'Waiting for result...'
-              : starting
-                ? 'Opening...'
-                : 'Verify my identity'}
+            {starting ? 'Opening...' : 'Verify my identity'}
           </Button>
           <p className="text-xs text-muted-foreground">
             Verify your ID card, passport or residence permit with our identity
@@ -262,7 +170,7 @@ export const IdentityVerification = ({
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p>
-                  You will be handed over to <strong>Didit</strong>, our
+                  You will be redirected to <strong>Didit</strong>, our
                   identity verification provider, to photograph your
                   government-issued ID and take a short selfie for a liveness
                   and face match check.
