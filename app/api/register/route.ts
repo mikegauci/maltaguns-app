@@ -81,17 +81,11 @@ export async function POST(req: Request) {
         birthday: data.birthday,
         phone: data.phone,
         address: data.address,
-        is_seller: data.interestedInSelling,
-        is_verified: data.isVerified,
-        license_image: data.interestedInSelling ? data.licenseImage : null,
-        license_expiry_date: data.interestedInSelling
-          ? data.licenseExpiryDate
-          : null,
-        id_card_image: data.interestedInSelling ? data.idCardImage : null,
-        id_card_verified: data.interestedInSelling
-          ? data.idCardVerified
-          : false,
-        license_types: data.interestedInSelling ? data.licenseTypes : null,
+        is_seller: false,
+        is_verified: false,
+        license_image: null,
+        license_expiry_date: null,
+        license_types: null,
         contact_preference: data.contactPreference,
         registration_ip: registrationIp,
         article_email_opt_out: !data.acceptArticleEmails,

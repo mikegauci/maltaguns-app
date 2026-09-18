@@ -21,9 +21,9 @@ interface ImageUploadFieldProps<T extends FieldValues>
   extends FormFieldProps<T> {
   uploadedImages: string[]
   uploading: boolean
-  handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void // eslint-disable-line unused-imports/no-unused-vars
-  handleDeleteImage: (index: number) => void // eslint-disable-line unused-imports/no-unused-vars
-  handleSetPrimaryImage: (index: number) => void // eslint-disable-line unused-imports/no-unused-vars
+  handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void
+  handleDeleteImage: (index: number) => void
+  handleSetPrimaryImage: (index: number) => void
 }
 
 export function TitleField<T extends FieldValues>({

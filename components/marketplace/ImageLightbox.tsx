@@ -5,6 +5,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 
 const DEFAULT_FALLBACK = '/images/maltaguns-default-img.jpg'
 const MIN_SCALE = 1
@@ -32,7 +33,7 @@ export function ImageLightbox({
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [errored, setErrored] = useState(false)
 
-  const isPanning = useRef(false)
+  const [isPanning, setIsPanning] = useState(false)
   const panStart = useRef({ x: 0, y: 0 })
   const offsetStart = useRef({ x: 0, y: 0 })
   const movedDuringPan = useRef(false)
@@ -45,12 +46,18 @@ export function ImageLightbox({
   }, [])
 
   useEffect(() => {
-    resetZoom()
-    setErrored(false)
+    scheduleEffectWork(() => {
+      resetZoom()
+      setErrored(false)
+    })
   }, [index, resetZoom])
 
   useEffect(() => {
-    if (!open) resetZoom()
+    if (!open) {
+      scheduleEffectWork(() => {
+        resetZoom()
+      })
+    }
   }, [open, resetZoom])
 
   const goPrev = useCallback(() => {
@@ -94,7 +101,7 @@ export function ImageLightbox({
 
   function handlePointerDown(e: React.PointerEvent) {
     if (scale <= MIN_SCALE) return
-    isPanning.current = true
+    setIsPanning(true)
     movedDuringPan.current = false
     panStart.current = { x: e.clientX, y: e.clientY }
     offsetStart.current = { ...offset }
@@ -102,7 +109,7 @@ export function ImageLightbox({
   }
 
   function handlePointerMove(e: React.PointerEvent) {
-    if (!isPanning.current) return
+    if (!isPanning) return
     const dx = e.clientX - panStart.current.x
     const dy = e.clientY - panStart.current.y
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) movedDuringPan.current = true
@@ -110,7 +117,7 @@ export function ImageLightbox({
   }
 
   function handlePointerUp(e: React.PointerEvent) {
-    isPanning.current = false
+    setIsPanning(false)
     try {
       ;(e.target as HTMLElement).releasePointerCapture(e.pointerId)
     } catch {
@@ -140,16 +147,14 @@ export function ImageLightbox({
               className={cn(
                 'relative h-full w-full select-none',
                 scale > MIN_SCALE
-                  ? isPanning.current
+                  ? isPanning
                     ? 'cursor-grabbing'
                     : 'cursor-grab'
                   : 'cursor-zoom-in'
               )}
               style={{
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-                transition: isPanning.current
-                  ? 'none'
-                  : 'transform 0.15s ease-out',
+                transition: isPanning ? 'none' : 'transform 0.15s ease-out',
                 touchAction: 'none',
               }}
               onClick={handleImageClick}

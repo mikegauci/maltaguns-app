@@ -271,9 +271,9 @@ export function Footer() {
             Platform compliance is overseen by a firearms dealer licensed by the
             Commissioner of Police (Licence No. SB/WO/03521/2010). All firearm
             listings may be posted only by, and are visible only to, verified
-            holders of licences issued under the Arms Act, and all transfers
-            are completed through the Malta Police Weapons Office in accordance
-            with law.
+            holders of licences issued under the Arms Act, and all transfers are
+            completed through the Malta Police Weapons Office in accordance with
+            law.
           </p>
         </div>
       </div>

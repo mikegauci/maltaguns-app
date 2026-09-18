@@ -20,6 +20,7 @@ import { getEstablishmentConfig } from '@/app/establishments/config'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { formatPrice, slugify } from '@/lib/format'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 
 interface EstablishmentClientProps {
   establishment: EstablishmentWithDetails
@@ -31,7 +32,9 @@ export default function EstablishmentClient({
   type,
 }: EstablishmentClientProps) {
   const { supabase, session } = useSupabase()
-  const [isOwner, setIsOwner] = useState(false)
+  const isOwner = Boolean(
+    session?.user?.id && session.user.id === establishment.owner_id
+  )
   const [blogPosts, setBlogPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshTrigger] = useState(0)
@@ -41,21 +44,16 @@ export default function EstablishmentClient({
   const isLive = establishment.status === 'active'
 
   useEffect(() => {
-    if (session?.user?.id) {
-      setIsOwner(session.user.id === establishment.owner_id)
-    } else {
-      setIsOwner(false)
-    }
+    scheduleEffectWork(() => {
+      if (Array.isArray(establishment.blogPosts)) {
+        setBlogPosts(establishment.blogPosts)
+      } else {
+        setBlogPosts([])
+      }
 
-    // Update blog posts if they change
-    if (Array.isArray(establishment.blogPosts)) {
-      setBlogPosts(establishment.blogPosts)
-    } else {
-      setBlogPosts([])
-    }
-
-    setLoading(false)
-  }, [session, establishment.owner_id, establishment.blogPosts])
+      setLoading(false)
+    })
+  }, [establishment.blogPosts])
 
   // Fetch blog posts directly from the client side as a fallback
   useEffect(() => {

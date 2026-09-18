@@ -293,13 +293,13 @@ export default function TermsAndConditions() {
         </h2>
         <p>
           The Platform is provided on an "as is" and "as available" basis. To
-          the fullest extent permitted by applicable law, Maltaguns disclaims all
-          warranties of any kind, whether express, implied, or statutory,
-          including but not limited to warranties of merchantability, fitness for
-          a particular purpose, title, non-infringement, accuracy of content, and
-          uninterrupted, secure, or error-free availability of the Platform. We
-          do not warrant that the Platform will be free of viruses or other
-          harmful components, or that any defects will be corrected.
+          the fullest extent permitted by applicable law, Maltaguns disclaims
+          all warranties of any kind, whether express, implied, or statutory,
+          including but not limited to warranties of merchantability, fitness
+          for a particular purpose, title, non-infringement, accuracy of
+          content, and uninterrupted, secure, or error-free availability of the
+          Platform. We do not warrant that the Platform will be free of viruses
+          or other harmful components, or that any defects will be corrected.
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
@@ -322,9 +322,7 @@ export default function TermsAndConditions() {
             An explanation of why you consider the content to be illegal or in
             breach of these Terms;
           </li>
-          <li>
-            The exact location of the content (URL or listing reference);
-          </li>
+          <li>The exact location of the content (URL or listing reference);</li>
           <li>Your name and email address; and</li>
           <li>
             A statement confirming your good-faith belief that the information
@@ -358,8 +356,8 @@ export default function TermsAndConditions() {
         <p>
           Nothing in these Terms creates any agency, partnership, joint venture,
           employment, or franchise relationship between the Operator and any
-          user. The Operator is at no time the seller, buyer, broker, or agent in
-          any transaction conducted between users.
+          user. The Operator is at no time the seller, buyer, broker, or agent
+          in any transaction conducted between users.
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">
@@ -387,11 +385,11 @@ export default function TermsAndConditions() {
         <p>
           Maltaguns shall not be liable for any failure or delay in performance,
           downtime, loss of data, or inability to access the Platform caused by
-          events beyond our reasonable control, including but not limited to acts
-          of God, network or hosting failures, cyber-attacks, power outages,
-          industrial action, or acts of any government or authority. We reserve
-          the right to modify, suspend, or discontinue the Platform, in whole or
-          in part, at any time without liability.
+          events beyond our reasonable control, including but not limited to
+          acts of God, network or hosting failures, cyber-attacks, power
+          outages, industrial action, or acts of any government or authority. We
+          reserve the right to modify, suspend, or discontinue the Platform, in
+          whole or in part, at any time without liability.
         </p>
         <p>
           To the extent liability cannot be excluded under applicable law, the
@@ -408,21 +406,17 @@ export default function TermsAndConditions() {
           fraudulent misrepresentation.
         </p>
 
-        <h2 className="text-xl font-semibold mt-8 mb-4">
-          14. Indemnification
-        </h2>
+        <h2 className="text-xl font-semibold mt-8 mb-4">14. Indemnification</h2>
         <p>
           You agree to indemnify, defend, and hold harmless Matchlock Group Ltd
           and its officers, directors, employees, and agents from and against
           any and all claims, liabilities, damages, losses, fines, penalties,
-          and expenses (including reasonable legal fees) arising out of or in any
-          way connected with:
+          and expenses (including reasonable legal fees) arising out of or in
+          any way connected with:
         </p>
         <ul className="list-disc pl-6 space-y-1">
           <li>Your listings, content, or use of the Platform;</li>
-          <li>
-            Any transaction, communication, or dispute with another user;
-          </li>
+          <li>Any transaction, communication, or dispute with another user;</li>
           <li>Your breach of these Terms; or</li>
           <li>
             Your violation of any law or regulation, including firearms and
@@ -460,8 +454,8 @@ export default function TermsAndConditions() {
         <p>
           If any provision of these Terms is held to be invalid or
           unenforceable, that provision shall be enforced to the maximum extent
-          permissible and the remaining provisions shall remain in full force and
-          effect. The provisions of these Terms concerning intellectual
+          permissible and the remaining provisions shall remain in full force
+          and effect. The provisions of these Terms concerning intellectual
           property, disclaimers of warranties, limitation of liability,
           indemnification, release, and governing law shall survive the
           termination of your account or of these Terms.
@@ -473,11 +467,11 @@ export default function TermsAndConditions() {
         <p>
           These Terms are governed by the laws of Malta, without regard to
           conflict of laws principles. Any disputes arising from or relating to
-          the use of this Platform shall be subject to the exclusive jurisdiction
-          of the courts of Malta. Users are solely responsible for complying with
-          local laws and regulations, including but not limited to Maltese
-          firearms and licensing laws, when using the Platform or engaging in
-          transactions.
+          the use of this Platform shall be subject to the exclusive
+          jurisdiction of the courts of Malta. Users are solely responsible for
+          complying with local laws and regulations, including but not limited
+          to Maltese firearms and licensing laws, when using the Platform or
+          engaging in transactions.
         </p>
 
         <h2 className="text-xl font-semibold mt-8 mb-4">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useIsClient } from '@/hooks/useIsClient'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,14 +35,8 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   variant = 'destructive',
 }: ConfirmDialogProps) {
-  const [isMounted, setIsMounted] = useState(false)
+  const isMounted = useIsClient()
 
-  // Prevent hydration issues by only rendering after component is mounted
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  // Return null during server-side rendering or before mounting
   if (!isMounted) {
     return null
   }

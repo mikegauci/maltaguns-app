@@ -42,8 +42,8 @@ const plans: Plan[] = [
 
 interface CreditDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
-  userId: string // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
+  userId: string
   onSuccess?: () => void
   source?: 'profile' | 'marketplace'
 }

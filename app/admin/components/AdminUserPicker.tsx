@@ -103,21 +103,19 @@ export function AdminUserPicker({
     return () => window.clearTimeout(timer)
   }, [open, query, fetchUsers])
 
-  useEffect(() => {
-    if (!value) {
-      setSelectedUser(null)
-    }
-  }, [value])
+  const displayedUser =
+    value && selectedUser?.id === value ? selectedUser : null
 
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(nextOpen: boolean) {
+    setOpen(nextOpen)
+    if (!nextOpen) {
       abortRef.current?.abort()
       setQuery('')
       setUsers([])
       setError(null)
       setLoading(false)
     }
-  }, [open])
+  }
 
   const handleSelect = (user: AdminSearchUser) => {
     if (user.is_disabled) return
@@ -135,7 +133,7 @@ export function AdminUserPicker({
   })()
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
           type="button"
@@ -148,7 +146,7 @@ export function AdminUserPicker({
             !value && 'text-muted-foreground'
           )}
         >
-          {selectedUser ? formatAdminUserLabel(selectedUser) : placeholder}
+          {displayedUser ? formatAdminUserLabel(displayedUser) : placeholder}
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

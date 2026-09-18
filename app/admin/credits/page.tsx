@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
@@ -13,9 +14,7 @@ import { AdminErrorState } from '@/app/admin/components/AdminErrorState'
 import { AdminDataCount } from '@/app/admin/components/AdminDataCount'
 import { EditCreditDialog } from '@/app/admin/components/EditCreditDialog'
 import { AddCreditDialog } from '@/app/admin/components/AddCreditDialog'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '@/components/ui/back-button'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   ADMIN_USER_USERNAME_EMAIL_SEARCH_KEYS,
@@ -84,7 +83,9 @@ function CreditsPageComponent() {
 
   useEffect(() => {
     if (isAuthorized) {
-      void fetchData()
+      scheduleEffectWork(() => {
+        void fetchData()
+      })
     }
   }, [isAuthorized, fetchData])
 
@@ -174,16 +175,15 @@ function CreditsPageComponent() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader title="Credit Management" description="Manage user credits" />
-      <div className="flex justify-center">
-        <Button onClick={handleAddCredit}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Credit
-        </Button>
-      </div>
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout
+      title="Credit Management"
+      description="Manage user credits"
+      actionButton={{
+        label: 'Add Credit',
+        icon: Plus,
+        onClick: handleAddCredit,
+      }}
+    >
       <AdminDataCount
         count={credits.length}
         singularLabel="credit record"
@@ -211,7 +211,7 @@ function CreditsPageComponent() {
         onOpenChange={setAddDialogOpen}
         onSuccess={fetchData}
       />
-    </PageLayout>
+    </AdminPageLayout>
   )
 }
 

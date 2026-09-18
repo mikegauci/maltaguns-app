@@ -6,6 +6,7 @@ import { Heart } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 
 interface WishlistButtonProps {
   listingId: string
@@ -50,7 +51,9 @@ export function WishlistButton({
   }, [session?.user, listingId])
 
   useEffect(() => {
-    checkWishlistStatus()
+    scheduleEffectWork(() => {
+      void checkWishlistStatus()
+    })
   }, [checkWishlistStatus])
 
   async function handleWishlistToggle() {

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { BackButton } from '@/components/ui/back-button'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import {
   Popover,
   PopoverContent,
@@ -31,8 +31,9 @@ import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
+import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import { createClient } from '@/lib/supabase/client'
 import {
   getListingStoragePathFromUrl,
@@ -46,7 +47,6 @@ import {
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
 import {
   ACCEPTED_IMAGE_TYPES,
-  MAX_FILE_SIZE,
   MAX_FILES,
 } from '@/app/marketplace/create/constants'
 
@@ -81,6 +81,9 @@ export default ListingsPageComponent
 
 function ListingsPageComponent() {
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({
+    preset: 'admin-silent',
+  })
   const supabase = createClient()
   const editListingIdRef = useRef<string | null>(null)
   const initialImageUrlsRef = useRef<string[]>([])
@@ -325,8 +328,15 @@ function ListingsPageComponent() {
   }, [toast])
 
   useEffect(() => {
-    fetchListings()
-  }, [fetchListings])
+    if (!isAuthorized) return
+    scheduleEffectWork(() => {
+      fetchListings()
+    })
+  }, [fetchListings, isAuthorized])
+
+  if (isChecking || !isAuthorized) {
+    return <AdminLoadingState message="Checking authorization..." />
+  }
 
   function handleEdit(listing: Listing) {
     const parsedImages = withoutDefaultListingImage(
@@ -640,10 +650,7 @@ function ListingsPageComponent() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader title="Listing Management" description="Manage listings" />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout title="Listing Management" description="Manage listings">
       <DataTable
         columns={columns}
         data={isLoading ? [] : listings}
@@ -898,6 +905,6 @@ function ListingsPageComponent() {
         confirmLabel="Delete"
         variant="destructive"
       />
-    </PageLayout>
+    </AdminPageLayout>
   )
 }

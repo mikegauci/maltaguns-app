@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import { slugify } from '@/lib/format'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -18,13 +20,14 @@ import {
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { createClient } from '@/lib/supabase/client'
-import { BackButton } from '@/components/ui/back-button'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
+import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 
 interface ReportedListing {
   id: string
@@ -52,10 +55,22 @@ interface ReportedListing {
 export default ReportedListingsPageComponent
 
 function ReportedListingsPageComponent() {
+  const searchParams = useSearchParams()
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({
+    preset: 'admin-silent',
+  })
   const [reportedListings, setReportedListings] = useState<ReportedListing[]>(
     []
   )
+  const pendingReportsFilter = searchParams.get('status') === 'pending'
+  const displayedReports = useMemo(() => {
+    if (!pendingReportsFilter) {
+      return reportedListings
+    }
+
+    return reportedListings.filter(report => report.status === 'pending')
+  }, [pendingReportsFilter, reportedListings])
   const [isLoading, setIsLoading] = useState(true)
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -280,8 +295,15 @@ function ReportedListingsPageComponent() {
   }, [supabase, toast])
 
   useEffect(() => {
-    fetchReportedListings()
-  }, [fetchReportedListings])
+    if (!isAuthorized) return
+    scheduleEffectWork(() => {
+      fetchReportedListings()
+    })
+  }, [fetchReportedListings, isAuthorized])
+
+  if (isChecking || !isAuthorized) {
+    return <AdminLoadingState message="Checking authorization..." />
+  }
 
   function handleStatusChange(report: ReportedListing) {
     setSelectedReport(report)
@@ -362,16 +384,24 @@ function ReportedListingsPageComponent() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="Reported Listings"
-        description="View all reported listings"
-      />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout
+      title="Reported Listings"
+      description="View all reported listings"
+    >
+      {pendingReportsFilter && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Showing open reports only.{' '}
+          <Link
+            href="/admin/reported-listings"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Clear filter
+          </Link>
+        </p>
+      )}
       <DataTable
         columns={columns}
-        data={isLoading ? [] : reportedListings}
+        data={isLoading ? [] : displayedReports}
         searchKey="listing.title"
         searchPlaceholder="Search by listing title..."
       />
@@ -419,6 +449,6 @@ function ReportedListingsPageComponent() {
         isLoading={isSubmitting}
         variant="destructive"
       />
-    </PageLayout>
+    </AdminPageLayout>
   )
 }

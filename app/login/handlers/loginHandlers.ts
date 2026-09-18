@@ -4,13 +4,12 @@ import {
   checkAccountDisabledByEmail,
 } from '../utils/authUtils'
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 interface LoginHandlerParams {
   identifier: string
   password: string
   supabase: SupabaseClient
   router: any
-  setIsDisabled: (disabled: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setIsDisabled: (disabled: boolean) => void
 }
 
 /**

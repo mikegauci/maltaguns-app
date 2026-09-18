@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
+import { buildAdminIdentityOverride } from '@/lib/identity-status'
 
 const PROFILE_FIELDS = [
   'username',
@@ -9,7 +10,6 @@ const PROFILE_FIELDS = [
   'is_admin',
   'is_seller',
   'is_verified',
-  'id_card_verified',
   'is_disabled',
   'notes',
   'license_types',
@@ -53,6 +53,13 @@ export async function PATCH(
       if (field in body) {
         updateData[field] = body[field]
       }
+    }
+
+    if (typeof body.identity_verified === 'boolean') {
+      Object.assign(
+        updateData,
+        buildAdminIdentityOverride(body.identity_verified)
+      )
     }
 
     if (Object.keys(updateData).length === 0 && !body.password) {

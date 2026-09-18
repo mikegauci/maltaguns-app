@@ -23,12 +23,16 @@ interface ContactFormProps {
   form: UseFormReturn<ContactFormValues>
   onSubmit: (_data: ContactFormValues) => void
   isSubmitting: boolean
+  honeypot: string
+  onHoneypotChange: (_value: string) => void
 }
 
 export function ContactForm({
   form,
   onSubmit,
   isSubmitting,
+  honeypot,
+  onHoneypotChange,
 }: ContactFormProps) {
   return (
     <Card>
@@ -41,6 +45,17 @@ export function ContactForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <input
+              type="text"
+              name="fax"
+              value={honeypot}
+              onChange={event => onHoneypotChange(event.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              className="sr-only"
+            />
+
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

@@ -16,7 +16,7 @@ import { BlogPost } from '../../app/profile/types'
 
 interface MyBlogPostsProps {
   blogPosts: BlogPost[]
-  handleDeletePost: (postId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  handleDeletePost: (postId: string) => Promise<void>
 }
 
 export const MyBlogPosts = ({

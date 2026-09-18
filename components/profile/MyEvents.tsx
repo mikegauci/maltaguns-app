@@ -16,8 +16,8 @@ import { Event } from '../../app/profile/types'
 interface MyEventsProps {
   events: Event[]
   eventCredits: number
-  handleDeleteEvent: (eventId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
-  setShowEventCreditDialog: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  handleDeleteEvent: (eventId: string) => Promise<void>
+  setShowEventCreditDialog: (open: boolean) => void
 }
 
 export const MyEvents = ({

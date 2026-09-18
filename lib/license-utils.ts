@@ -71,9 +71,9 @@ export function getAllCategories(): string[] {
 
 export function isFullyVerified(
   isVerified: boolean,
-  idCardVerified: boolean
+  identityVerified: boolean
 ): boolean {
-  return isVerified && idCardVerified
+  return isVerified && identityVerified
 }
 
 // Firearm categories - must match the display labels from getCategoryLabel
@@ -186,8 +186,15 @@ export function getAllowedCategories(
 export function canViewSellerInfo(
   userLicenseTypes: LicenseTypes | null,
   listingCategory: string,
-  options?: { isFullyVerified?: boolean }
+  options?: {
+    isFullyVerified?: boolean
+    listingType?: 'firearms' | 'non_firearms'
+  }
 ): boolean {
+  if (options?.listingType === 'non_firearms') {
+    return true
+  }
+
   if (options?.isFullyVerified) {
     return true
   }

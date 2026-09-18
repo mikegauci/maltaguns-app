@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '@/components/ui/back-button'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
+import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import {
   Card,
   CardContent,
@@ -137,6 +138,9 @@ function mergePageSeoFromSettings(settings: any): PageSeoMap {
 
 function SeoPageComponent() {
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({
+    preset: 'admin-silent',
+  })
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [globalForm, setGlobalForm] = useState<GlobalForm>(emptyGlobal)
@@ -189,8 +193,15 @@ function SeoPageComponent() {
   }, [toast])
 
   useEffect(() => {
-    fetchSettings()
-  }, [fetchSettings])
+    if (!isAuthorized) return
+    scheduleEffectWork(() => {
+      fetchSettings()
+    })
+  }, [fetchSettings, isAuthorized])
+
+  if (isChecking || !isAuthorized) {
+    return <AdminLoadingState message="Checking authorization..." />
+  }
 
   function updateGlobal(field: keyof GlobalForm, value: string) {
     setGlobalForm(prev => ({ ...prev, [field]: value }))
@@ -299,13 +310,10 @@ function SeoPageComponent() {
     activeTab === 'global' ? '/' : previewDefaults?.path || '/'
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="SEO Settings"
-        description="Manage global defaults and per-page meta title/description overrides"
-      />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout
+      title="SEO Settings"
+      description="Manage global defaults and per-page meta title/description overrides"
+    >
       {isLoading ? (
         <div className="w-full flex justify-center my-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
@@ -602,7 +610,7 @@ function SeoPageComponent() {
               </Tabs>
             </div>
 
-            <aside className="lg:sticky lg:top-24">
+            <aside className="lg:sticky lg:top-[4.5rem]">
               <SerpPreview
                 title={previewTitle}
                 description={previewDescription}
@@ -611,7 +619,7 @@ function SeoPageComponent() {
             </aside>
           </div>
 
-          <div className="sticky bottom-0 z-10 -mx-4 mt-6 px-4 py-3 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+          <div className="sticky bottom-0 z-10 -mx-4 mt-6 border-t bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:-mx-6 md:px-6">
             <div className="flex items-center justify-between gap-4">
               <p className="text-sm text-muted-foreground">
                 {isDirty ? 'You have unsaved changes' : 'All changes saved'}
@@ -623,6 +631,6 @@ function SeoPageComponent() {
           </div>
         </form>
       )}
-    </PageLayout>
+    </AdminPageLayout>
   )
 }

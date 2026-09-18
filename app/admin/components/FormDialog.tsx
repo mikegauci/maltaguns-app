@@ -1,6 +1,7 @@
 'use client'
 
-import { ReactNode, useState, useEffect } from 'react'
+import { ReactNode } from 'react'
+import { useIsClient } from '@/hooks/useIsClient'
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -35,14 +36,8 @@ export function FormDialog({
   cancelLabel = 'Cancel',
   children,
 }: FormDialogProps) {
-  const [isMounted, setIsMounted] = useState(false)
+  const isMounted = useIsClient()
 
-  // Prevent hydration issues by only rendering after component is mounted
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  // Return null during server-side rendering or before mounting
   if (!isMounted) {
     return null
   }

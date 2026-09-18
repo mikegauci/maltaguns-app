@@ -16,9 +16,9 @@ import {
 
 interface ImageAltDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
   imageAltText: string
-  setImageAltText: (text: string) => void // eslint-disable-line unused-imports/no-unused-vars
+  setImageAltText: (text: string) => void
   isEditingExistingImage: boolean
   selectedImage: { src: string; alt: string } | null
   uploadingContentImage: boolean

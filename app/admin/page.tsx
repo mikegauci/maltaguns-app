@@ -1,6 +1,25 @@
 'use client'
 
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import {
+  AlertCircle,
+  Banknote,
+  Calendar,
+  Eye,
+  FileText,
+  Flag,
+  IdCard,
+  Package,
+  RefreshCw,
+  Store,
+  Users,
+} from 'lucide-react'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
+import { AdminActionCard } from '@/app/admin/components/AdminActionCard'
+import { AdminOverviewLists } from '@/app/admin/components/AdminOverviewLists'
+import { AdminStatCard } from '@/app/admin/components/AdminStatCard'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,254 +27,267 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Tabs, TabsContent } from '@/components/ui/tabs'
-import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '@/components/ui/back-button'
-import { PageLayout } from '@/components/ui/page-layout'
+import { Skeleton } from '@/components/ui/skeleton'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
+import type { AdminOverviewResponse } from '@/lib/admin-overview-types'
+
+const NUMBER_FORMAT = 'en-GB'
 
 export default AdminDashboardComponent
 
 function AdminDashboardComponent() {
-  return (
-    <PageLayout>
-      <PageHeader
-        title="Admin Dashboard"
-        description="Manage the admin dashboard"
-      />
-      <BackButton label="Back to Site" href="/" />
+  const { isAuthorized, isChecking } = useRequireAdmin({
+    preset: 'admin-silent',
+  })
+  const [overview, setOverview] = useState<AdminOverviewResponse | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <AdminCard
-              title="Users"
-              description="Manage user accounts"
-              href="/admin/users"
-              icon="👤"
+  const fetchOverview = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const response = await fetch('/api/admin/overview')
+      const result = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to load admin overview')
+      }
+
+      setOverview(result as AdminOverviewResponse)
+    } catch (fetchError) {
+      setError(
+        fetchError instanceof Error
+          ? fetchError.message
+          : 'Failed to load admin overview'
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isAuthorized) return
+    scheduleEffectWork(() => {
+      void fetchOverview()
+    })
+  }, [fetchOverview, isAuthorized])
+
+  if (isChecking || !isAuthorized) {
+    return null
+  }
+
+  if (isLoading) {
+    return (
+      <AdminPageLayout
+        title="Admin Dashboard"
+        description="Platform overview and items needing attention."
+      >
+        <OverviewSkeleton />
+      </AdminPageLayout>
+    )
+  }
+
+  if (error || !overview) {
+    return (
+      <AdminPageLayout
+        title="Admin Dashboard"
+        description="Platform overview and items needing attention."
+      >
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              Could not load overview
+            </CardTitle>
+            <CardDescription>{error ?? 'Unknown error'}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={() => void fetchOverview()}>
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
+      </AdminPageLayout>
+    )
+  }
+
+  return (
+    <AdminPageLayout
+      title="Admin Dashboard"
+      description="Platform overview and items needing attention."
+      actionButton={{
+        label: 'Refresh',
+        icon: RefreshCw,
+        onClick: () => {
+          void fetchOverview()
+        },
+      }}
+    >
+      <div className="space-y-8">
+        {overview.warnings.length > 0 && (
+          <Card className="border-amber-500/40 bg-amber-500/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-amber-900">
+                Some metrics are unavailable
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-1 text-sm text-muted-foreground">
+                {overview.warnings.map(warning => (
+                  <li key={warning}>{warning}</li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Needs attention
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <AdminActionCard
+              label="Identity reviews"
+              count={overview.actionQueue.identityReviewsPending}
+              description="Didit sessions awaiting review"
+              href="/admin/identity-reviews?status=in-review"
+              icon={IdCard}
             />
-            <AdminCard
-              title="Listings"
-              description="Manage marketplace listings"
-              href="/admin/listings"
-              icon="📦"
+            <AdminActionCard
+              label="Reported listings"
+              count={overview.actionQueue.reportedListingsPending}
+              description="Open marketplace reports"
+              href="/admin/reported-listings?status=pending"
+              icon={Flag}
             />
-            <AdminCard
-              title="Events"
-              description="Manage events and schedules"
-              href="/admin/events"
-              icon="📅"
+            <AdminActionCard
+              label="Establishments"
+              count={overview.actionQueue.establishmentsPending}
+              description="Profiles pending approval"
+              href="/admin/establishments?status=pending"
+              icon={Store}
             />
-            <AdminCard
-              title="Blogs"
-              description="Manage blog posts"
-              href="/admin/blogs"
-              icon="📝"
-            />
-            <AdminCard
-              title="Establishments"
-              description="Manage establishment profiles"
-              href="/admin/establishments"
-              icon="🏪"
-            />
-            <AdminCard
-              title="Credits"
-              description="Manage user credits"
-              href="/admin/credits"
-              icon="💳"
-            />
-            <AdminCard
-              title="Event Credits"
-              description="Manage event credits"
-              href="/admin/event-credits"
-              icon="🎫"
-            />
-            <AdminCard
-              title="Payments Received"
-              description="View payment transactions"
-              href="/admin/payments-received"
-              icon="💰"
-            />
-            <AdminCard
-              title="Reported Listings"
-              description="Manage reported listings"
-              href="/admin/reported-listings"
-              icon="🚨"
-            />
-            <AdminCard
-              title="Notifications"
-              description="Send manual notifications"
-              href="/admin/notifications"
-              icon="🔔"
-            />
-            <AdminCard
-              title="SEO Settings"
-              description="Manage site meta title and description"
-              href="/admin/seo"
-              icon="🔍"
+            <AdminActionCard
+              label="License reviews"
+              count={overview.actionQueue.licenseReviewsPending}
+              description="Uploaded licenses awaiting verification"
+              href="/admin/users?filter=pending-license"
+              icon={Users}
             />
           </div>
-        </TabsContent>
+        </section>
 
-        <TabsContent value="users">
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Platform stats
+          </h2>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <AdminStatCard
+              label="Users"
+              value={overview.stats.totalUsers.toLocaleString(NUMBER_FORMAT)}
+              subtitle={`+${overview.stats.newUsers7d.toLocaleString(NUMBER_FORMAT)} in the last 7 days`}
+              icon={Users}
+              href="/admin/users"
+            />
+            <AdminStatCard
+              label="Listings"
+              value={overview.stats.activeListings.toLocaleString(
+                NUMBER_FORMAT
+              )}
+              subtitle={`${overview.stats.pendingListings.toLocaleString(NUMBER_FORMAT)} pending moderation`}
+              icon={Package}
+              href="/admin/listings"
+            />
+            <AdminStatCard
+              label="Revenue (30d)"
+              value={
+                overview.stats.revenue30d == null
+                  ? '—'
+                  : `€${overview.stats.revenue30d.toLocaleString(NUMBER_FORMAT)}`
+              }
+              subtitle="Completed credit transactions"
+              icon={Banknote}
+              href="/admin/payments-received"
+            />
+            <AdminStatCard
+              label="Events"
+              value={overview.stats.upcomingEvents.toLocaleString(
+                NUMBER_FORMAT
+              )}
+              subtitle={`${overview.stats.totalEvents.toLocaleString(NUMBER_FORMAT)} total events`}
+              icon={Calendar}
+              href="/admin/events"
+            />
+          </div>
+        </section>
+
+        <AdminOverviewLists
+          recentSignups={overview.recentSignups}
+          recentPayments={overview.recentPayments}
+        />
+
+        {overview.blog && (
           <Card>
-            <CardHeader>
-              <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                Create, view, edit, and delete user accounts
-              </CardDescription>
+            <CardHeader className="flex flex-row items-start justify-between gap-3">
+              <div>
+                <CardTitle>Blog snapshot</CardTitle>
+                <CardDescription>
+                  Published posts and total views
+                </CardDescription>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin/blogs/analytics">View analytics</Link>
+              </Button>
             </CardHeader>
-            <CardContent>
-              <Link
-                href="/admin/users"
-                className="text-blue-500 hover:underline"
-              >
-                Go to User Management →
-              </Link>
+            <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="flex items-center gap-3 rounded-lg border p-4">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Published posts
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {overview.blog.publishedPosts.toLocaleString(NUMBER_FORMAT)}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 rounded-lg border p-4">
+                <Eye className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Total views</p>
+                  <p className="text-2xl font-bold">
+                    {overview.blog.totalViews.toLocaleString(NUMBER_FORMAT)}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="listings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Listing Management</CardTitle>
-              <CardDescription>
-                Create, view, edit, and delete marketplace listings
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href="/admin/listings"
-                className="text-blue-500 hover:underline"
-              >
-                Go to Listing Management →
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="events">
-          <Card>
-            <CardHeader>
-              <CardTitle>Event Management</CardTitle>
-              <CardDescription>
-                Create, view, edit, and delete events
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href="/admin/events"
-                className="text-blue-500 hover:underline"
-              >
-                Go to Event Management →
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="blogs">
-          <Card>
-            <CardHeader>
-              <CardTitle>Blog Management</CardTitle>
-              <CardDescription>
-                Create, view, edit, and delete blog posts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href="/admin/blogs"
-                className="text-blue-500 hover:underline"
-              >
-                Go to Blog Management →
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="retailers">
-          <Card>
-            <CardHeader>
-              <CardTitle>Establishment Management</CardTitle>
-              <CardDescription>
-                Create, view, edit, and delete establishment profiles
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href="/admin/retailers"
-                className="text-blue-500 hover:underline"
-              >
-                Go to Establishment Management →
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="credits">
-          <Card>
-            <CardHeader>
-              <CardTitle>Credit Management</CardTitle>
-              <CardDescription>View and manage user credits</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href="/admin/credits"
-                className="text-blue-500 hover:underline"
-              >
-                Go to Credit Management →
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="event-credits">
-          <Card>
-            <CardHeader>
-              <CardTitle>Event Credit Management</CardTitle>
-              <CardDescription>View and manage event credits</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link
-                href="/admin/event-credits"
-                className="text-blue-500 hover:underline"
-              >
-                Go to Event Credit Management →
-              </Link>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </PageLayout>
+        )}
+      </div>
+    </AdminPageLayout>
   )
 }
 
-function AdminCard({
-  title,
-  description,
-  href,
-  icon,
-}: {
-  title: string
-  description: string
-  href: string
-  icon: string
-}) {
+function OverviewSkeleton() {
   return (
-    <Link href={href}>
-      <Card className="h-full transition-all hover:shadow-md">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>{title}</CardTitle>
-            <span className="text-2xl">{icon}</span>
-          </div>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <span className="text-blue-500 hover:underline">
-            Manage {title} →
-          </span>
-        </CardContent>
-      </Card>
-    </Link>
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={`action-${index}`} className="h-32 rounded-lg" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={`stat-${index}`} className="h-32 rounded-lg" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <Skeleton className="h-64 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
+      </div>
+    </div>
   )
 }

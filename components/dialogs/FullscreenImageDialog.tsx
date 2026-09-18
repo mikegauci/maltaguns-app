@@ -10,7 +10,7 @@ import {
 
 interface FullscreenImageDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
   imageUrl: string | null
   title: string | null
 }

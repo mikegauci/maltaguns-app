@@ -26,9 +26,9 @@ interface MyEstablishmentsProps {
   clubs: Club[]
   servicing: Servicing[]
   ranges: Range[]
-  handleDeleteStore: (storeId: string) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  handleDeleteStore: (storeId: string) => Promise<void>
   establishmentInfoOpen: boolean
-  setEstablishmentInfoOpen: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setEstablishmentInfoOpen: (open: boolean) => void
 }
 
 function StatusBadge({ status }: { status: EstablishmentStatus }) {

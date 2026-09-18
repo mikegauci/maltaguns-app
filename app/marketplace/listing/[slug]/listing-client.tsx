@@ -8,6 +8,8 @@ import {
   startTransition,
 } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useNow } from '@/hooks/useNow'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -218,7 +220,7 @@ export default function ListingClient({
     null
   )
   const [hasRequiredLicense, setHasRequiredLicense] = useState(false)
-  const [userIdCardVerified, setUserIdCardVerified] = useState(false)
+  const [userIdentityVerified, setUserIdentityVerified] = useState(false)
   const [userLicenseVerified, setUserLicenseVerified] = useState(false)
   const [contactRevealed, setContactRevealed] = useState(false)
 
@@ -235,8 +237,9 @@ export default function ListingClient({
     return Number.isNaN(createdTs) ? null : createdTs + 48 * 60 * 60 * 1000
   })()
 
+  const now = useNow()
   const canEditNow =
-    isOwner && editableUntilMs !== null && Date.now() <= editableUntilMs
+    isOwner && editableUntilMs !== null && now <= editableUntilMs
 
   // Function to check if the current user is the owner of the listing
   const checkOwnership = useCallback(async () => {
@@ -255,8 +258,7 @@ export default function ListingClient({
         setIsOwner(isUserOwner)
         setSessionChecked(true)
 
-        // If user is owner, they always have access
-        if (isUserOwner) {
+        if (isUserOwner || listing.type === 'non_firearms') {
           setHasRequiredLicense(true)
         }
 
@@ -277,7 +279,7 @@ export default function ListingClient({
       setSessionChecked(true)
       return null
     }
-  }, [session, listing.seller_id])
+  }, [session, listing.seller_id, listing.type])
 
   // Function to check if the listing is featured
   const checkIfFeatured = useCallback(async () => {
@@ -358,40 +360,45 @@ export default function ListingClient({
         return
       }
 
+      const isNonFirearmListing = listing.type === 'non_firearms'
+
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('license_types, id_card_verified, is_verified')
+          .select('license_types, identity_verified, is_verified')
           .eq('id', userIdToCheck)
           .single()
 
         if (error) {
           console.error('Error fetching user license types:', error)
-          setHasRequiredLicense(false)
+          setHasRequiredLicense(isNonFirearmListing)
           return
         }
 
         const licenses = data?.license_types as LicenseTypes | null
-        const idCardVerified = data?.id_card_verified ?? false
+        const identityVerified = data?.identity_verified ?? false
         const isLicenseVerified = data?.is_verified ?? false
         setUserLicenseTypes(licenses)
-        setUserIdCardVerified(idCardVerified)
+        setUserIdentityVerified(identityVerified)
         setUserLicenseVerified(isLicenseVerified)
 
-        // Check if user has required license AND verified ID card AND an
-        // admin-approved license for this listing category
         const categoryLabel = getCategoryLabel(listing.category, listing.type)
-        const fullyVerified = isFullyVerified(isLicenseVerified, idCardVerified)
+        const fullyVerified = isFullyVerified(
+          isLicenseVerified,
+          identityVerified
+        )
         const hasLicenseAccess = canViewSellerInfo(licenses, categoryLabel, {
           isFullyVerified: fullyVerified,
+          listingType: listing.type,
         })
         const hasAccess =
-          hasLicenseAccess && idCardVerified && isLicenseVerified
+          isNonFirearmListing ||
+          (hasLicenseAccess && identityVerified && isLicenseVerified)
 
-        console.log('License and ID card check result:', {
+        console.log('License and identity check result:', {
           userIdToCheck,
           licenses,
-          idCardVerified,
+          identityVerified,
           isLicenseVerified,
           categoryLabel,
           hasLicenseAccess,
@@ -401,7 +408,7 @@ export default function ListingClient({
         setHasRequiredLicense(hasAccess)
       } catch (error) {
         console.error('Error checking user license access:', error)
-        setHasRequiredLicense(false)
+        setHasRequiredLicense(isNonFirearmListing)
       }
     },
     [supabase, listing.category, listing.type]
@@ -502,7 +509,9 @@ export default function ListingClient({
   // Check license access whenever userId changes
   useEffect(() => {
     if (userId && !isOwner) {
-      checkUserLicenseAccess(userId)
+      scheduleEffectWork(() => {
+        checkUserLicenseAccess(userId)
+      })
     }
   }, [userId, isOwner, listing.category, listing.type, checkUserLicenseAccess])
 
@@ -631,8 +640,11 @@ export default function ListingClient({
       )
     }
 
-    // Show seller information for authenticated users WITH required license
-    if (userId && listing.seller && hasRequiredLicense) {
+    if (
+      userId &&
+      listing.seller &&
+      (hasRequiredLicense || listing.type === 'non_firearms')
+    ) {
       return (
         <>
           <div className="flex items-center gap-2 mb-3">
@@ -755,32 +767,33 @@ export default function ListingClient({
         {
           isFullyVerified: isFullyVerified(
             userLicenseVerified,
-            userIdCardVerified
+            userIdentityVerified
           ),
+          listingType: listing.type,
         }
       )
 
-      if (hasLicenseAccess && !userIdCardVerified) {
+      if (hasLicenseAccess && !userIdentityVerified) {
         return (
           <div className="flex flex-col items-center text-center space-y-3 py-2">
             <Lock className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground font-semibold">
-              Identification Verification Required
+              Identity Verification Required
             </p>
             <p className="text-xs text-muted-foreground">
-              You have the required license for this category, but your
-              identification needs to be verified to view seller information.
+              You have the required license for this category, but you need to
+              verify your identity to view seller information.
             </p>
             <Link href="/profile" className="w-full">
               <Button variant="outline" className="w-full" size="sm">
-                Verify Identification
+                Verify my identity
               </Button>
             </Link>
           </div>
         )
       }
 
-      if (hasLicenseAccess && userIdCardVerified && !userLicenseVerified) {
+      if (hasLicenseAccess && userIdentityVerified && !userLicenseVerified) {
         return (
           <div className="flex flex-col items-center text-center space-y-3 py-2">
             <Lock className="h-8 w-8 text-muted-foreground" />

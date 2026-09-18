@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { Database } from '@/lib/database.types'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
 
 export async function POST(request: Request) {
@@ -16,7 +15,7 @@ export async function POST(request: Request) {
     if (data.type === 'firearms') {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('is_verified, id_card_verified, license_image, id_card_image')
+        .select('is_verified, identity_verified, license_image')
         .eq('id', user.id)
         .single()
 
@@ -45,11 +44,11 @@ export async function POST(request: Request) {
         )
       }
 
-      if (!profile.id_card_verified || !profile.id_card_image) {
+      if (!profile.identity_verified) {
         return NextResponse.json(
           {
             error:
-              'You must have a verified identification to create a firearms listing. Please upload your identification in your profile.',
+              'You must have a verified identity to create a firearms listing. Please verify your identity in your profile.',
           },
           { status: 403 }
         )

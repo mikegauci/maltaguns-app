@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
@@ -12,18 +14,24 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { createClient } from '@/lib/supabase/client'
 import { getAuthRedirectOrigin } from '@/lib/seo-host'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
-import { BackButton } from '@/components/ui/back-button'
-import { PageHeader } from '@/components/ui/page-header'
-import { PageLayout } from '@/components/ui/page-layout'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
+import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   ADMIN_USER_FULL_SEARCH_KEYS,
   ADMIN_USER_SEARCH_PLACEHOLDER,
 } from '@/lib/admin-user-types'
+import {
+  ADMIN_IDENTITY_OVERRIDE_NOTE,
+  isAdminIdentityOverride,
+} from '@/lib/identity-status'
 import {
   createAllLicenseTypes,
   createEmptyLicenseTypes,
@@ -50,8 +58,14 @@ interface User {
   is_seller: boolean
   is_verified: boolean
   license_image: string | null
-  id_card_image: string | null
-  id_card_verified: boolean
+  identity_verified: boolean
+  identity_verified_at: string | null
+  identity_status: string | null
+  identity_first_name: string | null
+  identity_last_name: string | null
+  identity_document_type: string | null
+  identity_review_notes: string[] | null
+  didit_session_id: string | null
   is_disabled: boolean
   first_name: string | null
   last_name: string | null
@@ -96,8 +110,22 @@ function getEstablishmentLabel(type: string): string {
 }
 
 function UsersPageComponent() {
+  const searchParams = useSearchParams()
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({
+    preset: 'admin-silent',
+  })
   const [users, setUsers] = useState<User[]>([])
+  const pendingLicenseFilter = searchParams.get('filter') === 'pending-license'
+  const displayedUsers = useMemo(() => {
+    if (!pendingLicenseFilter) {
+      return users
+    }
+
+    return users.filter(
+      user => Boolean(user.license_image) && !user.is_verified
+    )
+  }, [pendingLicenseFilter, users])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -105,7 +133,6 @@ function UsersPageComponent() {
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploadingLicense, setIsUploadingLicense] = useState(false)
-  const [isUploadingIdCard, setIsUploadingIdCard] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [notesFormData, setNotesFormData] = useState('')
   const [formData, setFormData] = useState({
@@ -115,9 +142,7 @@ function UsersPageComponent() {
     is_admin: false,
     is_seller: false,
     is_verified: false,
-    id_card_verified: false,
     license_image: null as string | null,
-    id_card_image: null as string | null,
     is_disabled: false,
     first_name: '' as string | null,
     last_name: '' as string | null,
@@ -257,18 +282,22 @@ function UsersPageComponent() {
         const user = row.original
         // Admin can mark a user as verified even without documents / seller
         // status, so only check the two verification flags.
-        const isFullyVerified = user.is_verified && user.id_card_verified
+        const isFullyVerified = user.is_verified && user.identity_verified
 
-        // Only count documents as "Pending Approval" when the image is
-        // uploaded but not yet verified. Otherwise show "Awaiting Upload".
+        // Only count items as "Pending Approval" when they are in flight but
+        // not yet verified. Otherwise show "Awaiting Upload".
         let pendingText = 'Pending'
         if (user.is_seller && !isFullyVerified) {
           const pendingItems: string[] = []
           if (user.license_image && !user.is_verified) {
             pendingItems.push('License')
           }
-          if (user.id_card_image && !user.id_card_verified) {
-            pendingItems.push('Identification')
+          if (
+            !user.identity_verified &&
+            user.identity_status &&
+            user.identity_status !== 'Not Started'
+          ) {
+            pendingItems.push('Identity')
           }
           if (pendingItems.length > 0) {
             pendingText = `Pending Approval: ${pendingItems.join(' & ')}`
@@ -328,24 +357,55 @@ function UsersPageComponent() {
       },
     },
     {
-      accessorKey: 'id_card_image',
-      header: 'Identification',
+      accessorKey: 'identity_verified',
+      header: 'Identity',
       enableSorting: true,
       cell: ({ row }) => {
-        const idCardUrl = row.getValue('id_card_image') as string | null
+        const user = row.original
+        const verifiedName = [user.identity_first_name, user.identity_last_name]
+          .filter(Boolean)
+          .join(' ')
+
         return (
-          <div className="flex items-center">
-            {idCardUrl ? (
-              <a
-                href={idCardUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
-              >
-                View Identification
-              </a>
+          <div className="flex flex-col gap-1">
+            {user.identity_verified ? (
+              <>
+                <span className="flex items-center gap-1 text-green-600">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Verified
+                </span>
+                {isAdminIdentityOverride(user) ? (
+                  <span className="text-xs text-amber-600">Admin override</span>
+                ) : verifiedName ? (
+                  <span className="text-xs text-muted-foreground">
+                    {verifiedName}
+                  </span>
+                ) : null}
+              </>
+            ) : user.identity_status === 'In Review' ? (
+              <div className="flex flex-col gap-1">
+                <span className="flex items-center gap-1 text-amber-500">
+                  <AlertCircle className="h-4 w-4" />
+                  In Review
+                </span>
+                <Link
+                  href={
+                    user.didit_session_id
+                      ? `/admin/identity-reviews/${user.id}?sessionId=${user.didit_session_id}`
+                      : `/admin/identity-reviews/${user.id}`
+                  }
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Open review
+                </Link>
+              </div>
+            ) : user.identity_status ? (
+              <span className="flex items-center gap-1 text-amber-500">
+                <AlertCircle className="h-4 w-4" />
+                {user.identity_status}
+              </span>
             ) : (
-              'No Identification'
+              'Not verified'
             )}
           </div>
         )
@@ -420,13 +480,6 @@ function UsersPageComponent() {
                 label: user.is_verified ? 'Unverify License' : 'Verify License',
                 onClick: () => handleToggleVerification(user),
                 variant: user.is_verified ? 'destructive' : 'default',
-              },
-              {
-                label: user.id_card_verified
-                  ? 'Unverify Identification'
-                  : 'Verify Identification',
-                onClick: () => handleToggleIdCardVerification(user),
-                variant: user.id_card_verified ? 'destructive' : 'default',
               },
               ...(!user.is_admin &&
               !user.is_disabled &&
@@ -511,8 +564,15 @@ function UsersPageComponent() {
   }, [supabase, toast])
 
   useEffect(() => {
-    fetchUsers()
-  }, [fetchUsers])
+    if (!isAuthorized) return
+    scheduleEffectWork(() => {
+      fetchUsers()
+    })
+  }, [fetchUsers, isAuthorized])
+
+  if (isChecking || !isAuthorized) {
+    return <AdminLoadingState message="Checking authorization..." />
+  }
 
   function handleCreate() {
     setFormData({
@@ -522,9 +582,7 @@ function UsersPageComponent() {
       is_admin: false,
       is_seller: false,
       is_verified: false,
-      id_card_verified: false,
       license_image: null,
-      id_card_image: null,
       is_disabled: false,
       first_name: '',
       last_name: '',
@@ -543,9 +601,7 @@ function UsersPageComponent() {
       is_admin: user.is_admin,
       is_seller: user.is_seller,
       is_verified: user.is_verified,
-      id_card_verified: user.id_card_verified,
       license_image: user.license_image,
-      id_card_image: user.id_card_image,
       is_disabled: user.is_disabled,
       first_name: user.first_name,
       last_name: user.last_name,
@@ -693,76 +749,6 @@ function UsersPageComponent() {
     }
   }
 
-  // Admin upload: pushes ID card to Supabase Storage then saves URL via PATCH.
-  async function handleAdminIdCardUpload(
-    event: React.ChangeEvent<HTMLInputElement>
-  ) {
-    const file = event.target.files?.[0]
-    if (!file || !selectedUser) return
-
-    try {
-      setIsUploadingIdCard(true)
-
-      // Downscale + re-encode to WebP before upload to cut Storage egress.
-      const resized = await resizeImageForUpload(file)
-
-      const fileExt = resized.name.split('.').pop()
-      const fileName = `id-card-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
-      const filePath = `id-cards/${fileName}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('licenses')
-        .upload(filePath, resized, {
-          // Unique filename per upload (never overwritten) - cache for 1 year.
-          cacheControl: '31536000',
-          upsert: false,
-          contentType: resized.type,
-        })
-
-      if (uploadError) throw uploadError
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('licenses').getPublicUrl(filePath)
-
-      const response = await fetch(`/api/users/${selectedUser.id}/id-card`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: publicUrl }),
-      })
-
-      const result = await response.json()
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to save ID card image')
-      }
-
-      // Bucket is private - use the signed URL the server handed back.
-      setFormData({
-        ...formData,
-        id_card_image: result.signedUrl || publicUrl,
-      })
-
-      toast({
-        title: 'Success',
-        description: 'Identification image uploaded successfully',
-      })
-
-      fetchUsers()
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to upload identification image',
-      })
-    } finally {
-      setIsUploadingIdCard(false)
-      event.target.value = ''
-    }
-  }
-
   async function handleDeleteLicense() {
     if (!selectedUser || !formData.license_image) return
 
@@ -810,51 +796,6 @@ function UsersPageComponent() {
     }
   }
 
-  async function handleDeleteIdCard() {
-    if (!selectedUser || !formData.id_card_image) return
-
-    try {
-      setIsSubmitting(true)
-
-      // Use the API endpoint to delete the ID card
-      const response = await fetch(`/api/users/${selectedUser.id}/id-card`, {
-        method: 'DELETE',
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete identification image')
-      }
-
-      // Update local state
-      setFormData({
-        ...formData,
-        id_card_image: null,
-      })
-
-      toast({
-        title: 'Success',
-        description: 'Identification image deleted successfully',
-      })
-
-      // Close the edit dialog and refresh the users list
-      setIsEditDialogOpen(false)
-      fetchUsers()
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Failed to delete identification image',
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   function handleToggleAllLicenses(checked: boolean) {
     setFormData({
       ...formData,
@@ -882,7 +823,6 @@ function UsersPageComponent() {
       setFormData({
         ...formData,
         is_verified: true,
-        id_card_verified: true,
         license_types: createAllLicenseTypes(),
       })
       return
@@ -891,7 +831,6 @@ function UsersPageComponent() {
     setFormData({
       ...formData,
       is_verified: false,
-      id_card_verified: false,
       license_types: createEmptyLicenseTypes(),
     })
   }
@@ -915,7 +854,6 @@ function UsersPageComponent() {
           is_admin: formData.is_admin,
           is_seller: formData.is_seller,
           is_verified: formData.is_verified,
-          id_card_verified: formData.id_card_verified,
           is_disabled: formData.is_disabled,
           notes: formData.notes,
           license_types: hasAnyLicenseType(formData.license_types)
@@ -1104,18 +1042,18 @@ function UsersPageComponent() {
     }
   }
 
-  async function handleToggleIdCardVerification(user: User) {
+  async function handleToggleIdentityVerification(user: User) {
     try {
       setIsSubmitting(true)
 
-      // Use the API endpoint to toggle the ID card verification status
-      const response = await fetch(`/api/users/${user.id}/verify-id-card`, {
+      // Use the API endpoint to toggle the identity verification status
+      const response = await fetch(`/api/users/${user.id}/verify-identity`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          verified: !user.id_card_verified,
+          verified: !user.identity_verified,
         }),
       })
 
@@ -1124,14 +1062,27 @@ function UsersPageComponent() {
       if (!response.ok) {
         throw new Error(
           result.error ||
-            `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} identification`
+            `Failed to ${user.identity_verified ? 'unverify' : 'verify'} identity`
         )
       }
 
       toast({
         title: 'Success',
-        description: `Identification ${user.id_card_verified ? 'unverified' : 'verified'} successfully`,
+        description: `Identity ${user.identity_verified ? 'unverified' : 'verified'} successfully`,
       })
+
+      const nextVerified = !user.identity_verified
+      if (selectedUser?.id === user.id) {
+        setSelectedUser({
+          ...selectedUser,
+          identity_verified: nextVerified,
+          identity_status: nextVerified ? 'Approved' : 'Not Started',
+          identity_verified_at: nextVerified ? new Date().toISOString() : null,
+          identity_review_notes: nextVerified
+            ? [ADMIN_IDENTITY_OVERRIDE_NOTE]
+            : null,
+        })
+      }
 
       fetchUsers()
     } catch (error) {
@@ -1141,7 +1092,7 @@ function UsersPageComponent() {
         description:
           error instanceof Error
             ? error.message
-            : `Failed to ${user.id_card_verified ? 'unverify' : 'verify'} identification`,
+            : `Failed to ${user.identity_verified ? 'unverify' : 'verify'} identity`,
       })
     } finally {
       setIsSubmitting(false)
@@ -1191,13 +1142,21 @@ function UsersPageComponent() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader title="User Management" description="Manage user accounts" />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout title="User Management" description="Manage user accounts">
+      {pendingLicenseFilter && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Showing users with uploaded licenses awaiting verification.{' '}
+          <Link
+            href="/admin/users"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Clear filter
+          </Link>
+        </p>
+      )}
       <DataTable
         columns={columns}
-        data={users}
+        data={displayedUsers}
         searchKeys={[...ADMIN_USER_FULL_SEARCH_KEYS]}
         searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
         onCreateNew={handleCreate}
@@ -1481,63 +1440,80 @@ function UsersPageComponent() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Identification Image</Label>
-            <div className="border p-2 rounded-md">
-              {formData.id_card_image ? (
-                <div className="flex flex-col gap-2">
-                  <a
-                    href={formData.id_card_image}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline flex items-center gap-2"
-                  >
-                    <img
-                      src={formData.id_card_image}
-                      alt="Identification"
-                      className="w-20 h-20 object-cover border rounded"
-                    />
-                    <span>View Full Size</span>
-                  </a>
-                  <button
-                    type="button"
-                    onClick={handleDeleteIdCard}
-                    disabled={isSubmitting}
-                    className="text-red-500 hover:underline text-sm flex items-center gap-1 mt-2"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                    Delete Identification Image
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm text-muted-foreground">
-                    No identification image uploaded.
-                  </p>
-                  <Input
-                    id="admin-id-card-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAdminIdCardUpload}
-                    disabled={isUploadingIdCard}
-                  />
-                  {isUploadingIdCard && (
-                    <p className="text-xs text-muted-foreground">Uploading…</p>
-                  )}
-                </div>
+            <Label>Identity Verification (Didit)</Label>
+            <div className="border p-3 rounded-md space-y-1 text-sm">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Status:</span>
+                <span
+                  className={
+                    selectedUser?.identity_verified
+                      ? 'text-green-600 font-medium'
+                      : 'text-amber-600 font-medium'
+                  }
+                >
+                  {selectedUser?.identity_verified
+                    ? 'Verified'
+                    : selectedUser?.identity_status || 'Not verified'}
+                </span>
+              </div>
+              {(selectedUser?.identity_first_name ||
+                selectedUser?.identity_last_name) && (
+                <p className="text-muted-foreground">
+                  Document name:{' '}
+                  <span className="text-foreground">
+                    {[
+                      selectedUser.identity_first_name,
+                      selectedUser.identity_last_name,
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  </span>
+                </p>
               )}
+              {selectedUser?.identity_document_type && (
+                <p className="text-muted-foreground">
+                  Document type:{' '}
+                  <span className="text-foreground">
+                    {selectedUser.identity_document_type}
+                  </span>
+                </p>
+              )}
+              {selectedUser?.identity_verified_at && (
+                <p className="text-muted-foreground">
+                  Verified on{' '}
+                  {new Date(
+                    selectedUser.identity_verified_at
+                  ).toLocaleDateString()}
+                </p>
+              )}
+              {selectedUser && isAdminIdentityOverride(selectedUser) && (
+                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 mt-1">
+                  This user has not completed Didit. Identity was verified by an
+                  admin.
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground pt-1">
+                Document images are held by Didit and are not stored by
+                MaltaGuns. Use the buttons below to override.
+              </p>
+              <div className="pt-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    selectedUser?.identity_verified ? 'destructive' : 'default'
+                  }
+                  disabled={isSubmitting || !selectedUser}
+                  onClick={() =>
+                    selectedUser &&
+                    handleToggleIdentityVerification(selectedUser)
+                  }
+                >
+                  {selectedUser?.identity_verified
+                    ? 'Unverify Identity'
+                    : 'Verify Identity'}
+                </Button>
+              </div>
             </div>
           </div>
           <div className="space-y-2">
@@ -1576,7 +1552,7 @@ function UsersPageComponent() {
             <div className="flex items-center space-x-2">
               <Switch
                 id="edit-is_verified"
-                checked={formData.is_verified && formData.id_card_verified}
+                checked={formData.is_verified}
                 onCheckedChange={handleVerifiedToggle}
               />
               <Label htmlFor="edit-is_verified">Verified</Label>
@@ -1630,6 +1606,6 @@ function UsersPageComponent() {
           </div>
         </div>
       </FormDialog>
-    </PageLayout>
+    </AdminPageLayout>
   )
 }

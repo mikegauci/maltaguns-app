@@ -1,9 +1,15 @@
+import { checkBotId } from 'botid/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { z } from 'zod'
+import { isContactFormRateLimited } from '@/lib/contact-rate-limit'
 import { escapeHtml } from '@/lib/escape-html'
+import { getClientIp } from '@/lib/request-ip'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+const CONTACT_RATE_LIMIT = 3
+const CONTACT_RATE_WINDOW_MS = 60 * 60 * 1000
 
 const contactFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(200),
@@ -13,12 +19,69 @@ const contactFormSchema = z.object({
     .string()
     .min(10, 'Message must be at least 10 characters')
     .max(5000),
+  fax: z.string().optional(),
 })
 
+function logContactFormBlock(
+  reason: 'bot' | 'honeypot' | 'rate-limit',
+  ip: string
+) {
+  console.warn('[contact-form] blocked', { reason, ip })
+}
+
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+
+  if (
+    isContactFormRateLimited(ip, CONTACT_RATE_LIMIT, CONTACT_RATE_WINDOW_MS)
+  ) {
+    logContactFormBlock('rate-limit', ip)
+    return NextResponse.json(
+      {
+        error:
+          'Too many messages sent. Please wait a while before trying again.',
+      },
+      { status: 429 }
+    )
+  }
+
+  let verification
+
+  try {
+    verification = await checkBotId()
+  } catch (error) {
+    console.error('[contact-form] bot verification failed', error)
+    return NextResponse.json(
+      {
+        error:
+          "We couldn't verify your submission. Please try again, or email support@maltaguns.com directly.",
+      },
+      { status: 503 }
+    )
+  }
+
+  if (verification.isBot) {
+    logContactFormBlock('bot', ip)
+    return NextResponse.json(
+      {
+        error:
+          "We couldn't verify your submission. Please try again, or email support@maltaguns.com directly.",
+      },
+      { status: 403 }
+    )
+  }
+
   try {
     const body = await request.json()
     const validatedData = contactFormSchema.parse(body)
+
+    if (validatedData.fax?.trim()) {
+      logContactFormBlock('honeypot', ip)
+      return NextResponse.json(
+        { message: 'Email sent successfully' },
+        { status: 200 }
+      )
+    }
 
     const name = escapeHtml(validatedData.name)
     const email = escapeHtml(validatedData.email)

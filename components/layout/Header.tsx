@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { SearchBar } from '@/components/marketplace/Search'
@@ -70,8 +71,10 @@ export function Header() {
 
   // Close establishments submenu / mobile menu when route changes
   useEffect(() => {
-    setEstablishmentsOpen(false)
-    setMenuOpen(false)
+    scheduleEffectWork(() => {
+      setEstablishmentsOpen(false)
+      setMenuOpen(false)
+    })
   }, [pathname])
 
   // Check if current path matches the menu item

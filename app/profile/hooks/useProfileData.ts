@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { UseFormReturn } from 'react-hook-form'
 import { useToast } from '@/hooks/use-toast'
 import { SupabaseClient } from '@supabase/supabase-js'
+import { shouldSyncDiditIdentity } from '@/lib/identity-status'
+import { normalizeBirthdayForInput } from '@/lib/format'
 import {
   Profile,
   Listing,
@@ -75,12 +77,6 @@ export function useProfileData({
         let needsUpdate = false
         const updates: any = {}
 
-        if (profileData.id_card_verified && !profileData.id_card_image) {
-          updates.id_card_verified = false
-          profileData.id_card_verified = false
-          needsUpdate = true
-        }
-
         if (profileData.is_verified && !profileData.license_image) {
           updates.is_verified = false
           profileData.is_verified = false
@@ -93,27 +89,56 @@ export function useProfileData({
 
         // The licenses bucket is private - swap the stored identifiers for
         // short-lived signed URLs so the previews in SellerStatus render.
-        if (profileData.license_image || profileData.id_card_image) {
+        if (profileData.license_image) {
           try {
             const res = await fetch('/api/profile/document-urls')
             if (res.ok) {
-              const { licenseUrl, idCardUrl } = await res.json()
-              if (profileData.license_image)
-                profileData.license_image = licenseUrl
-              if (profileData.id_card_image)
-                profileData.id_card_image = idCardUrl
+              const { licenseUrl } = await res.json()
+              profileData.license_image = licenseUrl
             }
           } catch (err) {
             console.error('Failed to resolve signed document URLs:', err)
           }
         }
 
-        setProfile(profileData)
+        let resolvedProfile = profileData
+
+        if (
+          shouldSyncDiditIdentity(
+            profileData.identity_verified,
+            profileData.didit_session_id,
+            profileData.identity_status
+          )
+        ) {
+          try {
+            const statusRes = await fetch('/api/verification/status')
+            if (statusRes.ok) {
+              const status = await statusRes.json()
+              resolvedProfile = {
+                ...profileData,
+                identity_verified: status.verified,
+                identity_status: status.status,
+                identity_first_name: status.firstName,
+                identity_last_name: status.lastName,
+                identity_document_type: status.documentType,
+                identity_review_notes: status.reviewNotes ?? null,
+              }
+            }
+          } catch (syncError) {
+            console.error(
+              'Failed to sync identity verification status:',
+              syncError
+            )
+          }
+        }
+
+        setProfile(resolvedProfile)
         form.reset({
-          first_name: profileData.first_name || '',
-          last_name: profileData.last_name || '',
-          phone: profileData.phone || '',
-          address: profileData.address || '',
+          first_name: resolvedProfile.first_name || '',
+          last_name: resolvedProfile.last_name || '',
+          birthday: normalizeBirthdayForInput(resolvedProfile.birthday),
+          phone: resolvedProfile.phone || '',
+          address: resolvedProfile.address || '',
         })
 
         // Fetch everything else in parallel for better performance
@@ -294,7 +319,7 @@ export function useProfileData({
     } catch (error) {
       console.error('Error refreshing credits:', error)
     }
-  }, [session?.user, supabase])
+  }, [session, supabase])
 
   return {
     profile,

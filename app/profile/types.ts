@@ -1,4 +1,5 @@
 import { Database } from '@/lib/database.types'
+import { isAtLeast18YearsOld } from '@/lib/format'
 import * as z from 'zod'
 
 export type Profile = Database['public']['Tables']['profiles']['Row']
@@ -6,6 +7,9 @@ export type Profile = Database['public']['Tables']['profiles']['Row']
 export const profileSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
+  birthday: z.string().refine(isAtLeast18YearsOld, {
+    message: 'You must be at least 18 years old',
+  }),
   phone: z.string().min(1, 'Phone number is required'),
   address: z.string().min(1, 'Address is required'),
 })

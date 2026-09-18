@@ -12,8 +12,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { createClient } from '@/lib/supabase/client'
-import { BackButton } from '@/components/ui/back-button'
 import {
   Popover,
   PopoverContent,
@@ -23,8 +23,9 @@ import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
+import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 
 interface Event {
   id: string
@@ -57,6 +58,9 @@ export default EventsPageComponent
 
 function EventsPageComponent() {
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({
+    preset: 'admin-silent',
+  })
   const [events, setEvents] = useState<Event[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -251,8 +255,15 @@ function EventsPageComponent() {
   }, [supabase, toast])
 
   useEffect(() => {
-    fetchEvents()
-  }, [fetchEvents])
+    if (!isAuthorized) return
+    scheduleEffectWork(() => {
+      fetchEvents()
+    })
+  }, [fetchEvents, isAuthorized])
+
+  if (isChecking || !isAuthorized) {
+    return <AdminLoadingState message="Checking authorization..." />
+  }
 
   function handleEdit(event: Event) {
     setSelectedEvent(event)
@@ -375,10 +386,7 @@ function EventsPageComponent() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader title="Event Management" description="Manage events" />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout title="Event Management" description="Manage events">
       <DataTable
         columns={columns}
         data={isLoading ? [] : events}
@@ -642,6 +650,6 @@ function EventsPageComponent() {
         confirmLabel="Delete"
         variant="destructive"
       />
-    </PageLayout>
+    </AdminPageLayout>
   )
 }

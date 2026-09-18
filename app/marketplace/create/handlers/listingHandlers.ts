@@ -59,10 +59,10 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         throw new Error('Not authenticated')
       }
 
-      // Check if user is verified and has valid license and ID card
+      // Check if user is verified and has a valid license and identity
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('is_verified, id_card_verified, license_image, id_card_image')
+        .select('is_verified, identity_verified, license_image')
         .eq('id', session.user.id)
         .single()
 
@@ -82,10 +82,10 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         )
       }
 
-      // Check if user has verified ID card
-      if (!profile.id_card_verified || !profile.id_card_image) {
+      // Check if user has a verified identity
+      if (!profile.identity_verified) {
         throw new Error(
-          'You must have a verified ID card to create a firearms listing. Please upload your ID card in your profile.'
+          'You must have a verified identity to create a firearms listing. Please verify your identity in your profile.'
         )
       }
 

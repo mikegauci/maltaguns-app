@@ -15,6 +15,7 @@ import {
   grantGoogleAnalytics,
   setConsent as persistConsent,
 } from '@/lib/cookie-consent'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 
 type CookieConsentContextValue = {
   consent: CookieConsent | null
@@ -40,8 +41,10 @@ export function CookieConsentProvider({
   const [preferencesOpen, setPreferencesOpen] = useState(false)
 
   useEffect(() => {
-    setConsentState(getConsent())
-    setHydrated(true)
+    scheduleEffectWork(() => {
+      setConsentState(getConsent())
+      setHydrated(true)
+    })
   }, [])
 
   const setConsent = useCallback((next: CookieConsent) => {

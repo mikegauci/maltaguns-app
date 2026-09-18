@@ -44,7 +44,7 @@ export function NotificationsBell() {
   const [open, setOpen] = useState(false)
   const [shakeToken, setShakeToken] = useState(0)
   const lastUnreadRef = useRef(0)
-  const inFlightMutationRef = useRef(false)
+  const [mutationInFlight, setMutationInFlight] = useState(false)
 
   const refreshNotifications = useCallback(() => {
     if (!userId) return
@@ -88,7 +88,7 @@ export function NotificationsBell() {
 
   const unreadCount = notificationsQuery.data?.unreadCount ?? 0
   const items = notificationsQuery.data?.items ?? []
-  const loading = notificationsQuery.isFetching || inFlightMutationRef.current
+  const loading = notificationsQuery.isFetching || mutationInFlight
 
   const hasUnread = unreadCount > 0
   const badgeText = useMemo(() => {
@@ -108,30 +108,36 @@ export function NotificationsBell() {
   const markRead = useCallback(
     async (id: string) => {
       if (!userId) return
-      inFlightMutationRef.current = true
-      const now = new Date().toISOString()
-      markNotificationReadInCache(queryClient, userId, id, now)
-      await supabase
-        .from('notifications')
-        .update({ read_at: now })
-        .eq('id', id)
-        .eq('user_id', userId)
-      inFlightMutationRef.current = false
+      setMutationInFlight(true)
+      try {
+        const now = new Date().toISOString()
+        markNotificationReadInCache(queryClient, userId, id, now)
+        await supabase
+          .from('notifications')
+          .update({ read_at: now })
+          .eq('id', id)
+          .eq('user_id', userId)
+      } finally {
+        setMutationInFlight(false)
+      }
     },
     [queryClient, supabase, userId]
   )
 
   const markAllRead = useCallback(async () => {
     if (!userId) return
-    inFlightMutationRef.current = true
-    const now = new Date().toISOString()
-    markAllNotificationsReadInCache(queryClient, userId, now)
-    await supabase
-      .from('notifications')
-      .update({ read_at: now })
-      .eq('user_id', userId)
-      .is('read_at', null)
-    inFlightMutationRef.current = false
+    setMutationInFlight(true)
+    try {
+      const now = new Date().toISOString()
+      markAllNotificationsReadInCache(queryClient, userId, now)
+      await supabase
+        .from('notifications')
+        .update({ read_at: now })
+        .eq('user_id', userId)
+        .is('read_at', null)
+    } finally {
+      setMutationInFlight(false)
+    }
   }, [queryClient, supabase, userId])
 
   if (!userId) return null

@@ -27,9 +27,9 @@ interface ResetPasswordForm {
 
 interface ResetPasswordDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
   form: UseFormReturn<ResetPasswordForm>
-  onSubmit: (data: ResetPasswordForm) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  onSubmit: (data: ResetPasswordForm) => Promise<void>
   isLoading: boolean
   error: string | null
 }

@@ -4,7 +4,7 @@ import { EditCreditDialog } from '@/app/admin/components/EditCreditDialog'
 
 interface EditEventCreditDialogProps {
   open: boolean
-  onOpenChange: (open: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  onOpenChange: (open: boolean) => void
   credit: {
     id?: string
     user_id: string

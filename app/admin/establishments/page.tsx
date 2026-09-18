@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
@@ -20,12 +21,13 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
+import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { createClient } from '@/lib/supabase/client'
 import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { Store, Building, Wrench, Target, Upload, X } from 'lucide-react'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '@/components/ui/back-button'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
+import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 
 interface Establishment {
   id: string
@@ -57,8 +59,27 @@ interface User {
 
 export default EstablishmentsPageComponent
 
+function parseEstablishmentStatusFilter(
+  value: string | null
+): 'all' | 'pending' | 'active' | 'rejected' {
+  if (
+    value === 'pending' ||
+    value === 'active' ||
+    value === 'rejected' ||
+    value === 'all'
+  ) {
+    return value
+  }
+
+  return 'all'
+}
+
 function EstablishmentsPageComponent() {
+  const searchParams = useSearchParams()
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({
+    preset: 'admin-silent',
+  })
   const [establishments, setEstablishments] = useState<Establishment[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -104,7 +125,7 @@ function EstablishmentsPageComponent() {
   })
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'pending' | 'active' | 'rejected'
-  >('all')
+  >(() => parseEstablishmentStatusFilter(searchParams.get('status')))
   const supabase = createClient()
 
   function getTypePath(type: string) {
@@ -366,9 +387,16 @@ function EstablishmentsPageComponent() {
   }, [toast])
 
   useEffect(() => {
-    fetchEstablishments()
-    fetchUsers()
-  }, [fetchEstablishments, fetchUsers])
+    if (!isAuthorized) return
+    scheduleEffectWork(() => {
+      fetchEstablishments()
+      fetchUsers()
+    })
+  }, [fetchEstablishments, fetchUsers, isAuthorized])
+
+  if (isChecking || !isAuthorized) {
+    return <AdminLoadingState message="Checking authorization..." />
+  }
 
   // Logo upload handler
   const handleLogoUpload = async (
@@ -703,13 +731,10 @@ function EstablishmentsPageComponent() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="Establishment Management"
-        description="Manage establishments"
-      />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout
+      title="Establishment Management"
+      description="Manage establishments"
+    >
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-blue-50 p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -1235,7 +1260,7 @@ function EstablishmentsPageComponent() {
           pendingStatusChange?.status === 'rejected' ? 'destructive' : 'default'
         }
       />
-    </PageLayout>
+    </AdminPageLayout>
   )
 }
 

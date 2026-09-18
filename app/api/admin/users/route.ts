@@ -14,7 +14,7 @@ export async function GET() {
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select(
-        'id, username, email, created_at, is_admin, is_seller, is_verified, license_image, id_card_image, id_card_verified, is_disabled, first_name, last_name, notes, license_types'
+        'id, username, email, created_at, is_admin, is_seller, is_verified, license_image, identity_verified, identity_verified_at, identity_status, identity_first_name, identity_last_name, identity_document_type, identity_review_notes, didit_session_id, is_disabled, first_name, last_name, notes, license_types'
       )
       .order('created_at', { ascending: false })
 
@@ -94,23 +94,16 @@ export async function GET() {
     })
 
     // The licenses bucket is private - resolve short-lived signed URLs so
-    // the admin table can still preview/link to license & ID card images.
+    // the admin table can still preview/link to license images.
     const signedUrls = await Promise.all(
-      data.map(user =>
-        Promise.all([
-          signLicenseUrl(user.license_image),
-          signLicenseUrl(user.id_card_image),
-        ])
-      )
+      data.map(user => signLicenseUrl(user.license_image))
     )
 
     // Add establishment data and credit info to users
     const usersWithData = data.map((user, index) => {
-      const [licenseUrl, idCardUrl] = signedUrls[index]
       return {
         ...user,
-        license_image: licenseUrl,
-        id_card_image: idCardUrl,
+        license_image: signedUrls[index],
         establishments: userEstablishments.get(user.id) || [],
         purchasedBefore: userCredits.has(user.id),
         creditAmount: userCredits.get(user.id) || 0,

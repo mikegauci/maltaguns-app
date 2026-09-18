@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { normalizeBirthdayForInput } from '@/lib/format'
 import { Pencil } from 'lucide-react'
 import { Profile, ProfileForm } from '../../app/profile/types'
 import { NotificationPreferences } from './NotificationPreferences'
@@ -25,9 +26,9 @@ import { NotificationPreferences } from './NotificationPreferences'
 interface ProfileInformationProps {
   profile: Profile
   isEditing: boolean
-  setIsEditing: (value: boolean) => void // eslint-disable-line unused-imports/no-unused-vars
+  setIsEditing: (value: boolean) => void
   form: UseFormReturn<ProfileForm>
-  onSubmit: (data: ProfileForm) => Promise<void> // eslint-disable-line unused-imports/no-unused-vars
+  onSubmit: (data: ProfileForm) => Promise<void>
 }
 
 export const ProfileInformation = ({
@@ -60,7 +61,7 @@ export const ProfileInformation = ({
         {isEditing ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="first_name"
@@ -68,7 +69,11 @@ export const ProfileInformation = ({
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John" {...field} />
+                        <Input
+                          placeholder="John"
+                          disabled={profile.identity_verified}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -82,11 +87,48 @@ export const ProfileInformation = ({
                     <FormItem>
                       <FormLabel>Last Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Doe" {...field} />
+                        <Input
+                          placeholder="Doe"
+                          disabled={profile.identity_verified}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="birthday"
+                  render={({ field }) => {
+                    const today = new Date()
+                    const maxDate = new Date(today)
+                    maxDate.setFullYear(today.getFullYear() - 18)
+
+                    const minDate = new Date(today)
+                    minDate.setFullYear(today.getFullYear() - 100)
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Date of birth</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            max={maxDate.toISOString().split('T')[0]}
+                            min={minDate.toISOString().split('T')[0]}
+                            {...field}
+                            value={normalizeBirthdayForInput(field.value)}
+                            onChange={e => {
+                              field.onChange(e)
+                              form.trigger('birthday')
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )
+                  }}
                 />
 
                 <FormField
@@ -107,7 +149,7 @@ export const ProfileInformation = ({
                   control={form.control}
                   name="address"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="md:col-span-2">
                       <FormLabel>Address</FormLabel>
                       <FormControl>
                         <Input placeholder="123 Main St, Valletta" {...field} />
@@ -145,20 +187,20 @@ export const ProfileInformation = ({
               <p className="text-lg">{profile.last_name || 'Not provided'}</p>
             </div>
             <div>
+              <p className="text-sm font-medium text-muted-foreground">
+                Date of birth
+              </p>
+              <p className="text-lg">{profile.birthday || 'Not provided'}</p>
+            </div>
+            <div>
               <p className="text-sm font-medium text-muted-foreground">Phone</p>
               <p className="text-lg">{profile.phone || 'Not provided'}</p>
             </div>
-            <div>
+            <div className="md:col-span-2">
               <p className="text-sm font-medium text-muted-foreground">
                 Address
               </p>
               <p className="text-lg">{profile.address || 'Not provided'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Birthday
-              </p>
-              <p className="text-lg">{profile.birthday || 'Not provided'}</p>
             </div>
           </div>
         )}
