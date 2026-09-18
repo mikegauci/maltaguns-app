@@ -167,7 +167,7 @@ export const IdentityVerification = ({
     <div className="rounded-md border bg-muted/20 p-3 space-y-1">
       <div className="flex items-center gap-2 text-sm font-medium">
         <BadgeCheck className="h-4 w-4 text-green-600" />
-        <span>Identity confirmed by Didit</span>
+        <span>Identity confirmed</span>
       </div>
       {verifiedName && (
         <p className="text-xs text-muted-foreground">
