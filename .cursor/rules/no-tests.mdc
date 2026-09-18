@@ -1,0 +1,12 @@
+---
+description: Do not add tests unless explicitly requested
+alwaysApply: true
+---
+
+# No Tests
+
+- Do not add new test files (e.g. `*.test.ts`, `*.spec.ts`, `__tests__/`).
+- Do not add new test cases to existing test files.
+- Do not refactor code primarily to make it testable unless the user asks.
+- Do not suggest adding tests or offer to write them unless the user asks.
+- Only add or modify tests when the user explicitly requests tests, test coverage, or a test for a specific behavior.

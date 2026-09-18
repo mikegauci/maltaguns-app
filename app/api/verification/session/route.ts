@@ -6,24 +6,13 @@ import {
   getVerificationCallbackUrl,
   isDiditVerificationUrl,
 } from '@/lib/didit'
+import {
+  IDENTITY_PENDING_STATUSES,
+  IDENTITY_TERMINAL_STATUSES,
+} from '@/lib/identity-status'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 const SESSION_REUSE_WINDOW_MS = 15 * 60 * 1000
-
-const TERMINAL_STATUSES = new Set([
-  'Approved',
-  'Declined',
-  'Expired',
-  'Kyc Expired',
-  'Abandoned',
-])
-
-const ACTIVE_STATUSES = new Set([
-  'In Review',
-  'In Progress',
-  'Awaiting User',
-  'Resubmitted',
-])
 
 export async function POST() {
   try {
@@ -55,7 +44,7 @@ export async function POST() {
       )
     }
 
-    if (ACTIVE_STATUSES.has(profile.identity_status ?? '')) {
+    if (IDENTITY_PENDING_STATUSES.has(profile.identity_status ?? '')) {
       return NextResponse.json(
         {
           error:
@@ -81,7 +70,7 @@ export async function POST() {
     const isReusable =
       !!profile.didit_session_url &&
       Date.now() - createdAt < SESSION_REUSE_WINDOW_MS &&
-      !TERMINAL_STATUSES.has(profile.identity_status ?? '')
+      !IDENTITY_TERMINAL_STATUSES.has(profile.identity_status ?? '')
 
     if (isReusable && isDiditVerificationUrl(profile.didit_session_url)) {
       return NextResponse.json({ url: profile.didit_session_url })

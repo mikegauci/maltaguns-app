@@ -251,24 +251,6 @@ const DECISION_FEATURE_ARRAYS = [
   'poa_verifications',
 ] as const
 
-export const IDENTITY_PENDING_REVIEW_STATUSES = [
-  'In Review',
-  'In Progress',
-  'Awaiting User',
-  'Resubmitted',
-] as const
-
-export function isIdentityPendingReview(
-  verified: boolean,
-  status: string | null | undefined
-): boolean {
-  if (verified) return false
-  return (
-    typeof status === 'string' &&
-    (IDENTITY_PENDING_REVIEW_STATUSES as readonly string[]).includes(status)
-  )
-}
-
 export function extractReviewNotes(decision: unknown): string[] {
   if (!decision || typeof decision !== 'object') return []
 

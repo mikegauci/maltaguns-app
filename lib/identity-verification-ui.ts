@@ -1,11 +1,6 @@
-export const PENDING_IDENTITY_STATUSES = new Set([
-  'In Review',
-  'In Progress',
-  'Awaiting User',
-  'Resubmitted',
-])
+import { IDENTITY_PENDING_STATUSES } from '@/lib/identity-status'
 
-export type StatusTone = 'verified' | 'pending' | 'failed' | 'none'
+type StatusTone = 'verified' | 'pending' | 'failed' | 'none'
 
 export function describeStatus(
   verified: boolean,
@@ -44,7 +39,7 @@ export function getIdentityVerificationUiState(
   const pendingReview =
     !identityVerified &&
     !!identityStatus &&
-    PENDING_IDENTITY_STATUSES.has(identityStatus)
+    IDENTITY_PENDING_STATUSES.has(identityStatus)
   const inManualReview = identityStatus === 'In Review'
   const isDeclined = identityStatus === 'Declined'
   const isExpired =
@@ -55,23 +50,14 @@ export function getIdentityVerificationUiState(
   const showActionButton =
     !identityVerified && !inManualReview && !pendingReview
   const canStartVerification = showActionButton && !busy
-  const hasBodyContent =
-    identityVerified ||
-    inManualReview ||
-    pendingReview ||
-    showFailedPanel ||
-    showAbandonedPanel
 
   return {
     pendingReview,
     inManualReview,
     isDeclined,
-    isExpired,
-    isAbandoned,
     showFailedPanel,
     showAbandonedPanel,
     showActionButton,
     canStartVerification,
-    hasBodyContent,
   }
 }

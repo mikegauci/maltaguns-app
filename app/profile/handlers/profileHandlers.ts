@@ -4,10 +4,6 @@ import { uploadAndVerifyLicense } from '@/utils/document-upload-handlers'
 import { Profile, Listing, ProfileForm } from '../types'
 import React from 'react'
 
-/**
- * @deprecated Moved to document-upload-handlers.ts
- */
-
 interface HandlerDependencies {
   supabase: SupabaseClient
   toast: any
@@ -30,17 +26,6 @@ async function resolveSignedLicenseUrl(fallbackUrl: string): Promise<string> {
   } catch {
     return fallbackUrl
   }
-}
-
-// Helper: Convert data URL to File
-export async function urlToFile(
-  url: string,
-  filename: string,
-  mimeType: string
-): Promise<File> {
-  const res = await fetch(url)
-  const buf = await res.arrayBuffer()
-  return new File([buf], filename, { type: mimeType })
 }
 
 export function createProfileHandlers(deps: HandlerDependencies) {
