@@ -470,7 +470,7 @@ export default function Register() {
 
   return (
     <PageLayout>
-      <Card className="w-full max-w-md md:max-w-2xl mx-auto [&_label]:!text-foreground">
+      <Card className="w-full max-w-md md:max-w-2xl mx-auto [&_label.text-sm]:!text-foreground">
         <CardHeader>
           <CardTitle>Create an Account</CardTitle>
           <CardDescription>
