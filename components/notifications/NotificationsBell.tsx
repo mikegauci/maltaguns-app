@@ -109,14 +109,17 @@ export function NotificationsBell() {
     async (id: string) => {
       if (!userId) return
       setMutationInFlight(true)
-      const now = new Date().toISOString()
-      markNotificationReadInCache(queryClient, userId, id, now)
-      await supabase
-        .from('notifications')
-        .update({ read_at: now })
-        .eq('id', id)
-        .eq('user_id', userId)
-      setMutationInFlight(false)
+      try {
+        const now = new Date().toISOString()
+        markNotificationReadInCache(queryClient, userId, id, now)
+        await supabase
+          .from('notifications')
+          .update({ read_at: now })
+          .eq('id', id)
+          .eq('user_id', userId)
+      } finally {
+        setMutationInFlight(false)
+      }
     },
     [queryClient, supabase, userId]
   )
@@ -124,14 +127,17 @@ export function NotificationsBell() {
   const markAllRead = useCallback(async () => {
     if (!userId) return
     setMutationInFlight(true)
-    const now = new Date().toISOString()
-    markAllNotificationsReadInCache(queryClient, userId, now)
-    await supabase
-      .from('notifications')
-      .update({ read_at: now })
-      .eq('user_id', userId)
-      .is('read_at', null)
-    setMutationInFlight(false)
+    try {
+      const now = new Date().toISOString()
+      markAllNotificationsReadInCache(queryClient, userId, now)
+      await supabase
+        .from('notifications')
+        .update({ read_at: now })
+        .eq('user_id', userId)
+        .is('read_at', null)
+    } finally {
+      setMutationInFlight(false)
+    }
   }, [queryClient, supabase, userId])
 
   if (!userId) return null

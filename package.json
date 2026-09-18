@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type-check": "next typegen && tsc --noEmit",
-    "fix": "npm run lint:fix && npm run format"
+    "fix": "npm run lint:fix && npm run format",
+    "test": "node --experimental-strip-types --test lib/**/*.test.ts"
   },
   "dependencies": {
     "@didit-protocol/sdk-web": "^0.3.1",

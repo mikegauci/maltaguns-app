@@ -68,7 +68,11 @@ export const ProfileInformation = ({
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John" {...field} />
+                        <Input
+                          placeholder="John"
+                          disabled={profile.identity_verified}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -82,7 +86,11 @@ export const ProfileInformation = ({
                     <FormItem>
                       <FormLabel>Last Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Doe" {...field} />
+                        <Input
+                          placeholder="Doe"
+                          disabled={profile.identity_verified}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

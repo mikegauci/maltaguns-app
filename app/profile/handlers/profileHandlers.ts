@@ -169,6 +169,22 @@ export function createProfileHandlers(deps: HandlerDependencies) {
     try {
       if (!profile?.id) return
 
+      if (profile.identity_verified) {
+        const nameChanged =
+          data.first_name !== profile.first_name ||
+          data.last_name !== profile.last_name
+
+        if (nameChanged) {
+          toast({
+            variant: 'destructive',
+            title: 'Name cannot be changed',
+            description:
+              'Your name is locked after identity verification. Contact Info@maltaguns.com if it needs updating.',
+          })
+          return
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({

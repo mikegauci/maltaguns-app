@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import {
   extractIdentityDetails,
+  hasIdentityVerificationDecision,
   isProfileUserId,
   isWebhookTimestampFresh,
   resolveWebhookEventId,
+  shouldApplyWebhookForSession,
   verifyWebhookSignature,
   type DiditWebhookPayload,
 } from '@/lib/didit'
@@ -24,11 +26,15 @@ type ProfileIdentityUpdate = {
 
 function buildProfileUpdate(
   payload: DiditWebhookPayload
-): ProfileIdentityUpdate {
+): ProfileIdentityUpdate | null {
   const update: ProfileIdentityUpdate = { identity_status: payload.status }
 
   switch (payload.status) {
     case 'Approved': {
+      if (!hasIdentityVerificationDecision(payload.decision)) {
+        return null
+      }
+
       const details = extractIdentityDetails(payload.decision)
       update.identity_verified = true
       update.identity_verified_at = new Date().toISOString()
@@ -109,9 +115,56 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true, skipped: true })
   }
 
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from('profiles')
+    .select('didit_session_id')
+    .eq('id', userId)
+    .single()
+
+  if (profileError || !profile) {
+    console.error(
+      `${LOG_PREFIX} Failed to load profile ${userId}:`,
+      profileError
+    )
+    await supabaseAdmin
+      .from('didit_webhook_events')
+      .delete()
+      .eq('event_id', eventId)
+    return NextResponse.json(
+      { error: 'Profile lookup failed' },
+      { status: 500 }
+    )
+  }
+
+  if (
+    !shouldApplyWebhookForSession(profile.didit_session_id, payload.session_id)
+  ) {
+    console.warn(
+      `${LOG_PREFIX} Event ${eventId} ignored for user ${userId}: session ${payload.session_id} does not match active ${profile.didit_session_id}`
+    )
+    return NextResponse.json({
+      received: true,
+      skipped: true,
+      reason: 'stale_session',
+    })
+  }
+
+  const profileUpdate = buildProfileUpdate(payload)
+
+  if (!profileUpdate) {
+    console.warn(
+      `${LOG_PREFIX} Event ${eventId} ignored for user ${userId}: Approved without identity decision details`
+    )
+    return NextResponse.json({
+      received: true,
+      skipped: true,
+      reason: 'incomplete_decision',
+    })
+  }
+
   const { error: updateError } = await supabaseAdmin
     .from('profiles')
-    .update(buildProfileUpdate(payload))
+    .update(profileUpdate)
     .eq('id', userId)
 
   if (updateError) {

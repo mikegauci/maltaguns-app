@@ -29,5 +29,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "browser-tools-mcp"]
+  "exclude": ["node_modules", "browser-tools-mcp", "**/*.test.ts"]
 }

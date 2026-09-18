@@ -81,6 +81,7 @@ export const IdentityVerification = ({
   const [starting, setStarting] = useState(false)
   const [waiting, setWaiting] = useState(false)
   const isMounted = useRef(true)
+  const pollStatusRef = useRef<() => Promise<void>>(async () => {})
 
   useEffect(() => {
     isMounted.current = true
@@ -148,6 +149,10 @@ export const IdentityVerification = ({
     })
   }, [onVerificationChange, toast])
 
+  useEffect(() => {
+    pollStatusRef.current = pollStatus
+  }, [pollStatus])
+
   async function startVerification() {
     setConsentOpen(false)
     setStarting(true)
@@ -166,7 +171,7 @@ export const IdentityVerification = ({
 
       DiditSdk.shared.onComplete = outcome => {
         if (outcome.type === 'completed') {
-          void pollStatus()
+          void pollStatusRef.current()
           return
         }
 

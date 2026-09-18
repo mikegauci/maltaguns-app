@@ -71,7 +71,7 @@ export function createNavigationHandlers(deps: NavigationHandlerDependencies) {
       setDialogMessage({
         title: 'Seller Account Required',
         description:
-          'To sell firearms on Maltaguns, you need to have a verified seller account. Please go to your profile and upload your ID card and/or license.',
+          'To sell firearms on Maltaguns, you need a verified seller account. Go to your profile to verify your identity and upload your firearms license.',
       })
       setShowLicenseDialog(true)
       return

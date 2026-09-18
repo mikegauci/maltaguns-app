@@ -212,6 +212,20 @@ export function verifyWebhookSignature(
   return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
 }
 
+export function hasIdentityVerificationDecision(decision: unknown): boolean {
+  const details = extractIdentityDetails(decision)
+  return Boolean(details.firstName && details.lastName)
+}
+
+export function shouldApplyWebhookForSession(
+  profileSessionId: string | null | undefined,
+  payloadSessionId: string | null | undefined
+): boolean {
+  if (!payloadSessionId) return false
+  if (!profileSessionId) return true
+  return profileSessionId === payloadSessionId
+}
+
 export function extractIdentityDetails(
   decision: unknown
 ): DiditIdentityDetails {
