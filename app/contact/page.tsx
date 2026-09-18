@@ -6,7 +6,8 @@ import { ContactInformation, ContactForm } from '@/components/contact'
 import { useContactForm } from '../../hooks/useContactForm'
 
 export default function ContactPage() {
-  const { form, isSubmitting, onSubmit } = useContactForm()
+  const { form, isSubmitting, onSubmit, honeypot, setHoneypot } =
+    useContactForm()
 
   return (
     <PageLayout>
@@ -26,6 +27,8 @@ export default function ContactPage() {
             form={form}
             onSubmit={onSubmit}
             isSubmitting={isSubmitting}
+            honeypot={honeypot}
+            onHoneypotChange={setHoneypot}
           />
         </div>
       </div>

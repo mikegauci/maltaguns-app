@@ -16,6 +16,7 @@ export type ContactFormValues = z.infer<typeof contactFormSchema>
 export function useContactForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [honeypot, setHoneypot] = useState('')
 
   const form = useForm<ContactFormValues>({
     resolver: zodResolver(contactFormSchema),
@@ -36,7 +37,7 @@ export function useContactForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, fax: honeypot }),
       })
 
       const result = await response.json()
@@ -52,6 +53,7 @@ export function useContactForm() {
       })
 
       form.reset()
+      setHoneypot('')
     } catch (error) {
       console.error('Error submitting contact form:', error)
       toast({
@@ -71,5 +73,7 @@ export function useContactForm() {
     form,
     isSubmitting,
     onSubmit,
+    honeypot,
+    setHoneypot,
   }
 }
