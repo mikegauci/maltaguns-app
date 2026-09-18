@@ -155,16 +155,17 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       if (!profile?.id) return
 
       if (profile.identity_verified) {
-        const nameChanged =
+        const lockedFieldsChanged =
           data.first_name !== profile.first_name ||
-          data.last_name !== profile.last_name
+          data.last_name !== profile.last_name ||
+          data.birthday !== profile.birthday
 
-        if (nameChanged) {
+        if (lockedFieldsChanged) {
           toast({
             variant: 'destructive',
-            title: 'Name cannot be changed',
+            title: 'Details cannot be changed',
             description:
-              'Your name is locked after identity verification. Contact Info@maltaguns.com if it needs updating.',
+              'Your name and date of birth are locked after identity verification. Contact Info@maltaguns.com if they need updating.',
           })
           return
         }
@@ -175,6 +176,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         .update({
           first_name: data.first_name,
           last_name: data.last_name,
+          birthday: data.birthday,
           phone: data.phone,
           address: data.address,
         })
@@ -188,6 +190,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
               ...prev,
               first_name: data.first_name,
               last_name: data.last_name,
+              birthday: data.birthday,
               phone: data.phone,
               address: data.address,
             }

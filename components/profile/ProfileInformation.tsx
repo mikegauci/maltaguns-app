@@ -99,6 +99,39 @@ export const ProfileInformation = ({
 
                 <FormField
                   control={form.control}
+                  name="birthday"
+                  render={({ field }) => {
+                    const today = new Date()
+                    const maxDate = new Date(today)
+                    maxDate.setFullYear(today.getFullYear() - 18)
+
+                    const minDate = new Date(today)
+                    minDate.setFullYear(today.getFullYear() - 100)
+
+                    return (
+                      <FormItem>
+                        <FormLabel>Date of birth</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            max={maxDate.toISOString().split('T')[0]}
+                            min={minDate.toISOString().split('T')[0]}
+                            disabled={profile.identity_verified}
+                            {...field}
+                            onChange={e => {
+                              field.onChange(e)
+                              form.trigger('birthday')
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )
+                  }}
+                />
+
+                <FormField
+                  control={form.control}
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
@@ -164,7 +197,7 @@ export const ProfileInformation = ({
             </div>
             <div>
               <p className="text-sm font-medium text-muted-foreground">
-                Birthday
+                Date of birth
               </p>
               <p className="text-lg">{profile.birthday || 'Not provided'}</p>
             </div>

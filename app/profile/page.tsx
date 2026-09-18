@@ -68,6 +68,7 @@ export default function ProfilePage() {
     defaultValues: {
       first_name: '',
       last_name: '',
+      birthday: '',
       phone: '',
       address: '',
     },

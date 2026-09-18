@@ -6,6 +6,18 @@ export type Profile = Database['public']['Tables']['profiles']['Row']
 export const profileSchema = z.object({
   first_name: z.string().min(1, 'First name is required'),
   last_name: z.string().min(1, 'Last name is required'),
+  birthday: z.string().refine(
+    value => {
+      const date = new Date(value)
+      const today = new Date()
+      const minAgeDate = new Date(today)
+      minAgeDate.setFullYear(today.getFullYear() - 18)
+      return date <= minAgeDate
+    },
+    {
+      message: 'You must be at least 18 years old',
+    }
+  ),
   phone: z.string().min(1, 'Phone number is required'),
   address: z.string().min(1, 'Address is required'),
 })
