@@ -125,12 +125,6 @@ export const IdentityVerification = ({
   }, [])
 
   useEffect(() => {
-    if (identityVerified) return
-
-    void refreshStatus()
-  }, [identityVerified, refreshStatus])
-
-  useEffect(() => {
     if (!uiState.pendingReview) return
 
     let attempt = 0
@@ -237,8 +231,9 @@ export const IdentityVerification = ({
         <span>Verification in progress</span>
       </div>
       <p className="text-xs text-amber-800">
-        Didit is manually reviewing your submission. This page will update
-        automatically once a decision is made.
+        Our compliance team is manually reviewing your submission. We will email
+        you once a decision is made, whether your verification is approved or
+        declined. This page will update automatically when the outcome is ready.
       </p>
       {reviewNotes.length > 0 && (
         <ul className="text-xs text-amber-800 list-disc pl-5 space-y-1">

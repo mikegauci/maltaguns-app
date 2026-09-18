@@ -126,13 +126,18 @@ export async function POST(request: Request) {
 
   if (!profileUpdate) {
     console.warn(
-      `${LOG_PREFIX} Event ${eventId} ignored for user ${userId}: Approved without identity decision details`
+      `${LOG_PREFIX} Event ${eventId} retryable for user ${userId}: Approved without identity decision details`
     )
-    return NextResponse.json({
-      received: true,
-      skipped: true,
-      reason: 'incomplete_decision',
-    })
+
+    await supabaseAdmin
+      .from('didit_webhook_events')
+      .delete()
+      .eq('event_id', eventId)
+
+    return NextResponse.json(
+      { error: 'Incomplete decision payload' },
+      { status: 500 }
+    )
   }
 
   const { error: updateError } = await supabaseAdmin

@@ -13,6 +13,15 @@ import {
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 const SESSION_REUSE_WINDOW_MS = 15 * 60 * 1000
+const RESUBMIT_REUSE_WINDOW_MS = 24 * 60 * 60 * 1000
+
+function isSessionUrlFresh(
+  createdAt: string | null,
+  windowMs: number
+): boolean {
+  if (!createdAt) return false
+  return Date.now() - new Date(createdAt).getTime() < windowMs
+}
 
 export async function POST() {
   try {
@@ -56,7 +65,11 @@ export async function POST() {
 
     if (
       profile.identity_status === 'Resubmitted' &&
-      isDiditVerificationUrl(profile.didit_session_url)
+      isDiditVerificationUrl(profile.didit_session_url) &&
+      isSessionUrlFresh(
+        profile.didit_session_created_at,
+        RESUBMIT_REUSE_WINDOW_MS
+      )
     ) {
       return NextResponse.json({ url: profile.didit_session_url })
     }
@@ -71,12 +84,12 @@ export async function POST() {
       )
     }
 
-    const createdAt = profile.didit_session_created_at
-      ? new Date(profile.didit_session_created_at).getTime()
-      : 0
     const isReusable =
       !!profile.didit_session_url &&
-      Date.now() - createdAt < SESSION_REUSE_WINDOW_MS &&
+      isSessionUrlFresh(
+        profile.didit_session_created_at,
+        SESSION_REUSE_WINDOW_MS
+      ) &&
       !IDENTITY_TERMINAL_STATUSES.has(profile.identity_status ?? '')
 
     if (isReusable && isDiditVerificationUrl(profile.didit_session_url)) {

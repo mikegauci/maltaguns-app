@@ -106,7 +106,8 @@ export function useProfileData({
         if (
           shouldSyncDiditIdentity(
             profileData.identity_verified,
-            profileData.didit_session_id
+            profileData.didit_session_id,
+            profileData.identity_status
           )
         ) {
           try {

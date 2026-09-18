@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { FEATURE_DAYS, LISTING_EXTEND_DAYS } from '@/lib/featured-listings'
+import { normalizeBirthdayForInput } from '@/lib/format'
 import { uploadAndVerifyLicense } from '@/utils/document-upload-handlers'
 import { Profile, Listing, ProfileForm } from '../types'
 import React from 'react'
@@ -170,12 +171,60 @@ export function createProfileHandlers(deps: HandlerDependencies) {
         }
       }
 
+      const nextBirthday = normalizeBirthdayForInput(data.birthday)
+      const currentBirthday = normalizeBirthdayForInput(profile.birthday)
+      const birthdayChanged = nextBirthday !== currentBirthday
+
+      if (profile.identity_verified && birthdayChanged) {
+        const response = await fetch('/api/profile/update', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        })
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to update profile')
+        }
+
+        setProfile(prev =>
+          prev
+            ? {
+                ...prev,
+                first_name: data.first_name,
+                last_name: data.last_name,
+                birthday: nextBirthday,
+                phone: data.phone,
+                address: data.address,
+                identity_verified: false,
+                identity_verified_at: null,
+                identity_status: 'Not Started',
+                identity_first_name: null,
+                identity_last_name: null,
+                identity_document_type: null,
+                identity_review_notes: null,
+                didit_session_id: null,
+                didit_session_url: null,
+                didit_session_created_at: null,
+              }
+            : null
+        )
+        setIsEditing(false)
+
+        toast({
+          title: 'Profile updated',
+          description:
+            'Your date of birth was updated. Please verify your identity again.',
+        })
+        return
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update({
           first_name: data.first_name,
           last_name: data.last_name,
-          birthday: data.birthday,
+          birthday: nextBirthday,
           phone: data.phone,
           address: data.address,
         })
@@ -189,7 +238,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
               ...prev,
               first_name: data.first_name,
               last_name: data.last_name,
-              birthday: data.birthday,
+              birthday: nextBirthday,
               phone: data.phone,
               address: data.address,
             }

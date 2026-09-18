@@ -59,7 +59,8 @@ export async function syncProfileIdentityFromDidit<
   if (
     !shouldSyncDiditIdentity(
       profile.identity_verified ?? false,
-      profile.didit_session_id
+      profile.didit_session_id,
+      profile.identity_status
     )
   ) {
     return profile
