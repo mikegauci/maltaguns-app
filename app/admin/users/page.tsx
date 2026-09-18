@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -109,11 +110,22 @@ function getEstablishmentLabel(type: string): string {
 }
 
 function UsersPageComponent() {
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const { isAuthorized, isChecking } = useRequireAdmin({
     preset: 'admin-silent',
   })
   const [users, setUsers] = useState<User[]>([])
+  const pendingLicenseFilter = searchParams.get('filter') === 'pending-license'
+  const displayedUsers = useMemo(() => {
+    if (!pendingLicenseFilter) {
+      return users
+    }
+
+    return users.filter(
+      user => Boolean(user.license_image) && !user.is_verified
+    )
+  }, [pendingLicenseFilter, users])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
@@ -1131,9 +1143,20 @@ function UsersPageComponent() {
 
   return (
     <AdminPageLayout title="User Management" description="Manage user accounts">
+      {pendingLicenseFilter && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Showing users with uploaded licenses awaiting verification.{' '}
+          <Link
+            href="/admin/users"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Clear filter
+          </Link>
+        </p>
+      )}
       <DataTable
         columns={columns}
-        data={users}
+        data={displayedUsers}
         searchKeys={[...ADMIN_USER_FULL_SEARCH_KEYS]}
         searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
         onCreateNew={handleCreate}

@@ -1,6 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import { slugify } from '@/lib/format'
 import type { ColumnDef } from '@tanstack/react-table'
@@ -53,6 +55,7 @@ interface ReportedListing {
 export default ReportedListingsPageComponent
 
 function ReportedListingsPageComponent() {
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const { isAuthorized, isChecking } = useRequireAdmin({
     preset: 'admin-silent',
@@ -60,6 +63,14 @@ function ReportedListingsPageComponent() {
   const [reportedListings, setReportedListings] = useState<ReportedListing[]>(
     []
   )
+  const pendingReportsFilter = searchParams.get('status') === 'pending'
+  const displayedReports = useMemo(() => {
+    if (!pendingReportsFilter) {
+      return reportedListings
+    }
+
+    return reportedListings.filter(report => report.status === 'pending')
+  }, [pendingReportsFilter, reportedListings])
   const [isLoading, setIsLoading] = useState(true)
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -377,9 +388,20 @@ function ReportedListingsPageComponent() {
       title="Reported Listings"
       description="View all reported listings"
     >
+      {pendingReportsFilter && (
+        <p className="mb-4 text-sm text-muted-foreground">
+          Showing open reports only.{' '}
+          <Link
+            href="/admin/reported-listings"
+            className="text-primary underline-offset-4 hover:underline"
+          >
+            Clear filter
+          </Link>
+        </p>
+      )}
       <DataTable
         columns={columns}
-        data={isLoading ? [] : reportedListings}
+        data={isLoading ? [] : displayedReports}
         searchKey="listing.title"
         searchPlaceholder="Search by listing title..."
       />

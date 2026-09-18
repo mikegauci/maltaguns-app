@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
@@ -58,7 +59,23 @@ interface User {
 
 export default EstablishmentsPageComponent
 
+function parseEstablishmentStatusFilter(
+  value: string | null
+): 'all' | 'pending' | 'active' | 'rejected' {
+  if (
+    value === 'pending' ||
+    value === 'active' ||
+    value === 'rejected' ||
+    value === 'all'
+  ) {
+    return value
+  }
+
+  return 'all'
+}
+
 function EstablishmentsPageComponent() {
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const { isAuthorized, isChecking } = useRequireAdmin({
     preset: 'admin-silent',
@@ -108,7 +125,7 @@ function EstablishmentsPageComponent() {
   })
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'pending' | 'active' | 'rejected'
-  >('all')
+  >(() => parseEstablishmentStatusFilter(searchParams.get('status')))
   const supabase = createClient()
 
   function getTypePath(type: string) {

@@ -8,6 +8,7 @@ import {
   type SyntheticEvent,
 } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
 import type { ColumnDef } from '@tanstack/react-table'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
@@ -34,7 +35,18 @@ const STATUS_FILTERS = [
 
 export default IdentityReviewsPageComponent
 
+function parseIdentityStatusFilter(
+  value: string | null
+): (typeof STATUS_FILTERS)[number]['value'] {
+  if (value === 'in-review') {
+    return 'In Review'
+  }
+
+  return STATUS_FILTERS.find(filter => filter.value === value)?.value ?? 'all'
+}
+
 function IdentityReviewsPageComponent() {
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const { isAuthorized, isChecking: isCheckingAdmin } = useRequireAdmin({
     preset: 'home-toast',
@@ -43,8 +55,9 @@ function IdentityReviewsPageComponent() {
   const [pendingCount, setPendingCount] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [totalCount, setTotalCount] = useState<number | null>(null)
-  const [statusFilter, setStatusFilter] =
-    useState<(typeof STATUS_FILTERS)[number]['value']>('all')
+  const [statusFilter, setStatusFilter] = useState<
+    (typeof STATUS_FILTERS)[number]['value']
+  >(() => parseIdentityStatusFilter(searchParams.get('status')))
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
 
