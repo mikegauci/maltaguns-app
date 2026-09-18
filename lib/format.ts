@@ -17,3 +17,20 @@ export function formatPriceOrFree(price: number | null) {
   if (price === null) return 'Free'
   return formatPrice(price)
 }
+
+export function normalizeBirthdayForInput(
+  value: string | null | undefined
+): string {
+  if (!value) return ''
+
+  const isoMatch = value.match(/^(\d{4}-\d{2}-\d{2})/)
+  if (isoMatch) return isoMatch[1]
+
+  const parts = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+  if (parts) {
+    const [, day, month, year] = parts
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+  }
+
+  return ''
+}

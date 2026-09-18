@@ -3,6 +3,7 @@ import { UseFormReturn } from 'react-hook-form'
 import { useToast } from '@/hooks/use-toast'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { shouldSyncDiditIdentity } from '@/lib/identity-status'
+import { normalizeBirthdayForInput } from '@/lib/format'
 import {
   Profile,
   Listing,
@@ -134,7 +135,7 @@ export function useProfileData({
         form.reset({
           first_name: resolvedProfile.first_name || '',
           last_name: resolvedProfile.last_name || '',
-          birthday: resolvedProfile.birthday || '',
+          birthday: normalizeBirthdayForInput(resolvedProfile.birthday),
           phone: resolvedProfile.phone || '',
           address: resolvedProfile.address || '',
         })

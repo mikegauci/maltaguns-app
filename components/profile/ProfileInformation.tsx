@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { normalizeBirthdayForInput } from '@/lib/format'
 import { Pencil } from 'lucide-react'
 import { Profile, ProfileForm } from '../../app/profile/types'
 import { NotificationPreferences } from './NotificationPreferences'
@@ -60,7 +61,7 @@ export const ProfileInformation = ({
         {isEditing ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="first_name"
@@ -116,8 +117,8 @@ export const ProfileInformation = ({
                             type="date"
                             max={maxDate.toISOString().split('T')[0]}
                             min={minDate.toISOString().split('T')[0]}
-                            disabled={profile.identity_verified}
                             {...field}
+                            value={normalizeBirthdayForInput(field.value)}
                             onChange={e => {
                               field.onChange(e)
                               form.trigger('birthday')
@@ -148,7 +149,7 @@ export const ProfileInformation = ({
                   control={form.control}
                   name="address"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="md:col-span-2">
                       <FormLabel>Address</FormLabel>
                       <FormControl>
                         <Input placeholder="123 Main St, Valletta" {...field} />
@@ -186,20 +187,20 @@ export const ProfileInformation = ({
               <p className="text-lg">{profile.last_name || 'Not provided'}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Phone</p>
-              <p className="text-lg">{profile.phone || 'Not provided'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Address
-              </p>
-              <p className="text-lg">{profile.address || 'Not provided'}</p>
-            </div>
-            <div>
               <p className="text-sm font-medium text-muted-foreground">
                 Date of birth
               </p>
               <p className="text-lg">{profile.birthday || 'Not provided'}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">Phone</p>
+              <p className="text-lg">{profile.phone || 'Not provided'}</p>
+            </div>
+            <div className="md:col-span-2">
+              <p className="text-sm font-medium text-muted-foreground">
+                Address
+              </p>
+              <p className="text-lg">{profile.address || 'Not provided'}</p>
             </div>
           </div>
         )}
