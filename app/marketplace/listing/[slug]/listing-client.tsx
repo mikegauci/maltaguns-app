@@ -258,8 +258,7 @@ export default function ListingClient({
         setIsOwner(isUserOwner)
         setSessionChecked(true)
 
-        // If user is owner, they always have access
-        if (isUserOwner) {
+        if (isUserOwner || listing.type === 'non_firearms') {
           setHasRequiredLicense(true)
         }
 
@@ -280,7 +279,7 @@ export default function ListingClient({
       setSessionChecked(true)
       return null
     }
-  }, [session, listing.seller_id])
+  }, [session, listing.seller_id, listing.type])
 
   // Function to check if the listing is featured
   const checkIfFeatured = useCallback(async () => {
@@ -361,6 +360,8 @@ export default function ListingClient({
         return
       }
 
+      const isNonFirearmListing = listing.type === 'non_firearms'
+
       try {
         const { data, error } = await supabase
           .from('profiles')
@@ -370,7 +371,7 @@ export default function ListingClient({
 
         if (error) {
           console.error('Error fetching user license types:', error)
-          setHasRequiredLicense(false)
+          setHasRequiredLicense(isNonFirearmListing)
           return
         }
 
@@ -381,8 +382,6 @@ export default function ListingClient({
         setUserIdentityVerified(identityVerified)
         setUserLicenseVerified(isLicenseVerified)
 
-        // Check if user has required license AND verified identity AND an
-        // admin-approved license for this listing category
         const categoryLabel = getCategoryLabel(listing.category, listing.type)
         const fullyVerified = isFullyVerified(
           isLicenseVerified,
@@ -390,9 +389,11 @@ export default function ListingClient({
         )
         const hasLicenseAccess = canViewSellerInfo(licenses, categoryLabel, {
           isFullyVerified: fullyVerified,
+          listingType: listing.type,
         })
         const hasAccess =
-          hasLicenseAccess && identityVerified && isLicenseVerified
+          isNonFirearmListing ||
+          (hasLicenseAccess && identityVerified && isLicenseVerified)
 
         console.log('License and identity check result:', {
           userIdToCheck,
@@ -407,7 +408,7 @@ export default function ListingClient({
         setHasRequiredLicense(hasAccess)
       } catch (error) {
         console.error('Error checking user license access:', error)
-        setHasRequiredLicense(false)
+        setHasRequiredLicense(isNonFirearmListing)
       }
     },
     [supabase, listing.category, listing.type]
@@ -639,8 +640,11 @@ export default function ListingClient({
       )
     }
 
-    // Show seller information for authenticated users WITH required license
-    if (userId && listing.seller && hasRequiredLicense) {
+    if (
+      userId &&
+      listing.seller &&
+      (hasRequiredLicense || listing.type === 'non_firearms')
+    ) {
       return (
         <>
           <div className="flex items-center gap-2 mb-3">
@@ -765,6 +769,7 @@ export default function ListingClient({
             userLicenseVerified,
             userIdentityVerified
           ),
+          listingType: listing.type,
         }
       )
 
