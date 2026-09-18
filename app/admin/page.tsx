@@ -34,6 +34,12 @@ function AdminDashboardComponent() {
               icon="👤"
             />
             <AdminCard
+              title="Identity Reviews"
+              description="Review Didit identity verifications"
+              href="/admin/identity-reviews"
+              icon="🪪"
+            />
+            <AdminCard
               title="Listings"
               description="Manage marketplace listings"
               href="/admin/listings"

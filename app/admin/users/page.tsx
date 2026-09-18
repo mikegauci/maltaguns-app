@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
@@ -63,6 +64,7 @@ interface User {
   identity_last_name: string | null
   identity_document_type: string | null
   identity_review_notes: string[] | null
+  didit_session_id: string | null
   is_disabled: boolean
   first_name: string | null
   last_name: string | null
@@ -365,6 +367,23 @@ function UsersPageComponent() {
                   </span>
                 ) : null}
               </>
+            ) : user.identity_status === 'In Review' ? (
+              <div className="flex flex-col gap-1">
+                <span className="flex items-center gap-1 text-amber-500">
+                  <AlertCircle className="h-4 w-4" />
+                  In Review
+                </span>
+                <Link
+                  href={
+                    user.didit_session_id
+                      ? `/admin/identity-reviews/${user.id}?sessionId=${user.didit_session_id}`
+                      : `/admin/identity-reviews/${user.id}`
+                  }
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  Open review
+                </Link>
+              </div>
             ) : user.identity_status ? (
               <span className="flex items-center gap-1 text-amber-500">
                 <AlertCircle className="h-4 w-4" />
