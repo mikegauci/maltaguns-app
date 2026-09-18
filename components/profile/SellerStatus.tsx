@@ -57,7 +57,7 @@ export const SellerStatus = ({
           <CardDescription>
             {profile.is_seller
               ? 'Your seller verification status and license information'
-              : 'Upload a picture of your license to certify your account'}
+              : 'Verify your identity and upload your firearms license to sell firearms'}
           </CardDescription>
         </CardHeader>
         <CardContent className="py-2 mt-[-12px]">
@@ -92,8 +92,9 @@ export const SellerStatus = ({
                   <p className="text-sm text-blue-800">
                     You can currently add listings and contact sellers for{' '}
                     <strong>non-firearms</strong> items only. To list or contact
-                    sellers of <strong>Firearms</strong>, upload a valid
-                    firearms license above.
+                    sellers of <strong>Firearms</strong>, verify your identity
+                    and upload a valid firearms license below. Both must be
+                    approved before you can sell firearms.
                   </p>
                 </div>
               </div>
@@ -274,7 +275,7 @@ export const SellerStatus = ({
               <p className="text-xs text-muted-foreground">
                 {profile.is_seller
                   ? 'Upload your firearms license. License types are detected automatically.'
-                  : 'Upload a valid firearms license to list and contact sellers for firearms.'}
+                  : 'Upload a valid firearms license below. Identity verification and an approved license are both required.'}
               </p>
             </div>
           </div>
