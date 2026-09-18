@@ -14,7 +14,7 @@ export async function GET() {
     const { data, error } = await supabaseAdmin
       .from('profiles')
       .select(
-        'id, username, email, created_at, is_admin, is_seller, is_verified, license_image, identity_verified, identity_verified_at, identity_status, identity_first_name, identity_last_name, identity_document_type, is_disabled, first_name, last_name, notes, license_types'
+        'id, username, email, created_at, is_admin, is_seller, is_verified, license_image, identity_verified, identity_verified_at, identity_status, identity_first_name, identity_last_name, identity_document_type, identity_review_notes, is_disabled, first_name, last_name, notes, license_types'
       )
       .order('created_at', { ascending: false })
 

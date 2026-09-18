@@ -19,6 +19,10 @@ import {
   getIdentityVerificationUiState,
   hasDateOfBirthMismatch,
 } from '@/lib/identity-verification-ui'
+import {
+  ADMIN_IDENTITY_OVERRIDE_NOTE,
+  isAdminIdentityOverride,
+} from '@/lib/identity-status'
 import { BadgeCheck, Clock, Loader2, ShieldCheck, XCircle } from 'lucide-react'
 
 const POLL_INTERVAL_MS = 5000
@@ -62,12 +66,21 @@ export const IdentityVerification = ({
   const [starting, setStarting] = useState(false)
   const isMounted = useRef(true)
 
-  const reviewNotes = identityReviewNotes ?? []
+  const reviewNotes = (identityReviewNotes ?? []).filter(
+    note => note !== ADMIN_IDENTITY_OVERRIDE_NOTE
+  )
   const uiState = getIdentityVerificationUiState(
     identityVerified,
     identityStatus,
     starting
   )
+  const adminOverride = isAdminIdentityOverride({
+    identity_verified: identityVerified,
+    identity_first_name: identityFirstName,
+    identity_last_name: identityLastName,
+    identity_document_type: identityDocumentType,
+    identity_review_notes: identityReviewNotes,
+  })
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -175,6 +188,11 @@ export const IdentityVerification = ({
           {identityDocumentType
             ? ` · ${identityDocumentType.replace(/_/g, ' ').toLowerCase()}`
             : ''}
+        </p>
+      )}
+      {adminOverride && (
+        <p className="text-xs text-muted-foreground">
+          Confirmed by an administrator. Didit was not used.
         </p>
       )}
     </div>

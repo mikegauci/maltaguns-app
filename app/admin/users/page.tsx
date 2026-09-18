@@ -27,6 +27,10 @@ import {
   ADMIN_USER_SEARCH_PLACEHOLDER,
 } from '@/lib/admin-user-types'
 import {
+  ADMIN_IDENTITY_OVERRIDE_NOTE,
+  isAdminIdentityOverride,
+} from '@/lib/identity-status'
+import {
   createAllLicenseTypes,
   createEmptyLicenseTypes,
   formatLicenseName,
@@ -58,6 +62,7 @@ interface User {
   identity_first_name: string | null
   identity_last_name: string | null
   identity_document_type: string | null
+  identity_review_notes: string[] | null
   is_disabled: boolean
   first_name: string | null
   last_name: string | null
@@ -352,11 +357,13 @@ function UsersPageComponent() {
                   <CheckCircle2 className="h-4 w-4" />
                   Verified
                 </span>
-                {verifiedName && (
+                {isAdminIdentityOverride(user) ? (
+                  <span className="text-xs text-amber-600">Admin override</span>
+                ) : verifiedName ? (
                   <span className="text-xs text-muted-foreground">
                     {verifiedName}
                   </span>
-                )}
+                ) : null}
               </>
             ) : user.identity_status ? (
               <span className="flex items-center gap-1 text-amber-500">
@@ -1032,6 +1039,9 @@ function UsersPageComponent() {
           identity_verified: nextVerified,
           identity_status: nextVerified ? 'Approved' : 'Not Started',
           identity_verified_at: nextVerified ? new Date().toISOString() : null,
+          identity_review_notes: nextVerified
+            ? [ADMIN_IDENTITY_OVERRIDE_NOTE]
+            : null,
         })
       }
 
@@ -1427,6 +1437,12 @@ function UsersPageComponent() {
                   {new Date(
                     selectedUser.identity_verified_at
                   ).toLocaleDateString()}
+                </p>
+              )}
+              {selectedUser && isAdminIdentityOverride(selectedUser) && (
+                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 mt-1">
+                  This user has not completed Didit. Identity was verified by an
+                  admin.
                 </p>
               )}
               <p className="text-xs text-muted-foreground pt-1">
