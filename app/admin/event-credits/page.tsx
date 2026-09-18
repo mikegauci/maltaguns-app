@@ -9,11 +9,9 @@ import { EditEventCreditDialog } from '@/app/admin/components/EditEventCreditDia
 import { AddEventCreditDialog } from '@/app/admin/components/AddEventCreditDialog'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
-import { BackButton } from '@/components/ui/back-button'
 import { Button } from '@/components/ui/button'
 import { Plus, Edit } from 'lucide-react'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   ADMIN_USER_USERNAME_EMAIL_SEARCH_KEYS,
@@ -192,19 +190,15 @@ function EventCreditsPageComponent() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="Event Credit Management"
-        description="Manage event credits"
-      />
-      <div className="flex justify-center">
-        <Button onClick={handleAddEventCredit}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Credit
-        </Button>
-      </div>
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout
+      title="Event Credit Management"
+      description="Manage event credits"
+      actionButton={{
+        label: 'Add Credit',
+        icon: Plus,
+        onClick: handleAddEventCredit,
+      }}
+    >
       <p className="text-muted-foreground mb-6">
         {eventCredits.length === 0
           ? 'No event credits found.'
@@ -232,7 +226,7 @@ function EventCreditsPageComponent() {
         onOpenChange={setAddDialogOpen}
         onSuccess={fetchData}
       />
-    </PageLayout>
+    </AdminPageLayout>
   )
 }
 

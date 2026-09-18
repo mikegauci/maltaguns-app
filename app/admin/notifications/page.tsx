@@ -1,9 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '@/components/ui/back-button'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -178,24 +176,19 @@ export default function AdminNotificationsPage() {
 
   if (!isAuthorized) {
     return (
-      <PageLayout>
-        <PageHeader title="Notifications" description="Send notifications" />
-        <BackButton label="Back to Dashboard" href="/admin" />
+      <AdminPageLayout title="Notifications" description="Send notifications">
         <Card className="p-6 text-sm text-muted-foreground">
           Checking authorization…
         </Card>
-      </PageLayout>
+      </AdminPageLayout>
     )
   }
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="Notifications"
-        description="Send manual notifications to all users or selected users"
-      />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout
+      title="Notifications"
+      description="Send manual notifications to all users or selected users"
+    >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="p-4 space-y-4">
           <div className="flex items-center justify-between gap-3">
@@ -350,6 +343,6 @@ export default function AdminNotificationsPage() {
           </div>
         </Card>
       </div>
-    </PageLayout>
+    </AdminPageLayout>
   )
 }

@@ -5,9 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '@/components/ui/back-button'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -148,27 +146,23 @@ function IdentityReviewDetailPageComponent() {
 
   if (isCheckingAdmin || isLoading) {
     return (
-      <PageLayout>
-        <PageHeader
-          title="Identity Review"
-          description="Inspect verification evidence and submit a compliance decision for this session."
-        />
-        <BackButton label="Back to queue" href="/admin/identity-reviews" />
+      <AdminPageLayout
+        title="Identity Review"
+        description="Inspect verification evidence and submit a compliance decision for this session."
+      >
         <AdminLoadingState message="Loading verification evidence..." />
-      </PageLayout>
+      </AdminPageLayout>
     )
   }
 
   if (!detail) {
     return (
-      <PageLayout>
-        <PageHeader
-          title="Identity Review"
-          description="Inspect verification evidence and submit a compliance decision for this session."
-        />
-        <BackButton label="Back to queue" href="/admin/identity-reviews" />
+      <AdminPageLayout
+        title="Identity Review"
+        description="Inspect verification evidence and submit a compliance decision for this session."
+      >
         <p className="text-muted-foreground">Review not found.</p>
-      </PageLayout>
+      </AdminPageLayout>
     )
   }
 
@@ -195,13 +189,10 @@ function IdentityReviewDetailPageComponent() {
   const availableMedia = decision.media.filter(item => item.available)
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="Identity Review"
-        description="Inspect verification evidence and submit a compliance decision for this session."
-      />
-      <BackButton label="Back to queue" href="/admin/identity-reviews" />
-
+    <AdminPageLayout
+      title="Identity Review"
+      description="Inspect verification evidence and submit a compliance decision for this session."
+    >
       <div className="space-y-6">
         <section className="border rounded-lg p-4 space-y-2">
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -542,7 +533,7 @@ function IdentityReviewDetailPageComponent() {
           ) : null}
         </DialogContent>
       </Dialog>
-    </PageLayout>
+    </AdminPageLayout>
   )
 }
 

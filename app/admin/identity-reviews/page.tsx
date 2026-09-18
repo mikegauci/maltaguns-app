@@ -16,9 +16,7 @@ import { AdminEmptyState } from '@/app/admin/components/AdminEmptyState'
 import { AdminDataCount } from '@/app/admin/components/AdminDataCount'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '@/components/ui/back-button'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { useToast } from '@/hooks/use-toast'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
@@ -227,13 +225,10 @@ function IdentityReviewsPageComponent() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="Identity Reviews"
-        description="Review Didit identity verifications from MaltaGuns. View ID photos, document details, and submit approve, decline, or resubmission decisions."
-      />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout
+      title="Identity Reviews"
+      description="Review Didit identity verifications from MaltaGuns. View ID photos, document details, and submit approve, decline, or resubmission decisions."
+    >
       <div className="flex flex-wrap items-center gap-2 mb-4">
         {STATUS_FILTERS.map(filter => (
           <Button
@@ -294,7 +289,7 @@ function IdentityReviewsPageComponent() {
           ) : null}
         </>
       )}
-    </PageLayout>
+    </AdminPageLayout>
   )
 }
 

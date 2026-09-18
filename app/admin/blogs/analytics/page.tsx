@@ -24,9 +24,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { BackButton } from '@/components/ui/back-button'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 
 // Remove hardcoded admin list - use database is_admin field instead
 
@@ -298,51 +296,42 @@ export default function BlogAnalyticsPage() {
 
   if (!isAuthorized) {
     return (
-      <PageLayout>
-        <PageHeader
-          title="Blog Analytics"
-          description="Track blog performance and engagement metrics"
-        />
-        <BackButton label="Back to Blog Management" href="/admin/blogs" />
+      <AdminPageLayout
+        title="Blog Analytics"
+        description="Track blog performance and engagement metrics"
+      >
         <div className="text-center py-8">Checking authorization...</div>
-      </PageLayout>
+      </AdminPageLayout>
     )
   }
 
   if (loading) {
     return (
-      <PageLayout>
-        <PageHeader
-          title="Blog Analytics"
-          description="Track blog performance and engagement metrics"
-        />
-        <BackButton label="Back to Blog Management" href="/admin/blogs" />
+      <AdminPageLayout
+        title="Blog Analytics"
+        description="Track blog performance and engagement metrics"
+      >
         <div className="text-center py-8">Loading analytics...</div>
-      </PageLayout>
+      </AdminPageLayout>
     )
   }
 
   if (!analytics) {
     return (
-      <PageLayout>
-        <PageHeader
-          title="Blog Analytics"
-          description="Track blog performance and engagement metrics"
-        />
-        <BackButton label="Back to Blog Management" href="/admin/blogs" />
+      <AdminPageLayout
+        title="Blog Analytics"
+        description="Track blog performance and engagement metrics"
+      >
         <div className="text-center py-8">No data available</div>
-      </PageLayout>
+      </AdminPageLayout>
     )
   }
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="Blog Analytics"
-        description="Track blog performance and engagement metrics"
-      />
-      <BackButton label="Back to Blog Management" href="/admin/blogs" />
-
+    <AdminPageLayout
+      title="Blog Analytics"
+      description="Track blog performance and engagement metrics"
+    >
       {/* Overview Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -557,6 +546,6 @@ export default function BlogAnalyticsPage() {
           </CardContent>
         </Card>
       </div>
-    </PageLayout>
+    </AdminPageLayout>
   )
 }

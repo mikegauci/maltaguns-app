@@ -9,8 +9,7 @@ import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { GoogleAnalyticsTag } from '@/components/analytics/GoogleAnalyticsTag'
 import { CookieBanner } from '@/components/cookies/CookieBanner'
 import { Toaster } from '@/components/ui/toaster'
-import { Header } from '@/components/layout/Header'
-import { Footer } from '@/components/layout/Footer'
+import { AppChrome } from '@/components/layout/AppChrome'
 import SupabaseProvider from '@/components/providers/SupabaseProvider'
 import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner'
 import { getImpersonationState } from '@/lib/impersonation'
@@ -63,17 +62,9 @@ export default async function RootLayout({
                     targetUsername={impersonation.targetUsername}
                   />
                 )}
-                <Header />
-                <main
-                  className={
-                    impersonation
-                      ? 'min-h-[calc(100vh-64px-40px)]'
-                      : 'min-h-[calc(100vh-64px)]'
-                  }
-                >
+                <AppChrome impersonation={Boolean(impersonation)}>
                   {children}
-                </main>
-                <Footer />
+                </AppChrome>
                 <CookieBanner />
                 <GoogleAnalytics />
                 <Toaster />

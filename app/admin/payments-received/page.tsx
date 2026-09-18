@@ -9,9 +9,9 @@ import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ExternalLink, Copy } from 'lucide-react'
-import { BackButton } from '@/components/ui/back-button'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
+import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   ADMIN_USER_FULL_SEARCH_KEYS,
   ADMIN_USER_SEARCH_PLACEHOLDER,
@@ -37,6 +37,9 @@ export default PaymentsReceivedPageComponent
 
 function PaymentsReceivedPageComponent() {
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({
+    preset: 'admin-silent',
+  })
   const [payments, setPayments] = useState<Payment[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -226,19 +229,21 @@ function PaymentsReceivedPageComponent() {
   }, [toast])
 
   useEffect(() => {
+    if (!isAuthorized) return
     scheduleEffectWork(() => {
       fetchPayments()
     })
-  }, [fetchPayments])
+  }, [fetchPayments, isAuthorized])
+
+  if (isChecking || !isAuthorized) {
+    return <AdminLoadingState message="Checking authorization..." />
+  }
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="Payments Received"
-        description="View all payment transactions and their status"
-      />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout
+      title="Payments Received"
+      description="View all payment transactions and their status"
+    >
       {isLoading ? (
         <div className="rounded-md border">
           <div className="h-24 flex items-center justify-center">
@@ -257,6 +262,6 @@ function PaymentsReceivedPageComponent() {
           searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
         />
       )}
-    </PageLayout>
+    </AdminPageLayout>
   )
 }

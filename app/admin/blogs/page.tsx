@@ -56,9 +56,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
-import { PageLayout } from '@/components/ui/page-layout'
-import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '@/components/ui/back-button'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { FormDialog } from '@/app/admin/components/FormDialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -481,10 +479,8 @@ export default function AdminBlogsPage() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader title="Blog Management" description="Manage blog posts" />
-      <BackButton label="Back to Dashboard" href="/admin" />
-      <div className="flex justify-center items-center gap-3">
+    <AdminPageLayout title="Blog Management" description="Manage blog posts">
+      <div className="flex flex-wrap items-center gap-3">
         <Link href="/admin/blogs/analytics">
           <Button variant="outline">
             <BarChart3 className="h-4 w-4 mr-2" />
@@ -815,6 +811,6 @@ export default function AdminBlogsPage() {
           </div>
         </div>
       </FormDialog>
-    </PageLayout>
+    </AdminPageLayout>
   )
 }

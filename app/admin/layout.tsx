@@ -1,4 +1,6 @@
 import { Metadata } from 'next'
+import { AdminShell } from '@/components/admin/AdminShell'
+import { getImpersonationState } from '@/lib/impersonation'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard - MaltaGuns',
@@ -9,10 +11,14 @@ export const metadata: Metadata = {
   },
 }
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  const impersonation = await getImpersonationState()
+
+  return (
+    <AdminShell impersonating={Boolean(impersonation)}>{children}</AdminShell>
+  )
 }

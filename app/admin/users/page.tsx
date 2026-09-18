@@ -20,9 +20,9 @@ import { createClient } from '@/lib/supabase/client'
 import { getAuthRedirectOrigin } from '@/lib/seo-host'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
-import { BackButton } from '@/components/ui/back-button'
-import { PageHeader } from '@/components/ui/page-header'
-import { PageLayout } from '@/components/ui/page-layout'
+import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
+import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   ADMIN_USER_FULL_SEARCH_KEYS,
   ADMIN_USER_SEARCH_PLACEHOLDER,
@@ -110,6 +110,9 @@ function getEstablishmentLabel(type: string): string {
 
 function UsersPageComponent() {
   const { toast } = useToast()
+  const { isAuthorized, isChecking } = useRequireAdmin({
+    preset: 'admin-silent',
+  })
   const [users, setUsers] = useState<User[]>([])
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -549,10 +552,15 @@ function UsersPageComponent() {
   }, [supabase, toast])
 
   useEffect(() => {
+    if (!isAuthorized) return
     scheduleEffectWork(() => {
       fetchUsers()
     })
-  }, [fetchUsers])
+  }, [fetchUsers, isAuthorized])
+
+  if (isChecking || !isAuthorized) {
+    return <AdminLoadingState message="Checking authorization..." />
+  }
 
   function handleCreate() {
     setFormData({
@@ -1122,10 +1130,7 @@ function UsersPageComponent() {
   }
 
   return (
-    <PageLayout>
-      <PageHeader title="User Management" description="Manage user accounts" />
-      <BackButton label="Back to Dashboard" href="/admin" />
-
+    <AdminPageLayout title="User Management" description="Manage user accounts">
       <DataTable
         columns={columns}
         data={users}
@@ -1578,6 +1583,6 @@ function UsersPageComponent() {
           </div>
         </div>
       </FormDialog>
-    </PageLayout>
+    </AdminPageLayout>
   )
 }
