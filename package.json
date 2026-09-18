@@ -14,7 +14,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "type-check": "next typegen && tsc --noEmit",
-    "fix": "npm run lint:fix && npm run format"
+    "fix": "npm run lint:fix && npm run format",
+    "prepare": "husky"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -100,6 +101,7 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.5.1",
     "eslint-plugin-unused-imports": "^4.4.1",
+    "husky": "^9.1.7",
     "prettier": "^3.6.2",
     "utf-8-validate": "^6.0.5"
   }
