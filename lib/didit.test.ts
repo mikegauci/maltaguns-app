@@ -16,9 +16,7 @@ import {
 describe('isDiditVerificationUrl', () => {
   it('accepts verify.didit.me session URLs', () => {
     assert.equal(
-      isDiditVerificationUrl(
-        'https://verify.didit.me/en/session/D8YcOBalmUag'
-      ),
+      isDiditVerificationUrl('https://verify.didit.me/en/session/D8YcOBalmUag'),
       true
     )
   })

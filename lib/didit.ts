@@ -87,8 +87,7 @@ function requireDiditEnv(
   return value
 }
 
-export const DIDIT_VERIFICATION_URL_PATTERN =
-  /^https:\/\/verify\.didit\.me\//
+export const DIDIT_VERIFICATION_URL_PATTERN = /^https:\/\/verify\.didit\.me\//
 
 export function isDiditVerificationUrl(
   url: string | null | undefined

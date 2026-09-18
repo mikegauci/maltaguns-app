@@ -170,10 +170,9 @@ export const IdentityVerification = ({
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
                 <p>
-                  You will be redirected to <strong>Didit</strong>, our
-                  identity verification provider, to photograph your
-                  government-issued ID and take a short selfie for a liveness
-                  and face match check.
+                  You will be redirected to <strong>Didit</strong>, our identity
+                  verification provider, to photograph your government-issued ID
+                  and take a short selfie for a liveness and face match check.
                 </p>
                 <p>
                   Didit processes your document and biometric data as our
