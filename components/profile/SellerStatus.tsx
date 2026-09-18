@@ -92,9 +92,21 @@ export const SellerStatus = ({
                   <p className="text-sm text-blue-800">
                     You can currently add listings and contact sellers for{' '}
                     <strong>non-firearms</strong> items only. To list or contact
-                    sellers of <strong>Firearms</strong>, verify your identity
-                    and upload a valid firearms license below. Both must be
-                    approved before you can sell firearms.
+                    sellers of <strong>Firearms</strong>, verify your{' '}
+                    <a
+                      href="#seller-identity"
+                      className="underline font-medium hover:text-blue-950"
+                    >
+                      identity
+                    </a>{' '}
+                    and upload a valid firearms{' '}
+                    <a
+                      href="#seller-license"
+                      className="underline font-medium hover:text-blue-950"
+                    >
+                      license
+                    </a>{' '}
+                    below. Both must be approved before you can sell firearms.
                   </p>
                 </div>
               </div>
@@ -103,12 +115,12 @@ export const SellerStatus = ({
         </CardContent>
         <CardContent className="space-y-6">
           {/* Document Upload Sections */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Identification Section */}
-            <div className="space-y-3 border rounded-lg p-4">
-              <h3 className="text-base font-semibold flex items-center gap-2">
-                <span>Identification</span>
-              </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 lg:items-start gap-6 border rounded-lg p-4">
+            <div
+              id="seller-identity"
+              className="flex flex-col gap-3 scroll-mt-24"
+            >
+              <h3 className="text-base font-semibold">Identification</h3>
               <IdentityVerification
                 identityVerified={profile.identity_verified}
                 identityStatus={profile.identity_status}
@@ -120,13 +132,12 @@ export const SellerStatus = ({
               />
             </div>
 
-            {/* License Section */}
-            <div className="space-y-3 border rounded-lg p-4">
-              <h3 className="text-base font-semibold flex items-center gap-2">
-                <span>Firearms License</span>
-              </h3>
+            <div
+              id="seller-license"
+              className="flex flex-col gap-3 scroll-mt-24"
+            >
+              <h3 className="text-base font-semibold">Firearms License</h3>
 
-              {/* License Status */}
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
@@ -147,48 +158,36 @@ export const SellerStatus = ({
               </div>
 
               {profile.license_image && (
-                <div className="space-y-3">
-                  <div className="relative w-full max-w-sm">
-                    <img
-                      id="profile-license-preview"
-                      src={profile.license_image}
-                      alt="License"
-                      className="w-[100%] h-[220px] object-cover rounded-md border"
-                      data-rotation="0"
-                    />
-                    <button
-                      onClick={() =>
-                        setFullscreenImage({
-                          url: profile.license_image!,
-                          title: 'Firearms License',
-                        })
-                      }
-                      className="absolute top-2 left-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
-                      title="View full screen"
-                    >
-                      <Maximize2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={handleRemoveLicense}
-                      className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
-                      title="Remove license"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
+                <div className="relative w-full">
+                  <img
+                    id="profile-license-preview"
+                    src={profile.license_image}
+                    alt="License"
+                    className="w-full h-[220px] object-cover rounded-md border"
+                    data-rotation="0"
+                  />
+                  <button
+                    onClick={() =>
+                      setFullscreenImage({
+                        url: profile.license_image!,
+                        title: 'Firearms License',
+                      })
+                    }
+                    className="absolute top-2 left-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
+                    title="View full screen"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={handleRemoveLicense}
+                    className="absolute top-2 right-2 bg-black bg-opacity-70 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all"
+                    title="Remove license"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               )}
 
-              <DocumentUploadButton
-                id="license-upload"
-                label="Upload License"
-                replaceLabel="Replace License"
-                isUploading={uploadingLicense}
-                uploadProgress={licenseUploadProgress}
-                hasExistingDocument={!!profile.license_image}
-                onChange={handleLicenseUpload}
-              />
-              {/* Display detected license types */}
               {profile.license_types && (
                 <div className="p-3 border rounded-md bg-muted/20">
                   <p className="text-xs font-semibold mb-2 text-muted-foreground">
@@ -272,10 +271,20 @@ export const SellerStatus = ({
                   </div>
                 </div>
               )}
-              <p className="text-xs text-muted-foreground">
+
+              <DocumentUploadButton
+                id="license-upload"
+                label="Upload license"
+                replaceLabel="Replace license"
+                isUploading={uploadingLicense}
+                uploadProgress={licenseUploadProgress}
+                hasExistingDocument={!!profile.license_image}
+                onChange={handleLicenseUpload}
+              />
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {profile.is_seller
                   ? 'Upload your firearms license. License types are detected automatically.'
-                  : 'Upload a valid firearms license below. Identity verification and an approved license are both required.'}
+                  : 'Upload a valid firearms license. Identity verification and an approved license are both required.'}
               </p>
             </div>
           </div>
