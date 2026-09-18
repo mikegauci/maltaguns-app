@@ -23,7 +23,13 @@ import {
   ADMIN_IDENTITY_OVERRIDE_NOTE,
   isAdminIdentityOverride,
 } from '@/lib/identity-status'
-import { BadgeCheck, Clock, Loader2, ShieldCheck, XCircle } from 'lucide-react'
+import {
+  BadgeCheck,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  XCircle,
+} from 'lucide-react'
 
 const POLL_INTERVAL_MS = 5000
 const POLL_ATTEMPTS = 24
@@ -200,16 +206,15 @@ export const IdentityVerification = ({
         </p>
       )}
     </div>
-  ) : uiState.inManualReview ? (
+  ) : uiState.needsResubmission ? (
     <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
       <div className="flex items-start gap-2 text-sm font-medium text-amber-900">
-        <Clock className="h-4 w-4 flex-shrink-0 mt-0.5" />
-        <span>Your verification is being reviewed</span>
+        <RefreshCw className="h-4 w-4 flex-shrink-0 mt-0.5" />
+        <span>Resubmission required</span>
       </div>
       <p className="text-xs text-amber-800">
-        Didit flagged your submission for manual review. This usually takes a
-        short time and your profile will update automatically once a decision is
-        made.
+        Didit needs you to redo part of your verification. Check the details
+        below, then verify again when you are ready.
       </p>
       {reviewNotes.length > 0 && (
         <ul className="text-xs text-amber-800 list-disc pl-5 space-y-1">
@@ -221,15 +226,29 @@ export const IdentityVerification = ({
       {hasDateOfBirthMismatch(reviewNotes) && (
         <p className="text-xs text-amber-800">
           Check that your date of birth on your profile matches your ID exactly.
-          If it is wrong, update it in your profile details and contact{' '}
-          <a href="mailto:Info@maltaguns.com" className="underline font-medium">
-            Info@maltaguns.com
-          </a>{' '}
-          if you need help.
+          If it is wrong, update it in your profile details before trying again.
         </p>
       )}
     </div>
-  ) : uiState.pendingReview ? (
+  ) : uiState.inManualReview ? (
+    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
+      <div className="flex items-start gap-2 text-sm font-medium text-amber-900">
+        <Loader2 className="h-4 w-4 flex-shrink-0 mt-0.5 animate-spin" />
+        <span>Verification in progress</span>
+      </div>
+      <p className="text-xs text-amber-800">
+        Didit is manually reviewing your submission. This page will update
+        automatically once a decision is made.
+      </p>
+      {reviewNotes.length > 0 && (
+        <ul className="text-xs text-amber-800 list-disc pl-5 space-y-1">
+          {reviewNotes.map(note => (
+            <li key={note}>{note}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  ) : uiState.isAutomaticallyProcessing ? (
     <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
       <div className="flex items-start gap-2 text-sm font-medium text-amber-900">
         <Loader2 className="h-4 w-4 flex-shrink-0 mt-0.5 animate-spin" />
@@ -296,7 +315,11 @@ export const IdentityVerification = ({
               ) : (
                 <ShieldCheck className="h-4 w-4 mr-2" />
               )}
-              {starting ? 'Opening...' : 'Verify my identity'}
+              {starting
+                ? 'Opening...'
+                : uiState.needsResubmission
+                  ? 'Verify again'
+                  : 'Verify my identity'}
             </Button>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Verify your ID card, passport or residence permit with our

@@ -7,7 +7,7 @@ import {
   isDiditVerificationUrl,
 } from '@/lib/didit'
 import {
-  IDENTITY_PENDING_STATUSES,
+  IDENTITY_BLOCK_VERIFY_STATUSES,
   IDENTITY_TERMINAL_STATUSES,
 } from '@/lib/identity-status'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
@@ -44,7 +44,7 @@ export async function POST() {
       )
     }
 
-    if (IDENTITY_PENDING_STATUSES.has(profile.identity_status ?? '')) {
+    if (IDENTITY_BLOCK_VERIFY_STATUSES.has(profile.identity_status ?? '')) {
       return NextResponse.json(
         {
           error:
@@ -52,6 +52,13 @@ export async function POST() {
         },
         { status: 409 }
       )
+    }
+
+    if (
+      profile.identity_status === 'Resubmitted' &&
+      isDiditVerificationUrl(profile.didit_session_url)
+    ) {
+      return NextResponse.json({ url: profile.didit_session_url })
     }
 
     if (!profile.first_name || !profile.last_name) {

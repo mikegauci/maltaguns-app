@@ -403,6 +403,10 @@ export function buildProfileUpdateFromDidit(
       update.identity_verified = false
       update.identity_review_notes = extractReviewNotes(decision)
       break
+    case 'Resubmitted':
+      update.identity_verified = false
+      update.identity_review_notes = extractReviewNotes(decision)
+      break
     case 'Declined': {
       update.identity_verified = false
       update.identity_verified_at = null

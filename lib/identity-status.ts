@@ -2,8 +2,9 @@ export const IDENTITY_PENDING_STATUSES = new Set([
   'In Review',
   'In Progress',
   'Awaiting User',
-  'Resubmitted',
 ])
+
+export const IDENTITY_BLOCK_VERIFY_STATUSES = IDENTITY_PENDING_STATUSES
 
 export const IDENTITY_TERMINAL_STATUSES = new Set([
   'Approved',

@@ -13,8 +13,9 @@ export function describeStatus(
       return { label: 'In review', tone: 'pending' }
     case 'In Progress':
     case 'Awaiting User':
-    case 'Resubmitted':
       return { label: 'In progress', tone: 'pending' }
+    case 'Resubmitted':
+      return { label: 'Resubmission required', tone: 'pending' }
     case 'Declined':
       return { label: 'Declined', tone: 'failed' }
     case 'Expired':
@@ -36,11 +37,14 @@ export function getIdentityVerificationUiState(
   identityStatus: string | null,
   busy = false
 ) {
+  const inManualReview = identityStatus === 'In Review'
+  const needsResubmission = identityStatus === 'Resubmitted'
+  const isAutomaticallyProcessing =
+    identityStatus === 'In Progress' || identityStatus === 'Awaiting User'
   const pendingReview =
     !identityVerified &&
     !!identityStatus &&
     IDENTITY_PENDING_STATUSES.has(identityStatus)
-  const inManualReview = identityStatus === 'In Review'
   const isDeclined = identityStatus === 'Declined'
   const isExpired =
     identityStatus === 'Expired' || identityStatus === 'Kyc Expired'
@@ -48,12 +52,17 @@ export function getIdentityVerificationUiState(
   const showFailedPanel = !identityVerified && (isDeclined || isExpired)
   const showAbandonedPanel = !identityVerified && isAbandoned
   const showActionButton =
-    !identityVerified && !inManualReview && !pendingReview
+    !identityVerified &&
+    !inManualReview &&
+    !isAutomaticallyProcessing &&
+    !pendingReview
   const canStartVerification = showActionButton && !busy
 
   return {
     pendingReview,
     inManualReview,
+    needsResubmission,
+    isAutomaticallyProcessing,
     isDeclined,
     showFailedPanel,
     showAbandonedPanel,
