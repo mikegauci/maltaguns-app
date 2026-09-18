@@ -215,18 +215,64 @@ export function isWebhookTimestampFresh(timestamp: number): boolean {
   return Math.abs(Date.now() / 1000 - timestamp) <= WEBHOOK_MAX_SKEW_SECONDS
 }
 
-export function verifyWebhookSignature(
+function timingSafeHexEqual(signature: string, expected: string): boolean {
+  if (signature.length !== expected.length) return false
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+}
+
+export function verifyWebhookSignatureV2(
   payload: unknown,
   signature: string
 ): boolean {
+  if (!signature) return false
+
   const expected = crypto
     .createHmac('sha256', requireDiditEnv('DIDIT_WEBHOOK_SECRET'))
     .update(canonicaliseWebhookPayload(payload), 'utf8')
     .digest('hex')
 
-  if (signature.length !== expected.length) return false
+  return timingSafeHexEqual(signature, expected)
+}
 
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+export function verifyWebhookSignatureRaw(
+  rawBody: string,
+  signature: string
+): boolean {
+  if (!signature) return false
+
+  const expected = crypto
+    .createHmac('sha256', requireDiditEnv('DIDIT_WEBHOOK_SECRET'))
+    .update(rawBody, 'utf8')
+    .digest('hex')
+
+  return timingSafeHexEqual(signature, expected)
+}
+
+export function verifyDiditWebhookSignature(
+  payload: unknown,
+  rawBody: string,
+  signatureV2: string | null,
+  signature: string | null,
+  timestamp: number
+): boolean {
+  if (!isWebhookTimestampFresh(timestamp)) return false
+
+  if (signatureV2 && verifyWebhookSignatureV2(payload, signatureV2)) {
+    return true
+  }
+
+  if (signature && verifyWebhookSignatureRaw(rawBody, signature)) {
+    return true
+  }
+
+  return false
+}
+
+export function verifyWebhookSignature(
+  payload: unknown,
+  signature: string
+): boolean {
+  return verifyWebhookSignatureV2(payload, signature)
 }
 
 export function hasIdentityVerificationDecision(decision: unknown): boolean {
@@ -249,7 +295,28 @@ const DECISION_FEATURE_ARRAYS = [
   'liveness_checks',
   'face_matches',
   'poa_verifications',
+  'ip_analyses',
 ] as const
+
+const DECLINED_REVIEWER_FALLBACK =
+  'Your verification was declined by a reviewer.'
+
+function isUserFacingWarning(entry: Record<string, unknown>): boolean {
+  const logType = entry.log_type
+  return logType === undefined || logType === null || logType === 'warning'
+}
+
+function readWarningMessage(entry: Record<string, unknown>): string | null {
+  if (typeof entry.short_description === 'string' && entry.short_description) {
+    return entry.short_description
+  }
+
+  if (typeof entry.long_description === 'string' && entry.long_description) {
+    return entry.long_description
+  }
+
+  return null
+}
 
 export function extractReviewNotes(decision: unknown): string[] {
   if (!decision || typeof decision !== 'object') return []
@@ -257,6 +324,13 @@ export function extractReviewNotes(decision: unknown): string[] {
   const record = decision as Record<string, unknown>
   const notes: string[] = []
   const seen = new Set<string>()
+
+  const addNote = (message: string | null | undefined) => {
+    const trimmed = message?.trim()
+    if (!trimmed || seen.has(trimmed)) return
+    seen.add(trimmed)
+    notes.push(trimmed)
+  }
 
   for (const key of DECISION_FEATURE_ARRAYS) {
     const features = record[key]
@@ -272,17 +346,21 @@ export function extractReviewNotes(decision: unknown): string[] {
         if (!warning || typeof warning !== 'object') continue
 
         const entry = warning as Record<string, unknown>
-        const message =
-          typeof entry.short_description === 'string'
-            ? entry.short_description
-            : typeof entry.long_description === 'string'
-              ? entry.long_description
-              : null
+        if (!isUserFacingWarning(entry)) continue
 
-        if (message && !seen.has(message)) {
-          seen.add(message)
-          notes.push(message)
-        }
+        addNote(readWarningMessage(entry))
+      }
+    }
+  }
+
+  const reviews = record.reviews
+  if (Array.isArray(reviews)) {
+    for (const review of reviews) {
+      if (!review || typeof review !== 'object') continue
+
+      const comment = (review as Record<string, unknown>).comment
+      if (typeof comment === 'string') {
+        addNote(comment)
       }
     }
   }
@@ -325,7 +403,15 @@ export function buildProfileUpdateFromDidit(
       update.identity_verified = false
       update.identity_review_notes = extractReviewNotes(decision)
       break
-    case 'Declined':
+    case 'Declined': {
+      update.identity_verified = false
+      update.identity_verified_at = null
+      const notes = extractReviewNotes(decision)
+      update.identity_review_notes =
+        notes.length > 0 ? notes : [DECLINED_REVIEWER_FALLBACK]
+      update.didit_session_url = null
+      break
+    }
     case 'Expired':
     case 'Kyc Expired':
       update.identity_verified = false

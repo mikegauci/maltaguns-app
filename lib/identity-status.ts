@@ -15,14 +15,9 @@ export const IDENTITY_TERMINAL_STATUSES = new Set([
 
 export function shouldSyncDiditIdentity(
   identityVerified: boolean,
-  identityStatus: string | null,
   diditSessionId: string | null
 ) {
-  return (
-    !!diditSessionId &&
-    !identityVerified &&
-    IDENTITY_PENDING_STATUSES.has(identityStatus ?? '')
-  )
+  return !!diditSessionId && !identityVerified
 }
 
 export const ADMIN_IDENTITY_OVERRIDE_NOTE =

@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import {
   buildProfileUpdateFromDidit,
+  fetchDiditSessionDecision,
   isProfileUserId,
-  isWebhookTimestampFresh,
   resolveWebhookEventId,
   shouldApplyWebhookForSession,
-  verifyWebhookSignature,
+  verifyDiditWebhookSignature,
   type DiditWebhookPayload,
 } from '@/lib/didit'
 
@@ -15,13 +15,9 @@ const UNIQUE_VIOLATION = '23505'
 
 export async function POST(request: Request) {
   const raw = await request.text()
-  const signature = request.headers.get('x-signature-v2') ?? ''
+  const signatureV2 = request.headers.get('x-signature-v2')
+  const signature = request.headers.get('x-signature')
   const timestamp = Number(request.headers.get('x-timestamp'))
-
-  if (!isWebhookTimestampFresh(timestamp)) {
-    console.error(`${LOG_PREFIX} Rejected stale or missing timestamp`)
-    return new NextResponse('Stale timestamp', { status: 401 })
-  }
 
   let payload: DiditWebhookPayload
   try {
@@ -32,7 +28,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    if (!verifyWebhookSignature(payload, signature)) {
+    if (
+      !verifyDiditWebhookSignature(
+        payload,
+        raw,
+        signatureV2,
+        signature,
+        timestamp
+      )
+    ) {
       console.error(`${LOG_PREFIX} Rejected invalid signature`)
       return new NextResponse('Invalid signature', { status: 401 })
     }
@@ -104,10 +108,21 @@ export async function POST(request: Request) {
     })
   }
 
-  const profileUpdate = buildProfileUpdateFromDidit(
-    payload.status,
-    payload.decision
-  )
+  let decision = payload.decision
+
+  if (!decision && payload.session_id) {
+    try {
+      const remote = await fetchDiditSessionDecision(payload.session_id)
+      decision = remote.decision
+    } catch (fetchError) {
+      console.error(
+        `${LOG_PREFIX} Failed to fetch decision for session ${payload.session_id}:`,
+        fetchError
+      )
+    }
+  }
+
+  const profileUpdate = buildProfileUpdateFromDidit(payload.status, decision)
 
   if (!profileUpdate) {
     console.warn(

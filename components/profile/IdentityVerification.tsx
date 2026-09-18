@@ -119,9 +119,13 @@ export const IdentityVerification = ({
   }, [])
 
   useEffect(() => {
-    if (!uiState.pendingReview) return
+    if (identityVerified) return
 
     void refreshStatus()
+  }, [identityVerified, refreshStatus])
+
+  useEffect(() => {
+    if (!uiState.pendingReview) return
 
     let attempt = 0
     const intervalId = window.setInterval(() => {
