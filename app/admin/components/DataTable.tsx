@@ -102,16 +102,24 @@ export function DataTable<TData, TValue>({
     },
   })
 
+  const searchColumn = useMemo(
+    () =>
+      searchKey
+        ? table.getAllColumns().find(column => column.id === searchKey)
+        : undefined,
+    [searchKey, table]
+  )
+
   const searchValue = useMultiFieldSearch
     ? (table.getState().globalFilter ?? '')
-    : ((table.getColumn(searchKey ?? '')?.getFilterValue() as string) ?? '')
+    : ((searchColumn?.getFilterValue() as string) ?? '')
 
   const handleSearchChange = (value: string) => {
     if (useMultiFieldSearch) {
       setGlobalFilter(value)
       return
     }
-    table.getColumn(searchKey ?? '')?.setFilterValue(value)
+    searchColumn?.setFilterValue(value)
   }
 
   if (!isMounted) {

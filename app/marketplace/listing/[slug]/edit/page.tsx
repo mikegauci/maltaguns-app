@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   DEFAULT_LISTING_IMAGE,
   getListingStoragePathFromUrl,
@@ -138,7 +138,7 @@ export default function EditListing(props: {
   const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [listingId, setListingId] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<

@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   deleteEventPoster,
   eventPosterValidationToast,
@@ -67,7 +67,7 @@ export default function EditEvent(props: {
   const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [eventId, setEventId] = useState<string | null>(null)
   const [posterUrl, setPosterUrl] = useState<string | null>(null)

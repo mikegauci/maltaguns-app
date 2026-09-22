@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   Popover,
   PopoverContent,
@@ -83,7 +83,7 @@ function EventsPageComponent() {
     meta_title: '',
     meta_description: '',
   })
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   const columns: ColumnDef<Event>[] = [
     {

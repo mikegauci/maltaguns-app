@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
@@ -149,7 +149,7 @@ function UsersPageComponent() {
     notes: '' as string | null,
     license_types: createEmptyLicenseTypes(),
   })
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   const columns: ColumnDef<User>[] = [
     {

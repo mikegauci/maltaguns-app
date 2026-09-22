@@ -126,6 +126,7 @@ export function Header() {
               alt="MaltaGuns Logo"
               width={152}
               height={28}
+              priority
               className="h-8 w-auto max-w-full object-contain"
             />
           </Link>

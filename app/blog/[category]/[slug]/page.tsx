@@ -284,7 +284,18 @@ export default async function BlogPost(props: {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const canEdit = user?.id === post.author_id
+
+  let isAdmin = false
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+    isAdmin = !!profile?.is_admin
+  }
+
+  const canEdit = isAdmin || user?.id === post.author_id
 
   // Get the establishment icon based on type
   const getEstablishmentIcon = () => {

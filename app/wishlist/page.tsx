@@ -177,7 +177,12 @@ export default function WishlistPage() {
               <Link href="/login">
                 <Button className="w-full">Log In</Button>
               </Link>
-              <BackButton label="Back to Home" href="/" />
+              <BackButton
+                label="Back to Home"
+                href="/"
+                preferHref
+                hideLabelOnMobile={false}
+              />
             </div>
           </CardContent>
         </Card>

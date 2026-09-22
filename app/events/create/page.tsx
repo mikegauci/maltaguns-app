@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   eventPosterValidationToast,
   uploadEventPoster,
@@ -166,7 +166,7 @@ type EventForm = z.infer<typeof eventSchema>
 export default function CreateEventPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingPoster, setUploadingPoster] = useState(false)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
@@ -452,7 +452,12 @@ export default function CreateEventPage() {
                   <Button onClick={() => setShowCreditDialog(true)}>
                     View purchase options
                   </Button>
-                  <BackButton label="Back to events" href="/events" />
+                  <BackButton
+                    label="Back to events"
+                    href="/events"
+                    preferHref
+                    hideLabelOnMobile={false}
+                  />
                 </div>
               </div>
             )}

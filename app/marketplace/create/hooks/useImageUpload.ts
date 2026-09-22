@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { UseFormSetValue } from 'react-hook-form'
 import {
   moveImageToPrimary,
@@ -31,7 +31,7 @@ export function useImageUpload({
   setImages: setControlledImages,
   removedMessage = 'The image has been removed from your listing',
 }: UseImageUploadProps) {
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [internalImages, setInternalImages] = useState<string[]>([])
   const uploadedImages = controlledImages ?? internalImages
   const [uploading, setUploading] = useState(false)

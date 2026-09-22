@@ -22,7 +22,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { Store, Building, Wrench, Target, Upload, X } from 'lucide-react'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
@@ -126,7 +126,7 @@ function EstablishmentsPageComponent() {
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'pending' | 'active' | 'rejected'
   >(() => parseEstablishmentStatusFilter(searchParams.get('status')))
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   function getTypePath(type: string) {
     return type === 'servicing' ? 'servicing' : `${type}s`

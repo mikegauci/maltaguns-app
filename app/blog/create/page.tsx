@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   findFirstActiveEstablishment,
   isActiveEstablishmentOwnedByUser,
@@ -66,7 +66,7 @@ type BlogPostForm = z.infer<typeof blogPostSchema>
 export default function CreateBlogPost() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)

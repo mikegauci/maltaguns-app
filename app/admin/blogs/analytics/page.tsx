@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   Card,
@@ -61,7 +61,7 @@ interface BlogAnalytics {
 
 export default function BlogAnalyticsPage() {
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const { isAuthorized } = useRequireAdmin({ preset: 'admin-toast' })
 
   const [analytics, setAnalytics] = useState<BlogAnalytics | null>(null)

@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
 import CategoryListings from '@/components/marketplace/CategoryListings'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useToast } from '@/hooks/use-toast'
 import {
   firearmsCategories,
@@ -27,7 +27,7 @@ export default function FirearmsCategoryPage(props: FirearmsCategoryPageProps) {
   const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [canAccess, setCanAccess] = useState(false)
 
