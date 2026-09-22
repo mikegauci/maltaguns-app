@@ -8,6 +8,7 @@ import {
   Flag,
   HelpCircle,
   Home,
+  Crosshair,
   IdCard,
   LayoutDashboard,
   MapPin,
@@ -20,11 +21,14 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 
+export type AdminNavBadgeKey = 'armoryDealersPending'
+
 export type AdminNavItem = {
   title: string
   href: string
   icon: LucideIcon
   description: string
+  badgeKey?: AdminNavBadgeKey
 }
 
 export type AdminNavGroup = {
@@ -67,6 +71,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         href: '/admin/identity-reviews',
         icon: IdCard,
         description: 'Review Didit identity verifications',
+      },
+      {
+        title: 'Armory Dealers',
+        href: '/admin/armory-dealers',
+        icon: Crosshair,
+        description: 'Approve Armory dealership registrations',
+        badgeKey: 'armoryDealersPending',
       },
     ],
   },

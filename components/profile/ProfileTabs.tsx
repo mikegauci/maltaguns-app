@@ -14,6 +14,7 @@ import {
   Calendar,
   Store,
   CreditCard,
+  Crosshair,
 } from 'lucide-react'
 import Link from 'next/link'
 import { UseFormReturn } from 'react-hook-form'
@@ -142,7 +143,7 @@ export function ProfileTabs({
   return (
     <Tabs defaultValue="profile" className="space-y-4">
       <TabsList
-        className={`grid w-full grid-cols-3 h-auto ${canAccessBlog ? 'lg:grid-cols-6' : 'lg:grid-cols-5'}`}
+        className={`grid w-full grid-cols-3 h-auto ${canAccessBlog ? 'lg:grid-cols-7' : 'lg:grid-cols-6'}`}
       >
         <TabsTrigger
           value="profile"
@@ -215,6 +216,16 @@ export function ProfileTabs({
         >
           <CreditCard className="h-4 w-4" />
           <span className="text-xs sm:text-sm">Billing</span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="armory"
+          className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-3"
+          asChild
+        >
+          <Link href="/profile/armory">
+            <Crosshair className="h-4 w-4" />
+            <span className="text-xs sm:text-sm">Armory</span>
+          </Link>
         </TabsTrigger>
       </TabsList>
 

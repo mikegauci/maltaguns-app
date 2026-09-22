@@ -70,6 +70,7 @@
     "encoding": "^0.1.13",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.11",
+    "exceljs": "^4.4.0",
     "heic2any": "^0.0.4",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.446.0",
