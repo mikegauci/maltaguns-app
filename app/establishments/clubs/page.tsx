@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
+import { AppCard } from '@/components/design-system'
 import { Users, MapPin, Phone, Mail, Globe } from 'lucide-react'
-import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageHeader } from '@/components/ui/page-header'
@@ -44,9 +44,8 @@ export default function ClubsPage() {
 
   return (
     <PageLayout>
-      {/* Back Button */}
-      <BackButton label="Back" href="/establishments" />
       <PageHeader
+        backHref="/establishments"
         title="Shooting Clubs"
         description="Find shooting clubs and ranges across Malta"
       />
@@ -64,17 +63,17 @@ export default function ClubsPage() {
               key={club.id}
               href={`/establishments/clubs/${club.slug || club.id}`}
             >
-              <Card className="h-full hover:shadow-lg transition-shadow">
+              <AppCard className="h-full">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
                     {club.logo_url ? (
                       <img
                         src={club.logo_url}
                         alt={club.business_name}
-                        className="w-16 h-16 object-contain rounded-lg"
+                        className="w-16 h-16 object-contain rounded-sm"
                       />
                     ) : (
-                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                      <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                         <Users className="h-8 w-8 text-muted-foreground" />
                       </div>
                     )}
@@ -116,7 +115,7 @@ export default function ClubsPage() {
                     )}
                   </div>
                 </CardContent>
-              </Card>
+              </AppCard>
             </Link>
           ))}
         </div>

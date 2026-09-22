@@ -18,16 +18,12 @@ export function BackButton({
   label = 'Back',
   href,
   className,
-  hideLabelOnMobile = true,
+  hideLabelOnMobile = false,
   preferHref = false,
   size,
 }: BackButtonProps) {
   const router = useRouter()
   const fallbackHref = getSafeInternalPath(href, '/')
-
-  const wrapperClasses = hideLabelOnMobile
-    ? 'absolute md:top-0.5 top-0 right-auto left-auto'
-    : ''
 
   const labelClasses = hideLabelOnMobile ? 'hidden md:inline' : ''
 
@@ -46,18 +42,16 @@ export function BackButton({
   }
 
   return (
-    <div className={wrapperClasses}>
-      <Button
-        type="button"
-        variant="outline"
-        size={size}
-        aria-label={label}
-        className={`${buttonClasses} ${className || ''}`}
-        onClick={handleClick}
-      >
-        <ArrowLeft className={iconClasses} />
-        <span className={labelClasses}>{label}</span>
-      </Button>
-    </div>
+    <Button
+      type="button"
+      variant="outline"
+      size={size}
+      aria-label={label}
+      className={`rounded-sm ${buttonClasses} ${className || ''}`}
+      onClick={handleClick}
+    >
+      <ArrowLeft className={iconClasses} />
+      <span className={labelClasses}>{label}</span>
+    </Button>
   )
 }

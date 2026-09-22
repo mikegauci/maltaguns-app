@@ -17,8 +17,10 @@ import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
 import { MarketplaceCategoryNav } from '@/components/marketplace/MarketplaceCategoryNav'
+import { AppCard, AppSectionHeading } from '@/components/design-system'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
+import { cn } from '@/lib/utils'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { formatPrice, slugify } from '@/lib/format'
 
@@ -85,11 +87,12 @@ export default function MarketplaceClient({
     }/${listing.category}`
 
     return (
-      <Card
+      <AppCard
         key={listing.id}
-        className={`relative overflow-hidden hover:shadow-lg transition-shadow h-full ${
-          listing.is_featured ? 'border-2 border-red-500' : ''
-        }`}
+        className={cn(
+          'relative h-full',
+          listing.is_featured && 'border-t-2 border-t-primary'
+        )}
       >
         <Link href={listingHref} className="block">
           <div className="aspect-video relative overflow-hidden">
@@ -169,7 +172,7 @@ export default function MarketplaceClient({
             />
           </div>
         </div>
-      </Card>
+      </AppCard>
     )
   }
 
@@ -234,10 +237,11 @@ export default function MarketplaceClient({
         <div className="space-y-8">
           {featuredListings.length > 0 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4 flex items-center">
-                <Star className="h-5 w-5 mr-2 text-red-500" />
+              <AppSectionHeading
+                icon={<Star className="mr-2 h-5 w-5 text-primary" />}
+              >
                 Featured Listings
-              </h2>
+              </AppSectionHeading>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
                 {featuredListings.map(renderListingCard)}
               </div>
@@ -246,9 +250,9 @@ export default function MarketplaceClient({
 
           {regularListings.length > 0 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">
+              <AppSectionHeading>
                 {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
-              </h2>
+              </AppSectionHeading>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
                 {regularListings.map(renderListingCard)}
               </div>

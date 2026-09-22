@@ -15,10 +15,18 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/public'
 import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
+import { AppCard, AppSectionHeading } from '@/components/design-system'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '../ui/back-button'
 import { formatPrice, slugify } from '@/lib/format'
+
+function getBackHref(type?: 'firearms' | 'non_firearms', category?: string) {
+  if (category && type === 'firearms') return '/marketplace/firearms'
+  if (category && type === 'non_firearms') return '/marketplace/non-firearms'
+  if (type === 'firearms') return '/marketplace'
+  if (type === 'non_firearms') return '/marketplace/non-firearms'
+  return '/marketplace'
+}
 
 interface Listing {
   id: string
@@ -175,9 +183,7 @@ export default function CategoryListings({
       key={listing.id}
       href={`/marketplace/listing/${slugify(listing.title)}`}
     >
-      <Card
-        className={`overflow-hidden hover:shadow-lg transition-shadow ${listing.is_featured ? 'border-2 border-red-500' : ''}`}
-      >
+      <AppCard featured={listing.is_featured}>
         <div className="aspect-video relative overflow-hidden">
           <StorageImage
             src={listing.thumbnail}
@@ -236,23 +242,25 @@ export default function CategoryListings({
             )}
           </div>
         </CardContent>
-      </Card>
+      </AppCard>
     </Link>
   )
 
   return (
     <PageLayout>
-      <PageHeader title={title} description={description} />
-      <BackButton label="Back" href="/marketplace" />
-
-      <div className="mb-8 flex justify-center">
-        <Link href="/marketplace/create">
-          <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Listing
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        backHref={getBackHref(type, category)}
+        title={title}
+        description={description}
+        actions={
+          <Link href="/marketplace/create">
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Listing
+            </Button>
+          </Link>
+        }
+      />
 
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
@@ -280,10 +288,11 @@ export default function CategoryListings({
         <div className="space-y-8">
           {featuredListings.length > 0 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4 flex items-center">
-                <Star className="h-5 w-5 mr-2 text-red-500" />
+              <AppSectionHeading
+                icon={<Star className="mr-2 h-5 w-5 text-primary" />}
+              >
                 Featured Listings
-              </h2>
+              </AppSectionHeading>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
                 {featuredListings.map(renderListingCard)}
               </div>
@@ -292,9 +301,9 @@ export default function CategoryListings({
 
           {regularListings.length > 0 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">
+              <AppSectionHeading>
                 {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
-              </h2>
+              </AppSectionHeading>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
                 {regularListings.map(renderListingCard)}
               </div>

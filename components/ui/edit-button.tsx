@@ -23,10 +23,6 @@ export function EditButton({
   className,
   hideLabelOnMobile = true,
 }: EditButtonProps) {
-  const wrapperClasses = hideLabelOnMobile
-    ? 'absolute md:top-0.5 top-0 right-4 left-auto !mt-0'
-    : ''
-
   const labelClasses = hideLabelOnMobile ? 'hidden md:inline' : ''
 
   const buttonClasses = hideLabelOnMobile
@@ -36,13 +32,14 @@ export function EditButton({
   const iconClasses = hideLabelOnMobile ? 'h-4 w-4 md:mr-2' : 'h-4 w-4 mr-2'
 
   return (
-    <div className={wrapperClasses}>
-      <Link href={href}>
-        <Button className={`${buttonClasses} ${className || ''}`}>
-          <Pencil className={iconClasses} />
-          <span className={labelClasses}>{label}</span>
-        </Button>
-      </Link>
-    </div>
+    <Link href={href}>
+      <Button
+        variant="outline"
+        className={`rounded-sm ${buttonClasses} ${className || ''}`}
+      >
+        <Pencil className={iconClasses} />
+        <span className={labelClasses}>{label}</span>
+      </Button>
+    </Link>
   )
 }

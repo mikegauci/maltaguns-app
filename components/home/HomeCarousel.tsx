@@ -12,15 +12,17 @@ import {
 import { cn } from '@/lib/utils'
 
 type SlideMode = 'single' | 'pair' | 'triple' | 'quad' | 'peek'
+type CarouselDensity = 'default' | 'wide'
 
 type HomeCarouselContextValue = {
   mode: SlideMode
-  /** Static centered row for 1–2 items (no Embla). */
+  density: CarouselDensity
   layout: 'carousel' | 'static'
 }
 
 const HomeCarouselContext = createContext<HomeCarouselContextValue>({
   mode: 'pair',
+  density: 'default',
   layout: 'carousel',
 })
 
@@ -32,16 +34,22 @@ function getSlideMode(count: number): SlideMode {
   return 'peek'
 }
 
-/** Width/basis classes shared by carousel slides and static centered cards. */
 const slideSizeClass: Record<SlideMode, string> = {
   single: 'basis-[80%] max-w-sm',
   pair: 'basis-1/2 md:basis-1/3 lg:basis-1/4',
-  // Peek on mobile; exact slots on md/lg
   triple: 'basis-[42%] md:basis-1/3 lg:basis-1/4',
-  // Peek below lg; exact 4-up on desktop
   quad: 'basis-[42%] md:basis-[28%] lg:basis-1/4',
-  // Peek at every breakpoint (5+)
   peek: 'basis-[42%] md:basis-[28%] lg:basis-[22%]',
+}
+
+const wideSlideSizeClass: Record<SlideMode, string> = {
+  single:
+    'basis-[88%] sm:basis-[70%] md:basis-[45%] lg:max-w-md lg:basis-[32%]',
+  pair: 'basis-[88%] sm:basis-[70%] md:basis-[45%] lg:basis-[32%]',
+  triple:
+    'basis-[88%] sm:basis-[70%] md:basis-[45%] lg:basis-[32%] xl:basis-[24%]',
+  quad: 'basis-[88%] sm:basis-[70%] md:basis-[45%] lg:basis-[32%] xl:basis-[24%]',
+  peek: 'basis-[88%] sm:basis-[70%] md:basis-[45%] lg:basis-[32%] xl:basis-[24%]',
 }
 
 function HomeCarouselTrack({ children }: { children: React.ReactNode }) {
@@ -61,8 +69,8 @@ function HomeCarouselTrack({ children }: { children: React.ReactNode }) {
       </CarouselContent>
       {canScroll ? (
         <>
-          <CarouselPrevious className="hidden md:flex -left-3 lg:-left-12" />
-          <CarouselNext className="hidden md:flex -right-3 lg:-right-12" />
+          <CarouselPrevious className="hidden md:flex -left-2 lg:-left-10 h-8 w-8 rounded-sm border border-[var(--home-border)] bg-[var(--home-slate)] text-[var(--home-ink)] hover:bg-[var(--home-surface)] hover:text-[var(--home-amber)]" />
+          <CarouselNext className="hidden md:flex -right-2 lg:-right-10 h-8 w-8 rounded-sm border border-[var(--home-border)] bg-[var(--home-slate)] text-[var(--home-ink)] hover:bg-[var(--home-surface)] hover:text-[var(--home-amber)]" />
         </>
       ) : null}
     </>
@@ -72,6 +80,7 @@ function HomeCarouselTrack({ children }: { children: React.ReactNode }) {
 interface HomeCarouselProps {
   children: React.ReactNode
   className?: string
+  density?: CarouselDensity
 }
 
 /**
@@ -79,14 +88,23 @@ interface HomeCarouselProps {
  * 1–2 items: static centered row.
  * 3+ items: Embla (mobile peek for 3; full 4-up on desktop; peek when 5+).
  */
-export function HomeCarousel({ children, className }: HomeCarouselProps) {
+export function HomeCarousel({
+  children,
+  className,
+  density = 'default',
+}: HomeCarouselProps) {
   const count = Children.count(children)
   const mode = getSlideMode(count)
-  const layout = count > 0 && count <= 2 ? 'static' : 'carousel'
+  const layout =
+    density === 'wide' || count > 2
+      ? 'carousel'
+      : count > 0
+        ? 'static'
+        : 'carousel'
 
   if (layout === 'static') {
     return (
-      <HomeCarouselContext.Provider value={{ mode, layout }}>
+      <HomeCarouselContext.Provider value={{ mode, density, layout }}>
         <div
           className={cn(
             'flex flex-nowrap justify-center -ml-2 md:-ml-4',
@@ -100,7 +118,7 @@ export function HomeCarousel({ children, className }: HomeCarouselProps) {
   }
 
   return (
-    <HomeCarouselContext.Provider value={{ mode, layout }}>
+    <HomeCarouselContext.Provider value={{ mode, density, layout }}>
       <Carousel
         opts={{
           align: 'start',
@@ -124,14 +142,15 @@ export function HomeCarouselItem({
   children,
   className,
 }: HomeCarouselItemProps) {
-  const { mode, layout } = useContext(HomeCarouselContext)
+  const { mode, density, layout } = useContext(HomeCarouselContext)
+  const sizes = density === 'wide' ? wideSlideSizeClass : slideSizeClass
 
   if (layout === 'static') {
     return (
       <div
         className={cn(
           'min-w-0 shrink-0 grow-0 pl-2 md:pl-4',
-          slideSizeClass[mode],
+          sizes[mode],
           className
         )}
       >
@@ -141,9 +160,7 @@ export function HomeCarouselItem({
   }
 
   return (
-    <CarouselItem
-      className={cn('pl-2 md:pl-4', slideSizeClass[mode], className)}
-    >
+    <CarouselItem className={cn('pl-2 md:pl-4', sizes[mode], className)}>
       {children}
     </CarouselItem>
   )

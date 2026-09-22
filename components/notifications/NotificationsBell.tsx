@@ -147,7 +147,7 @@ export function NotificationsBell() {
       <DropdownMenuTrigger asChild>
         <button
           aria-label="Notifications"
-          className="relative aspect-square rounded-full w-10 flex items-center justify-center bg-background focus:outline-none p-2 border"
+          className="relative aspect-square rounded-sm w-10 flex items-center justify-center bg-[var(--chrome-surface)] border border-[var(--chrome-border)] text-[var(--chrome-ink)] focus:outline-none p-2 hover:text-[var(--chrome-brand)]"
         >
           <Bell
             key={shakeToken}
@@ -161,24 +161,29 @@ export function NotificationsBell() {
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-80 p-2 mt-2" align="end">
+      <DropdownMenuContent
+        className="w-80 p-2 mt-2 bg-[var(--chrome-surface)] border-[var(--chrome-border)] text-[var(--chrome-ink)]"
+        align="end"
+      >
         <div className="px-2 py-1 flex items-center justify-between">
-          <div className="text-sm font-medium">Notifications</div>
+          <div className="text-sm font-semibold text-[var(--chrome-ink)]">
+            Notifications
+          </div>
           <Button
             variant="ghost"
             size="sm"
             disabled={!hasUnread || loading}
             onClick={markAllRead}
-            className="h-8"
+            className="h-8 text-[var(--chrome-brand)] hover:text-[var(--chrome-brand)] hover:bg-[var(--chrome-slate)]"
           >
             Mark all read
           </Button>
         </div>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-[var(--chrome-border)]" />
 
         <div className="md:max-h-[350px] max-h-[250px] overflow-y-auto">
           {items.length === 0 ? (
-            <div className="px-2 py-6 text-sm text-muted-foreground text-center">
+            <div className="px-2 py-6 text-sm text-[var(--chrome-muted)] text-center">
               {loading ? 'Loading…' : 'No notifications yet.'}
             </div>
           ) : (
@@ -187,25 +192,28 @@ export function NotificationsBell() {
                 const href = n.link_url || '/notifications'
                 const isUnread = !n.read_at
                 return (
-                  <DropdownMenuItem key={n.id} className="cursor-pointer p-0">
+                  <DropdownMenuItem
+                    key={n.id}
+                    className="cursor-pointer p-0 focus:bg-[var(--chrome-slate)] focus:text-[var(--chrome-ink)]"
+                  >
                     <div className="w-full px-2 py-2">
                       <div className="flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <div className="text-sm font-medium truncate">
+                            <div className="text-sm font-medium truncate text-[var(--chrome-ink)]">
                               {n.title}
                             </div>
-                            <div className="text-xs text-muted-foreground shrink-0">
+                            <div className="text-xs text-zinc-300 shrink-0 tabular-nums">
                               {formatRelativeTime(n.created_at)}
                             </div>
                           </div>
-                          <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                          <div className="text-xs text-zinc-300 mt-1 line-clamp-2">
                             {n.body}
                           </div>
                           <div className="mt-2 flex items-center gap-2">
                             <Link
                               href={href}
-                              className="text-xs underline"
+                              className="text-xs font-medium text-[var(--chrome-brand)] hover:underline"
                               onClick={() => {
                                 if (isUnread) void markRead(n.id)
                               }}
@@ -214,7 +222,7 @@ export function NotificationsBell() {
                             </Link>
                             {isUnread && (
                               <button
-                                className="text-xs underline text-muted-foreground"
+                                className="text-xs text-zinc-300 hover:text-[var(--chrome-ink)]"
                                 onClick={e => {
                                   e.preventDefault()
                                   e.stopPropagation()
@@ -227,7 +235,7 @@ export function NotificationsBell() {
                           </div>
                         </div>
                         {isUnread && (
-                          <span className="mt-1 w-2 h-2 rounded-full bg-destructive shrink-0" />
+                          <span className="mt-1 w-2 h-2 rounded-full bg-[var(--chrome-brand)] shrink-0" />
                         )}
                       </div>
                     </div>

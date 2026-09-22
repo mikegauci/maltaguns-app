@@ -3,10 +3,8 @@ import { getImageProps } from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import {
   HeroSection,
-  RecentListingsSection,
-  FeaturedListingsSection,
-  LatestArticlesSection,
-  UpcomingEventsSection,
+  MarketplaceSection,
+  ArticlesEventsSection,
   FeaturedEstablishmentsSection,
   ResourcesSection,
   CTASection,
@@ -54,7 +52,7 @@ export default async function Home() {
     'The premier destination for the firearms community in Malta'
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="home min-h-screen">
       <JsonLd
         data={[
           buildOrganizationSchema({
@@ -69,13 +67,16 @@ export default async function Home() {
       />
       <HeroSection isAuthenticated={isAuthenticated} />
 
-      <RecentListingsSection listings={homeData.recentListings} />
+      <MarketplaceSection
+        featuredListings={homeData.featuredListings}
+        recentListings={homeData.recentListings}
+      />
 
-      <FeaturedListingsSection listings={homeData.featuredListings} />
-
-      <LatestArticlesSection posts={homeData.latestPosts} />
-
-      <UpcomingEventsSection events={homeData.latestEvents} />
+      <ArticlesEventsSection
+        posts={homeData.latestPosts}
+        events={homeData.latestEvents}
+        eventsArePast={homeData.eventsArePast}
+      />
 
       <FeaturedEstablishmentsSection
         establishments={homeData.featuredEstablishments}

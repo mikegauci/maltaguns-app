@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { PageLayout } from '@/components/ui/page-layout'
 import { createClient } from '@/lib/supabase/server'
 import { syncIdentityVerificationForUser } from '@/lib/sync-identity-verification'
 
@@ -27,9 +28,9 @@ export default async function VerificationCompletePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16 max-w-xl">
-      <Card className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-3">
+    <PageLayout className="flex items-center justify-center">
+      <Card className="max-w-xl rounded-sm border-border p-8 text-center shadow-none">
+        <h1 className="app-display mb-3 text-2xl font-bold uppercase tracking-tight">
           Thanks, we&apos;re checking your details
         </h1>
         <p className="text-muted-foreground">
@@ -46,6 +47,6 @@ export default async function VerificationCompletePage() {
           </Button>
         </div>
       </Card>
-    </div>
+    </PageLayout>
   )
 }

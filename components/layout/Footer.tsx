@@ -13,24 +13,24 @@ export function Footer() {
   const { openPreferences } = useCookieConsent()
 
   const linkClassName =
-    'text-sm text-muted-foreground hover:text-foreground transition-colors'
+    'text-sm text-[var(--chrome-muted)] hover:text-[var(--chrome-brand)] transition-colors'
 
   return (
-    <footer className="border-t bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <footer className="site-chrome border-t border-[var(--chrome-border)]">
+      <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
           {/* Logo and About */}
           <div className="col-span-2 md:col-span-1 flex flex-col gap-4 items-center md:items-start text-center md:text-left">
             <Link href="/" className="flex items-center gap-2">
               <Image
-                src="/maltaguns.png"
+                src="/maltaguns-logo-dark.png"
                 alt="MaltaGuns Logo"
                 width={152}
                 height={28}
                 className="h-8 w-auto"
               />
             </Link>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[var(--chrome-muted)]">
               Your trusted source for firearms information, marketplace
               listings, and community events in Malta.
             </p>
@@ -38,7 +38,9 @@ export function Footer() {
 
           {/* Quick Links */}
           <div className="text-center md:text-left">
-            <h3 className="font-semibold mb-4">Quick Links</h3>
+            <h3 className="font-semibold mb-4 text-[var(--chrome-ink)] uppercase tracking-wide text-xs">
+              Quick Links
+            </h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/marketplace" className={linkClassName}>
@@ -107,45 +109,32 @@ export function Footer() {
           {/* Legal (+ Connect on mobile) */}
           <div className="text-center md:text-left flex flex-col gap-6">
             <div>
-              <h3 className="font-semibold mb-4">Legal</h3>
+              <h3 className="font-semibold mb-4 text-[var(--chrome-ink)] uppercase tracking-wide text-xs">
+                Legal
+              </h3>
               <ul className="space-y-2">
                 <li>
-                  <Link
-                    href="/terms"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <Link href="/terms" className={linkClassName}>
                     Terms of Service
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/privacy"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <Link href="/privacy" className={linkClassName}>
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/cookie-policy"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <Link href="/cookie-policy" className={linkClassName}>
                     Cookie Policy
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/prohibited-items"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <Link href="/prohibited-items" className={linkClassName}>
                     Prohibited Items Policy
                   </Link>
                 </li>
                 <li>
-                  <Link
-                    href="/refunds-policy"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                  >
+                  <Link href="/refunds-policy" className={linkClassName}>
                     Refunds Policy
                   </Link>
                 </li>
@@ -153,7 +142,7 @@ export function Footer() {
                   <button
                     type="button"
                     onClick={openPreferences}
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    className={linkClassName}
                   >
                     Cookie settings
                   </button>
@@ -162,7 +151,9 @@ export function Footer() {
             </div>
 
             <div className="flex flex-col items-center md:hidden">
-              <h3 className="font-semibold mb-2">Connect With Us</h3>
+              <h3 className="font-semibold mb-2 text-[var(--chrome-ink)] uppercase tracking-wide text-xs">
+                Connect With Us
+              </h3>
               <div className="flex items-center justify-center gap-4 mb-2">
                 <Link
                   href="https://www.facebook.com/profile.php?id=61572524158548"
@@ -172,7 +163,7 @@ export function Footer() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 rounded-full text-muted-foreground"
+                    className="h-7 w-7 rounded-sm text-[var(--chrome-muted)] hover:text-[var(--chrome-brand)]"
                   >
                     <Facebook className="h-5 w-5" />
                     <span className="sr-only">Facebook</span>
@@ -182,7 +173,7 @@ export function Footer() {
               <div className="space-y-2">
                 <a
                   href="mailto:info@maltaguns.com"
-                  className="flex items-center justify-center gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
+                  className={`flex items-center justify-center gap-2 ${linkClassName}`}
                 >
                   <Mail className="h-4 w-4" />
                   <span>info@maltaguns.com</span>
@@ -191,7 +182,7 @@ export function Footer() {
                   href="https://wa.link/kqa3o5"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
+                  className={`flex items-center justify-center gap-1 ${linkClassName}`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -222,7 +213,7 @@ export function Footer() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-full relative right-[6px] text-muted-foreground"
+                  className="h-7 w-7 rounded-sm relative right-[6px] text-[var(--chrome-muted)] hover:text-[var(--chrome-brand)]"
                 >
                   <Facebook className="h-5 w-5" />
                   <span className="sr-only">Facebook</span>
@@ -232,7 +223,7 @@ export function Footer() {
             <div className="space-y-2">
               <a
                 href="mailto:info@maltaguns.com"
-                className="flex items-center justify-start gap-2 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
+                className={`flex items-center justify-start gap-2 ${linkClassName}`}
               >
                 <Mail className="h-4 w-4" />
                 <span>info@maltaguns.com</span>
@@ -241,7 +232,7 @@ export function Footer() {
                 href="https://wa.link/kqa3o5"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-start gap-1 text-sm text-muted-foreground hover:text-muted-foreground/80 transition-colors"
+                className={`flex items-center justify-start gap-1 ${linkClassName}`}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -260,7 +251,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t text-center text-sm text-muted-foreground space-y-3">
+        <div className="mt-8 pt-6 border-t border-[var(--chrome-border)] text-center text-sm text-[var(--chrome-muted)] space-y-3">
           <p className="max-w-4xl mx-auto text-xs leading-relaxed">
             © {currentYear} MaltaGuns. All rights reserved. <br /> Maltaguns.com
             is operated by Matchlock Group Ltd (C 116325), a Malta-registered

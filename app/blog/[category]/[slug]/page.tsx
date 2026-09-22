@@ -355,9 +355,9 @@ export default async function BlogPost(props: {
         )}
       </div>
 
-      <article className="prose prose-neutral dark:prose-invert prose-strong:text-[#0a0a0a] prose-b:text-[#0a0a0a] mx-auto">
+      <article className="prose prose-sm mx-auto max-w-none text-foreground">
         {post.featured_image && (
-          <div className="relative mb-8 w-full h-[220px] sm:h-[320px] md:h-[420px] lg:h-[550px] overflow-hidden rounded-lg">
+          <div className="relative mb-8 h-[220px] w-full overflow-hidden rounded-sm sm:h-[320px] md:h-[420px] lg:h-[550px]">
             <StorageImage
               src={post.featured_image}
               alt={post.title}
