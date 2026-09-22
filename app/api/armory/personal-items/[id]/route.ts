@@ -5,6 +5,30 @@ import { normalisePersonalItemImages } from '@/lib/armory/personal-items'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
+export async function GET(_req: NextRequest, { params }: RouteParams) {
+  const auth = await requireAuthenticatedUser()
+  if ('error' in auth) return auth.error
+
+  const { id } = await params
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('armory_personal_items')
+    .select('*')
+    .eq('id', id)
+    .eq('profile_id', auth.user.id)
+    .maybeSingle()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  if (!data) {
+    return NextResponse.json({ error: 'Item not found' }, { status: 404 })
+  }
+
+  return NextResponse.json({ item: data })
+}
+
 export async function PATCH(req: NextRequest, { params }: RouteParams) {
   const auth = await requireAuthenticatedUser()
   if ('error' in auth) return auth.error

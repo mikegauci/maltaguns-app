@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useListingPrefillFromInventory } from '../hooks/useListingPrefillFromInventory'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -44,6 +45,7 @@ export default function CreateNonFirearmsListing() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedCategory, setSelectedCategory] =
     useState<keyof typeof nonFirearmsSubcategories>('airsoft')
+  const [prefilledImages, setPrefilledImages] = useState<string[]>([])
 
   const form = useForm<NonFirearmsForm>({
     resolver: zodResolver(nonFirearmsSchema),
@@ -65,7 +67,19 @@ export default function CreateNonFirearmsListing() {
     handleImageUpload,
     handleDeleteImage,
     handleSetPrimaryImage,
-  } = useImageUpload({ toast, setValue: form.setValue })
+  } = useImageUpload({
+    toast,
+    setValue: form.setValue,
+    images: prefilledImages,
+    setImages: setPrefilledImages,
+  })
+
+  const { isPrefilling } = useListingPrefillFromInventory({
+    kind: 'non-firearms',
+    form,
+    setImages: setPrefilledImages,
+    ready: !isLoading,
+  })
 
   // Create handlers
   const { createNonFirearmsListing } = createListingHandlers({
@@ -79,7 +93,7 @@ export default function CreateNonFirearmsListing() {
     await createNonFirearmsListing(data)
   }
 
-  if (isLoading) {
+  if (isLoading || isPrefilling) {
     return (
       <PageLayout>
         <p className="text-muted-foreground">Loading...</p>

@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { FileSpreadsheet, Pencil, Trash2 } from 'lucide-react'
+import { SellPersonalItemButton } from '@/components/armory/SellPersonalItemButton'
 import { SectionCard } from '@/components/armory/section-card'
 import { FormField } from '@/components/armory/form-field'
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
@@ -348,7 +349,8 @@ export function PersonalInventoryPanel({
                   <TableCell>{item.serial_number ?? '—'}</TableCell>
                   <TableCell>{item.acquisition_date ?? '—'}</TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-2">
+                      <SellPersonalItemButton item={item} />
                       <Button
                         type="button"
                         variant="ghost"

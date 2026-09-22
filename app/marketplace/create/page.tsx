@@ -72,7 +72,7 @@ export default function CreateListing() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card
           className="hover:border-primary/50 cursor-pointer transition-colors"
-          onClick={handleFirearmsClick}
+          onClick={() => handleFirearmsClick()}
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
