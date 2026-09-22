@@ -9,6 +9,27 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      admin_password_history: {
+        Row: {
+          id: string
+          user_id: string
+          password_hash: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          password_hash: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          password_hash?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           id: string
@@ -21,6 +42,7 @@ export interface Database {
           is_seller: boolean
           is_verified: boolean
           is_admin: boolean | null
+          must_change_password: boolean
           license_image: string | null
           identity_verified: boolean
           identity_verified_at: string | null
@@ -51,6 +73,7 @@ export interface Database {
           is_seller?: boolean
           is_verified?: boolean
           is_admin?: boolean | null
+          must_change_password?: boolean
           license_image?: string | null
           identity_verified?: boolean
           identity_verified_at?: string | null
@@ -81,6 +104,7 @@ export interface Database {
           is_seller?: boolean
           is_verified?: boolean
           is_admin?: boolean | null
+          must_change_password?: boolean
           license_image?: string | null
           identity_verified?: boolean
           identity_verified_at?: string | null

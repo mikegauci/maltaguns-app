@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { AdminSecurityGate } from '@/components/admin/AdminSecurityGate'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { getImpersonationState } from '@/lib/impersonation'
 
@@ -19,6 +20,8 @@ export default async function AdminLayout({
   const impersonation = await getImpersonationState()
 
   return (
-    <AdminShell impersonating={Boolean(impersonation)}>{children}</AdminShell>
+    <AdminShell impersonating={Boolean(impersonation)}>
+      <AdminSecurityGate>{children}</AdminSecurityGate>
+    </AdminShell>
   )
 }

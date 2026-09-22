@@ -18,7 +18,6 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { createClient } from '@/lib/supabase/client'
-import { getAuthRedirectOrigin } from '@/lib/seo-host'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
@@ -32,6 +31,7 @@ import {
   ADMIN_IDENTITY_OVERRIDE_NOTE,
   isAdminIdentityOverride,
 } from '@/lib/identity-status'
+import { validateAdminPassword } from '@/lib/admin-password-policy'
 import {
   createAllLicenseTypes,
   createEmptyLicenseTypes,
@@ -503,25 +503,25 @@ function UsersPageComponent() {
     try {
       // First check if we have a valid session
       const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
 
-      if (sessionError) {
-        console.error('Session error:', sessionError)
-        throw new Error('Failed to get session')
+      if (userError) {
+        console.error('Auth error:', userError)
+        throw new Error('Failed to verify authentication')
       }
 
-      if (!session) {
-        console.error('No session found')
+      if (!user) {
+        console.error('No authenticated user found')
         throw new Error('No active session')
       }
 
-      setCurrentUserId(session.user.id)
+      setCurrentUserId(user.id)
 
-      console.log('Fetching users with session:', {
-        userId: session.user.id,
-        userEmail: session.user.email,
+      console.log('Fetching users with authenticated user:', {
+        userId: user.id,
+        userEmail: user.email,
       })
 
       // Use the API instead of direct Supabase call to bypass RLS
@@ -626,37 +626,33 @@ function UsersPageComponent() {
     try {
       setIsSubmitting(true)
 
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${getAuthRedirectOrigin()}/login`,
-          data: {
-            username: formData.username,
-          },
-        },
+      if (formData.is_admin && formData.password) {
+        const validation = validateAdminPassword(formData.password)
+        if (!validation.valid) {
+          throw new Error(validation.error)
+        }
+      }
+
+      const createResponse = await fetch('/api/admin/users/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          is_admin: formData.is_admin,
+          is_seller: formData.is_seller,
+          is_disabled: formData.is_disabled,
+          notes: formData.notes,
+        }),
       })
 
-      if (authError) throw authError
-
-      const userId = authData?.user?.id
-      if (!userId) throw new Error('User ID not found after signup.')
-
-      // Create profile
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: userId,
-        username: formData.username,
-        email: formData.email,
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        is_admin: formData.is_admin,
-        is_seller: formData.is_seller,
-        is_disabled: formData.is_disabled,
-        notes: formData.notes,
-      })
-
-      if (profileError) throw profileError
+      if (!createResponse.ok) {
+        const createData = await createResponse.json()
+        throw new Error(createData.error || 'Failed to create user')
+      }
 
       toast({
         title: 'Success',

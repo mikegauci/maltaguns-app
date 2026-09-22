@@ -67,10 +67,14 @@ export function isSessionNearExpiry(
 export async function getUserProfile(
   supabase: SupabaseClient,
   userId: string
-): Promise<{ is_admin: boolean; is_disabled: boolean } | null> {
+): Promise<{
+  is_admin: boolean
+  is_disabled: boolean
+  must_change_password: boolean
+} | null> {
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('is_admin, is_disabled')
+    .select('is_admin, is_disabled, must_change_password')
     .eq('id', userId)
     .single()
 

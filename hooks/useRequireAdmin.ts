@@ -14,7 +14,6 @@ type RequireAdminOptions = {
 const PRESETS: Record<
   DenyPreset,
   {
-    authMethod: 'getUser' | 'getSession'
     unauthenticatedTo: string
     unauthorizedTo: string
     toast:
@@ -26,7 +25,6 @@ const PRESETS: Record<
   }
 > = {
   'home-toast': {
-    authMethod: 'getUser',
     unauthenticatedTo: '/',
     unauthorizedTo: '/',
     toast: {
@@ -35,7 +33,6 @@ const PRESETS: Record<
     },
   },
   'admin-toast': {
-    authMethod: 'getSession',
     unauthenticatedTo: '/login',
     unauthorizedTo: '/admin',
     toast: {
@@ -44,7 +41,6 @@ const PRESETS: Record<
     },
   },
   'admin-silent': {
-    authMethod: 'getSession',
     unauthenticatedTo: '/login',
     unauthorizedTo: '/admin',
     toast: false,
@@ -65,40 +61,26 @@ export function useRequireAdmin(options?: RequireAdminOptions) {
 
     async function checkAuth() {
       try {
-        let userId: string | undefined
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
 
-        if (config.authMethod === 'getUser') {
-          const {
-            data: { user },
-          } = await supabase.auth.getUser()
-          userId = user?.id
-          if (!userId) {
-            if (config.toast) {
-              toast({
-                variant: 'destructive',
-                title: config.toast.title,
-                description: config.toast.description,
-              })
-            }
-            router.push(config.unauthenticatedTo)
-            return
+        if (!user) {
+          if (config.toast) {
+            toast({
+              variant: 'destructive',
+              title: config.toast.title,
+              description: config.toast.description,
+            })
           }
-        } else {
-          const {
-            data: { session },
-            error,
-          } = await supabase.auth.getSession()
-          if (error || !session) {
-            router.push(config.unauthenticatedTo)
-            return
-          }
-          userId = session.user.id
+          router.push(config.unauthenticatedTo)
+          return
         }
 
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('is_admin')
-          .eq('id', userId)
+          .eq('id', user.id)
           .single()
 
         if (profileError || !profile?.is_admin) {
@@ -132,7 +114,6 @@ export function useRequireAdmin(options?: RequireAdminOptions) {
       mounted = false
     }
   }, [
-    config.authMethod,
     config.toast,
     config.unauthenticatedTo,
     config.unauthorizedTo,
