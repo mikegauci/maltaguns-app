@@ -1,4 +1,6 @@
-import Link from 'next/link'
+'use client'
+
+import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -9,20 +11,14 @@ interface BackButtonProps {
   hideLabelOnMobile?: boolean
 }
 
-/**
- * Reusable back button component with consistent styling across the app
- * Uses Next.js Link for optimal SEO, accessibility, and UX.
- *
- * @example
- * <BackButton label="Back to blog" href="/blog" />
- * <BackButton label="Back to post" href="/blog/news/my-post" hideLabelOnMobile={false} />
- */
 export function BackButton({
   label = 'Back',
   href,
   className,
   hideLabelOnMobile = true,
 }: BackButtonProps) {
+  const router = useRouter()
+
   const wrapperClasses = hideLabelOnMobile
     ? 'absolute md:top-0.5 top-0 right-auto left-auto'
     : ''
@@ -35,17 +31,25 @@ export function BackButton({
 
   const iconClasses = hideLabelOnMobile ? 'h-4 w-4 md:mr-2' : 'h-4 w-4 mr-2'
 
+  const handleClick = () => {
+    if (window.history.length > 1) {
+      router.back()
+    } else {
+      router.push(href)
+    }
+  }
+
   return (
     <div className={wrapperClasses}>
-      <Link href={href}>
-        <Button
-          variant="outline"
-          className={`${buttonClasses} ${className || ''}`}
-        >
-          <ArrowLeft className={iconClasses} />
-          <span className={labelClasses}>{label}</span>
-        </Button>
-      </Link>
+      <Button
+        type="button"
+        variant="outline"
+        className={`${buttonClasses} ${className || ''}`}
+        onClick={handleClick}
+      >
+        <ArrowLeft className={iconClasses} />
+        <span className={labelClasses}>{label}</span>
+      </Button>
     </div>
   )
 }

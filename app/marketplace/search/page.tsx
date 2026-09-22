@@ -6,8 +6,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Package, ArrowLeft, Star } from 'lucide-react'
+import { Package, Star } from 'lucide-react'
 import Link from 'next/link'
+import { BackButton } from '@/components/ui/back-button'
 import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -203,12 +204,11 @@ function SearchResultsContent() {
               : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`}
         </p>
         <div className="mb-6">
-          <Link href="/marketplace">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          </Link>
+          <BackButton
+            label="Back"
+            href="/marketplace"
+            hideLabelOnMobile={false}
+          />
         </div>
       </div>
 
