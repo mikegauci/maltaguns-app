@@ -11,6 +11,7 @@ export async function getHomePageData() {
       featuredListings: [],
       latestPosts: [],
       latestEvents: [],
+      eventsArePast: false,
       featuredEstablishments: [],
     }
   }
@@ -23,7 +24,8 @@ export async function fetchHomePageData() {
     recentListingsRes,
     featuredListingsRes,
     postsRes,
-    eventsRes,
+    upcomingEventsRes,
+    pastEventsRes,
     storesRes,
     rangesRes,
     servicingRes,
@@ -65,6 +67,12 @@ export async function fetchHomePageData() {
       .select('*')
       .gte('start_date', now)
       .order('start_date', { ascending: true })
+      .limit(10),
+    supabaseAdmin
+      .from('events')
+      .select('*')
+      .lt('start_date', now)
+      .order('start_date', { ascending: false })
       .limit(10),
     supabaseAdmin
       .from('stores')
@@ -123,11 +131,16 @@ export async function fetchHomePageData() {
     )
     .slice(0, 10)
 
+  const upcomingEvents = upcomingEventsRes.data || []
+  const pastEvents = pastEventsRes.data || []
+  const latestEvents = upcomingEvents.length > 0 ? upcomingEvents : pastEvents
+
   return {
     recentListings: recentListingsRes.data || [],
     featuredListings,
     latestPosts: postsRes.data || [],
-    latestEvents: eventsRes.data || [],
+    latestEvents,
+    eventsArePast: upcomingEvents.length === 0 && pastEvents.length > 0,
     featuredEstablishments,
   }
 }

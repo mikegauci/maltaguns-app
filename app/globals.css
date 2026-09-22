@@ -10,6 +10,14 @@
 
 @layer base {
   :root {
+    --chrome-bg: #0f1114;
+    --chrome-surface: #1a1d21;
+    --chrome-slate: #2a2f36;
+    --chrome-ink: #f4f4f5;
+    --chrome-muted: #a1a1aa;
+    --chrome-border: #3f3f46;
+    --chrome-brand: #cb0e0e;
+    --header-height: 4rem;
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -144,4 +152,120 @@
 .animate-bell-shake {
   transform-origin: 50% 10%;
   animation: bell-shake 650ms ease-in-out;
+}
+
+.home {
+  --home-bg: #0f1114;
+  --home-surface: #1a1d21;
+  --home-slate: #2a2f36;
+  --home-olive: #3d4a3a;
+  --home-ink: #f4f4f5;
+  --home-muted: #a1a1aa;
+  --home-border: #3f3f46;
+  --home-brand: #cb0e0e;
+  --home-brand-muted: #3f1515;
+  --home-brand-deep: #991b1b;
+  --home-tertiary: #71717a;
+  --home-tertiary-muted: #27272a;
+  --home-accent: #cb0e0e;
+  --home-accent-muted: #3f1515;
+  --home-amber: #cb0e0e;
+  --home-amber-muted: #3f1515;
+  --home-blue: #cb0e0e;
+  --home-blue-muted: #1a1d21;
+  --home-emerald: #a1a1aa;
+  --home-emerald-muted: #27272a;
+  --home-violet: #a1a1aa;
+  --home-violet-muted: #27272a;
+  background-color: var(--home-bg);
+  color: var(--home-ink);
+  font-family: var(--font-home-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+.home-icon-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.125rem;
+  flex-shrink: 0;
+}
+
+.home-icon-badge svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.home h1,
+.home h2,
+.home h3,
+.home .home-display {
+  font-family: var(--font-home-display), ui-sans-serif, system-ui, sans-serif;
+}
+
+.home-card {
+  background-color: var(--home-surface);
+  border: 1px solid var(--home-border);
+  border-radius: 0.25rem;
+  transition: border-color 200ms ease;
+}
+
+.home-card:hover {
+  border-color: var(--home-brand);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-enter {
+    animation: none;
+  }
+}
+
+.home-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.06;
+}
+
+.home-blueprint {
+  background-image:
+    linear-gradient(rgba(203, 14, 14, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(203, 14, 14, 0.07) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.home-callout {
+  border: 1px solid var(--home-border);
+  background-color: rgba(15, 17, 20, 0.85);
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--home-brand);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.125rem;
+}
+
+.site-chrome {
+  background-color: var(--chrome-bg);
+  color: var(--chrome-ink);
+}
+
+.site-chrome-header {
+  background-color: color-mix(in srgb, var(--chrome-bg) 92%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+@keyframes home-hero-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.home-hero-enter {
+  animation: home-hero-enter 600ms ease-out both;
 }

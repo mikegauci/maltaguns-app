@@ -1,12 +1,11 @@
 import { preload } from 'react-dom'
 import { getImageProps } from 'next/image'
+import { Oswald, IBM_Plex_Sans } from 'next/font/google'
 import { createClient } from '@/lib/supabase/server'
 import {
   HeroSection,
-  RecentListingsSection,
-  FeaturedListingsSection,
-  LatestArticlesSection,
-  UpcomingEventsSection,
+  MarketplaceSection,
+  ArticlesEventsSection,
   FeaturedEstablishmentsSection,
   ResourcesSection,
   CTASection,
@@ -16,6 +15,18 @@ import { JsonLd } from '@/components/seo/JsonLd'
 import { getSiteSettings } from '@/lib/seo'
 import { buildOrganizationSchema, buildWebSiteSchema } from '@/lib/seo-jsonld'
 import heroImage from '@/public/maltaguns-hero-2.jpg'
+
+const oswald = Oswald({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-home-display',
+})
+
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-home-body',
+})
 
 export const revalidate = 30
 
@@ -54,7 +65,9 @@ export default async function Home() {
     'The premier destination for the firearms community in Malta'
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className={`home min-h-screen ${oswald.variable} ${ibmPlexSans.variable}`}
+    >
       <JsonLd
         data={[
           buildOrganizationSchema({
@@ -69,13 +82,16 @@ export default async function Home() {
       />
       <HeroSection isAuthenticated={isAuthenticated} />
 
-      <RecentListingsSection listings={homeData.recentListings} />
+      <MarketplaceSection
+        featuredListings={homeData.featuredListings}
+        recentListings={homeData.recentListings}
+      />
 
-      <FeaturedListingsSection listings={homeData.featuredListings} />
-
-      <LatestArticlesSection posts={homeData.latestPosts} />
-
-      <UpcomingEventsSection events={homeData.latestEvents} />
+      <ArticlesEventsSection
+        posts={homeData.latestPosts}
+        events={homeData.latestEvents}
+        eventsArePast={homeData.eventsArePast}
+      />
 
       <FeaturedEstablishmentsSection
         establishments={homeData.featuredEstablishments}

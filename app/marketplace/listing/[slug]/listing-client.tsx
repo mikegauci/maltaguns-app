@@ -432,31 +432,28 @@ export default function ListingClient({
 
   useEffect(() => {
     let mounted = true
-    let timeoutId: NodeJS.Timeout
+    let completed = false
 
     async function initializeData() {
       try {
         setIsLoading(true)
 
-        // First check session and ownership
         const currentSession = await checkOwnership()
         console.log('Initial session check complete:', {
           hasSession: !!currentSession,
           userId: currentSession?.user?.id,
         })
 
-        // If we're not logged in, we can skip other checks
         if (!currentSession || !currentSession.user) {
           if (mounted) {
+            completed = true
             setIsLoading(false)
           }
           return
         }
 
-        // Get the user ID from the session
         const currentUserId = currentSession.user.id
 
-        // Run remaining checks in parallel only if we have a session
         if (mounted) {
           await Promise.all([
             checkIfFeatured(),
@@ -467,27 +464,27 @@ export default function ListingClient({
         }
 
         if (mounted) {
+          completed = true
           setIsLoading(false)
         }
       } catch (error) {
         console.error('Error initializing data:', error)
         if (mounted) {
+          completed = true
           setIsLoading(false)
         }
       }
     }
 
-    // Initialize data when session changes
     initializeData()
 
-    // Set a timeout to show loading state if initialization takes too long
-    timeoutId = setTimeout(() => {
-      if (mounted && isLoading) {
+    const timeoutId = setTimeout(() => {
+      if (mounted && !completed) {
         console.log('Loading timeout reached, forcing state update')
         setIsLoading(false)
         setSessionChecked(true)
       }
-    }, 3000) // 3 seconds timeout
+    }, 3000)
 
     return () => {
       mounted = false
@@ -502,7 +499,6 @@ export default function ListingClient({
     checkIfRetailer,
     checkIfSellerVerified,
     checkUserLicenseAccess,
-    isLoading,
   ])
 
   // Check license access whenever userId changes

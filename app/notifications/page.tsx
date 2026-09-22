@@ -143,10 +143,10 @@ export default function NotificationsPage() {
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-muted-foreground mt-1">
+                    <div className="text-sm text-foreground/80 mt-1">
                       {n.body}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-2">
+                    <div className="text-xs text-muted-foreground mt-2 tabular-nums">
                       {formatDate(n.created_at)}
                     </div>
                   </div>

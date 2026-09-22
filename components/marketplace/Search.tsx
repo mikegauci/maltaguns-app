@@ -46,13 +46,26 @@ interface SearchBarProps {
   disableShortcut?: boolean
   variant?: 'default' | 'inline'
   onSearchComplete?: () => void
+  theme?: 'default' | 'dark'
 }
 
 export function SearchBar({
   disableShortcut = false,
   variant = 'default',
   onSearchComplete,
+  theme = 'default',
 }: SearchBarProps) {
+  const isDark = theme === 'dark'
+  const fieldClass = isDark
+    ? 'bg-[var(--chrome-slate)] border-[var(--chrome-border)] text-[var(--chrome-ink)] placeholder:text-[var(--chrome-muted)]'
+    : variant === 'inline'
+      ? 'pl-9 bg-muted/60 border-transparent'
+      : ''
+  const selectClass = isDark
+    ? 'bg-[var(--chrome-slate)] border-[var(--chrome-border)] text-[var(--chrome-ink)]'
+    : variant === 'inline'
+      ? 'bg-muted/60 border-transparent'
+      : undefined
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [category, setCategory] = useState('all')
@@ -148,13 +161,7 @@ export function SearchBar({
     >
       <div className="flex flex-col gap-2">
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger
-            className={
-              variant === 'inline'
-                ? 'bg-muted/60 border-transparent'
-                : undefined
-            }
-          >
+          <SelectTrigger className={selectClass}>
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
           <SelectContent>
@@ -198,7 +205,7 @@ export function SearchBar({
               placeholder="Search listings..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className={`pr-8 w-full ${variant === 'inline' ? 'pl-9 bg-muted/60 border-transparent' : ''}`}
+              className={`pr-8 w-full ${variant === 'inline' ? 'pl-9' : ''} ${fieldClass}`}
             />
             {searchTerm && (
               <button
@@ -210,7 +217,14 @@ export function SearchBar({
               </button>
             )}
           </div>
-          <Button type="submit">
+          <Button
+            type="submit"
+            className={
+              isDark
+                ? 'rounded-sm bg-[var(--chrome-brand)] text-white hover:bg-[var(--chrome-brand)]/90'
+                : undefined
+            }
+          >
             <SearchIcon className="h-4 w-4" />
           </Button>
         </div>
@@ -233,7 +247,11 @@ export function SearchBar({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
-          className="w-full flex items-center gap-2"
+          className={`w-full flex items-center gap-2 rounded-sm ${
+            isDark
+              ? 'border-[var(--chrome-border)] bg-[var(--chrome-surface)] text-[var(--chrome-ink)] hover:bg-[var(--chrome-slate)] hover:text-[var(--chrome-brand)]'
+              : ''
+          }`}
           onClick={() => setIsOpen(true)}
         >
           <SearchIcon className="h-4 w-4" />
