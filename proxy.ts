@@ -9,6 +9,10 @@ import {
   getUserProfile,
 } from './middleware/utils'
 import { isNonProductionHost } from '@/lib/seo-host'
+import {
+  getAdminSecurityStatus,
+  getRequiredAdminSecurityRedirect,
+} from '@/lib/admin-security'
 
 function applyHostHeaders(req: NextRequest, res: NextResponse): NextResponse {
   if (isNonProductionHost(req.headers.get('host'))) {
@@ -62,7 +66,7 @@ export async function proxy(req: NextRequest) {
       purpose === 'prefetch' ||
       req.headers.get('x-middleware-prefetch') === '1' ||
       req.headers.get('next-router-prefetch') === '1'
-    if (isPrefetch) {
+    if (isPrefetch && !isAdminRoute) {
       return applyHostHeaders(req, NextResponse.next())
     }
 
@@ -86,6 +90,22 @@ export async function proxy(req: NextRequest) {
         console.log('User not authorized for admin:', user.email)
         const response = NextResponse.redirect(new URL('/', req.url))
         return applyHostHeaders(req, addSecurityHeaders(response))
+      }
+
+      try {
+        const status = await getAdminSecurityStatus(supabase, user.id)
+        const redirectTo = getRequiredAdminSecurityRedirect(
+          status,
+          req.nextUrl.pathname
+        )
+
+        if (redirectTo) {
+          const response = NextResponse.redirect(new URL(redirectTo, req.url))
+          return applyHostHeaders(req, addSecurityHeaders(response))
+        }
+      } catch (error) {
+        console.error('Admin security status check failed:', error)
+        return await signOutAndRedirectToLogin()
       }
     }
 

@@ -46,12 +46,33 @@ export async function handleLogin({
     throw error
   }
 
-  // Check for saved redirect URL
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   const redirectUrl = localStorage.getItem('redirectAfterLogin')
+  const destination =
+    redirectUrl && redirectUrl.startsWith('/admin') ? redirectUrl : null
 
   if (redirectUrl) {
-    console.log(`Redirecting to saved location: ${redirectUrl}`)
     localStorage.removeItem('redirectAfterLogin')
+  }
+
+  if (destination && user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.is_admin) {
+      router.push(destination)
+      router.refresh()
+      return
+    }
+  }
+
+  if (redirectUrl) {
     router.push(redirectUrl)
   } else {
     router.push('/profile')

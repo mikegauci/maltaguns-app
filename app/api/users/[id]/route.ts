@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
 import { buildAdminIdentityOverride } from '@/lib/identity-status'
+import { validateAdminPassword } from '@/lib/admin-password-policy'
+import {
+  assertPasswordNotReused,
+  recordPasswordHistory,
+} from '@/lib/admin-password-history'
 
 const PROFILE_FIELDS = [
   'username',
@@ -29,7 +34,7 @@ export async function PATCH(
 
     const { data: userProfile, error: userProfileError } = await supabaseAdmin
       .from('profiles')
-      .select('id')
+      .select('id, is_admin')
       .eq('id', params.id)
       .single()
 
@@ -69,6 +74,14 @@ export async function PATCH(
       )
     }
 
+    const willBeAdmin =
+      body.is_admin === true ||
+      (body.is_admin !== false && Boolean(userProfile.is_admin))
+
+    if (body.is_admin === true && !userProfile.is_admin) {
+      updateData.must_change_password = true
+    }
+
     if (Object.keys(updateData).length > 0) {
       const { error: updateError } = await supabaseAdmin
         .from('profiles')
@@ -85,6 +98,27 @@ export async function PATCH(
     }
 
     if (body.password) {
+      if (willBeAdmin) {
+        const validation = validateAdminPassword(body.password)
+        if (!validation.valid) {
+          return NextResponse.json({ error: validation.error }, { status: 400 })
+        }
+
+        try {
+          await assertPasswordNotReused(params.id, body.password)
+        } catch (error) {
+          return NextResponse.json(
+            {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Password reuse not allowed',
+            },
+            { status: 400 }
+          )
+        }
+      }
+
       const { error: passwordError } =
         await supabaseAdmin.auth.admin.updateUserById(params.id, {
           password: body.password,
@@ -96,6 +130,34 @@ export async function PATCH(
           { error: `Failed to update password: ${passwordError.message}` },
           { status: 400 }
         )
+      }
+
+      if (willBeAdmin) {
+        try {
+          await recordPasswordHistory(params.id, body.password)
+        } catch (error) {
+          return NextResponse.json(
+            {
+              error:
+                error instanceof Error
+                  ? error.message
+                  : 'Failed to record password history',
+            },
+            { status: 500 }
+          )
+        }
+
+        const { error: flagError } = await supabaseAdmin
+          .from('profiles')
+          .update({ must_change_password: true })
+          .eq('id', params.id)
+
+        if (flagError) {
+          return NextResponse.json(
+            { error: 'Password updated but failed to set change flag' },
+            { status: 500 }
+          )
+        }
       }
     }
 

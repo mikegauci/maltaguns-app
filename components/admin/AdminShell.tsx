@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -22,6 +22,7 @@ import {
   SITE_NAV_ITEMS,
   isAdminNavActive,
 } from '@/lib/admin-nav'
+import { ADMIN_SECURITY_ROUTES } from '@/lib/admin-security'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -78,10 +79,12 @@ export function AdminShell({
     })
   }, [pathname])
 
-  useLayoutEffect(() => {
-    const stored = window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY)
-    setSidebarCollapsed(stored === 'true')
-    setSidebarInitialized(true)
+  useEffect(() => {
+    scheduleEffectWork(() => {
+      const stored = window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY)
+      setSidebarCollapsed(stored === 'true')
+      setSidebarInitialized(true)
+    })
   }, [])
 
   const toggleSidebar = () => {
@@ -121,6 +124,19 @@ export function AdminShell({
       prefetchPublic={prefetchPublic}
     />
   )
+
+  const isCenteredSecurityRoute =
+    pathname.startsWith(ADMIN_SECURITY_ROUTES.changePassword) ||
+    pathname.startsWith(ADMIN_SECURITY_ROUTES.mfaEnroll) ||
+    pathname.startsWith(ADMIN_SECURITY_ROUTES.mfaVerify)
+
+  if (isCenteredSecurityRoute) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        {children}
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
@@ -197,6 +213,9 @@ export function AdminShell({
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild className="cursor-pointer">
                       <Link href="/wishlist">Wishlist</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer">
+                      <Link href="/admin/security">Security</Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="cursor-pointer text-destructive"

@@ -47,6 +47,7 @@ export interface Database {
           email: string | null
           full_name: string | null
           is_admin: boolean | null
+          must_change_password: boolean
           created_at: string | null
           updated_at: string | null
         }
