@@ -46,39 +46,75 @@ export default function RegisterPage() {
       title="Register as a dealership"
       description="Apply for the full Armory dealer dashboard. Your licence will be verified by platform admin."
     >
-      <SectionCard>
+      <SectionCard className="max-w-2xl">
+        <Alert className="mb-6 border-blue-200 bg-blue-50">
+          <AlertDescription className="text-blue-900">
+            After you submit, our team will verify your dealer licence. You can
+            complete your company profile while you wait; full dashboard access
+            unlocks once approved.
+          </AlertDescription>
+        </Alert>
         {error && (
-          <Alert variant="destructive" className="mb-4">
+          <Alert variant="destructive" className="mb-6">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <form onSubmit={onSubmit} className="max-w-xl space-y-4">
-          <FormField label="Company name">
-            <Input name="companyName" required />
-          </FormField>
-          <FormField label="Licence holder full name">
-            <Input
-              name="contactName"
-              required
-              placeholder="First and last name on the dealer licence"
-            />
-          </FormField>
-          <FormField label="Phone number">
-            <Input name="phoneNumber" required />
-          </FormField>
-          <FormField label="Dealer licence number">
-            <Input
-              name="dealerLicenceNumber"
-              required
-              placeholder="SB/WO/00000/2010"
-            />
-          </FormField>
-          <FormField label="Licence expiry date">
-            <Input name="dealerLicenceExpiry" type="date" required />
-          </FormField>
-          <Button type="submit" disabled={pending}>
-            {pending ? 'Submitting…' : 'Submit registration'}
-          </Button>
+        <form onSubmit={onSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold tracking-tight">
+              Company details
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <FormField label="Company name" className="sm:col-span-2">
+                <Input
+                  name="companyName"
+                  required
+                  autoComplete="organization"
+                />
+              </FormField>
+              <FormField label="Licence holder full name">
+                <Input
+                  name="contactName"
+                  required
+                  autoComplete="name"
+                  placeholder="First and last name on the dealer licence"
+                />
+              </FormField>
+              <FormField label="Phone number">
+                <Input
+                  name="phoneNumber"
+                  type="tel"
+                  required
+                  autoComplete="tel"
+                />
+              </FormField>
+            </div>
+          </div>
+          <div className="space-y-4 border-t pt-6">
+            <h2 className="text-lg font-semibold tracking-tight">
+              Dealer licence
+            </h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <FormField
+                label="Dealer licence number"
+                hint="As printed on your Malta dealer licence"
+              >
+                <Input
+                  name="dealerLicenceNumber"
+                  required
+                  placeholder="SB/WO/00000/2010"
+                />
+              </FormField>
+              <FormField label="Licence expiry date">
+                <Input name="dealerLicenceExpiry" type="date" required />
+              </FormField>
+            </div>
+          </div>
+          <div className="flex justify-end border-t pt-4">
+            <Button type="submit" disabled={pending}>
+              {pending ? 'Submitting…' : 'Submit registration'}
+            </Button>
+          </div>
         </form>
       </SectionCard>
     </ProfilePageLayout>
