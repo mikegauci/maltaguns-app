@@ -129,18 +129,15 @@ export default function AdminHelpGuidesPage() {
   )
 
   const assignmentsByGuide = useMemo(() => {
+    const sortedAssignments = [...assignments].sort(
+      (a, b) => a.sort_order - b.sort_order
+    )
     const map = new Map<string, GuideAssignment[]>()
-    for (const assignment of assignments) {
+    for (const assignment of sortedAssignments) {
       const list = map.get(assignment.blog_post_id) ?? []
       list.push(assignment)
       map.set(assignment.blog_post_id, list)
     }
-    map.forEach((list, guideId) => {
-      map.set(
-        guideId,
-        [...list].sort((a, b) => a.sort_order - b.sort_order)
-      )
-    })
     return map
   }, [assignments])
 
