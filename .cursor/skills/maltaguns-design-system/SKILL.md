@@ -13,8 +13,8 @@ Dev styleguide (local only): `/design-system`
 
 ## When to apply
 
-- **Use:** all public routes (`/marketplace`, `/establishments`, `/events`, `/blog`, `/profile/**`, auth, legal, etc.)
-- **Do not use:** `/admin/**` (unchanged), `/profile/armory/print/**` (light for printing)
+- **Use:** all public routes (`/marketplace`, `/establishments`, `/events`, `/blog`, `/profile/**`, `/admin/**`, auth, legal, etc.)
+- **Do not use:** `/profile/armory/print/**` (light for printing)
 
 Public pages get `html.app-dark` via `ThemeProvider` — prefer shadcn semantic tokens (`bg-background`, `text-primary`) so portaled dialogs inherit dark theme.
 
@@ -90,7 +90,7 @@ Existing shells (do not duplicate):
 
 **Cards:** `AppCard` or `className="app-card"`. `rounded-sm`, no `hover:shadow-lg`.
 
-**Buttons:** Primary = brand red (`Button` default). Secondary = `variant="outline"`. `rounded-sm`.
+**Buttons:** Primary = `Button` default (brand red). Secondary = white fill + dark text (`variant="secondary"`). Tertiary = grey fill (`variant="tertiary"`). Outline/ghost for lower emphasis. Prefer `rounded-sm` on tactical surfaces.
 
 **Alerts:** `AppAlert variant="pending|rejected|success"` — not light-mode `bg-amber-50`.
 
@@ -105,7 +105,7 @@ Existing shells (do not duplicate):
 - Pill-shaped CTAs (`rounded-full` on primary actions)
 - Absolute-positioned back buttons without a flex toolbar
 - Changing global `:root` for dark mode (use `html.app-dark` instead)
-- Applying dark styling to `/admin` or print routes
+- Applying dark styling to print routes
 
 ## File map
 

@@ -4,7 +4,6 @@ import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 
 function shouldUseDarkTheme(pathname: string) {
-  if (pathname.startsWith('/admin')) return false
   if (pathname.startsWith('/profile/armory/print')) return false
   return true
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { AdminTableLoader } from '@/components/admin/AdminTableLoader'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import {
@@ -315,9 +316,7 @@ function SeoPageComponent() {
       description="Manage global defaults and per-page meta title/description overrides"
     >
       {isLoading ? (
-        <div className="w-full flex justify-center my-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-        </div>
+        <AdminTableLoader />
       ) : (
         <form onSubmit={handleSubmit} className="mt-6 pb-24">
           <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-6 items-start">

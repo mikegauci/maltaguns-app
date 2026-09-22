@@ -29,7 +29,7 @@ export function ProfilePageLayout({
       <PageHeader
         title={title}
         description={description}
-        uppercase={titleUppercase}
+        titleUppercase={titleUppercase}
         actions={
           actionButton ? (
             <Button onClick={actionButton.onClick} className="shrink-0">

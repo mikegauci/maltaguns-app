@@ -43,7 +43,7 @@ export function ImpersonationBanner({
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-4 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950">
+    <div className="fixed left-0 right-0 top-0 z-50 flex items-center justify-center gap-4 border-b border-amber-700 bg-amber-950/95 px-4 py-2 text-sm font-medium text-amber-100">
       <span>
         Viewing as <strong>{targetUsername}</strong> (admin: {adminUsername})
       </span>
@@ -52,7 +52,7 @@ export function ImpersonationBanner({
         size="sm"
         onClick={handleStop}
         disabled={isStopping}
-        className="border-amber-700 bg-amber-50 text-amber-950 hover:bg-amber-100"
+        className="border-amber-600 bg-amber-900/50 text-amber-100 hover:bg-amber-900 hover:text-amber-50"
       >
         {isStopping ? 'Stopping…' : 'Stop impersonating'}
       </Button>

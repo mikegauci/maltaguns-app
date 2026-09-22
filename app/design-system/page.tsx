@@ -74,11 +74,22 @@ export default function DesignSystemPage() {
         <section>
           <AppSectionHeading>Buttons</AppSectionHeading>
           <div className="flex flex-wrap gap-3">
-            <Button>Primary</Button>
-            <Button variant="outline">Outline</Button>
-            <Button variant="secondary">Secondary</Button>
-            <Button variant="destructive">Destructive</Button>
-            <Button variant="ghost">Ghost</Button>
+            <Button className="rounded-sm">Primary</Button>
+            <Button variant="outline" className="rounded-sm">
+              Outline
+            </Button>
+            <Button variant="secondary" className="rounded-sm">
+              Secondary
+            </Button>
+            <Button variant="tertiary" className="rounded-sm">
+              Tertiary
+            </Button>
+            <Button variant="destructive" className="rounded-sm">
+              Destructive
+            </Button>
+            <Button variant="ghost" className="rounded-sm">
+              Ghost
+            </Button>
           </div>
         </section>
 

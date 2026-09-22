@@ -1,19 +1,11 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Package } from 'lucide-react'
+import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 
 const categories = [
   {
     title: 'Firearms',
-    icon: (
-      <Image
-        src="/images/pistol-gun-icon.svg"
-        alt=""
-        width={16}
-        height={16}
-        aria-hidden
-      />
-    ),
+    icon: <PistolGunIcon className="h-4 w-4" />,
     href: '/marketplace/firearms',
     subcategories: [
       { name: 'Airguns', href: '/marketplace/firearms/airguns' },

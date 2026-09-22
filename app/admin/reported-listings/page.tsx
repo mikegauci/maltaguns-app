@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { Badge } from '@/components/ui/badge'
+import { AdminTableLoader } from '@/components/admin/AdminTableLoader'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
@@ -402,17 +403,15 @@ function ReportedListingsPageComponent() {
           </Link>
         </p>
       )}
-      <DataTable
-        columns={columns}
-        data={isLoading ? [] : displayedReports}
-        searchKey="listingTitle"
-        searchPlaceholder="Search by listing title..."
-      />
-
-      {isLoading && (
-        <div className="w-full flex justify-center my-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
+      {isLoading ? (
+        <AdminTableLoader />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={displayedReports}
+          searchKey="listingTitle"
+          searchPlaceholder="Search by listing title..."
+        />
       )}
 
       {/* Status Update Dialog */}
