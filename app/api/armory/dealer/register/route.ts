@@ -7,34 +7,43 @@ export async function POST(req: NextRequest) {
   const auth = await requireAuthenticatedUser()
   if ('error' in auth) return auth.error
 
-  const body = await req.json()
-  const {
-    companyName,
-    contactName,
-    phoneNumber,
-    dealerLicenceNumber,
-    dealerLicenceExpiry,
-  } = body
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
 
-  if (!companyName?.trim()) {
+  const companyName =
+    typeof body.companyName === 'string' ? body.companyName : ''
+  const contactName =
+    typeof body.contactName === 'string' ? body.contactName : ''
+  const phoneNumber =
+    typeof body.phoneNumber === 'string' ? body.phoneNumber : ''
+  const dealerLicenceNumber =
+    typeof body.dealerLicenceNumber === 'string' ? body.dealerLicenceNumber : ''
+  const dealerLicenceExpiry =
+    typeof body.dealerLicenceExpiry === 'string' ? body.dealerLicenceExpiry : ''
+
+  if (!companyName.trim()) {
     return NextResponse.json(
       { error: 'Company name is required' },
       { status: 400 }
     )
   }
-  if (!contactName?.trim()) {
+  if (!contactName.trim()) {
     return NextResponse.json(
       { error: 'Licence holder name is required' },
       { status: 400 }
     )
   }
-  if (!phoneNumber?.trim()) {
+  if (!phoneNumber.trim()) {
     return NextResponse.json(
       { error: 'Phone number is required' },
       { status: 400 }
     )
   }
-  if (!dealerLicenceNumber?.trim()) {
+  if (!dealerLicenceNumber.trim()) {
     return NextResponse.json(
       { error: 'Dealer licence number is required' },
       { status: 400 }
@@ -47,7 +56,16 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const expiryDate = new Date(dealerLicenceExpiry)
+  if (Number.isNaN(expiryDate.getTime())) {
+    return NextResponse.json(
+      { error: 'Licence expiry date is invalid' },
+      { status: 400 }
+    )
+  }
+
   const supabase = await createClient()
+  const licenceNumber = dealerLicenceNumber.trim()
 
   const { data: existing } = await supabase
     .from('armory_dealer_accounts')
@@ -58,6 +76,19 @@ export async function POST(req: NextRequest) {
   if (existing) {
     return NextResponse.json(
       { error: 'You already have a dealership registration' },
+      { status: 400 }
+    )
+  }
+
+  const { data: licenceInUse } = await supabase
+    .from('armory_dealer_accounts')
+    .select('id')
+    .eq('dealer_licence_number', licenceNumber)
+    .maybeSingle()
+
+  if (licenceInUse) {
+    return NextResponse.json(
+      { error: 'This dealer licence number is already registered' },
       { status: 400 }
     )
   }
@@ -74,7 +105,7 @@ export async function POST(req: NextRequest) {
       contact_surname: contactSurname,
       contact_first_names: contactFirstNames,
       phone_number: phoneNumber.trim(),
-      dealer_licence_number: dealerLicenceNumber.trim(),
+      dealer_licence_number: licenceNumber,
       dealer_licence_expiry: dealerLicenceExpiry,
       email: auth.user.email,
       account_status: 'pending',
@@ -99,6 +130,7 @@ export async function POST(req: NextRequest) {
     })
 
   if (staffError) {
+    await supabase.from('armory_dealer_accounts').delete().eq('id', account.id)
     return NextResponse.json({ error: staffError.message }, { status: 500 })
   }
 
