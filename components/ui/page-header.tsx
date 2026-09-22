@@ -8,6 +8,7 @@ interface PageHeaderProps {
   actions?: React.ReactNode
   backHref?: string
   backLabel?: string
+  titleUppercase?: boolean
 }
 
 export function PageHeader({
@@ -17,6 +18,7 @@ export function PageHeader({
   actions,
   backHref,
   backLabel = 'Back',
+  titleUppercase = true,
 }: PageHeaderProps) {
   return (
     <>
@@ -36,7 +38,12 @@ export function PageHeader({
         )}
       >
         <div className="max-w-2xl">
-          <h1 className="app-display text-2xl font-bold uppercase tracking-tight text-foreground md:text-3xl text-balance">
+          <h1
+            className={cn(
+              'app-display text-2xl font-bold tracking-tight text-foreground md:text-3xl text-balance',
+              titleUppercase && 'uppercase'
+            )}
+          >
             {title}
           </h1>
           {description ? (

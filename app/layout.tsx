@@ -64,7 +64,7 @@ export default async function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname;if(!p.startsWith('/admin')&&!p.startsWith('/profile')){document.documentElement.classList.add('app-dark')}}catch(e){}})();`,
+            __html: `(function(){try{var p=location.pathname;if(!p.startsWith('/profile/armory/print')){document.documentElement.classList.add('app-dark')}}catch(e){}})();`,
           }}
         />
       </head>

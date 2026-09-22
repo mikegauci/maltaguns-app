@@ -20,8 +20,8 @@ import { AdminActionCard } from '@/app/admin/components/AdminActionCard'
 import { AdminOverviewLists } from '@/app/admin/components/AdminOverviewLists'
 import { AdminStatCard } from '@/app/admin/components/AdminStatCard'
 import { Button } from '@/components/ui/button'
+import { AppAlert, AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -96,20 +96,20 @@ function AdminDashboardComponent() {
         title="Admin Dashboard"
         description="Platform overview and items needing attention."
       >
-        <Card className="border-destructive/40 bg-destructive/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" />
-              Could not load overview
-            </CardTitle>
-            <CardDescription>{error ?? 'Unknown error'}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button variant="outline" onClick={() => void fetchOverview()}>
-              Try again
-            </Button>
-          </CardContent>
-        </Card>
+        <AppAlert
+          variant="rejected"
+          icon={<AlertCircle className="h-4 w-4" />}
+          title="Could not load overview"
+        >
+          <p>{error ?? 'Unknown error'}</p>
+          <Button
+            variant="outline"
+            className="mt-3"
+            onClick={() => void fetchOverview()}
+          >
+            Try again
+          </Button>
+        </AppAlert>
       </AdminPageLayout>
     )
   }
@@ -128,20 +128,13 @@ function AdminDashboardComponent() {
     >
       <div className="space-y-8">
         {overview.warnings.length > 0 && (
-          <Card className="border-amber-500/40 bg-amber-500/5">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-amber-900">
-                Some metrics are unavailable
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-1 text-sm text-muted-foreground">
-                {overview.warnings.map(warning => (
-                  <li key={warning}>{warning}</li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          <AppAlert variant="pending" title="Some metrics are unavailable">
+            <ul className="space-y-1">
+              {overview.warnings.map(warning => (
+                <li key={warning}>{warning}</li>
+              ))}
+            </ul>
+          </AppAlert>
         )}
 
         <section className="space-y-3">
@@ -230,7 +223,7 @@ function AdminDashboardComponent() {
         />
 
         {overview.blog && (
-          <Card>
+          <AppCard>
             <CardHeader className="flex flex-row items-start justify-between gap-3">
               <div>
                 <CardTitle>Blog snapshot</CardTitle>
@@ -243,28 +236,28 @@ function AdminDashboardComponent() {
               </Button>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="flex items-center gap-3 rounded-lg border p-4">
+              <div className="flex items-center gap-3 rounded-sm border border-border p-4">
                 <FileText className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">
                     Published posts
                   </p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-2xl font-bold tabular-nums">
                     {overview.blog.publishedPosts.toLocaleString(NUMBER_FORMAT)}
                   </p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-lg border p-4">
+              <div className="flex items-center gap-3 rounded-sm border border-border p-4">
                 <Eye className="h-5 w-5 text-muted-foreground" />
                 <div>
                   <p className="text-sm text-muted-foreground">Total views</p>
-                  <p className="text-2xl font-bold">
+                  <p className="text-2xl font-bold tabular-nums">
                     {overview.blog.totalViews.toLocaleString(NUMBER_FORMAT)}
                   </p>
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </AppCard>
         )}
       </div>
     </AdminPageLayout>

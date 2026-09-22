@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { LucideIcon } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AppCard } from '@/components/design-system'
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 interface AdminStatCardProps {
@@ -21,7 +22,7 @@ export function AdminStatCard({
   className,
 }: AdminStatCardProps) {
   const content = (
-    <Card
+    <AppCard
       className={cn(
         href && 'transition-colors hover:border-primary/30 hover:bg-accent/30',
         className
@@ -32,12 +33,12 @@ export function AdminStatCard({
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
+        <div className="text-2xl font-bold tabular-nums">{value}</div>
         {subtitle && (
           <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
         )}
       </CardContent>
-    </Card>
+    </AppCard>
   )
 
   if (href) {

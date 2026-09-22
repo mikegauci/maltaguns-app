@@ -33,8 +33,8 @@ import { format } from 'date-fns'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { FeatureCreditDialog, ReportListingDialog } from '@/components/dialogs'
 import { LoadingState } from '@/components/ui/loading-state'
-import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
+import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
 import { ImageLightbox } from '@/components/marketplace/ImageLightbox'
 import {
@@ -983,13 +983,7 @@ export default function ListingClient({
             <CardContent className="p-6 space-y-6">
               <div className="flex items-center gap-2 mb-4">
                 {listing.type === 'firearms' ? (
-                  <Image
-                    src="/images/pistol-gun-icon.svg"
-                    alt="Firearms"
-                    width={20}
-                    height={20}
-                    className="mr-2"
-                  />
+                  <PistolGunIcon className="mr-2 h-5 w-5" />
                 ) : (
                   <Package className="h-5 w-5 mr-2" />
                 )}

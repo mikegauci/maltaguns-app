@@ -33,6 +33,9 @@ import { CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { AdminStatusBadge } from '@/components/admin/AdminStatusBadge'
+import { AdminTableLoader } from '@/components/admin/AdminTableLoader'
+import { listingStatusTone } from '@/lib/admin/listing-ui'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
@@ -152,9 +155,9 @@ function ListingsPageComponent() {
         return (
           <div className="flex items-center gap-2">
             {featured && (
-              <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full mr-1">
+              <AdminStatusBadge tone="pending" className="mr-1">
                 Featured
-              </span>
+              </AdminStatusBadge>
             )}
             {title}
           </div>
@@ -206,19 +209,9 @@ function ListingsPageComponent() {
         const displayStatus = expired ? 'expired' : status
 
         return (
-          <div
-            className={`px-2 py-1 rounded-full text-xs inline-block ${
-              displayStatus === 'active'
-                ? 'bg-green-100 text-green-800'
-                : displayStatus === 'pending'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : displayStatus === 'expired'
-                    ? 'bg-gray-100 text-gray-800'
-                    : 'bg-red-100 text-red-800'
-            }`}
-          >
+          <AdminStatusBadge tone={listingStatusTone(displayStatus)}>
             {displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)}
-          </div>
+          </AdminStatusBadge>
         )
       },
     },
@@ -651,16 +644,15 @@ function ListingsPageComponent() {
 
   return (
     <AdminPageLayout title="Listing Management" description="Manage listings">
-      <DataTable
-        columns={columns}
-        data={isLoading ? [] : listings}
-        searchKey="title"
-        searchPlaceholder="Search listings..."
-      />
-      {isLoading && (
-        <div className="w-full flex justify-center my-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
+      {isLoading ? (
+        <AdminTableLoader />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={listings}
+          searchKey="title"
+          searchPlaceholder="Search listings..."
+        />
       )}
 
       {/* Edit Listing Dialog */}

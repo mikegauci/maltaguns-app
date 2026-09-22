@@ -6,8 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -115,7 +115,7 @@ export default function AdminChangePasswordPage() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <AppCard className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Change admin password</CardTitle>
         <CardDescription>
@@ -240,6 +240,6 @@ export default function AdminChangePasswordPage() {
           </form>
         </Form>
       </CardContent>
-    </Card>
+    </AppCard>
   )
 }

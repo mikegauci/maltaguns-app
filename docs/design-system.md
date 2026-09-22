@@ -6,12 +6,11 @@ Dark industrial UI for MaltaGuns public routes. This document mirrors the Cursor
 
 ## Theme scopes
 
-| Route         | Theme                   | Mechanism                                |
-| ------------- | ----------------------- | ---------------------------------------- |
-| Public pages  | Dark tactical           | `html.app-dark` via `ThemeProvider`      |
-| `/profile/**` | Light                   | `app-dark` removed on pathname           |
-| `/admin/**`   | Unchanged               | No dark theme applied                    |
-| `/` homepage  | Dark + marketing extras | `.home` wrapper coexists with `app-dark` |
+| Route                                      | Theme                   | Mechanism                                |
+| ------------------------------------------ | ----------------------- | ---------------------------------------- |
+| Public pages + `/profile/**` + `/admin/**` | Dark tactical           | `html.app-dark` via `ThemeProvider`      |
+| `/profile/armory/print/**`                 | Light (print)           | `app-dark` removed on pathname           |
+| `/` homepage                               | Dark + marketing extras | `.home` wrapper coexists with `app-dark` |
 
 ## Colors
 
@@ -59,7 +58,22 @@ import { PageHeader } from '@/components/ui/page-header'
 - **AppCard** — flat card with border hover; pass `featured` for primary border emphasis
 - **AppSectionHeading** — in-page h2; optional `icon` slot
 - **AppPageToolbar** — `backHref` + `actions`
-- **AppAlert** — `pending`, `rejected`, `success` variants for status messaging (dark public pages only; do not use on `/profile`)
+- **AppAlert** — `pending`, `rejected`, `success` variants for status messaging
+
+## Buttons
+
+Use shadcn `Button` from `@/components/ui/button`:
+
+| Variant       | Use for                                      |
+| ------------- | -------------------------------------------- |
+| `default`     | Primary CTA — brand red                      |
+| `outline`     | Bordered neutral action on dark surfaces     |
+| `secondary`   | White fill, dark text — high-contrast action |
+| `tertiary`    | Grey fill — lower-emphasis filled action     |
+| `destructive` | Irreversible or dangerous actions            |
+| `ghost`       | Minimal toolbar / inline actions             |
+
+Badge `variant="secondary"` stays grey — only the button secondary variant is white.
 
 ## Do
 
@@ -73,4 +87,4 @@ import { PageHeader } from '@/components/ui/page-header'
 - Light-mode-only colors (`text-gray-700`, `bg-amber-50`)
 - Heavy shadows (`hover:shadow-lg`)
 - Absolute-positioned navigation without a toolbar wrapper
-- Dark styling on profile or admin
+- Dark styling on print routes

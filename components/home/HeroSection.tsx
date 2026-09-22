@@ -61,9 +61,9 @@ export const HeroSection = ({ isAuthenticated }: HeroSectionProps) => {
             </Link>
             <Link href="/marketplace" className="w-full sm:w-auto">
               <Button
-                variant="outline"
+                variant="secondary"
                 size="lg"
-                className="w-full sm:w-auto rounded-sm border-white bg-white text-black hover:bg-white/90 hover:text-black uppercase tracking-wide text-xs"
+                className="w-full sm:w-auto rounded-sm uppercase tracking-wide text-xs font-semibold"
               >
                 Browse marketplace
               </Button>

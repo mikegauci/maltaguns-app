@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { AdminInlineNotice } from '@/components/admin/AdminInlineNotice'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -429,18 +430,18 @@ function IdentityReviewDetailPageComponent() {
                 {decision.warnings.map((warning, index) => (
                   <li
                     key={`${warning.risk}-${index}`}
-                    className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2"
+                    className="space-y-1 rounded-sm border border-amber-900/50 bg-amber-950/40 px-3 py-2 text-amber-100"
                   >
-                    <p className="font-medium">
+                    <p className="text-sm font-medium">
                       {warning.shortDescription || warning.risk || 'Warning'}
                     </p>
                     {warning.longDescription ? (
-                      <p className="text-muted-foreground mt-1">
+                      <p className="text-sm opacity-90">
                         {warning.longDescription}
                       </p>
                     ) : null}
                     {warning.feature ? (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs opacity-80">
                         {warning.feature}
                         {warning.logType ? ` · ${warning.logType}` : ''}
                       </p>

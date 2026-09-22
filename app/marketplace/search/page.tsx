@@ -9,8 +9,8 @@ import { AppCard } from '@/components/design-system'
 import { Badge } from '@/components/ui/badge'
 import { Package, Star } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
+import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { formatPrice, slugify } from '@/lib/format'
@@ -148,13 +148,7 @@ function SearchResultsContent() {
           <div className="flex items-center gap-2 mb-2 sm:mb-3">
             {listing.type === 'firearms' ? (
               <div className="inline-flex">
-                <Image
-                  src="/images/pistol-gun-icon.svg"
-                  alt="Firearms"
-                  width={16}
-                  height={16}
-                  className="mr-2"
-                />
+                <PistolGunIcon className="mr-2 h-4 w-4" />
               </div>
             ) : (
               <div className="inline-flex">

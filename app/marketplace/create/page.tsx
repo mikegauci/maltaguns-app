@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import Image from 'next/image'
+import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 
 // Import custom hooks and handlers
 import { useSellerStatus } from './hooks/useSellerStatus'
@@ -76,12 +76,7 @@ export default function CreateListing() {
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Image
-                src="/images/pistol-gun-icon.svg"
-                alt="Firearms"
-                width={20}
-                height={20}
-              />
+              <PistolGunIcon className="h-5 w-5" />
               Firearms Listing
             </CardTitle>
             <CardDescription>
