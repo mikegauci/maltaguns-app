@@ -9,8 +9,7 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { isRecoverySession } from '@/lib/admin-security'
 
 export type AdminPasswordChangeResult =
-  | { success: true }
-  | { success: false; error: string; status: number }
+  { success: true } | { success: false; error: string; status: number }
 
 function isInvalidCredentialsError(message: string): boolean {
   const normalized = message.toLowerCase()

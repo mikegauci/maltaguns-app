@@ -22,8 +22,7 @@ export const adminPasswordWithConfirmSchema = z
   })
 
 export type AdminPasswordValidationResult =
-  | { valid: true }
-  | { valid: false; error: string }
+  { valid: true } | { valid: false; error: string }
 
 export function validateAdminPassword(
   password: string

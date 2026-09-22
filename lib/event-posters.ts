@@ -13,8 +13,7 @@ export const EVENT_ACCEPTED_IMAGE_TYPES = [
 ]
 
 export type EventPosterValidationError =
-  | { code: 'file_too_large' }
-  | { code: 'invalid_type' }
+  { code: 'file_too_large' } | { code: 'invalid_type' }
 
 export function validateEventPoster(
   file: File

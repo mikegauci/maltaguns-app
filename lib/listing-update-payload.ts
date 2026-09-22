@@ -12,8 +12,7 @@ export type ListingContentUpdateFields = {
 }
 
 export type BuildListingUpdatePayloadResult =
-  | { ok: true; payload: Record<string, unknown> }
-  | { ok: false; error: string }
+  { ok: true; payload: Record<string, unknown> } | { ok: false; error: string }
 
 function parsePrice(price: string | number | undefined): number | undefined {
   if (price === undefined) return undefined

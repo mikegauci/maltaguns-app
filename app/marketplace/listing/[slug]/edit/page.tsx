@@ -244,9 +244,7 @@ export default function EditListing(props: {
         }
 
         const editableUntilIso = (listing as any).editable_until as
-          | string
-          | null
-          | undefined
+          string | null | undefined
         const editableUntilMs = (() => {
           if (editableUntilIso) {
             const ts = Date.parse(editableUntilIso)

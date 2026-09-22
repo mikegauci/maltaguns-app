@@ -500,8 +500,7 @@ function AdminNavLink({
   onNavigate,
 }: {
   item:
-    | (typeof ADMIN_NAV_GROUPS)[number]['items'][number]
-    | typeof ADMIN_OVERVIEW
+    (typeof ADMIN_NAV_GROUPS)[number]['items'][number] | typeof ADMIN_OVERVIEW
   pathname: string
   collapsed: boolean
   onNavigate: () => void
