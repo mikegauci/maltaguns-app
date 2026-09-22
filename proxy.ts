@@ -38,22 +38,6 @@ export async function proxy(req: NextRequest) {
       return applyHostHeaders(req, addSecurityHeaders(response))
     }
 
-    if (req.nextUrl.pathname.startsWith('/api/webhooks/stripe')) {
-      console.log(
-        '[PROXY] Detected Stripe webhook request, skipping auth check'
-      )
-      return applyHostHeaders(
-        req,
-        NextResponse.next({
-          request: {
-            headers: new Headers({
-              'x-middleware-next': '1',
-            }),
-          },
-        })
-      )
-    }
-
     const needsAuth = isProtectedRoute(req.nextUrl.pathname, PROTECTED_ROUTES)
     const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
 
@@ -117,8 +101,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|public).*)',
-    '/api/webhooks/stripe',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)'],
 }

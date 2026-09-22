@@ -63,7 +63,7 @@ export async function GET() {
         amount: transaction.amount,
         type: transaction.type,
         credit_type: transaction.credit_type,
-        stripe_payment_id: transaction.stripe_payment_id,
+        external_payment_id: transaction.external_payment_id,
         status: transaction.status,
         description: transaction.description,
         created_at: transaction.created_at,

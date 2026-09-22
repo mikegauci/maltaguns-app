@@ -97,17 +97,6 @@ export default function CookiePolicy() {
                 </td>
                 <td className="py-2">localStorage</td>
               </tr>
-              <tr className="border-b align-top">
-                <td className="py-2 pr-4">
-                  Stripe (checkout)
-                  <br />
-                  <span className="text-xs">stripe.com / js.stripe.com</span>
-                </td>
-                <td className="py-2 pr-4">
-                  Process payments when you buy credits or paid features
-                </td>
-                <td className="py-2">Third-party (payment)</td>
-              </tr>
             </tbody>
           </table>
         </div>

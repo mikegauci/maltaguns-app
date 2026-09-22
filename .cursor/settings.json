@@ -1,7 +1,3 @@
 {
-  "plugins": {
-    "stripe": {
-      "enabled": true
-    }
-  }
+  "plugins": {}
 }

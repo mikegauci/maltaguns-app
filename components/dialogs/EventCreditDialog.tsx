@@ -11,17 +11,12 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useRouter } from 'next/navigation'
+import { PaymentsUnavailableNotice } from '@/components/dialogs/PaymentsUnavailableNotice'
 
 interface EventCreditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   userId: string
-  onSuccess?: () => void
-}
-
-async function getStripe() {
-  const { loadStripe } = await import('@stripe/stripe-js')
-  return loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 }
 
 export function EventCreditDialog({
@@ -30,46 +25,13 @@ export function EventCreditDialog({
 }: EventCreditDialogProps) {
   const router = useRouter()
 
-  const handlePurchase = async () => {
-    try {
-      const res = await fetch('/api/create-event-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      if (!res.ok) {
-        const errorText = await res.text()
-        throw new Error(`Error response from server: ${errorText}`)
-      }
-
-      const data = await res.json()
-      const stripe = await getStripe()
-      if (!stripe) throw new Error('Stripe failed to load')
-
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      })
-
-      if (error) console.error('Stripe checkout error:', error)
-    } catch (error) {
-      console.error('Payment error:', error)
-    }
-  }
-
-  const handleOpenChange = (newOpen: boolean) => {
-    if (newOpen === false) {
-      return
-    }
-    onOpenChange(newOpen)
-  }
-
   const handleBack = () => {
     router.back()
     onOpenChange(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Purchase Event Credits</DialogTitle>
@@ -77,7 +39,8 @@ export function EventCreditDialog({
             Purchase credits to create events on MaltaGuns
           </DialogDescription>
         </DialogHeader>
-        <Card className="p-4">
+        <PaymentsUnavailableNotice action="purchase event credits" />
+        <Card className="p-4 opacity-60">
           <div className="flex-1">
             <h3 className="font-semibold text-lg">1 Event Credit</h3>
             <p className="text-2xl font-bold mb-2">€25</p>
@@ -85,8 +48,8 @@ export function EventCreditDialog({
               Create one event on MaltaGuns
             </p>
           </div>
-          <Button className="w-full mt-4" onClick={handlePurchase}>
-            Purchase
+          <Button className="w-full mt-4" disabled>
+            Unavailable
           </Button>
         </Card>
         <DialogFooter className="mt-6">

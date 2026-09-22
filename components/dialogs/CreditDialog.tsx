@@ -11,6 +11,7 @@ import {
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useRouter } from 'next/navigation'
+import { PaymentsUnavailableNotice } from '@/components/dialogs/PaymentsUnavailableNotice'
 
 interface Plan {
   id: string
@@ -43,14 +44,8 @@ const plans: Plan[] = [
 interface CreditDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  userId: string
-  onSuccess?: () => void
+  userId?: string
   source?: 'profile' | 'marketplace'
-}
-
-async function getStripe() {
-  const { loadStripe } = await import('@stripe/stripe-js')
-  return loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 }
 
 export function CreditDialog({
@@ -59,31 +54,6 @@ export function CreditDialog({
   source,
 }: CreditDialogProps) {
   const router = useRouter()
-
-  const handlePurchase = async (priceId: string) => {
-    try {
-      const res = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId }),
-      })
-
-      if (!res.ok) {
-        const errorText = await res.text()
-        throw new Error(`Error response from server: ${errorText}`)
-      }
-
-      const data = await res.json()
-      const stripe = await getStripe()
-      if (!stripe) throw new Error('Stripe failed to load')
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId,
-      })
-      if (error) console.error('Stripe checkout error:', error)
-    } catch (error) {
-      console.error('Payment error:', error)
-    }
-  }
 
   const handleBack = () => {
     if (source === 'profile') {
@@ -97,10 +67,10 @@ export function CreditDialog({
   }
 
   const handleOpenChange = (newOpen: boolean) => {
-    if (newOpen === false) {
-      return
-    }
     onOpenChange(newOpen)
+    if (!newOpen && source === 'marketplace') {
+      router.push('/marketplace/create')
+    }
   }
 
   return (
@@ -112,9 +82,10 @@ export function CreditDialog({
             Choose a credit package to start creating listings
           </DialogDescription>
         </DialogHeader>
+        <PaymentsUnavailableNotice action="purchase credits" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
           {plans.map(plan => (
-            <Card key={plan.id} className="p-4 flex flex-col">
+            <Card key={plan.id} className="p-4 flex flex-col opacity-60">
               <div className="flex-1">
                 <h3 className="font-semibold text-lg">
                   {plan.credits} Credit{plan.credits > 1 ? 's' : ''}
@@ -124,8 +95,8 @@ export function CreditDialog({
                   {plan.description}
                 </p>
               </div>
-              <Button className="mt-4" onClick={() => handlePurchase(plan.id)}>
-                Purchase
+              <Button className="mt-4" disabled>
+                Unavailable
               </Button>
             </Card>
           ))}

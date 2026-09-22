@@ -350,6 +350,10 @@ export interface Database {
           user_id: string
           amount: number
           type: string
+          external_payment_id: string | null
+          credit_type: string | null
+          status: string | null
+          description: string | null
           created_at: string
         }
         Insert: {
@@ -357,6 +361,10 @@ export interface Database {
           user_id: string
           amount: number
           type: string
+          external_payment_id?: string | null
+          credit_type?: string | null
+          status?: string | null
+          description?: string | null
           created_at?: string
         }
         Update: {
@@ -364,6 +372,10 @@ export interface Database {
           user_id?: string
           amount?: number
           type?: string
+          external_payment_id?: string | null
+          credit_type?: string | null
+          status?: string | null
+          description?: string | null
           created_at?: string
         }
       }

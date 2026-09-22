@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { ExternalLink, Copy } from 'lucide-react'
+import { Copy } from 'lucide-react'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
@@ -27,7 +27,7 @@ interface Payment {
   amount: number
   type: string
   credit_type: string | null
-  stripe_payment_id: string | null
+  external_payment_id: string | null
   status: string | null
   description: string | null
   created_at: string
@@ -93,45 +93,39 @@ function PaymentsReceivedPageComponent() {
             case 'completed':
               return 'default'
             case 'failed':
+            case 'cancelled':
               return 'destructive'
             default:
               return 'secondary'
           }
         }
 
-        return (
-          <Badge variant={getVariant(displayStatus)}>{displayStatus}</Badge>
-        )
+        const statusLabel =
+          displayStatus.charAt(0).toUpperCase() + displayStatus.slice(1)
+
+        return <Badge variant={getVariant(displayStatus)}>{statusLabel}</Badge>
       },
     },
     {
-      accessorKey: 'stripe_payment_id',
+      accessorKey: 'external_payment_id',
       header: 'Payment ID',
       enableSorting: false,
       cell: ({ row }) => {
-        const stripeId = row.getValue('stripe_payment_id') as string | null
-        if (!stripeId) return <span className="text-muted-foreground">-</span>
+        const paymentId = row.getValue('external_payment_id') as string | null
+        if (!paymentId) return <span className="text-muted-foreground">-</span>
 
         const copyToClipboard = () => {
-          navigator.clipboard.writeText(stripeId)
+          navigator.clipboard.writeText(paymentId)
           toast({
             title: 'Copied',
             description: 'Payment ID copied to clipboard',
           })
         }
 
-        const openInStripe = () => {
-          // Note: This would need proper Stripe dashboard URL construction
-          window.open(
-            `https://dashboard.stripe.com/payments/${stripeId}`,
-            '_blank'
-          )
-        }
-
         return (
           <div className="flex items-center space-x-2">
             <code className="text-xs bg-muted px-2 py-1 rounded">
-              {stripeId.substring(0, 15)}...
+              {paymentId.substring(0, 15)}...
             </code>
             <Button
               variant="ghost"
@@ -140,14 +134,6 @@ function PaymentsReceivedPageComponent() {
               className="h-6 w-6 p-0"
             >
               <Copy className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={openInStripe}
-              className="h-6 w-6 p-0"
-            >
-              <ExternalLink className="h-3 w-3" />
             </Button>
           </div>
         )

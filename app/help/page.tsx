@@ -460,34 +460,26 @@ export default function HelpPage() {
 
                   <AccordionItem value="payment-issues">
                     <AccordionTrigger>
-                      My payment for a featured listing failed
+                      How do I purchase credits or feature a listing?
                     </AccordionTrigger>
                     <AccordionContent>
                       <p className="mb-3">
-                        If your payment for a featured listing failed, try these
-                        solutions:
+                        Online payments for listing credits, event credits, and
+                        featured listings are temporarily unavailable while we
+                        switch payment providers.
                       </p>
-                      <ol className="list-decimal pl-5 space-y-2">
-                        <li>
-                          Check that your payment card has sufficient funds
-                        </li>
-                        <li>
-                          Verify that your card details are entered correctly
-                        </li>
-                        <li>
-                          Ensure your card isn't expired or blocked for online
-                          transactions
-                        </li>
-                        <li>Try a different payment method if available</li>
-                        <li>
-                          Wait a few minutes and try again, as the issue might
-                          be temporary
-                        </li>
-                        <li>
-                          If problems persist, contact your bank or our support
-                          team
-                        </li>
-                      </ol>
+                      <p>
+                        To purchase credits or paid features during this period,
+                        contact{' '}
+                        <a
+                          href="mailto:info@maltaguns.com"
+                          className="underline"
+                        >
+                          info@maltaguns.com
+                        </a>{' '}
+                        from your registered email address and our team will
+                        help you.
+                      </p>
                     </AccordionContent>
                   </AccordionItem>
 

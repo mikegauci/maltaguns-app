@@ -86,7 +86,7 @@ export interface CreditTransaction {
   id: string
   amount: number
   type: 'credit' | 'debit'
-  stripe_payment_id: string | null
+  external_payment_id: string | null
   created_at: string
   credit_type: 'featured' | 'event' | null
   description: string | null

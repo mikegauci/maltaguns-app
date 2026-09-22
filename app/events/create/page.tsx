@@ -240,25 +240,6 @@ export default function CreateEventPage() {
             setShowCreditDialog(true)
           }
 
-          // Check URL parameters for Stripe success
-          if (typeof window !== 'undefined') {
-            const url = new URL(window.location.href)
-            const success = url.searchParams.get('success')
-            const sessionId = url.searchParams.get('session_id')
-
-            if (success === 'true' && sessionId) {
-              toast({
-                title: 'Payment successful!',
-                description:
-                  'Your event credit has been added to your account.',
-              })
-
-              url.searchParams.delete('success')
-              url.searchParams.delete('session_id')
-              window.history.replaceState({}, '', url.toString())
-            }
-          }
-
           setIsLoading(false)
         }
       } catch (error) {
@@ -448,20 +429,34 @@ export default function CreateEventPage() {
     )
   }
 
-  // Show only the credit dialog if credits are 0
   if (!hasCredits) {
     return (
       <PageLayout>
         {userId && (
-          <EventCreditDialog
-            open={showCreditDialog}
-            onOpenChange={setShowCreditDialog}
-            userId={userId}
-            onSuccess={() => {
-              setShowCreditDialog(false)
-              setHasCredits(true)
-            }}
-          />
+          <>
+            <EventCreditDialog
+              open={showCreditDialog}
+              onOpenChange={setShowCreditDialog}
+              userId={userId}
+            />
+            {!showCreditDialog && (
+              <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-16 text-center">
+                <h1 className="text-2xl font-semibold">
+                  Event credits required
+                </h1>
+                <p className="text-muted-foreground">
+                  You need at least one event credit to create an event. Online
+                  payments are temporarily unavailable.
+                </p>
+                <div className="flex w-full flex-col gap-3 sm:flex-row sm:justify-center">
+                  <Button onClick={() => setShowCreditDialog(true)}>
+                    View purchase options
+                  </Button>
+                  <BackButton label="Back to events" href="/events" />
+                </div>
+              </div>
+            )}
+          </>
         )}
       </PageLayout>
     )

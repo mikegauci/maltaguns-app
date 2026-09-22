@@ -313,10 +313,6 @@ export default function CreateFirearmsListing() {
           }}
           userId={userId}
           source="marketplace"
-          onSuccess={() => {
-            checkCredits(isRetailer)
-            setShowCreditDialog(false)
-          }}
         />
       )}
     </>
