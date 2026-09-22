@@ -109,7 +109,8 @@ function ReportedListingsPageComponent() {
       enableHiding: false,
     },
     {
-      accessorKey: 'listing.title',
+      id: 'listingTitle',
+      accessorFn: row => row.listing?.title ?? '',
       header: 'Listing Title',
       enableSorting: true,
       cell: ({ row }) => {
@@ -138,7 +139,8 @@ function ReportedListingsPageComponent() {
       },
     },
     {
-      accessorKey: 'listing.seller.username',
+      id: 'listingOwner',
+      accessorFn: row => row.listing?.seller?.username ?? '',
       header: 'Listing Owner',
       enableSorting: true,
       cell: ({ row }) => {
@@ -147,7 +149,8 @@ function ReportedListingsPageComponent() {
       },
     },
     {
-      accessorKey: 'reporter.username',
+      id: 'reporter',
+      accessorFn: row => row.reporter?.username ?? '',
       header: 'Reporter',
       enableSorting: true,
       cell: ({ row }) => {
@@ -402,7 +405,7 @@ function ReportedListingsPageComponent() {
       <DataTable
         columns={columns}
         data={isLoading ? [] : displayedReports}
-        searchKey="listing.title"
+        searchKey="listingTitle"
         searchPlaceholder="Search by listing title..."
       />
 
