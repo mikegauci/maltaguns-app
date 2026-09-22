@@ -17,8 +17,9 @@ interface FormFieldProps<T extends FieldValues> {
   name: Path<T>
 }
 
-interface ImageUploadFieldProps<T extends FieldValues>
-  extends FormFieldProps<T> {
+interface ImageUploadFieldProps<
+  T extends FieldValues,
+> extends FormFieldProps<T> {
   uploadedImages: string[]
   uploading: boolean
   handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void

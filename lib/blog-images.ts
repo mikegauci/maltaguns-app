@@ -13,8 +13,7 @@ export const BLOG_ACCEPTED_IMAGE_TYPES = [
 ]
 
 export type BlogImageValidationError =
-  | { code: 'file_too_large' }
-  | { code: 'invalid_type' }
+  { code: 'file_too_large' } | { code: 'invalid_type' }
 
 export function validateBlogFeaturedImage(
   file: File

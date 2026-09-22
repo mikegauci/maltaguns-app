@@ -118,9 +118,7 @@ export const MyListings = ({
         <div className="space-y-4">
           {activeListings.map(listing => {
             const editableUntil = (listing as any).editable_until as
-              | string
-              | null
-              | undefined
+              string | null | undefined
             const editableUntilMs = (() => {
               if (editableUntil) {
                 const ts = Date.parse(editableUntil)
