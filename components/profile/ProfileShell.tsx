@@ -92,8 +92,6 @@ export function ProfileShell({
   const badges = navContext?.badges ?? {}
   const showArmoryBanner =
     isArmoryRoute(pathname) && navContext?.armoryHasDealer
-  const showRegisterCta =
-    isArmoryRoute(pathname) && navContext && !navContext.armoryHasDealer
 
   const sidebarContent = (collapsed: boolean) => (
     <ProfileSidebarNav
@@ -156,19 +154,6 @@ export function ProfileShell({
         </div>
 
         <div className="w-full space-y-6 px-4 py-6 md:px-6 md:py-8">
-          {showRegisterCta && (
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-muted/30 px-4 py-3">
-              <p className="text-sm text-muted-foreground">
-                Running a dealership? Register for the full Armory dashboard.
-              </p>
-              <Button asChild size="sm">
-                <Link href="/profile/armory/register">
-                  Register as Dealership
-                </Link>
-              </Button>
-            </div>
-          )}
-
           {showArmoryBanner && (
             <ArmoryStatusBanner
               accountStatus={navContext?.armoryAccountStatus}

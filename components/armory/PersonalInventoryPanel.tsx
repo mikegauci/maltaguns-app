@@ -1,8 +1,8 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil, Trash2 } from 'lucide-react'
+import { FileSpreadsheet, Pencil, Trash2 } from 'lucide-react'
 import { SectionCard } from '@/components/armory/section-card'
 import { FormField } from '@/components/armory/form-field'
 import { Button } from '@/components/ui/button'
@@ -61,6 +61,8 @@ export function PersonalInventoryPanel({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyForm)
   const [showForm, setShowForm] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const loadItems = useCallback(async () => {
     const res = await fetch('/api/armory/personal-items')
@@ -123,6 +125,35 @@ export function PersonalInventoryPanel({
     router.refresh()
   }
 
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setImporting(true)
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/armory/personal-items/import', {
+      method: 'POST',
+      body: fd,
+    })
+    const data = await res.json()
+    setImporting(false)
+    if (!res.ok) {
+      toast({
+        title: 'Import failed',
+        description: data.error,
+        variant: 'destructive',
+      })
+      return
+    }
+    toast({
+      title: 'Import complete',
+      description: `Added ${data.imported} item${data.imported === 1 ? '' : 's'} to your collection.`,
+    })
+    await loadItems()
+    router.refresh()
+  }
+
   async function handleDelete(id: string) {
     if (!window.confirm('Remove this item from your collection?')) return
     const res = await fetch(`/api/armory/personal-items/${id}`, {
@@ -144,9 +175,27 @@ export function PersonalInventoryPanel({
       description="Track your personal firearms and related items."
       actions={
         !showForm && (
-          <Button size="sm" onClick={() => setShowForm(true)}>
-            Add item
-          </Button>
+          <div className="flex gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.csv"
+              className="hidden"
+              onChange={handleImport}
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={importing}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+              {importing ? 'Importing…' : 'Import spreadsheet'}
+            </Button>
+            <Button size="sm" onClick={() => setShowForm(true)}>
+              Add item
+            </Button>
+          </div>
         )
       }
     >

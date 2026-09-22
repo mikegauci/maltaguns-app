@@ -82,6 +82,11 @@ export function buildArmoryNavItems(
         href: `${ARMORY_BASE}/inventory`,
         iconKey: 'package',
       },
+      {
+        title: 'Dealership',
+        href: `${ARMORY_BASE}/register`,
+        iconKey: 'store',
+      },
     ]
   }
 
