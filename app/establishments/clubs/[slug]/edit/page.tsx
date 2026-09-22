@@ -367,7 +367,7 @@ export default function EditClubPage(props: {
                           <img
                             src={field.value}
                             alt="Club logo preview"
-                            className="w-32 h-32 object-contain rounded-lg"
+                            className="w-32 h-32 object-contain rounded-sm"
                           />
                         )}
                         <Input

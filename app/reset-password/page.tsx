@@ -295,9 +295,11 @@ export default function ResetPassword() {
   if (success) {
     return (
       <PageLayout>
-        <Card className="w-full max-w-md">
+        <Card className="mx-auto w-full max-w-md rounded-sm border-border shadow-none">
           <CardHeader>
-            <CardTitle>Password Reset Complete</CardTitle>
+            <CardTitle className="app-display uppercase tracking-tight">
+              Password Reset Complete
+            </CardTitle>
             <CardDescription>
               Your password has been successfully reset.
             </CardDescription>
@@ -324,9 +326,11 @@ export default function ResetPassword() {
 
   return (
     <PageLayout>
-      <Card className="w-full max-w-md">
+      <Card className="mx-auto w-full max-w-md rounded-sm border-border shadow-none">
         <CardHeader>
-          <CardTitle>Reset Your Password</CardTitle>
+          <CardTitle className="app-display uppercase tracking-tight">
+            Reset Your Password
+          </CardTitle>
           <CardDescription>
             {isAdminUser
               ? 'Admin passwords must be at least 12 characters with letters and numbers.'

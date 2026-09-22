@@ -53,6 +53,7 @@ interface HomePageData {
   featuredListings: Listing[]
   latestPosts: BlogPost[]
   latestEvents: Event[]
+  eventsArePast: boolean
   featuredEstablishments: Establishment[]
   isAuthenticated: boolean
 }
@@ -80,6 +81,7 @@ export function useHomePageData() {
       featuredListings: query.data?.featuredListings ?? [],
       latestPosts: query.data?.latestPosts ?? [],
       latestEvents: query.data?.latestEvents ?? [],
+      eventsArePast: query.data?.eventsArePast ?? false,
       featuredEstablishments: query.data?.featuredEstablishments ?? [],
       isAuthenticated,
     }),

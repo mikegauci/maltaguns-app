@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query'
 import { Calendar } from '@/components/ui/calendar'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { AppCard } from '@/components/design-system'
 import { Badge } from '@/components/ui/badge'
 import {
   Carousel,
@@ -115,7 +116,7 @@ export default function EventsPage() {
                 className="md:basis-1/2 lg:basis-1/3"
               >
                 <Link href={`/events/${event.slug || event.id}`}>
-                  <Card className="h-full hover:shadow-lg transition-shadow">
+                  <AppCard className="h-full">
                     {event.poster_url && (
                       <div className="aspect-video relative overflow-hidden rounded-t-lg">
                         <StorageImage
@@ -150,7 +151,7 @@ export default function EventsPage() {
                         )}
                       </div>
                     </CardContent>
-                  </Card>
+                  </AppCard>
                 </Link>
               </CarouselItem>
             ))}
@@ -163,7 +164,7 @@ export default function EventsPage() {
       {/* Calendar Section */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-3">
-          <div className="bg-card rounded-lg border shadow">
+          <div className="rounded-sm border border-border bg-card shadow-none">
             {/* Calendar Header */}
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-4">
@@ -282,7 +283,7 @@ export default function EventsPage() {
                       key={event.id}
                       href={`/events/${event.slug || event.id}`}
                     >
-                      <div className="p-3 rounded-lg border hover:bg-accent transition-colors">
+                      <div className="rounded-sm border border-border p-3 transition-colors hover:bg-accent">
                         <Badge className="mb-2">{event.type}</Badge>
                         <h4 className="font-medium">{event.title}</h4>
                         <div className="text-sm text-muted-foreground mt-2">
@@ -315,7 +316,7 @@ export default function EventsPage() {
           {!baseQuery.isLoading &&
             pastEvents.map(event => (
               <Link key={event.id} href={`/events/${event.slug || event.id}`}>
-                <Card className="hover:shadow-lg transition-shadow">
+                <AppCard>
                   {event.poster_url && (
                     <div className="aspect-video relative overflow-hidden rounded-t-lg">
                       <StorageImage
@@ -344,7 +345,7 @@ export default function EventsPage() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
+                </AppCard>
               </Link>
             ))}
         </div>

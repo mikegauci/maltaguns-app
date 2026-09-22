@@ -41,9 +41,11 @@ export function ListingFormLayout({
           </div>
         )}
       </div>
-      <Card>
+      <Card className="rounded-sm border-border shadow-none">
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
+          <CardTitle className="app-display uppercase tracking-tight">
+            {title}
+          </CardTitle>
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent>{children}</CardContent>

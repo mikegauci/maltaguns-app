@@ -323,9 +323,11 @@ export default function Register() {
 
   return (
     <PageLayout>
-      <Card className="w-full max-w-md md:max-w-2xl mx-auto [&_label.text-sm]:!text-foreground">
+      <Card className="mx-auto w-full max-w-md rounded-sm border-border shadow-none md:max-w-2xl [&_label.text-sm]:!text-foreground">
         <CardHeader>
-          <CardTitle>Create an Account</CardTitle>
+          <CardTitle className="app-display uppercase tracking-tight">
+            Create an Account
+          </CardTitle>
           <CardDescription>
             {step === 1
               ? 'Step 1 of 2 — Profile details'
@@ -333,7 +335,7 @@ export default function Register() {
           </CardDescription>
           <Progress
             value={step === 1 ? 50 : 100}
-            className="h-2 mt-2 [&>div]:bg-[#4CAF50]"
+            className="mt-2 h-2 [&>div]:bg-primary"
           />
         </CardHeader>
         <CardContent>
@@ -693,7 +695,7 @@ export default function Register() {
               {step === 1 ? (
                 <Button
                   type="button"
-                  className="w-full bg-[#4CAF50] hover:bg-[#45a049] text-white font-semibold py-6 rounded-lg"
+                  className="w-full py-6 rounded-sm font-semibold"
                   onClick={handleContinue}
                   disabled={isCheckingAvailability}
                 >
@@ -704,14 +706,14 @@ export default function Register() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full sm:w-auto font-semibold py-6 rounded-lg"
+                    className="w-full rounded-sm py-6 font-semibold sm:w-auto"
                     onClick={() => setStep(1)}
                   >
                     Back
                   </Button>
                   <Button
                     type="submit"
-                    className="w-full flex-1 bg-[#4CAF50] hover:bg-[#45a049] text-white font-semibold py-6 rounded-lg"
+                    className="w-full flex-1 py-6 rounded-sm font-semibold"
                     disabled={isLoading}
                   >
                     {isLoading ? 'Creating account...' : 'Create account'}

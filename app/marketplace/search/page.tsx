@@ -5,13 +5,14 @@ import { useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { AppCard } from '@/components/design-system'
 import { Badge } from '@/components/ui/badge'
 import { Package, Star } from 'lucide-react'
 import Link from 'next/link'
-import { BackButton } from '@/components/ui/back-button'
 import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
 import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 import { formatPrice, slugify } from '@/lib/format'
 
 interface Listing {
@@ -130,7 +131,7 @@ function SearchResultsContent() {
       href={`/marketplace/listing/${slugify(listing.title)}`}
       className="block"
     >
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+      <AppCard>
         <div className="aspect-video relative overflow-hidden">
           <StorageImage
             src={listing.thumbnail}
@@ -176,42 +177,35 @@ function SearchResultsContent() {
             </p>
           </div>
         </CardContent>
-      </Card>
+      </AppCard>
     </Link>
   )
 
+  const pageTitle = isLoading
+    ? 'Loading...'
+    : query
+      ? 'Search Results'
+      : category
+        ? getCategoryLabel(category, type as 'firearms' | 'non_firearms')
+        : type
+          ? type === 'firearms'
+            ? 'Firearms'
+            : 'Non-Firearms'
+          : 'All Listings'
+
+  const pageDescription = isLoading
+    ? 'Searching...'
+    : query
+      ? `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"`
+      : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`
+
   return (
     <PageLayout>
-      <div className="space-y-2 mb-8 text-center">
-        <h1 className="text-4xl font-bold tracking-tight">
-          {isLoading
-            ? 'Loading...'
-            : query
-              ? 'Search Results'
-              : category
-                ? `${getCategoryLabel(category, type as 'firearms' | 'non_firearms')}`
-                : type
-                  ? type === 'firearms'
-                    ? 'Firearms'
-                    : 'Non-Firearms'
-                  : 'All Listings'}
-        </h1>
-        <p className="text-lg text-muted-foreground">
-          {isLoading
-            ? 'Searching...'
-            : query
-              ? `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"`
-              : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`}
-        </p>
-        <div className="mb-6">
-          <BackButton
-            label="Back"
-            href="/marketplace"
-            hideLabelOnMobile={false}
-            size="sm"
-          />
-        </div>
-      </div>
+      <PageHeader
+        backHref="/marketplace"
+        title={pageTitle}
+        description={pageDescription}
+      />
 
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">

@@ -9,9 +9,12 @@ interface PageLayoutProps {
 export function PageLayout({ children, className }: PageLayoutProps) {
   return (
     <div
-      className={cn('min-h-screen bg-background md:py-8 py-6 px-4', className)}
+      className={cn(
+        'min-h-[calc(100vh-var(--header-height))] bg-background py-8 lg:py-12',
+        className
+      )}
     >
-      <div className="container mx-auto md:px-4 px-0 relative">{children}</div>
+      <div className="relative mx-auto w-full max-w-7xl px-6">{children}</div>
     </div>
   )
 }

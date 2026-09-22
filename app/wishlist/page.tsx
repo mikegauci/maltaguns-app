@@ -32,6 +32,7 @@ import { BackButton } from '@/components/ui/back-button'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
+import { AppCard } from '@/components/design-system'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { formatPrice, slugify } from '@/lib/format'
@@ -192,8 +193,8 @@ export default function WishlistPage() {
 
   return (
     <PageLayout>
-      <BackButton label="Back" href="/marketplace" />
       <PageHeader
+        backHref="/marketplace"
         title="My Wishlist"
         description="Compare and manage your saved listings"
         className="mb-4"
@@ -257,7 +258,7 @@ export default function WishlistPage() {
                     })
                   }}
                   disabled={isRemoving}
-                  className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200"
+                  className="border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20"
                 >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Clear All
@@ -269,10 +270,7 @@ export default function WishlistPage() {
           {/* Wishlist Items Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {wishlistItems.map(item => (
-              <Card
-                key={item.id}
-                className="overflow-hidden hover:shadow-lg transition-all duration-200 group"
-              >
+              <AppCard key={item.id} className="group">
                 <div className="aspect-video relative overflow-hidden">
                   <StorageImage
                     src={item.listings.thumbnail}
@@ -347,7 +345,7 @@ export default function WishlistPage() {
                     )}
                     <span>{item.listings.seller?.username}</span>
                     {item.listings.seller?.is_seller && (
-                      <CheckCircle className="h-3 w-3 text-green-600" />
+                      <CheckCircle className="h-3 w-3 text-primary" />
                     )}
                   </div>
 
@@ -374,12 +372,12 @@ export default function WishlistPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => confirmRemoveItem(item.listing_id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                   >
                     <Heart className="h-4 w-4 fill-current" />
                   </Button>
                 </CardFooter>
-              </Card>
+              </AppCard>
             ))}
           </div>
         </div>

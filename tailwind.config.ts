@@ -21,6 +21,15 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
+        chrome: {
+          bg: 'var(--chrome-bg)',
+          surface: 'var(--chrome-surface)',
+          slate: 'var(--chrome-slate)',
+          ink: 'var(--chrome-ink)',
+          muted: 'var(--chrome-muted)',
+          border: 'var(--chrome-border)',
+          brand: 'var(--chrome-brand)',
+        },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
