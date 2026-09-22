@@ -193,13 +193,13 @@ export default function BlogPostCard({ post }: BlogPostCardProps) {
 
   return (
     <Link href={`/blog/${post.category}/${post.slug}`}>
-      <Card className="h-full min-h-[400px] hover:shadow-lg transition-shadow duration-200">
+      <Card className="h-full min-h-[400px] rounded-sm border-border shadow-none transition-colors hover:border-primary">
         {post.featured_image && (
           <div className="relative w-full aspect-video">
             <StorageImage
               src={post.featured_image}
               alt={post.title}
-              className="object-cover rounded-t-lg"
+              className="object-cover rounded-t-sm"
               sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             />
           </div>
@@ -222,7 +222,7 @@ export default function BlogPostCard({ post }: BlogPostCardProps) {
               >
                 <Badge
                   variant="outline"
-                  className="flex items-center text-xs bg-blue-50 border-blue-200 text-blue-700"
+                  className="flex items-center border-border bg-muted text-xs text-foreground"
                 >
                   {getEstablishmentIcon()}
                   {establishment.name}

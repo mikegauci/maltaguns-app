@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
+import { AppCard, AppSectionHeading } from '@/components/design-system'
 import {
   Store,
   Users,
@@ -71,10 +72,10 @@ export default function EstablishmentsPage() {
       {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Link href="/establishments/stores">
-          <Card className="h-full hover:shadow-lg transition-shadow">
+          <AppCard className="h-full">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                   <Store className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div>
@@ -85,14 +86,14 @@ export default function EstablishmentsPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </AppCard>
         </Link>
 
         <Link href="/establishments/clubs">
-          <Card className="h-full hover:shadow-lg transition-shadow">
+          <AppCard className="h-full">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                   <Users className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div>
@@ -103,14 +104,14 @@ export default function EstablishmentsPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </AppCard>
         </Link>
 
         <Link href="/establishments/servicing">
-          <Card className="h-full hover:shadow-lg transition-shadow">
+          <AppCard className="h-full">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                   <Wrench className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div>
@@ -121,14 +122,14 @@ export default function EstablishmentsPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </AppCard>
         </Link>
 
         <Link href="/establishments/ranges">
-          <Card className="h-full hover:shadow-lg transition-shadow">
+          <AppCard className="h-full">
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                   <MapPin className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <div>
@@ -140,13 +141,14 @@ export default function EstablishmentsPage() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+          </AppCard>
         </Link>
       </div>
 
-      {/* All Establishments Section */}
       <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-6">All Establishments</h2>
+        <AppSectionHeading className="mb-6 text-2xl">
+          All Establishments
+        </AppSectionHeading>
 
         {query.isLoading ? (
           <div className="flex items-center justify-center py-12">
@@ -166,17 +168,17 @@ export default function EstablishmentsPage() {
                 key={`${establishment.type}-${establishment.id}`}
                 href={`/establishments/${establishment.type === 'stores' ? 'stores' : establishment.type}/${establishment.slug || establishment.id}`}
               >
-                <Card className="h-full hover:shadow-lg transition-shadow">
+                <AppCard className="h-full">
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4 mb-4">
                       {establishment.logo_url ? (
                         <img
                           src={establishment.logo_url}
                           alt={establishment.business_name}
-                          className="w-16 h-16 object-contain rounded-lg"
+                          className="w-16 h-16 object-contain rounded-sm"
                         />
                       ) : (
-                        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                        <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                           {getEstablishmentIcon(establishment.type)}
                         </div>
                       )}
@@ -218,7 +220,7 @@ export default function EstablishmentsPage() {
                       )}
                     </div>
                   </CardContent>
-                </Card>
+                </AppCard>
               </Link>
             ))}
           </div>

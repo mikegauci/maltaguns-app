@@ -6,6 +6,8 @@ import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageLayout } from '@/components/ui/page-layout'
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime'
 import {
   invalidateNotifications,
@@ -89,10 +91,10 @@ export default function NotificationsPage() {
 
   if (!session?.user) {
     return (
-      <div className="container mx-auto px-4 py-10">
-        <Card className="p-6">
+      <PageLayout>
+        <Card className="rounded-sm border-border p-6 shadow-none">
           <div className="text-lg font-semibold">Notifications</div>
-          <div className="text-sm text-muted-foreground mt-2">
+          <div className="mt-2 text-sm text-muted-foreground">
             Please{' '}
             <Link className="underline" href="/login">
               log in
@@ -100,31 +102,34 @@ export default function NotificationsPage() {
             to view notifications.
           </div>
         </Card>
-      </div>
+      </PageLayout>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="flex items-center justify-between gap-3 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Notifications</h1>
-          <div className="text-sm text-muted-foreground">
-            {loading ? 'Loading…' : `${unreadCount} unread`}
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          onClick={markAllRead}
-          disabled={unreadCount === 0 || loading}
-        >
-          Mark all read
-        </Button>
-      </div>
+    <PageLayout>
+      <PageHeader
+        title="Notifications"
+        description={
+          loading
+            ? 'Loading…'
+            : `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`
+        }
+        actions={
+          <Button
+            variant="outline"
+            className="rounded-sm"
+            onClick={markAllRead}
+            disabled={unreadCount === 0 || loading}
+          >
+            Mark all read
+          </Button>
+        }
+      />
 
       <div className="space-y-3">
         {items.length === 0 ? (
-          <Card className="p-6 text-sm text-muted-foreground text-center">
+          <Card className="rounded-sm border-border p-6 text-center text-sm text-muted-foreground shadow-none">
             No notifications yet.
           </Card>
         ) : (
@@ -132,7 +137,10 @@ export default function NotificationsPage() {
             const isUnread = !n.read_at
             const href = n.link_url || '/notifications'
             return (
-              <Card key={n.id} className="p-4">
+              <Card
+                key={n.id}
+                className="rounded-sm border-border p-4 shadow-none"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -170,6 +178,6 @@ export default function NotificationsPage() {
           })
         )}
       </div>
-    </div>
+    </PageLayout>
   )
 }

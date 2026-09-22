@@ -5,6 +5,8 @@ description: Firearms and tactical web design system for dark-mode, industrial U
 
 # Firearms & Tactical Web Design Skill
 
+> **MaltaGuns implementation:** use the [`maltaguns-design-system`](../maltaguns-design-system/SKILL.md) skill for tokens, components, and layout recipes in this repo. This file covers general tactical aesthetic principles.
+
 - **Aesthetic:** Dark-mode primary (charcoal, deep slate, tactical olive, or matte black backgrounds with high-contrast white/amber typography).
 - **Typography:** Heavy industrial sans-serif headings (e.g., Barlow, Roboto Condensed, or Oswald) paired with ultra-clean body text.
 - **Constraints:** NO soft pastel gradients, NO overly playful rounded pill buttons. Use sharp 1px borders, rigid geometric containers, and precise data tables for technical specs (caliber, barrel length, weight).

@@ -374,7 +374,7 @@ export default function EditServicingPage(props: {
                           <img
                             src={field.value}
                             alt="Business logo preview"
-                            className="w-32 h-32 object-contain rounded-lg"
+                            className="w-32 h-32 object-contain rounded-sm"
                           />
                         )}
                         <Input

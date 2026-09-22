@@ -26,7 +26,6 @@ import {
   Store,
   CheckCircle,
   ShieldAlert,
-  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
@@ -46,7 +45,7 @@ import {
 } from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AppAlert } from '@/components/design-system'
 import type { ListingDetails } from './types'
 import { formatPrice, slugify } from '@/lib/format'
 
@@ -154,47 +153,38 @@ function CreatedSuccessBanner({ listingTitle }: { listingTitle: string }) {
   if (!showBanner || dismissed) return null
 
   return (
-    <Alert
-      className={
-        notifyFailed
-          ? 'mb-6 border-amber-200 bg-amber-50 text-amber-950 pr-12'
-          : 'mb-6 border-green-200 bg-green-50 text-green-900 pr-12'
+    <AppAlert
+      className="mb-6"
+      variant={notifyFailed ? 'pending' : 'success'}
+      title="Listing successfully created"
+      dismissible
+      onDismiss={() => setDismissed(true)}
+      icon={
+        <CheckCircle
+          className={
+            notifyFailed ? 'h-4 w-4 text-amber-300' : 'h-4 w-4 text-green-300'
+          }
+        />
       }
     >
-      <CheckCircle
-        className={
-          notifyFailed ? 'h-4 w-4 text-amber-700' : 'h-4 w-4 text-green-700'
-        }
-      />
-      <AlertTitle>Listing successfully created</AlertTitle>
-      <AlertDescription>
-        {notifyFailed ? (
-          <>
-            Your listing is now live on MaltaGuns, but we couldn&apos;t send the
-            confirmation notification. You can still manage it from your{' '}
-            <Link href="/profile" className="font-medium underline">
-              profile
-            </Link>
-            .
-          </>
-        ) : (
-          <>
-            Your listing is now live on MaltaGuns.{' '}
-            <Link href="/profile" className="font-medium underline">
-              View all your listings
-            </Link>
-          </>
-        )}
-      </AlertDescription>
-      <button
-        type="button"
-        onClick={() => setDismissed(true)}
-        className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100"
-        aria-label="Dismiss"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </Alert>
+      {notifyFailed ? (
+        <>
+          Your listing is now live on MaltaGuns, but we couldn&apos;t send the
+          confirmation notification. You can still manage it from your{' '}
+          <Link href="/profile" className="font-medium underline">
+            profile
+          </Link>
+          .
+        </>
+      ) : (
+        <>
+          Your listing is now live on MaltaGuns.{' '}
+          <Link href="/profile" className="font-medium underline">
+            View all your listings
+          </Link>
+        </>
+      )}
+    </AppAlert>
   )
 }
 
@@ -596,7 +586,7 @@ export default function ListingClient({
           <div className="flex items-center gap-2">
             <p className="font-semibold">{listing.seller.username}</p>
             {isSellerVerified && (
-              <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1">
+              <Badge className="flex items-center gap-1 border-primary/40 bg-primary/15 text-primary hover:bg-primary/20">
                 <CheckCircle className="h-3 w-3" />
                 Verified Gun Seller
               </Badge>
@@ -655,7 +645,7 @@ export default function ListingClient({
           <div className="flex items-center gap-2">
             <p className="font-semibold">{listing.seller.username}</p>
             {isSellerVerified && (
-              <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1">
+              <Badge className="flex items-center gap-1 border-primary/40 bg-primary/15 text-primary hover:bg-primary/20">
                 <CheckCircle className="h-3 w-3" />
                 Verified Gun Seller
               </Badge>
@@ -1040,7 +1030,7 @@ export default function ListingClient({
               {/* Description Section */}
               <div className="border-t pt-4">
                 <h2 className="text-xl font-semibold mb-3">Description</h2>
-                <p className="text-gray-700 whitespace-pre-line">
+                <p className="whitespace-pre-line text-muted-foreground">
                   {listing.description}
                 </p>
               </div>

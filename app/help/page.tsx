@@ -18,8 +18,8 @@ export default async function HelpPage() {
       <div className="max-w-4xl mx-auto">
         <HelpCenterTabs tabs={tabs} />
 
-        <div className="text-center mt-12 pt-8 border-t">
-          <h2 className="text-2xl font-semibold mb-4">
+        <div className="mt-12 border-t border-border pt-8 text-center">
+          <h2 className="app-display mb-4 text-2xl font-semibold uppercase tracking-tight">
             Can&apos;t find what you&apos;re looking for?
           </h2>
           <p className="text-muted-foreground mb-6">

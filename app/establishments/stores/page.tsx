@@ -2,10 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
+import { AppCard } from '@/components/design-system'
 import { Store, MapPin, Phone, Mail, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { LoadingState } from '@/components/ui/loading-state'
-import { BackButton } from '@/components/ui/back-button'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
 
@@ -45,12 +45,11 @@ export default function StoresPage() {
 
   return (
     <PageLayout>
-      {/* Hero Section */}
       <PageHeader
+        backHref="/establishments"
         title="Firearms Stores"
         description="Find licensed firearms dealers and stores across Malta"
       />
-      <BackButton label="Back" href="/establishments" />
 
       {/* Stores Grid */}
       {stores.length === 0 ? (
@@ -65,17 +64,17 @@ export default function StoresPage() {
               key={store.id}
               href={`/establishments/stores/${store.slug || store.id}`}
             >
-              <Card className="h-full hover:shadow-lg transition-shadow">
+              <AppCard className="h-full">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
                     {store.logo_url ? (
                       <img
                         src={store.logo_url}
                         alt={store.business_name}
-                        className="w-16 h-16 object-contain rounded-lg"
+                        className="w-16 h-16 object-contain rounded-sm"
                       />
                     ) : (
-                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                      <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                         <Store className="h-8 w-8 text-muted-foreground" />
                       </div>
                     )}
@@ -117,7 +116,7 @@ export default function StoresPage() {
                     )}
                   </div>
                 </CardContent>
-              </Card>
+              </AppCard>
             </Link>
           ))}
         </div>

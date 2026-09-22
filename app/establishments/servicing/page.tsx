@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
+import { AppCard } from '@/components/design-system'
 import { Wrench, MapPin, Phone, Mail, Globe } from 'lucide-react'
-import { BackButton } from '@/components/ui/back-button'
 import Link from 'next/link'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -45,8 +45,8 @@ export default function ServicingPage() {
 
   return (
     <PageLayout>
-      <BackButton label="Back" href="/establishments" />
       <PageHeader
+        backHref="/establishments"
         title="Firearms Servicing"
         description="Find firearms repair, servicing and maintenance providers across Malta"
       />
@@ -66,17 +66,17 @@ export default function ServicingPage() {
               key={provider.id}
               href={`/establishments/servicing/${provider.slug || provider.id}`}
             >
-              <Card className="h-full hover:shadow-lg transition-shadow">
+              <AppCard className="h-full">
                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
                     {provider.logo_url ? (
                       <img
                         src={provider.logo_url}
                         alt={provider.business_name}
-                        className="w-16 h-16 object-contain rounded-lg"
+                        className="w-16 h-16 object-contain rounded-sm"
                       />
                     ) : (
-                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                      <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                         <Wrench className="h-8 w-8 text-muted-foreground" />
                       </div>
                     )}
@@ -118,7 +118,7 @@ export default function ServicingPage() {
                     )}
                   </div>
                 </CardContent>
-              </Card>
+              </AppCard>
             </Link>
           ))}
         </div>

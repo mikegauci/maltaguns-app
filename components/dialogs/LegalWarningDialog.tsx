@@ -78,7 +78,7 @@ export function LegalWarningDialog({
             Cancel
           </Button>
           <Button
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="rounded-sm"
             onClick={onConfirm}
             disabled={!agreed || isLoading}
           >

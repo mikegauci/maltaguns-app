@@ -11,7 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AppAlert } from '@/components/design-system'
 import {
   Calendar as CalendarIcon,
   MapPin,
@@ -22,7 +22,6 @@ import {
   Pencil,
   Maximize2,
   CheckCircle,
-  X,
   User,
 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -98,47 +97,38 @@ function CreatedSuccessBanner({ eventSlug }: { eventSlug: string }) {
   if (!showBanner || dismissed) return null
 
   return (
-    <Alert
-      className={
-        notifyFailed
-          ? 'mb-4 border-amber-200 bg-amber-50 text-amber-950 pr-12'
-          : 'mb-4 border-green-200 bg-green-50 text-green-900 pr-12'
+    <AppAlert
+      className="mb-4"
+      variant={notifyFailed ? 'pending' : 'success'}
+      title="Event successfully created"
+      dismissible
+      onDismiss={() => setDismissed(true)}
+      icon={
+        <CheckCircle
+          className={
+            notifyFailed ? 'h-4 w-4 text-amber-300' : 'h-4 w-4 text-green-300'
+          }
+        />
       }
     >
-      <CheckCircle
-        className={
-          notifyFailed ? 'h-4 w-4 text-amber-700' : 'h-4 w-4 text-green-700'
-        }
-      />
-      <AlertTitle>Event successfully created</AlertTitle>
-      <AlertDescription>
-        {notifyFailed ? (
-          <>
-            Your event is now live on MaltaGuns, but we couldn&apos;t send the
-            confirmation notification. You can still manage it from your{' '}
-            <Link href="/profile" className="font-medium underline">
-              profile
-            </Link>
-            .
-          </>
-        ) : (
-          <>
-            Your event is now live on MaltaGuns.{' '}
-            <Link href="/profile" className="font-medium underline">
-              View all your events
-            </Link>
-          </>
-        )}
-      </AlertDescription>
-      <button
-        type="button"
-        onClick={() => setDismissed(true)}
-        className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100"
-        aria-label="Dismiss"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </Alert>
+      {notifyFailed ? (
+        <>
+          Your event is now live on MaltaGuns, but we couldn&apos;t send the
+          confirmation notification. You can still manage it from your{' '}
+          <Link href="/profile" className="font-medium underline">
+            profile
+          </Link>
+          .
+        </>
+      ) : (
+        <>
+          Your event is now live on MaltaGuns.{' '}
+          <Link href="/profile" className="font-medium underline">
+            View all your events
+          </Link>
+        </>
+      )}
+    </AppAlert>
   )
 }
 
@@ -222,7 +212,7 @@ export default function EventClient({ event }: EventClientProps) {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-lg bg-card">
+      <div className="overflow-hidden rounded-sm bg-card">
         <div
           className={`grid grid-cols-1 gap-6 p-6 lg:gap-8 ${
             event.poster_url
@@ -235,7 +225,7 @@ export default function EventClient({ event }: EventClientProps) {
               role="button"
               tabIndex={0}
               aria-label={`View ${event.title} poster full screen`}
-              className="relative h-[460px] w-full cursor-zoom-in overflow-hidden rounded-lg bg-muted sm:h-[560px] lg:h-[680px]"
+              className="relative h-[460px] w-full cursor-zoom-in overflow-hidden rounded-sm bg-muted sm:h-[560px] lg:h-[680px]"
               onClick={openLightbox}
               onKeyDown={handlePosterKeyDown}
             >

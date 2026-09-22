@@ -759,7 +759,7 @@ export default function CreateEventPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                className="w-full"
                 disabled={isSubmitting || uploadingPoster || !hasCredits}
               >
                 {isSubmitting || uploadingPoster ? (

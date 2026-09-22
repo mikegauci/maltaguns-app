@@ -1,6 +1,5 @@
 import { preload } from 'react-dom'
 import { getImageProps } from 'next/image'
-import { Oswald, IBM_Plex_Sans } from 'next/font/google'
 import { createClient } from '@/lib/supabase/server'
 import {
   HeroSection,
@@ -15,18 +14,6 @@ import { JsonLd } from '@/components/seo/JsonLd'
 import { getSiteSettings } from '@/lib/seo'
 import { buildOrganizationSchema, buildWebSiteSchema } from '@/lib/seo-jsonld'
 import heroImage from '@/public/maltaguns-hero-2.jpg'
-
-const oswald = Oswald({
-  subsets: ['latin'],
-  weight: ['600', '700'],
-  variable: '--font-home-display',
-})
-
-const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-home-body',
-})
 
 export const revalidate = 30
 
@@ -65,9 +52,7 @@ export default async function Home() {
     'The premier destination for the firearms community in Malta'
 
   return (
-    <div
-      className={`home min-h-screen ${oswald.variable} ${ibmPlexSans.variable}`}
-    >
+    <div className="home min-h-screen">
       <JsonLd
         data={[
           buildOrganizationSchema({

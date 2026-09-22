@@ -59,13 +59,11 @@ export function SearchBar({
   const fieldClass = isDark
     ? 'bg-[var(--chrome-slate)] border-[var(--chrome-border)] text-[var(--chrome-ink)] placeholder:text-[var(--chrome-muted)]'
     : variant === 'inline'
-      ? 'pl-9 bg-muted/60 border-transparent'
-      : ''
+      ? 'pl-9 bg-muted border-border text-foreground placeholder:text-muted-foreground'
+      : 'bg-muted border-border text-foreground placeholder:text-muted-foreground'
   const selectClass = isDark
     ? 'bg-[var(--chrome-slate)] border-[var(--chrome-border)] text-[var(--chrome-ink)]'
-    : variant === 'inline'
-      ? 'bg-muted/60 border-transparent'
-      : undefined
+    : 'bg-muted border-border text-foreground'
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [category, setCategory] = useState('all')

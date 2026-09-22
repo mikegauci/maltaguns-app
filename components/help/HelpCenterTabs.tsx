@@ -68,8 +68,8 @@ export function HelpCenterTabs({ tabs }: HelpCenterTabsProps) {
             </CardHeader>
             <CardContent>
               {tab.banner_text ? (
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 mb-6">
-                  <p className="text-sm text-blue-700 dark:text-blue-400">
+                <div className="mb-6 rounded-sm border border-border bg-muted p-4">
+                  <p className="text-sm text-muted-foreground">
                     <strong>Disclaimer:</strong> {tab.banner_text}
                   </p>
                 </div>

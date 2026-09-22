@@ -214,10 +214,12 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-[calc(100vh-var(--header-height))] items-center justify-center bg-background p-6">
+      <Card className="w-full max-w-md rounded-sm border-border shadow-none">
         <CardHeader>
-          <CardTitle>Welcome Back</CardTitle>
+          <CardTitle className="app-display uppercase tracking-tight">
+            Welcome Back
+          </CardTitle>
           <CardDescription>Sign in to your MaltaGuns account</CardDescription>
         </CardHeader>
         <CardContent>
