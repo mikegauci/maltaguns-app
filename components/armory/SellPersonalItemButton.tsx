@@ -14,13 +14,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useSellerStatus } from '@/app/marketplace/create/hooks/useSellerStatus'
-import { useCredits } from '@/app/marketplace/create/hooks/useCredits'
-import { useAuthSession } from '@/app/marketplace/create/hooks/useAuthSession'
+import { useSellEligibility } from '@/app/marketplace/create/hooks/useSellEligibility'
 import {
   getFirearmsSellGateMessage,
   type FirearmsSellGateMessage,
 } from '@/app/marketplace/create/handlers/navigationHandlers'
+import { useToast } from '@/hooks/use-toast'
 
 const CreditDialog = nextDynamic(
   () => import('@/components/dialogs/CreditDialog').then(m => m.CreditDialog),
@@ -34,58 +33,77 @@ type SellPersonalItem = {
 
 type SellPersonalItemButtonProps = {
   item: SellPersonalItem
+  returnTo: string
 }
 
-export function SellPersonalItemButton({ item }: SellPersonalItemButtonProps) {
+export function SellPersonalItemButton({
+  item,
+  returnTo,
+}: SellPersonalItemButtonProps) {
   const router = useRouter()
-  const { isLoading, isSeller, isVerified, isIdentityVerified, hasLicense } =
-    useSellerStatus()
-  const { credits, checkCredits } = useCredits()
-  const { userId, isRetailer } = useAuthSession()
+  const { toast } = useToast()
+  const { refreshEligibility } = useSellEligibility()
   const [showVerifyDialog, setShowVerifyDialog] = useState(false)
   const [showCreditDialog, setShowCreditDialog] = useState(false)
+  const [creditUserId, setCreditUserId] = useState<string | null>(null)
+  const [isHandling, setIsHandling] = useState(false)
   const [dialogMessage, setDialogMessage] = useState<FirearmsSellGateMessage>({
     title: 'Verification Required',
     description:
       'To sell firearms on Maltaguns, you must verify your account. Please go to your profile to complete verification.',
   })
   const isFirearm = item.item_type === 'FIREARM'
-  const isBusy = isLoading
 
   function navigateToCreate() {
     const base = isFirearm
       ? '/marketplace/create/firearms'
       : '/marketplace/create/non-firearms'
-    router.push(`${base}?inventoryItem=${item.id}`)
+    const params = new URLSearchParams()
+    params.set('inventoryItem', item.id)
+    params.set('returnTo', returnTo)
+    router.push(`${base}?${params.toString()}`)
   }
 
   async function handleSell() {
-    if (isBusy) return
+    if (isHandling) return
 
     if (!isFirearm) {
       navigateToCreate()
       return
     }
 
-    const gate = getFirearmsSellGateMessage({
-      isSeller,
-      isVerified,
-      isIdentityVerified,
-      hasLicense,
-    })
-    if (gate) {
-      setDialogMessage(gate)
-      setShowVerifyDialog(true)
-      return
-    }
+    setIsHandling(true)
+    try {
+      const ready = await refreshEligibility()
 
-    const currentCredits = (await checkCredits(isRetailer)) ?? credits
-    if (currentCredits < 1 && !isRetailer) {
-      setShowCreditDialog(true)
-      return
-    }
+      const gate = getFirearmsSellGateMessage({
+        isSeller: ready.isSeller,
+        isVerified: ready.isVerified,
+        isIdentityVerified: ready.isIdentityVerified,
+        hasLicense: ready.hasLicense,
+      })
+      if (gate) {
+        setDialogMessage(gate)
+        setShowVerifyDialog(true)
+        return
+      }
 
-    navigateToCreate()
+      if (ready.credits < 1 && !ready.isRetailer) {
+        setCreditUserId(ready.userId)
+        setShowCreditDialog(true)
+        return
+      }
+
+      navigateToCreate()
+    } catch {
+      toast({
+        title: 'Unable to start listing',
+        description: 'Please check your connection and try again.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsHandling(false)
+    }
   }
 
   return (
@@ -95,7 +113,7 @@ export function SellPersonalItemButton({ item }: SellPersonalItemButtonProps) {
         variant="outline"
         size="sm"
         className="h-8"
-        disabled={isBusy}
+        disabled={isHandling}
         onClick={handleSell}
       >
         Sell
@@ -118,11 +136,11 @@ export function SellPersonalItemButton({ item }: SellPersonalItemButtonProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      {userId && showCreditDialog && (
+      {creditUserId && showCreditDialog && (
         <CreditDialog
           open={showCreditDialog}
           onOpenChange={setShowCreditDialog}
-          userId={userId}
+          userId={creditUserId}
           source="marketplace"
         />
       )}

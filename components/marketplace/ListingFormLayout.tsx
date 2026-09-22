@@ -15,6 +15,7 @@ interface ListingFormLayoutProps {
   children: ReactNode
   credits?: number
   showCredits?: boolean
+  backHref?: string
 }
 
 export function ListingFormLayout({
@@ -23,17 +24,14 @@ export function ListingFormLayout({
   children,
   credits,
   showCredits = false,
+  backHref = '/marketplace/create',
 }: ListingFormLayoutProps) {
   return (
     <PageLayout>
       <div
         className={`mb-6 ${showCredits ? 'flex items-center justify-between' : ''}`}
       >
-        <BackButton
-          label="Back"
-          href="/marketplace/create"
-          hideLabelOnMobile={false}
-        />
+        <BackButton label="Back" href={backHref} hideLabelOnMobile={false} />
         {showCredits && (
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">

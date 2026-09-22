@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { Suspense, useState, useEffect, useMemo } from 'react'
 import nextDynamic from 'next/dynamic'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -51,9 +51,15 @@ import {
   LicenseTypes,
 } from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
+import { getSafeInternalPath } from '@/lib/navigation'
 
-export default function CreateFirearmsListing() {
+function CreateFirearmsListing() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const backHref = getSafeInternalPath(
+    searchParams.get('returnTo'),
+    '/marketplace/create'
+  )
   const { toast } = useToast()
   const supabase = createClient()
   const [showCreditDialog, setShowCreditDialog] = useState(false)
@@ -231,6 +237,7 @@ export default function CreateFirearmsListing() {
         description="List your firearm for sale on the marketplace"
         credits={credits}
         showCredits
+        backHref={backHref}
       >
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -339,5 +346,19 @@ export default function CreateFirearmsListing() {
         />
       )}
     </>
+  )
+}
+
+export default function CreateFirearmsListingPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageLayout>
+          <p className="text-muted-foreground">Loading...</p>
+        </PageLayout>
+      }
+    >
+      <CreateFirearmsListing />
+    </Suspense>
   )
 }

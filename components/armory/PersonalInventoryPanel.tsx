@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { FileSpreadsheet, Pencil, Trash2 } from 'lucide-react'
 import { SellPersonalItemButton } from '@/components/armory/SellPersonalItemButton'
 import { SectionCard } from '@/components/armory/section-card'
@@ -62,6 +62,10 @@ export function PersonalInventoryPanel({
   initialItems,
 }: PersonalInventoryPanelProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const query = searchParams.toString()
+  const returnTo = `${pathname}${query ? `?${query}` : ''}`
   const { toast } = useToast()
   const [items, setItems] = useState<PersonalItem[]>(initialItems)
   const [pending, setPending] = useState(false)
@@ -350,7 +354,7 @@ export function PersonalInventoryPanel({
                   <TableCell>{item.acquisition_date ?? '—'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <SellPersonalItemButton item={item} />
+                      <SellPersonalItemButton item={item} returnTo={returnTo} />
                       <Button
                         type="button"
                         variant="ghost"

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
 import { SectionCard } from '@/components/armory/section-card'
 import { NativeSelect } from '@/components/armory/native-select'
@@ -35,7 +36,13 @@ export default async function InventoryPage({
         title="Inventory"
         description="Manage your personal firearm collection"
       >
-        <PersonalInventoryPanel initialItems={personal ?? []} />
+        <Suspense
+          fallback={
+            <p className="text-sm text-muted-foreground">Loading inventory…</p>
+          }
+        >
+          <PersonalInventoryPanel initialItems={personal ?? []} />
+        </Suspense>
       </ProfilePageLayout>
     )
   }

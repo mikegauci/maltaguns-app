@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useListingPrefillFromInventory } from '../hooks/useListingPrefillFromInventory'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -37,9 +37,15 @@ import {
   ImageUploadField,
 } from '../../../../components/marketplace/FormFields'
 import { PageLayout } from '@/components/ui/page-layout'
+import { getSafeInternalPath } from '@/lib/navigation'
 
-export default function CreateNonFirearmsListing() {
+function CreateNonFirearmsListing() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const backHref = getSafeInternalPath(
+    searchParams.get('returnTo'),
+    '/marketplace/create'
+  )
   const { toast } = useToast()
   const supabase = createClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -105,6 +111,7 @@ export default function CreateNonFirearmsListing() {
     <ListingFormLayout
       title="Create Non-Firearms Listing"
       description="List accessories, equipment, and related items for sale"
+      backHref={backHref}
     >
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -200,5 +207,19 @@ export default function CreateNonFirearmsListing() {
         </form>
       </Form>
     </ListingFormLayout>
+  )
+}
+
+export default function CreateNonFirearmsListingPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageLayout>
+          <p className="text-muted-foreground">Loading...</p>
+        </PageLayout>
+      }
+    >
+      <CreateNonFirearmsListing />
+    </Suspense>
   )
 }
