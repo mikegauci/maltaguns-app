@@ -111,6 +111,23 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
   {
+    label: 'Help',
+    items: [
+      {
+        title: 'Help Center',
+        href: '/admin/help',
+        icon: HelpCircle,
+        description: 'Manage help tabs and FAQs',
+      },
+      {
+        title: 'Help Guides',
+        href: '/admin/help/guides',
+        icon: FileText,
+        description: 'Create and assign help guides',
+      },
+    ],
+  },
+  {
     label: 'Finance',
     items: [
       {

@@ -154,7 +154,15 @@ export default function EditBlogPost(props: {
           return
         }
 
-        if (post.author_id !== session.user.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single()
+
+        const isAdmin = !!profile?.is_admin
+
+        if (!isAdmin && post.author_id !== session.user.id) {
           toast({
             variant: 'destructive',
             title: 'Unauthorized',
