@@ -1,6 +1,5 @@
 'use client'
 
-import { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -14,7 +13,6 @@ import { Badge } from '@/components/ui/badge'
 import { Package, Star, Plus, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { AutoFeatureHandler } from './auto-feature-handler'
 import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
@@ -197,10 +195,6 @@ export default function MarketplaceClient({
           </Link>
         )}
       </div>
-
-      <Suspense fallback={null}>
-        <AutoFeatureHandler />
-      </Suspense>
 
       <MarketplaceCategoryNav />
 

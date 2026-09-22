@@ -16,9 +16,18 @@ export default function RefundsPolicy() {
       <p className="text-muted-foreground mb-1">
         Maltaguns.com — operated by Matchlock Group Ltd (C 116325)
       </p>
-      <p className="text-muted-foreground mb-8">Last updated: 10/09/2026</p>
+      <p className="text-muted-foreground mb-8">Last updated: 22/09/2026</p>
 
       <div className="prose prose-sm max-w-none text-foreground">
+        <p>
+          Online payments for listing credits, featured listings, and event
+          credits are temporarily unavailable while we switch payment providers.
+          To purchase credits or paid features during this period, contact{' '}
+          <a href="mailto:info@maltaguns.com" className="underline">
+            info@maltaguns.com
+          </a>
+          .
+        </p>
         <p>
           This policy applies to fees paid to Maltaguns for its own services:
           listing credits, featured listings, event listings and Establishment

@@ -16,6 +16,44 @@ interface PaymentHistoryProps {
   listingIdToTitleMap: Record<string, string>
 }
 
+function getTransactionStatusLabel(status: string | null, type: string) {
+  const normalizedStatus =
+    status || (type === 'debit' ? 'completed' : 'pending')
+
+  switch (normalizedStatus) {
+    case 'completed':
+      return 'Completed'
+    case 'cancelled':
+      return 'Cancelled'
+    case 'failed':
+      return 'Failed'
+    case 'pending':
+      return 'Pending'
+    default:
+      return normalizedStatus
+  }
+}
+
+function getTransactionStatusVariant(
+  status: string | null,
+  type: string
+): 'default' | 'outline' | 'secondary' | 'destructive' {
+  const normalizedStatus =
+    status || (type === 'debit' ? 'completed' : 'pending')
+
+  switch (normalizedStatus) {
+    case 'completed':
+      return 'default'
+    case 'pending':
+      return 'outline'
+    case 'cancelled':
+    case 'failed':
+      return 'destructive'
+    default:
+      return 'secondary'
+  }
+}
+
 export const PaymentHistory = ({
   creditTransactions,
   listingIdToTitleMap,
@@ -58,7 +96,6 @@ export const PaymentHistory = ({
             </thead>
             <tbody className="divide-y">
               {creditTransactions.map((transaction: CreditTransaction) => {
-                // Process description to replace listing IDs with titles
                 let description = transaction.description
                   ? transaction.description.replace(
                       /\s*\(price_\d+credits?\)\s*/g,
@@ -66,12 +103,10 @@ export const PaymentHistory = ({
                     )
                   : '—'
 
-                // Check if this is a feature listing purchase (vs regular credit purchase)
                 const isFeaturePurchase = description.includes(
                   'Feature listing purchase for listing'
                 )
 
-                // Replace listing IDs with titles if available
                 if (isFeaturePurchase) {
                   const match = description.match(
                     /Feature listing purchase for listing ([0-9a-f-]+)/
@@ -83,6 +118,15 @@ export const PaymentHistory = ({
                     )
                   }
                 }
+
+                const statusLabel = getTransactionStatusLabel(
+                  transaction.status,
+                  transaction.type
+                )
+                const statusVariant = getTransactionStatusVariant(
+                  transaction.status,
+                  transaction.type
+                )
 
                 return (
                   <tr
@@ -128,17 +172,7 @@ export const PaymentHistory = ({
                     </td>
                     <td className="py-4 px-4 text-sm">{description}</td>
                     <td className="py-4 px-4 text-sm text-right">
-                      <Badge
-                        variant={
-                          (transaction.status || 'pending') === 'completed'
-                            ? 'default'
-                            : (transaction.status || 'pending') === 'pending'
-                              ? 'outline'
-                              : 'secondary'
-                        }
-                      >
-                        {transaction.status || 'pending'}
-                      </Badge>
+                      <Badge variant={statusVariant}>{statusLabel}</Badge>
                     </td>
                   </tr>
                 )

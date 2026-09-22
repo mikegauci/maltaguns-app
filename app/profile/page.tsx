@@ -150,13 +150,6 @@ export default function ProfilePage() {
       setListingToDelete
     )
 
-  const handleRenewalSuccess = () =>
-    profileHandlers.handleRenewalSuccess(
-      listingToFeature,
-      setListingToFeature,
-      refreshCredits
-    )
-
   const onSubmit = async (data: ProfileForm) => {
     await profileHandlers.onSubmit(data, setIsEditing)
   }
@@ -272,7 +265,6 @@ export default function ProfilePage() {
           onOpenChange={setFeatureDialogOpen}
           userId={profile?.id ?? ''}
           listingId={listingToFeature ?? ''}
-          onSuccess={handleRenewalSuccess}
         />
       )}
 
@@ -294,13 +286,6 @@ export default function ProfilePage() {
           onOpenChange={setShowCreditDialog}
           userId={profile?.id || ''}
           source="profile"
-          onSuccess={() => {
-            refreshCredits()
-            toast({
-              title: 'Credits purchased',
-              description: 'Your credits have been added to your account.',
-            })
-          }}
         />
       )}
 
@@ -309,14 +294,6 @@ export default function ProfilePage() {
           open={showEventCreditDialog}
           onOpenChange={setShowEventCreditDialog}
           userId={profile?.id || ''}
-          onSuccess={() => {
-            refreshCredits()
-            toast({
-              title: 'Event credits purchased',
-              description:
-                'Your event credits have been added to your account.',
-            })
-          }}
         />
       )}
     </PageLayout>

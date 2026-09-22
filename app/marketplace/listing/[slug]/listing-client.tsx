@@ -33,7 +33,6 @@ import { BackButton } from '@/components/ui/back-button'
 import { format } from 'date-fns'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { FeatureCreditDialog, ReportListingDialog } from '@/components/dialogs'
-import { AutoFeatureHandler } from '../../auto-feature-handler'
 import { LoadingState } from '@/components/ui/loading-state'
 import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
@@ -907,9 +906,6 @@ export default function ListingClient({
           onOpenChange={setShowFeatureDialog}
           userId={userId}
           listingId={listing.id}
-          onSuccess={() => {
-            setIsFeatured(true)
-          }}
         />
       )}
 
@@ -1069,14 +1065,6 @@ export default function ListingClient({
           </Card>
         </div>
       </div>
-
-      {/* Add the AutoFeatureHandler with the specific listing ID */}
-      <AutoFeatureHandler
-        listingId={listing.id}
-        onFeatured={() => {
-          setIsFeatured(true)
-        }}
-      />
     </PageLayout>
   )
 }
