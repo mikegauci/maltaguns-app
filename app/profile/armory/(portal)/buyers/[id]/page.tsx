@@ -33,6 +33,7 @@ export default async function BuyerPage({
   return (
     <ProfilePageLayout
       title={`${buyer.firstNames} ${buyer.surname}${buyer.nickname ? ` "${buyer.nickname}"` : ''}`}
+      titleUppercase={false}
       description="Buyer details and assigned items"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">

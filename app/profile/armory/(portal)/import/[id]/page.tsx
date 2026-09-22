@@ -48,6 +48,7 @@ export default async function ImportReviewPage({
   return (
     <ProfilePageLayout
       title={`Review: ${batch.file_name}${batch.sheet_name ? ` — ${batch.sheet_name}` : ''}`}
+      titleUppercase={false}
       description={`${rows.length} rows`}
     >
       <BackLink href={`${BASE}/import`}>Imports</BackLink>

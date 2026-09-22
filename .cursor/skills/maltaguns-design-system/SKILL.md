@@ -13,8 +13,8 @@ Dev styleguide (local only): `/design-system`
 
 ## When to apply
 
-- **Use:** all public routes (`/marketplace`, `/establishments`, `/events`, `/blog`, auth, legal, etc.)
-- **Do not use:** `/profile/**` (light island), `/admin/**` (unchanged)
+- **Use:** all public routes (`/marketplace`, `/establishments`, `/events`, `/blog`, `/profile/**`, auth, legal, etc.)
+- **Do not use:** `/admin/**` (unchanged), `/profile/armory/print/**` (light for printing)
 
 Public pages get `html.app-dark` via `ThemeProvider` — prefer shadcn semantic tokens (`bg-background`, `text-primary`) so portaled dialogs inherit dark theme.
 
@@ -73,12 +73,12 @@ Never use absolute positioning on `BackButton` — always flow layout above or i
 
 Import from `@/components/design-system`:
 
-| Component           | Use for                                                                   |
-| ------------------- | ------------------------------------------------------------------------- |
-| `AppCard`           | Listing/establishment cards — flat border, hover primary border           |
-| `AppSectionHeading` | "Listings", "Featured Listings" section titles                            |
-| `AppPageToolbar`    | Back + right-side actions row on detail pages                             |
-| `AppAlert`          | `pending`, `rejected`, `success` status banners (public dark routes only) |
+| Component           | Use for                                                         |
+| ------------------- | --------------------------------------------------------------- |
+| `AppCard`           | Listing/establishment cards — flat border, hover primary border |
+| `AppSectionHeading` | "Listings", "Featured Listings" section titles                  |
+| `AppPageToolbar`    | Back + right-side actions row on detail pages                   |
+| `AppAlert`          | `pending`, `rejected`, `success` status banners                 |
 
 Existing shells (do not duplicate):
 
@@ -105,7 +105,7 @@ Existing shells (do not duplicate):
 - Pill-shaped CTAs (`rounded-full` on primary actions)
 - Absolute-positioned back buttons without a flex toolbar
 - Changing global `:root` for dark mode (use `html.app-dark` instead)
-- Applying dark styling to `/profile` or `/admin`
+- Applying dark styling to `/admin` or print routes
 
 ## File map
 

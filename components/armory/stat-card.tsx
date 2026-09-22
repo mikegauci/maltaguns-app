@@ -12,12 +12,12 @@ export function StatCard({
   tone?: 'good' | 'bad'
 }) {
   return (
-    <div className="rounded-lg border bg-background px-4 py-3">
+    <div className="rounded-sm border border-border bg-card px-4 py-3">
       <div
         className={cn(
           'text-2xl font-semibold tabular-nums',
-          tone === 'good' && 'text-emerald-600',
-          tone === 'bad' && 'text-red-600'
+          tone === 'good' && 'text-emerald-400',
+          tone === 'bad' && 'text-red-400'
         )}
       >
         {value}

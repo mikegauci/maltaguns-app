@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { AppCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -25,9 +25,11 @@ export function ProfileAccountGate({
   if (!session?.user) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center px-4 py-8">
-        <Card className="w-full max-w-md">
+        <AppCard className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Profile Access</CardTitle>
+            <CardTitle className="app-display uppercase tracking-tight">
+              Profile Access
+            </CardTitle>
             <CardDescription>
               You need to log in to view your profile
             </CardDescription>
@@ -44,7 +46,7 @@ export function ProfileAccountGate({
               />
             </div>
           </CardContent>
-        </Card>
+        </AppCard>
       </div>
     )
   }

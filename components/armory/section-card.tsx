@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -21,11 +21,15 @@ export function SectionCard({
   className?: string
 }) {
   return (
-    <Card className={className}>
+    <AppCard className={className}>
       {(title || actions) && (
         <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
           <div className="space-y-1">
-            {title && <CardTitle>{title}</CardTitle>}
+            {title && (
+              <CardTitle className="app-display text-lg font-bold tracking-tight">
+                {title}
+              </CardTitle>
+            )}
             {description && <CardDescription>{description}</CardDescription>}
           </div>
           {actions && (
@@ -36,6 +40,6 @@ export function SectionCard({
       <CardContent className={title || actions ? undefined : 'pt-6'}>
         {children}
       </CardContent>
-    </Card>
+    </AppCard>
   )
 }

@@ -104,10 +104,10 @@ export function ProfileShell({
   )
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)] bg-muted/30">
+    <div className="flex min-h-[calc(100vh-64px)] bg-background">
       <aside
         className={cn(
-          'hidden shrink-0 border-r bg-background lg:block',
+          'hidden shrink-0 border-r border-border bg-card lg:block',
           sidebarInitialized && 'transition-[width] duration-200 ease-in-out',
           sidebarCollapsed ? 'w-16' : 'w-60'
         )}
@@ -140,7 +140,7 @@ export function ProfileShell({
       </aside>
 
       <main className="min-w-0 flex-1">
-        <div className="flex items-center gap-3 border-b bg-background px-4 py-3 lg:hidden">
+        <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 lg:hidden">
           <Button
             type="button"
             variant="outline"
@@ -168,8 +168,8 @@ export function ProfileShell({
       </main>
 
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <SheetContent side="left" className="w-72 p-0">
-          <SheetHeader className="border-b px-4 py-4 text-left">
+        <SheetContent side="left" className="w-72 border-border bg-card p-0">
+          <SheetHeader className="border-b border-border px-4 py-4 text-left">
             <SheetTitle>Account navigation</SheetTitle>
           </SheetHeader>
           <div className="flex h-[calc(100vh-4.5rem)] flex-col overflow-hidden">
@@ -256,11 +256,11 @@ function ProfileNavLink({
       href={item.href}
       onClick={onNavigate}
       className={cn(
-        'flex items-center rounded-md py-2 text-sm transition-colors',
+        'relative flex items-center rounded-sm py-2 text-sm transition-colors',
         collapsed ? 'justify-center px-2' : 'gap-2 px-3',
         active
-          ? 'bg-accent font-medium text-accent-foreground'
-          : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+          ? 'border border-border bg-chrome-slate/50 font-medium text-foreground'
+          : 'text-muted-foreground hover:bg-chrome-slate/30 hover:text-foreground'
       )}
       aria-label={collapsed ? item.title : undefined}
     >

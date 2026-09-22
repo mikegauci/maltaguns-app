@@ -6,12 +6,12 @@ Dark industrial UI for MaltaGuns public routes. This document mirrors the Cursor
 
 ## Theme scopes
 
-| Route         | Theme                   | Mechanism                                |
-| ------------- | ----------------------- | ---------------------------------------- |
-| Public pages  | Dark tactical           | `html.app-dark` via `ThemeProvider`      |
-| `/profile/**` | Light                   | `app-dark` removed on pathname           |
-| `/admin/**`   | Unchanged               | No dark theme applied                    |
-| `/` homepage  | Dark + marketing extras | `.home` wrapper coexists with `app-dark` |
+| Route                        | Theme                   | Mechanism                                |
+| ---------------------------- | ----------------------- | ---------------------------------------- |
+| Public pages + `/profile/**` | Dark tactical           | `html.app-dark` via `ThemeProvider`      |
+| `/profile/armory/print/**`   | Light (print)           | `app-dark` removed on pathname           |
+| `/admin/**`                  | Unchanged               | No dark theme applied                    |
+| `/` homepage                 | Dark + marketing extras | `.home` wrapper coexists with `app-dark` |
 
 ## Colors
 
@@ -59,7 +59,7 @@ import { PageHeader } from '@/components/ui/page-header'
 - **AppCard** — flat card with border hover; pass `featured` for primary border emphasis
 - **AppSectionHeading** — in-page h2; optional `icon` slot
 - **AppPageToolbar** — `backHref` + `actions`
-- **AppAlert** — `pending`, `rejected`, `success` variants for status messaging (dark public pages only; do not use on `/profile`)
+- **AppAlert** — `pending`, `rejected`, `success` variants for status messaging
 
 ## Do
 
@@ -73,4 +73,4 @@ import { PageHeader } from '@/components/ui/page-header'
 - Light-mode-only colors (`text-gray-700`, `bg-amber-50`)
 - Heavy shadows (`hover:shadow-lg`)
 - Absolute-positioned navigation without a toolbar wrapper
-- Dark styling on profile or admin
+- Dark styling on admin

@@ -1,8 +1,8 @@
 'use client'
 
+import { AppCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -29,7 +29,7 @@ export default function ProfileBillingPage() {
     >
       <div className="space-y-6">
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+          <AppCard>
             <CardHeader>
               <CardTitle className="text-lg">Listing Credits</CardTitle>
               <CardDescription>
@@ -38,18 +38,17 @@ export default function ProfileBillingPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">{listingCredits}</div>
-                <Button
-                  onClick={() => setShowCreditDialog(true)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
+                <div className="text-3xl font-bold tabular-nums">
+                  {listingCredits}
+                </div>
+                <Button onClick={() => setShowCreditDialog(true)}>
                   Add Credits
                 </Button>
               </div>
             </CardContent>
-          </Card>
+          </AppCard>
 
-          <Card>
+          <AppCard>
             <CardHeader>
               <CardTitle className="text-lg">Event Credits</CardTitle>
               <CardDescription>
@@ -58,16 +57,15 @@ export default function ProfileBillingPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <div className="text-3xl font-bold">{eventCredits}</div>
-                <Button
-                  onClick={() => setShowEventCreditDialog(true)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
+                <div className="text-3xl font-bold tabular-nums">
+                  {eventCredits}
+                </div>
+                <Button onClick={() => setShowEventCreditDialog(true)}>
                   Add Credits
                 </Button>
               </div>
             </CardContent>
-          </Card>
+          </AppCard>
         </div>
 
         <PaymentHistory

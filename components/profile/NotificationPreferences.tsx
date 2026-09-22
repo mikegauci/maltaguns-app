@@ -55,7 +55,7 @@ export const NotificationPreferences = ({
   }
 
   return (
-    <div className="flex items-center justify-between gap-4 border-t pt-4">
+    <div className="flex items-center justify-between gap-4 border-t border-border pt-4">
       <span className="text-sm text-muted-foreground">
         Enable email notifications on new articles?
       </span>

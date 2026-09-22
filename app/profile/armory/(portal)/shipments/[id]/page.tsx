@@ -33,6 +33,7 @@ import { ItemForm } from '@/components/armory/item-form'
 import { ItemsTable } from '@/components/armory/items-table'
 import { NotesLog } from '@/components/armory/notes-log'
 import { StatusControls } from './status-controls'
+import { AppAlert } from '@/components/design-system'
 import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
 import { SectionCard } from '@/components/armory/section-card'
 import { StatCard } from '@/components/armory/stat-card'
@@ -94,6 +95,7 @@ export default async function ShipmentPage({
   return (
     <ProfilePageLayout
       title={shipment.reference}
+      titleUppercase={false}
       description={`Created ${fmtDate(shipment.createdAt)} · ${items.length} items (${items.filter(i => i.itemType === 'FIREARM').length} firearms)${shipment.priorConsentRef ? ` · Prior consent ${shipment.priorConsentRef}` : ''}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -116,13 +118,13 @@ export default async function ShipmentPage({
       </div>
 
       {sp.imported && (
-        <div className="rounded border border-emerald-300 bg-emerald-50 text-emerald-900 text-sm px-3 py-2">
+        <AppAlert variant="success">
           Imported {sp.imported} item(s)
           {sp.skipped && sp.skipped !== '0'
             ? `, ${sp.skipped} row(s) skipped`
             : ''}
           .
-        </div>
+        </AppAlert>
       )}
 
       <section className="grid grid-cols-2 md:grid-cols-5 gap-3">

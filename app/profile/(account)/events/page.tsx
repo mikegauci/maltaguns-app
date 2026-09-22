@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { Calendar } from 'lucide-react'
+import { AppCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { CardContent } from '@/components/ui/card'
 import { MyEvents } from '@/components/profile/MyEvents'
 import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
 import { useProfileContext } from '@/components/profile/ProfileDataProvider'
@@ -25,7 +26,7 @@ export default function ProfileEventsPage() {
           setShowEventCreditDialog={setShowEventCreditDialog}
         />
       ) : (
-        <Card>
+        <AppCard>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="mb-2 text-lg font-semibold">No events yet</h3>
@@ -39,7 +40,7 @@ export default function ProfileEventsPage() {
               </Button>
             </Link>
           </CardContent>
-        </Card>
+        </AppCard>
       )}
     </ProfilePageLayout>
   )

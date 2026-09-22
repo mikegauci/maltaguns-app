@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -26,7 +26,7 @@ export const MyBlogPosts = ({
   if (blogPosts.length === 0) return null
 
   return (
-    <Card>
+    <AppCard>
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
           <div>
@@ -44,7 +44,7 @@ export const MyBlogPosts = ({
       <CardContent>
         <div className="space-y-4">
           {blogPosts.map(post => (
-            <Card key={post.id}>
+            <AppCard key={post.id}>
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-4">
                   <div className="flex flex-col space-y-2">
@@ -81,7 +81,7 @@ export const MyBlogPosts = ({
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeletePost(post.id)}
-                      className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 w-full sm:w-auto"
+                      className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 sm:w-auto"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
@@ -89,10 +89,10 @@ export const MyBlogPosts = ({
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </AppCard>
           ))}
         </div>
       </CardContent>
-    </Card>
+    </AppCard>
   )
 }

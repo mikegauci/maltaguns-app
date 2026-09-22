@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { AppAlert } from '@/components/design-system'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -52,10 +53,10 @@ interface IdentityVerificationProps {
 }
 
 const TONE_CLASSES = {
-  verified: 'border-green-600 text-green-600',
-  pending: 'border-amber-500 text-amber-500',
+  verified: 'border-emerald-600 text-emerald-400',
+  pending: 'border-amber-600 text-amber-400',
   failed: 'border-destructive text-destructive',
-  none: 'border-gray-400 text-gray-400',
+  none: 'border-border text-muted-foreground',
 } as const
 
 export const IdentityVerification = ({
@@ -181,13 +182,13 @@ export const IdentityVerification = ({
     .join(' ')
 
   const bodyContent = identityVerified ? (
-    <div className="rounded-md border bg-muted/20 p-3 space-y-1">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <BadgeCheck className="h-4 w-4 text-green-600" />
-        <span>Identity confirmed</span>
-      </div>
+    <AppAlert
+      variant="success"
+      icon={<BadgeCheck className="h-4 w-4" />}
+      title="Identity confirmed"
+    >
       {verifiedName && (
-        <p className="text-xs text-muted-foreground">
+        <p>
           Verified as {verifiedName}
           {identityDocumentType
             ? ` · ${identityDocumentType.replace(/_/g, ' ').toLowerCase()}`
@@ -195,92 +196,90 @@ export const IdentityVerification = ({
         </p>
       )}
       {adminOverride && (
-        <p className="text-xs text-muted-foreground">
-          Confirmed by an administrator. Didit was not used.
-        </p>
+        <p>Confirmed by an administrator. Didit was not used.</p>
       )}
-    </div>
+    </AppAlert>
   ) : uiState.needsResubmission ? (
-    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
-      <div className="flex items-start gap-2 text-sm font-medium text-amber-900">
-        <RefreshCw className="h-4 w-4 flex-shrink-0 mt-0.5" />
-        <span>Resubmission required</span>
-      </div>
-      <p className="text-xs text-amber-800">
+    <AppAlert
+      variant="pending"
+      icon={<RefreshCw className="h-4 w-4" />}
+      title="Resubmission required"
+    >
+      <p>
         Didit needs you to redo part of your verification. Check the details
         below, then verify again when you are ready.
       </p>
       {reviewNotes.length > 0 && (
-        <ul className="text-xs text-amber-800 list-disc pl-5 space-y-1">
+        <ul className="list-disc space-y-1 pl-5">
           {reviewNotes.map(note => (
             <li key={note}>{note}</li>
           ))}
         </ul>
       )}
       {hasDateOfBirthMismatch(reviewNotes) && (
-        <p className="text-xs text-amber-800">
+        <p>
           Check that your date of birth on your profile matches your ID exactly.
           If it is wrong, update it in your profile details before trying again.
         </p>
       )}
-    </div>
+    </AppAlert>
   ) : uiState.inManualReview ? (
-    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
-      <div className="flex items-start gap-2 text-sm font-medium text-amber-900">
-        <Loader2 className="h-4 w-4 flex-shrink-0 mt-0.5 animate-spin" />
-        <span>Verification in progress</span>
-      </div>
-      <p className="text-xs text-amber-800">
+    <AppAlert
+      variant="pending"
+      icon={<Loader2 className="h-4 w-4 animate-spin" />}
+      title="Verification in progress"
+    >
+      <p>
         Our compliance team is manually reviewing your submission. We will email
         you once a decision is made, whether your verification is approved or
         declined. This page will update automatically when the outcome is ready.
       </p>
       {reviewNotes.length > 0 && (
-        <ul className="text-xs text-amber-800 list-disc pl-5 space-y-1">
+        <ul className="list-disc space-y-1 pl-5">
           {reviewNotes.map(note => (
             <li key={note}>{note}</li>
           ))}
         </ul>
       )}
-    </div>
+    </AppAlert>
   ) : uiState.isAutomaticallyProcessing ? (
-    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
-      <div className="flex items-start gap-2 text-sm font-medium text-amber-900">
-        <Loader2 className="h-4 w-4 flex-shrink-0 mt-0.5 animate-spin" />
-        <span>Verification in progress</span>
-      </div>
-      <p className="text-xs text-amber-800">
+    <AppAlert
+      variant="pending"
+      icon={<Loader2 className="h-4 w-4 animate-spin" />}
+      title="Verification in progress"
+    >
+      <p>
         We are waiting for Didit to finish processing your submission. This page
         will update automatically.
       </p>
-    </div>
+    </AppAlert>
   ) : uiState.showFailedPanel ? (
-    <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 space-y-2">
-      <div className="flex items-start gap-2 text-sm font-medium text-destructive">
-        <XCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-        <span>Verification {uiState.isDeclined ? 'declined' : 'expired'}</span>
-      </div>
-      <p className="text-xs text-muted-foreground">
+    <AppAlert
+      variant="rejected"
+      icon={<XCircle className="h-4 w-4" />}
+      title={`Verification ${uiState.isDeclined ? 'declined' : 'expired'}`}
+    >
+      <p>
         {uiState.isDeclined
           ? 'Your submission was not approved. Check the details below and try again with a clear photo of your ID.'
           : 'Your verification session expired. Start again when you are ready.'}
       </p>
       {reviewNotes.length > 0 && (
-        <ul className="text-xs text-muted-foreground list-disc pl-5 space-y-1">
+        <ul className="list-disc space-y-1 pl-5">
           {reviewNotes.map(note => (
             <li key={note}>{note}</li>
           ))}
         </ul>
       )}
       {hasDateOfBirthMismatch(reviewNotes) && (
-        <p className="text-xs text-muted-foreground">
+        <p>
           Check that your date of birth on your profile matches your ID exactly.
           If it is wrong, update it in your profile details before trying again.
         </p>
       )}
-    </div>
+    </AppAlert>
   ) : uiState.showAbandonedPanel ? (
-    <div className="rounded-md border bg-muted/20 p-3 space-y-1">
+    <div className="rounded-sm border border-border bg-muted/20 p-3">
       <p className="text-xs text-muted-foreground">
         You did not finish verification. You can start again when you are ready.
       </p>
@@ -306,9 +305,9 @@ export const IdentityVerification = ({
               className="w-full"
             >
               {starting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <ShieldCheck className="h-4 w-4 mr-2" />
+                <ShieldCheck className="mr-2 h-4 w-4" />
               )}
               {starting
                 ? 'Opening...'
@@ -316,7 +315,7 @@ export const IdentityVerification = ({
                   ? 'Verify again'
                   : 'Verify my identity'}
             </Button>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <p className="text-sm leading-relaxed text-muted-foreground">
               Verify your ID card, passport or residence permit with our
               identity provider. It takes about two minutes and needs your
               camera.

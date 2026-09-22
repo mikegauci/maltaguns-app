@@ -7,6 +7,7 @@ import { SectionCard } from '@/components/armory/section-card'
 import { FormField } from '@/components/armory/form-field'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { AppAlert } from '@/components/design-system'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export function RegisterForm() {
@@ -55,13 +56,11 @@ export function RegisterForm() {
       description="Apply for the full Armory dealer dashboard. Your licence will be verified by platform admin."
     >
       <SectionCard className="max-w-2xl">
-        <Alert className="mb-6 border-blue-200 bg-blue-50">
-          <AlertDescription className="text-blue-900">
-            After you submit, our team will verify your dealer licence. You can
-            complete your company profile while you wait; full dashboard access
-            unlocks once approved.
-          </AlertDescription>
-        </Alert>
+        <AppAlert variant="pending" className="mb-6">
+          After you submit, our team will verify your dealer licence. You can
+          complete your company profile while you wait; full dashboard access
+          unlocks once approved.
+        </AppAlert>
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertDescription>{error}</AlertDescription>

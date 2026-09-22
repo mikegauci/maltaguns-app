@@ -53,7 +53,7 @@ export function ItemsTable({
   }
 
   return (
-    <div className="max-h-[65vh] overflow-auto rounded-md border">
+    <div className="max-h-[65vh] overflow-auto rounded-sm border border-border">
       <Table>
         <TableHeader>
           <TableRow>

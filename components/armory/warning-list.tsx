@@ -11,10 +11,10 @@ export function WarningList({
   return (
     <ul
       className={cn(
-        'space-y-1 rounded border px-3 py-2 text-xs',
+        'space-y-1 rounded-sm border px-3 py-2 text-xs',
         tone === 'amber'
-          ? 'border-amber-300 bg-amber-50 text-amber-900'
-          : 'border-red-300 bg-red-50 text-red-900'
+          ? 'border-amber-900/50 bg-amber-950/40 text-amber-100'
+          : 'border-red-900/50 bg-red-950/40 text-red-100'
       )}
     >
       {items.map((w, i) => (

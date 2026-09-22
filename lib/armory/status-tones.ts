@@ -2,12 +2,12 @@ export type StatusTone =
   'neutral' | 'green' | 'amber' | 'red' | 'blue' | 'purple'
 
 export const STATUS_TONE_CLASS: Record<StatusTone, string> = {
-  neutral: 'bg-muted text-muted-foreground border-transparent',
-  green: 'bg-emerald-100 text-emerald-800 border-transparent',
-  amber: 'bg-amber-100 text-amber-800 border-transparent',
-  red: 'bg-red-100 text-red-800 border-transparent',
-  blue: 'bg-sky-100 text-sky-800 border-transparent',
-  purple: 'bg-violet-100 text-violet-800 border-transparent',
+  neutral: 'border-border bg-muted/30 text-muted-foreground',
+  green: 'border-emerald-700/50 bg-emerald-950/40 text-emerald-400',
+  amber: 'border-amber-700/50 bg-amber-950/40 text-amber-400',
+  red: 'border-red-700/50 bg-red-950/40 text-red-400',
+  blue: 'border-sky-700/50 bg-sky-950/40 text-sky-400',
+  purple: 'border-violet-700/50 bg-violet-950/40 text-violet-400',
 }
 
 export const ITEM_STATUS_TONE: Record<string, StatusTone> = {

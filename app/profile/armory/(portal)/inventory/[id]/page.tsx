@@ -68,6 +68,7 @@ export default async function ItemPage({
   return (
     <ProfilePageLayout
       title={title}
+      titleUppercase={false}
       description={`${item.itemType.replace('_', ' ').toLowerCase()} · s/n ${item.serialNumber ?? '—'} · ${item.calibreDisplay ?? item.calibreRaw ?? 'no calibre'} · holder: ${item.buyerName ?? 'dealer stock'}`}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">

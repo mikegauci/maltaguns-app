@@ -36,6 +36,7 @@ export default async function DocumentSnapshotPage({
   return (
     <ProfilePageLayout
       title={`Document version ${d.version}`}
+      titleUppercase={false}
       description={`${d.generationMethod === 'BLANK_MANUAL' ? 'Blank form printed and completed by hand.' : 'Exact data that was on the printed page.'} · ${fmtDate(d.createdAt)}`}
     >
       <BackLink href={`${BASE}/documents`}>All documents</BackLink>

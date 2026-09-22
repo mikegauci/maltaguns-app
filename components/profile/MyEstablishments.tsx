@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -37,20 +37,29 @@ interface MyEstablishmentsProps {
 function StatusBadge({ status }: { status: EstablishmentStatus }) {
   if (status === 'pending') {
     return (
-      <Badge className="mt-1 bg-amber-100 text-amber-800 hover:bg-amber-100">
+      <Badge
+        variant="outline"
+        className="mt-1 border-amber-600 text-amber-400 hover:bg-transparent"
+      >
         Pending approval
       </Badge>
     )
   }
   if (status === 'rejected') {
     return (
-      <Badge className="mt-1 bg-red-100 text-red-800 hover:bg-red-100">
+      <Badge
+        variant="outline"
+        className="mt-1 border-destructive text-destructive hover:bg-transparent"
+      >
         Rejected
       </Badge>
     )
   }
   return (
-    <Badge className="mt-1 bg-green-100 text-green-800 hover:bg-green-100">
+    <Badge
+      variant="outline"
+      className="mt-1 border-emerald-600 text-emerald-400 hover:bg-transparent"
+    >
       Live
     </Badge>
   )
@@ -120,7 +129,7 @@ export const MyEstablishments = ({
   if (!hasEstablishments) {
     return (
       <>
-        <Card className="w-full mb-8">
+        <AppCard className="mb-8 w-full">
           <CardHeader>
             <CardTitle>Create Establishment</CardTitle>
             <CardDescription className="flex items-center gap-2">
@@ -128,7 +137,7 @@ export const MyEstablishments = ({
               community{' '}
               <Button
                 variant="outline"
-                className="h-7 rounded-full text-xs font-normal flex items-center gap-1.5 border-muted-foreground/20"
+                className="flex h-7 items-center gap-1.5 rounded-sm text-xs font-normal"
                 onClick={() => setEstablishmentInfoOpen(true)}
               >
                 <Info className="h-3.5 w-3.5" />
@@ -144,7 +153,7 @@ export const MyEstablishments = ({
               </Button>
             </Link>
           </CardContent>
-        </Card>
+        </AppCard>
 
         <EstablishmentInfoDialog
           open={establishmentInfoOpen}
@@ -155,7 +164,7 @@ export const MyEstablishments = ({
   }
 
   return (
-    <Card className="w-full mb-8">
+    <AppCard className="mb-8 w-full">
       <CardHeader>
         <CardTitle>My Establishments</CardTitle>
         <CardDescription>
@@ -167,16 +176,19 @@ export const MyEstablishments = ({
           <>
             <h3 className="text-lg font-semibold mb-3">Stores</h3>
             {stores.map(storeItem => (
-              <div key={storeItem.id} className="border rounded-lg p-4 mb-4">
+              <div
+                key={storeItem.id}
+                className="mb-4 rounded-sm border border-border p-4"
+              >
                 <div className="flex items-center gap-4 mb-4">
                   {storeItem.logo_url ? (
                     <img
                       src={storeItem.logo_url}
                       alt={storeItem.business_name}
-                      className="w-16 h-16 object-contain rounded-lg"
+                      className="w-16 h-16 object-contain rounded-sm"
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                    <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                       <Store className="h-8 w-8 text-muted-foreground" />
                     </div>
                   )}
@@ -214,16 +226,19 @@ export const MyEstablishments = ({
           <>
             <h3 className="text-lg font-semibold mb-3">Clubs</h3>
             {clubs.map(club => (
-              <div key={club.id} className="border rounded-lg p-4 mb-4">
+              <div
+                key={club.id}
+                className="mb-4 rounded-sm border border-border p-4"
+              >
                 <div className="flex items-center gap-4 mb-4">
                   {club.logo_url ? (
                     <img
                       src={club.logo_url}
                       alt={club.business_name}
-                      className="w-16 h-16 object-contain rounded-lg"
+                      className="w-16 h-16 object-contain rounded-sm"
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                    <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                       <Users className="h-8 w-8 text-muted-foreground" />
                     </div>
                   )}
@@ -256,16 +271,19 @@ export const MyEstablishments = ({
           <>
             <h3 className="text-lg font-semibold mb-3">Servicing & Repair</h3>
             {servicing.map(service => (
-              <div key={service.id} className="border rounded-lg p-4 mb-4">
+              <div
+                key={service.id}
+                className="mb-4 rounded-sm border border-border p-4"
+              >
                 <div className="flex items-center gap-4 mb-4">
                   {service.logo_url ? (
                     <img
                       src={service.logo_url}
                       alt={service.business_name}
-                      className="w-16 h-16 object-contain rounded-lg"
+                      className="w-16 h-16 object-contain rounded-sm"
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                    <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                       <Wrench className="h-8 w-8 text-muted-foreground" />
                     </div>
                   )}
@@ -302,16 +320,19 @@ export const MyEstablishments = ({
           <>
             <h3 className="text-lg font-semibold mb-3">Shooting Ranges</h3>
             {ranges.map(range => (
-              <div key={range.id} className="border rounded-lg p-4 mb-4">
+              <div
+                key={range.id}
+                className="mb-4 rounded-sm border border-border p-4"
+              >
                 <div className="flex items-center gap-4 mb-4">
                   {range.logo_url ? (
                     <img
                       src={range.logo_url}
                       alt={range.business_name}
-                      className="w-16 h-16 object-contain rounded-lg"
+                      className="w-16 h-16 object-contain rounded-sm"
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                    <div className="w-16 h-16 bg-muted rounded-sm flex items-center justify-center">
                       <MapPin className="h-8 w-8 text-muted-foreground" />
                     </div>
                   )}
@@ -356,6 +377,6 @@ export const MyEstablishments = ({
           </Alert>
         )}
       </CardContent>
-    </Card>
+    </AppCard>
   )
 }
