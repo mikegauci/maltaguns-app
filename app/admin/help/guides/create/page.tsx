@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import slug from 'slug'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import { useFeaturedImageUpload } from '@/hooks/useFeaturedImageUpload'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
@@ -66,7 +66,7 @@ type GuideForm = z.infer<typeof guideSchema>
 export default function CreateHelpGuidePage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const { isAuthorized, isChecking } = useRequireAdmin({
     preset: 'admin-silent',
   })

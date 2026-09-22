@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import slug from 'slug'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
@@ -91,7 +91,7 @@ const emptyFaqForm: FaqFormData = {
 
 export default function AdminHelpPage() {
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const { isAuthorized, isChecking } = useRequireAdmin({
     preset: 'admin-silent',
   })

@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { Loader2 } from 'lucide-react'
 import { LegalWarningDialog } from '@/components/dialogs'
 import { firearmsCategories } from '../constants'
@@ -54,7 +54,7 @@ import { PageLayout } from '@/components/ui/page-layout'
 export default function CreateFirearmsListing() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [showLegalDialog, setShowLegalDialog] = useState(false)
   const [pendingData, setPendingData] = useState<FirearmsForm | null>(null)

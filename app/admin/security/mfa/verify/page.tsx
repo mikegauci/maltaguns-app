@@ -15,7 +15,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from '@/components/ui/input-otp'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { getVerifiedTotpFactors } from '@/lib/admin-mfa'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2 } from 'lucide-react'
@@ -56,7 +56,7 @@ async function createMfaChallenge(
 export default function AdminMfaVerifyPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const [supabase] = useState(() => createClient())
+  const { supabase } = useSupabase()
   const [factorId, setFactorId] = useState<string>()
   const [challengeId, setChallengeId] = useState<string>()
   const [code, setCode] = useState('')

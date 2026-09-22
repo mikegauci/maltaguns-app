@@ -21,7 +21,7 @@ import {
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
@@ -79,7 +79,7 @@ function ReportedListingsPageComponent() {
     null
   )
   const [newStatus, setNewStatus] = useState('')
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   function formatReason(reason: string): string {
     return reason.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useToast } from '@/hooks/use-toast'
 
 type DenyPreset = 'home-toast' | 'admin-toast' | 'admin-silent'
@@ -52,7 +52,7 @@ export function useRequireAdmin(options?: RequireAdminOptions) {
   const config = PRESETS[preset]
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [isChecking, setIsChecking] = useState(true)
 

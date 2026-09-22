@@ -15,7 +15,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from '@/components/ui/input-otp'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   getVerifiedTotpFactors,
   unenrollUnverifiedTotpFactors,
@@ -98,7 +98,7 @@ async function prepareMfaEnrollment(
 export default function AdminMfaEnrollPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const [supabase] = useState(() => createClient())
+  const { supabase } = useSupabase()
   const enrollmentRef = useRef<ReturnType<typeof prepareMfaEnrollment> | null>(
     null
   )

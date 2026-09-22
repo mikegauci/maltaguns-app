@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   getListingStoragePathFromUrl,
   listingImageValidationToast,
@@ -84,7 +84,7 @@ function ListingsPageComponent() {
   const { isAuthorized, isChecking } = useRequireAdmin({
     preset: 'admin-silent',
   })
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const editListingIdRef = useRef<string | null>(null)
   const initialImageUrlsRef = useRef<string[]>([])
   const uploadedDuringEditRef = useRef<string[]>([])

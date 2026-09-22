@@ -208,6 +208,7 @@ function SearchResultsContent() {
             label="Back"
             href="/marketplace"
             hideLabelOnMobile={false}
+            size="sm"
           />
         </div>
       </div>

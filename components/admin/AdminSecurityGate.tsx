@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useAdminSecurityGate } from '@/hooks/useAdminSecurityGate'
 import { Loader2 } from 'lucide-react'
 
 export function AdminSecurityGate({ children }: { children: React.ReactNode }) {
-  const [supabase] = useState(() => createClient())
+  const { supabase } = useSupabase()
   const [userId, setUserId] = useState<string>()
   const [authChecked, setAuthChecked] = useState(false)
 

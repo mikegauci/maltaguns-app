@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import {
@@ -76,7 +76,7 @@ export default function BlogEditor({
   onUploadingChange,
 }: BlogEditorProps) {
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
   const [linkDialogOpen, setLinkDialogOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')

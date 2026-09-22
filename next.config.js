@@ -28,6 +28,13 @@ const nextConfig = {
         'utf-8-validate': 'utf-8-validate',
       })
     }
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      {
+        module: /node_modules\/@supabase\/realtime-js/,
+        message: /Critical dependency/,
+      },
+    ]
     return config
   },
 }

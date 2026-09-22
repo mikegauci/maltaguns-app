@@ -185,6 +185,7 @@ export default function ProfilePage() {
               <BackButton
                 label="Back to Home"
                 href="/"
+                preferHref
                 hideLabelOnMobile={false}
               />
             </div>

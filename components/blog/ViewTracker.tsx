@@ -1,14 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 interface ViewTrackerProps {
   postId: string
 }
 
 export default function ViewTracker({ postId }: ViewTrackerProps) {
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [tracked, setTracked] = useState(false)
 
   useEffect(() => {

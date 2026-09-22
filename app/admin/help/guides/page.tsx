@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
@@ -66,7 +66,7 @@ type GuideAssignment = {
 export default function AdminHelpGuidesPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const { isAuthorized, isChecking } = useRequireAdmin({
     preset: 'admin-silent',
   })

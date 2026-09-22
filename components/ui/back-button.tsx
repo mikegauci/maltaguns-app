@@ -3,12 +3,15 @@
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { canUseBrowserBack, getSafeInternalPath } from '@/lib/navigation'
 
 interface BackButtonProps {
   label?: string
   href: string
   className?: string
   hideLabelOnMobile?: boolean
+  preferHref?: boolean
+  size?: 'default' | 'sm' | 'lg' | 'icon'
 }
 
 export function BackButton({
@@ -16,8 +19,11 @@ export function BackButton({
   href,
   className,
   hideLabelOnMobile = true,
+  preferHref = false,
+  size,
 }: BackButtonProps) {
   const router = useRouter()
+  const fallbackHref = getSafeInternalPath(href, '/')
 
   const wrapperClasses = hideLabelOnMobile
     ? 'absolute md:top-0.5 top-0 right-auto left-auto'
@@ -32,10 +38,10 @@ export function BackButton({
   const iconClasses = hideLabelOnMobile ? 'h-4 w-4 md:mr-2' : 'h-4 w-4 mr-2'
 
   const handleClick = () => {
-    if (window.history.length > 1) {
+    if (!preferHref && canUseBrowserBack()) {
       router.back()
     } else {
-      router.push(href)
+      router.push(fallbackHref)
     }
   }
 
@@ -44,6 +50,8 @@ export function BackButton({
       <Button
         type="button"
         variant="outline"
+        size={size}
+        aria-label={label}
         className={`${buttonClasses} ${className || ''}`}
         onClick={handleClick}
       >

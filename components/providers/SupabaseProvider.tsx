@@ -17,7 +17,7 @@ export default function SupabaseProvider({
 }: {
   children: React.ReactNode
 }) {
-  const [supabase] = useState(() => createClient())
+  const supabase = createClient()
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 

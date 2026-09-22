@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useFeaturedImageUpload } from '@/hooks/useFeaturedImageUpload'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -67,7 +67,7 @@ export default function EditBlogPost(props: {
   const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [postId, setPostId] = useState<string | null>(null)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)

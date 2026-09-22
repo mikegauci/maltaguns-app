@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   Card,
@@ -95,7 +95,7 @@ interface BlogPost {
 export default function AdminBlogsPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const { isAuthorized } = useRequireAdmin({ preset: 'admin-toast' })
 
   const [posts, setPosts] = useState<BlogPost[]>([])
