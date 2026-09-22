@@ -135,12 +135,12 @@ export default function AdminHelpGuidesPage() {
       list.push(assignment)
       map.set(assignment.blog_post_id, list)
     }
-    for (const [guideId, list] of map) {
+    map.forEach((list, guideId) => {
       map.set(
         guideId,
         [...list].sort((a, b) => a.sort_order - b.sort_order)
       )
-    }
+    })
     return map
   }, [assignments])
 
