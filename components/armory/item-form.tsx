@@ -1,7 +1,12 @@
 'use client'
 import { useMemo, useState } from 'react'
 import { ActionForm, type ActionResult } from './action-form'
-import { Field, Input, Select, Textarea, Warn, Badge } from './ui'
+import { FormField } from '@/components/armory/form-field'
+import { StatusBadge } from '@/components/armory/status-badge'
+import { WarningList } from '@/components/armory/warning-list'
+import { NativeSelect } from '@/components/armory/native-select'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
   classify,
   FIREARM_CATEGORIES,
@@ -117,8 +122,8 @@ export function ItemForm({
       onDone={onDone}
     >
       <div className={grid}>
-        <Field label="Item type">
-          <Select
+        <FormField label="Item type">
+          <NativeSelect
             name="itemType"
             value={itemType}
             onChange={e => setItemType(e.target.value as ItemType)}
@@ -130,12 +135,12 @@ export function ItemForm({
             <option value="ACCESSORY">
               Accessory (magazine, sling, tools…)
             </option>
-          </Select>
-        </Field>
+          </NativeSelect>
+        </FormField>
 
         {isFirearm ? (
-          <Field label="Firearm type">
-            <Select
+          <FormField label="Firearm type">
+            <NativeSelect
               name="category"
               value={category}
               onChange={e => setCategory(e.target.value)}
@@ -145,10 +150,10 @@ export function ItemForm({
                   {c.label}
                 </option>
               ))}
-            </Select>
-          </Field>
+            </NativeSelect>
+          </FormField>
         ) : (
-          <Field
+          <FormField
             label={
               itemType === 'REGULATED_COMPONENT' ? 'Component' : 'Accessory'
             }
@@ -168,10 +173,10 @@ export function ItemForm({
                 <option key={t} value={t} />
               ))}
             </datalist>
-          </Field>
+          </FormField>
         )}
 
-        <Field label={<Req>Make</Req>}>
+        <FormField label={<Req>Make</Req>}>
           <Input
             name="make"
             value={make}
@@ -179,16 +184,16 @@ export function ItemForm({
             placeholder="e.g. Mauser"
             required
           />
-        </Field>
-        <Field label={<Req>Model</Req>}>
+        </FormField>
+        <FormField label={<Req>Model</Req>}>
           <Input
             name="model"
             defaultValue={item?.model ?? ''}
             placeholder="e.g. K98k"
             required
           />
-        </Field>
-        <Field label="Serial number">
+        </FormField>
+        <FormField label="Serial number">
           <Input
             name="serialNumber"
             value={noSerial ? 'N/A' : serial}
@@ -207,8 +212,8 @@ export function ItemForm({
             />{' '}
             No serial (mark N/A)
           </label>
-        </Field>
-        <Field
+        </FormField>
+        <FormField
           label="Calibre (as written)"
           hint={
             preview.calibre.display && preview.calibre.display !== calibre
@@ -222,15 +227,15 @@ export function ItemForm({
             onChange={e => setCalibre(e.target.value)}
             placeholder="e.g. 12/70, 9x19, 7.62x39"
           />
-        </Field>
-        <Field label="Quantity">
+        </FormField>
+        <FormField label="Quantity">
           <Input
             name="quantity"
             type="number"
             min={1}
             defaultValue={item?.quantity ?? 1}
           />
-        </Field>
+        </FormField>
       </div>
 
       <details open={detailsDefaultOpen} className="group">
@@ -240,26 +245,26 @@ export function ItemForm({
             : '+ Add more details (country, year, action, sights, pricing…)'}
         </summary>
         <div className={grid + ' mt-3'}>
-          <Field label="Country of manufacture">
+          <FormField label="Country of manufacture">
             <Input
               name="countryOfManufacture"
               defaultValue={item?.countryOfManufacture ?? ''}
               placeholder="e.g. Germany"
             />
-          </Field>
-          <Field label="Year of manufacture">
+          </FormField>
+          <FormField label="Year of manufacture">
             <Input
               name="yearOfManufacture"
               value={year}
               onChange={e => setYear(e.target.value)}
               placeholder="e.g. 1943"
             />
-          </Field>
+          </FormField>
 
           {isFirearm && (
             <>
-              <Field label="Fire mode">
-                <Select
+              <FormField label="Fire mode">
+                <NativeSelect
                   name="fireMode"
                   value={fireMode}
                   onChange={e => setFireMode(e.target.value)}
@@ -269,10 +274,10 @@ export function ItemForm({
                       {f.label}
                     </option>
                   ))}
-                </Select>
-              </Field>
-              <Field label="Loading (feed)">
-                <Select
+                </NativeSelect>
+              </FormField>
+              <FormField label="Loading (feed)">
+                <NativeSelect
                   name="loading"
                   value={loading}
                   onChange={e => setLoading(e.target.value)}
@@ -282,9 +287,9 @@ export function ItemForm({
                       {l.label}
                     </option>
                   ))}
-                </Select>
-              </Field>
-              <Field
+                </NativeSelect>
+              </FormField>
+              <FormField
                 label="Ammunition capacity"
                 hint="Fills the Capacity box on the transfer proforma"
               >
@@ -294,8 +299,8 @@ export function ItemForm({
                   min={0}
                   defaultValue={item?.capacity ?? ''}
                 />
-              </Field>
-              <Field label="Deactivated?">
+              </FormField>
+              <FormField label="Deactivated?">
                 <label className="inline-flex items-center gap-2 text-sm pt-2">
                   <input
                     type="checkbox"
@@ -313,13 +318,13 @@ export function ItemForm({
                     className="mt-1"
                   />
                 )}
-              </Field>
+              </FormField>
             </>
           )}
 
           {itemType !== 'ACCESSORY' && (
-            <Field label="CIP proof mark">
-              <Select
+            <FormField label="CIP proof mark">
+              <NativeSelect
                 name="cipProof"
                 defaultValue={
                   item?.cipProof === true
@@ -332,58 +337,58 @@ export function ItemForm({
                 <option value="">Unknown</option>
                 <option value="1">Yes</option>
                 <option value="0">No</option>
-              </Select>
-            </Field>
+              </NativeSelect>
+            </FormField>
           )}
-          <Field label="Other features (annex)">
+          <FormField label="Other features (annex)">
             <Input
               name="otherFeatures"
               defaultValue={item?.otherFeatures ?? ''}
               placeholder="e.g. matching numbers, import marks"
             />
-          </Field>
+          </FormField>
         </div>
 
         <div className={grid + ' mt-3'}>
-          <Field label="Original seller">
+          <FormField label="Original seller">
             <Input
               name="originalSeller"
               defaultValue={item?.originalSeller ?? ''}
               placeholder="eGun seller or dealer"
             />
-          </Field>
-          <Field label="eGun listing ID or URL">
+          </FormField>
+          <FormField label="eGun listing ID or URL">
             <Input
               name="egunListingId"
               defaultValue={item?.egunListingId ?? ''}
               placeholder="e.g. 20469880"
             />
-          </Field>
-          <Field label="Purchase price (€)">
+          </FormField>
+          <FormField label="Purchase price (€)">
             <Input
               name="acquisitionPrice"
               type="number"
               step="0.01"
               defaultValue={item?.acquisitionPrice ?? ''}
             />
-          </Field>
-          <Field label="eGun shipping within DE (€)">
+          </FormField>
+          <FormField label="eGun shipping within DE (€)">
             <Input
               name="egunDomesticShippingFee"
               type="number"
               step="0.01"
               defaultValue={item?.egunDomesticShippingFee ?? ''}
             />
-          </Field>
-          <Field label="Sale price to buyer (€)">
+          </FormField>
+          <FormField label="Sale price to buyer (€)">
             <Input
               name="salePrice"
               type="number"
               step="0.01"
               defaultValue={item?.salePrice ?? ''}
             />
-          </Field>
-          <Field
+          </FormField>
+          <FormField
             label="Handling fee charged (€)"
             hint={
               !item && isFirearm
@@ -397,11 +402,11 @@ export function ItemForm({
               step="0.01"
               defaultValue={item?.clientHandlingFee ?? ''}
             />
-          </Field>
+          </FormField>
         </div>
-        <Field label="Notes" className="mt-3">
+        <FormField label="Notes" className="mt-3">
           <Textarea name="notes" defaultValue={item?.notes ?? ''} rows={2} />
-        </Field>
+        </FormField>
       </details>
 
       {isFirearm && (
@@ -421,7 +426,7 @@ export function ItemForm({
             the Schedule / classification line item below is a single tick.
           </p>
           <div className={grid}>
-            <Field label="Loading" hint="Tick as many as apply">
+            <FormField label="Loading" hint="Tick as many as apply">
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm pt-1">
                 {PROFORMA_LOADING_OPTIONS.map(o => (
                   <label
@@ -438,8 +443,8 @@ export function ItemForm({
                   </label>
                 ))}
               </div>
-            </Field>
-            <Field label="Barrel/Hammer" hint="Tick as many as apply">
+            </FormField>
+            <FormField label="Barrel/Hammer" hint="Tick as many as apply">
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm pt-1">
                 {PROFORMA_BARREL_HAMMER_OPTIONS.map(o => (
                   <label
@@ -456,8 +461,8 @@ export function ItemForm({
                   </label>
                 ))}
               </div>
-            </Field>
-            <Field label="Sights" hint="Tick as many as apply">
+            </FormField>
+            <FormField label="Sights" hint="Tick as many as apply">
               <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm pt-1">
                 {SIGHT_OPTIONS.map(s => (
                   <label key={s} className="inline-flex items-center gap-1">
@@ -471,8 +476,8 @@ export function ItemForm({
                   </label>
                 ))}
               </div>
-            </Field>
-            <Field
+            </FormField>
+            <FormField
               label={<Req>Schedule / classification line item</Req>}
               hint={
                 suggestedScheduleLineItem && !scheduleLineItemCode
@@ -481,7 +486,7 @@ export function ItemForm({
               }
               className="col-span-2"
             >
-              <Select
+              <NativeSelect
                 name="scheduleLineItemCode"
                 value={scheduleLineItemCode}
                 onChange={e => setScheduleLineItemCode(e.target.value)}
@@ -514,7 +519,7 @@ export function ItemForm({
                     )
                   )}
                 </optgroup>
-              </Select>
+              </NativeSelect>
               {suggestedScheduleLineItem && !scheduleLineItemCode && (
                 <button
                   type="button"
@@ -526,9 +531,9 @@ export function ItemForm({
                   Use suggested
                 </button>
               )}
-            </Field>
-            <Field label="Purchaser declares this firearm is being purchased for">
-              <Select
+            </FormField>
+            <FormField label="Purchaser declares this firearm is being purchased for">
+              <NativeSelect
                 name="buyerLicenceType"
                 defaultValue={item?.buyerLicenceType ?? ''}
               >
@@ -554,14 +559,14 @@ export function ItemForm({
                     </option>
                   ))}
                 </optgroup>
-              </Select>
-            </Field>
-            <Field label="Buyer licence no.">
+              </NativeSelect>
+            </FormField>
+            <FormField label="Buyer licence no.">
               <Input
                 name="buyerLicenceNumber"
                 defaultValue={item?.buyerLicenceNumber ?? ''}
               />
-            </Field>
+            </FormField>
           </div>
         </details>
       )}
@@ -569,19 +574,27 @@ export function ItemForm({
       {isFirearm && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="text-neutral-500">Engine suggests:</span>
-          <Badge tone="blue">{preview.scheduleProforma ?? '—'}</Badge>
-          <Badge tone="blue">{preview.scheduleImportDoc ?? '—'}</Badge>
-          <Badge tone="neutral">EU cat. {preview.euCategory ?? '—'}</Badge>
+          <StatusBadge tone="blue">
+            {preview.scheduleProforma ?? '—'}
+          </StatusBadge>
+          <StatusBadge tone="blue">
+            {preview.scheduleImportDoc ?? '—'}
+          </StatusBadge>
+          <StatusBadge tone="neutral">
+            EU cat. {preview.euCategory ?? '—'}
+          </StatusBadge>
           {preview.isAntique && (
-            <Badge tone="purple">Antique (pre-1946 automatic)</Badge>
+            <StatusBadge tone="purple">
+              Antique (pre-1946 automatic)
+            </StatusBadge>
           )}
           {item?.scheduleOverridden ? (
-            <Badge tone="amber">Manual override in place</Badge>
+            <StatusBadge tone="amber">Manual override in place</StatusBadge>
           ) : null}
         </div>
       )}
-      <Warn items={preview.blockers} tone="red" />
-      <Warn items={preview.warnings} />
+      <WarningList items={preview.blockers} tone="red" />
+      <WarningList items={preview.warnings} />
     </ActionForm>
   )
 }

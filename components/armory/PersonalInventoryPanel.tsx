@@ -2,16 +2,11 @@
 
 import { useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Card,
-  Field,
-  Input,
-  Table,
-  th,
-  td,
-  Empty,
-} from '@/components/armory/ui'
+import { Pencil, Trash2 } from 'lucide-react'
+import { SectionCard } from '@/components/armory/section-card'
+import { FormField } from '@/components/armory/form-field'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -21,8 +16,15 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useToast } from '@/hooks/use-toast'
-import { Pencil, Trash2 } from 'lucide-react'
 
 type PersonalItem = {
   id: string
@@ -137,125 +139,123 @@ export function PersonalInventoryPanel({
   }
 
   return (
-    <>
-      <Card
-        title={`Personal collection (${items.length})`}
-        description="Track your personal firearms and related items."
-        actions={
-          !showForm && (
-            <Button size="sm" onClick={() => setShowForm(true)}>
-              Add item
-            </Button>
-          )
-        }
-      >
-        {showForm && (
-          <form
-            onSubmit={handleSubmit}
-            className="mb-6 space-y-4 rounded-lg border p-4"
-          >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1">
-                <Label>Type</Label>
-                <Select
-                  value={form.item_type}
-                  onValueChange={v => setForm(f => ({ ...f, item_type: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FIREARM">Firearm</SelectItem>
-                    <SelectItem value="NON_FIREARM">Non-firearm</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Field label="Acquisition date">
-                <Input
-                  type="date"
-                  value={form.acquisition_date}
-                  onChange={e =>
-                    setForm(f => ({ ...f, acquisition_date: e.target.value }))
-                  }
-                />
-              </Field>
-              <Field label="Make">
-                <Input
-                  value={form.make}
-                  onChange={e => setForm(f => ({ ...f, make: e.target.value }))}
-                />
-              </Field>
-              <Field label="Model">
-                <Input
-                  value={form.model}
-                  onChange={e =>
-                    setForm(f => ({ ...f, model: e.target.value }))
-                  }
-                />
-              </Field>
-              <Field label="Calibre">
-                <Input
-                  value={form.calibre}
-                  onChange={e =>
-                    setForm(f => ({ ...f, calibre: e.target.value }))
-                  }
-                />
-              </Field>
-              <Field label="Serial number">
-                <Input
-                  value={form.serial_number}
-                  onChange={e =>
-                    setForm(f => ({ ...f, serial_number: e.target.value }))
-                  }
-                />
-              </Field>
+    <SectionCard
+      title={`Personal collection (${items.length})`}
+      description="Track your personal firearms and related items."
+      actions={
+        !showForm && (
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            Add item
+          </Button>
+        )
+      }
+    >
+      {showForm && (
+        <form
+          onSubmit={handleSubmit}
+          className="mb-6 space-y-4 rounded-lg border p-4"
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label>Type</Label>
+              <Select
+                value={form.item_type}
+                onValueChange={v => setForm(f => ({ ...f, item_type: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FIREARM">Firearm</SelectItem>
+                  <SelectItem value="NON_FIREARM">Non-firearm</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Field label="Notes">
-              <Textarea
-                value={form.notes}
-                onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-                rows={3}
+            <FormField label="Acquisition date">
+              <Input
+                type="date"
+                value={form.acquisition_date}
+                onChange={e =>
+                  setForm(f => ({ ...f, acquisition_date: e.target.value }))
+                }
               />
-            </Field>
-            <div className="flex gap-2">
-              <Button type="submit" disabled={pending}>
-                {pending ? 'Saving…' : editingId ? 'Update item' : 'Add item'}
-              </Button>
-              <Button type="button" variant="outline" onClick={resetForm}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        )}
+            </FormField>
+            <FormField label="Make">
+              <Input
+                value={form.make}
+                onChange={e => setForm(f => ({ ...f, make: e.target.value }))}
+              />
+            </FormField>
+            <FormField label="Model">
+              <Input
+                value={form.model}
+                onChange={e => setForm(f => ({ ...f, model: e.target.value }))}
+              />
+            </FormField>
+            <FormField label="Calibre">
+              <Input
+                value={form.calibre}
+                onChange={e =>
+                  setForm(f => ({ ...f, calibre: e.target.value }))
+                }
+              />
+            </FormField>
+            <FormField label="Serial number">
+              <Input
+                value={form.serial_number}
+                onChange={e =>
+                  setForm(f => ({ ...f, serial_number: e.target.value }))
+                }
+              />
+            </FormField>
+          </div>
+          <FormField label="Notes">
+            <Textarea
+              value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              rows={3}
+            />
+          </FormField>
+          <div className="flex gap-2">
+            <Button type="submit" disabled={pending}>
+              {pending ? 'Saving…' : editingId ? 'Update item' : 'Add item'}
+            </Button>
+            <Button type="button" variant="outline" onClick={resetForm}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      )}
 
-        {!items.length ? (
-          <Empty>
-            No items yet. Add your first firearm or accessory to start tracking
-            your collection.
-          </Empty>
-        ) : (
+      {!items.length ? (
+        <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+          No items yet. Add your first firearm or accessory to start tracking
+          your collection.
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
           <Table>
-            <thead>
-              <tr>
-                <th className={th}>Type</th>
-                <th className={th}>Make / model</th>
-                <th className={th}>Calibre</th>
-                <th className={th}>Serial</th>
-                <th className={th}>Acquired</th>
-                <th className={th}></th>
-              </tr>
-            </thead>
-            <tbody>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Type</TableHead>
+                <TableHead>Make / model</TableHead>
+                <TableHead>Calibre</TableHead>
+                <TableHead>Serial</TableHead>
+                <TableHead>Acquired</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {items.map(item => (
-                <tr key={item.id}>
-                  <td className={td}>{item.item_type}</td>
-                  <td className={td}>
+                <TableRow key={item.id}>
+                  <TableCell>{item.item_type}</TableCell>
+                  <TableCell>
                     {[item.make, item.model].filter(Boolean).join(' ') || '—'}
-                  </td>
-                  <td className={td}>{item.calibre ?? '—'}</td>
-                  <td className={td}>{item.serial_number ?? '—'}</td>
-                  <td className={td}>{item.acquisition_date ?? '—'}</td>
-                  <td className={td}>
+                  </TableCell>
+                  <TableCell>{item.calibre ?? '—'}</TableCell>
+                  <TableCell>{item.serial_number ?? '—'}</TableCell>
+                  <TableCell>{item.acquisition_date ?? '—'}</TableCell>
+                  <TableCell>
                     <div className="flex gap-1">
                       <Button
                         type="button"
@@ -276,13 +276,13 @@ export function PersonalInventoryPanel({
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
+            </TableBody>
           </Table>
-        )}
-      </Card>
-    </>
+        </div>
+      )}
+    </SectionCard>
   )
 }

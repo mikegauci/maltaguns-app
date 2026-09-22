@@ -52,6 +52,7 @@ export async function updateProfile(fd: FormData): Promise<ActionResult> {
       dealerAccountId: ctx.dealerAccount.id,
     })
     revalidatePath(BASE, 'layout')
+    revalidatePath(`${BASE}/company-profile`)
     return { ok: true, message: 'Profile saved' }
   })
 }

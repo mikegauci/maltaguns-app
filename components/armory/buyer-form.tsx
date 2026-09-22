@@ -1,5 +1,7 @@
 import { ActionForm, type ActionResult } from '@/components/armory/action-form'
-import { Field, Input, Textarea } from '@/components/armory/ui'
+import { FormField } from '@/components/armory/form-field'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import type { BuyerRow } from '@/lib/armory/types'
 
 export const LICENCE_TYPES = [
@@ -34,35 +36,35 @@ export function BuyerForm({
       submitLabel={submitLabel}
       resetOnSuccess={!buyer}
     >
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <Field label="First name(s)">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <FormField label="First name(s)">
           <Input
             name="firstNames"
             defaultValue={buyer?.firstNames ?? ''}
             required
           />
-        </Field>
-        <Field label="Surname">
+        </FormField>
+        <FormField label="Surname">
           <Input name="surname" defaultValue={buyer?.surname ?? ''} required />
-        </Field>
-        <Field
+        </FormField>
+        <FormField
           label="Nickname"
           hint="Optional — a quick way to spot this buyer"
         >
           <Input name="nickname" defaultValue={buyer?.nickname ?? ''} />
-        </Field>
-        <Field label="ID card / passport no.">
+        </FormField>
+        <FormField label="ID card / passport no.">
           <Input
             name="passportIdNumber"
             defaultValue={buyer?.passportIdNumber ?? ''}
           />
-        </Field>
-        <Field
+        </FormField>
+        <FormField
           label="Licence type(s)"
           className="col-span-2 md:col-span-3"
           hint="A buyer can hold more than one"
         >
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm pt-1">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1 text-sm">
             {LICENCE_TYPES.map(l => (
               <label key={l} className="inline-flex items-center gap-1">
                 <input
@@ -75,14 +77,14 @@ export function BuyerForm({
               </label>
             ))}
           </div>
-        </Field>
-        <Field label="Licence number">
+        </FormField>
+        <FormField label="Licence number">
           <Input
             name="licenceNumber"
             defaultValue={buyer?.licenceNumber ?? ''}
           />
-        </Field>
-        <Field
+        </FormField>
+        <FormField
           label="Phone (for WhatsApp/SMS)"
           hint="8-digit Maltese numbers get +356 added"
         >
@@ -91,15 +93,15 @@ export function BuyerForm({
             defaultValue={buyer?.phoneNumber ?? ''}
             placeholder="+356 …"
           />
-        </Field>
-        <Field label="Email">
+        </FormField>
+        <FormField label="Email">
           <Input name="email" type="email" defaultValue={buyer?.email ?? ''} />
-        </Field>
-        <Field label="Address" className="col-span-2">
+        </FormField>
+        <FormField label="Address" className="col-span-2">
           <Input name="address" defaultValue={buyer?.address ?? ''} />
-        </Field>
-        <Field label="Notifications (buyer consent)">
-          <div className="flex gap-4 text-sm pt-2">
+        </FormField>
+        <FormField label="Notifications (buyer consent)">
+          <div className="flex gap-4 pt-2 text-sm">
             <label className="inline-flex items-center gap-1">
               <input
                 type="checkbox"
@@ -117,10 +119,10 @@ export function BuyerForm({
               SMS
             </label>
           </div>
-        </Field>
-        <Field label="Notes" className="col-span-2">
+        </FormField>
+        <FormField label="Notes" className="col-span-2">
           <Textarea name="notes" defaultValue={buyer?.notes ?? ''} rows={2} />
-        </Field>
+        </FormField>
       </div>
     </ActionForm>
   )

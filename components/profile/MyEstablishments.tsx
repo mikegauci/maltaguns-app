@@ -26,7 +26,10 @@ interface MyEstablishmentsProps {
   clubs: Club[]
   servicing: Servicing[]
   ranges: Range[]
-  handleDeleteStore: (storeId: string) => Promise<void>
+  handleDeleteEstablishment: (
+    establishmentId: string,
+    table: 'stores' | 'clubs' | 'servicing' | 'ranges'
+  ) => Promise<void>
   establishmentInfoOpen: boolean
   setEstablishmentInfoOpen: (open: boolean) => void
 }
@@ -104,7 +107,7 @@ export const MyEstablishments = ({
   clubs,
   servicing,
   ranges,
-  handleDeleteStore,
+  handleDeleteEstablishment,
   establishmentInfoOpen,
   setEstablishmentInfoOpen,
 }: MyEstablishmentsProps) => {
@@ -197,7 +200,9 @@ export const MyEstablishments = ({
                   slug={storeItem.slug}
                   id={storeItem.id}
                   status={storeItem.status || 'active'}
-                  onDelete={() => handleDeleteStore(storeItem.id)}
+                  onDelete={() =>
+                    handleDeleteEstablishment(storeItem.id, 'stores')
+                  }
                   showBlog
                 />
               </div>
@@ -240,7 +245,7 @@ export const MyEstablishments = ({
                   slug={club.slug}
                   id={club.id}
                   status={club.status || 'active'}
-                  onDelete={() => handleDeleteStore(club.id)}
+                  onDelete={() => handleDeleteEstablishment(club.id, 'clubs')}
                 />
               </div>
             ))}
@@ -284,7 +289,9 @@ export const MyEstablishments = ({
                   slug={service.slug}
                   id={service.id}
                   status={service.status || 'active'}
-                  onDelete={() => handleDeleteStore(service.id)}
+                  onDelete={() =>
+                    handleDeleteEstablishment(service.id, 'servicing')
+                  }
                 />
               </div>
             ))}
@@ -326,7 +333,7 @@ export const MyEstablishments = ({
                   slug={range.slug}
                   id={range.id}
                   status={range.status || 'active'}
-                  onDelete={() => handleDeleteStore(range.id)}
+                  onDelete={() => handleDeleteEstablishment(range.id, 'ranges')}
                 />
               </div>
             ))}

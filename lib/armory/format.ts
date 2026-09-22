@@ -15,3 +15,18 @@ export function eur(n: number | null | undefined): string {
     currency: 'EUR',
   }).format(n)
 }
+
+export function fmtDate(s: string | null | undefined): string {
+  if (!s) return '—'
+  const d = new Date(
+    s.includes('T') || s.includes(' ')
+      ? s.replace(' ', 'T') + (s.length === 19 ? 'Z' : '')
+      : s
+  )
+  if (Number.isNaN(d.getTime())) return s
+  return d.toLocaleDateString('en-MT', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
+}

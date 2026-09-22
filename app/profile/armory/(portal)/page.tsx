@@ -1,6 +1,13 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
+import { SectionCard } from '@/components/armory/section-card'
+import { StatCard } from '@/components/armory/stat-card'
+import { StatusBadge } from '@/components/armory/status-badge'
+import { ActionForm, ActionButton } from '@/components/armory/action-form'
 import { requireArmoryContext } from '@/lib/armory/auth'
+import { fmtDate } from '@/lib/armory/format'
+import { SHIPMENT_STATUS_TONE } from '@/lib/armory/status-tones'
 import {
   getDashboardStats,
   listDueCommissionerNotices,
@@ -9,19 +16,15 @@ import {
 } from '@/lib/armory/queries'
 import { createShipment } from '@/lib/armory/actions/shipments'
 import { markCommissionerNotified } from '@/lib/armory/actions/items'
-import { ActionForm, ActionButton } from '@/components/armory/action-form'
+import { Input } from '@/components/ui/input'
 import {
-  Card,
-  Input,
-  Badge,
-  SHIPMENT_STATUS_TONE,
   Table,
-  th,
-  td,
-  Empty,
-  fmtDate,
-  Stat,
-} from '@/components/armory/ui'
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 const BASE = '/profile/armory'
 
@@ -38,12 +41,15 @@ export default async function ArmoryDashboardPage() {
   ])
 
   return (
-    <>
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Firearms & items in stock" value={stats.inStock} />
-        <Stat label="Reserved for buyers" value={stats.reserved} />
-        <Stat label="Pending transfer" value={stats.pending} />
-        <Stat
+    <ProfilePageLayout
+      title="Shipments"
+      description={`${account.companyName} · ${ctx.staffRole === 'owner' ? 'Owner' : 'Staff'} · Licence ${account.dealerLicenceNumber ?? '—'}`}
+    >
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard label="Firearms & items in stock" value={stats.inStock} />
+        <StatCard label="Reserved for buyers" value={stats.reserved} />
+        <StatCard label="Pending transfer" value={stats.pending} />
+        <StatCard
           label="Unpaid buyer balances"
           value={stats.unpaid}
           tone={stats.unpaid ? 'bad' : undefined}
@@ -51,7 +57,7 @@ export default async function ArmoryDashboardPage() {
       </section>
 
       {dueNotices.length > 0 && (
-        <Card
+        <SectionCard
           title="Commissioner notifications due"
           description="Arms Act art. 20: the transferor must inform the Commissioner of Police within 15 days of a transfer."
         >
@@ -61,7 +67,7 @@ export default async function ArmoryDashboardPage() {
               return (
                 <li
                   key={n.id}
-                  className="py-2 flex flex-wrap items-center justify-between gap-2 text-sm"
+                  className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"
                 >
                   <span>
                     <Link
@@ -74,11 +80,11 @@ export default async function ArmoryDashboardPage() {
                       s/n {n.serialNumber ?? '—'} → {n.buyerName ?? 'buyer'} ·
                       transferred {fmtDate(n.transferredAt)}
                     </span>{' '}
-                    <Badge
+                    <StatusBadge
                       tone={left < 0 ? 'red' : left <= 5 ? 'amber' : 'neutral'}
                     >
                       {left < 0 ? `${-left} days overdue` : `${left} days left`}
-                    </Badge>
+                    </StatusBadge>
                   </span>
                   <ActionButton
                     small
@@ -90,10 +96,10 @@ export default async function ArmoryDashboardPage() {
               )
             })}
           </ul>
-        </Card>
+        </SectionCard>
       )}
 
-      <Card
+      <SectionCard
         title="Shipments"
         description="A shipment is one box from one origin dealer. Items, the Prior Consent, quotes and costs all hang off it."
         actions={
@@ -107,68 +113,70 @@ export default async function ArmoryDashboardPage() {
                 name="reference"
                 placeholder="e.g. Shipment 64"
                 required
-                className="!w-48"
+                className="w-48"
               />
             </ActionForm>
           )
         }
       >
         {shipments.length === 0 ? (
-          <Empty>
+          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
             {approved
               ? 'No shipments yet — create the first one above, or import an existing spreadsheet.'
               : 'Shipments unlock once your account is approved.'}
-          </Empty>
+          </p>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <th className={th}>Reference</th>
-                <th className={th}>Status</th>
-                <th className={th}>Origin</th>
-                <th className={th}>Items</th>
-                <th className={th}>Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shipments.map(s => (
-                <tr key={s.id} className="hover:bg-muted/50">
-                  <td className={td}>
-                    <Link
-                      href={`${BASE}/shipments/${s.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {s.reference}
-                    </Link>
-                  </td>
-                  <td className={td}>
-                    <Badge tone={SHIPMENT_STATUS_TONE[s.status]}>
-                      {SHIPMENT_STATUSES.find(x => x.value === s.status)
-                        ?.label ?? s.status}
-                    </Badge>
-                  </td>
-                  <td className={td + ' text-muted-foreground'}>
-                    {s.senderCompanyName ??
-                      ([s.senderFirstNames, s.senderSurname]
-                        .filter(Boolean)
-                        .join(' ') ||
-                        '—')}
-                  </td>
-                  <td className={td}>
-                    {s.itemCount}{' '}
-                    <span className="text-muted-foreground">
-                      ({s.firearmCount} firearms)
-                    </span>
-                  </td>
-                  <td className={td + ' text-muted-foreground'}>
-                    {fmtDate(s.createdAt)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Reference</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Origin</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Created</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {shipments.map(s => (
+                  <TableRow key={s.id}>
+                    <TableCell>
+                      <Link
+                        href={`${BASE}/shipments/${s.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {s.reference}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge tone={SHIPMENT_STATUS_TONE[s.status]}>
+                        {SHIPMENT_STATUSES.find(x => x.value === s.status)
+                          ?.label ?? s.status}
+                      </StatusBadge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {s.senderCompanyName ??
+                        ([s.senderFirstNames, s.senderSurname]
+                          .filter(Boolean)
+                          .join(' ') ||
+                          '—')}
+                    </TableCell>
+                    <TableCell>
+                      {s.itemCount}{' '}
+                      <span className="text-muted-foreground">
+                        ({s.firearmCount} firearms)
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {fmtDate(s.createdAt)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
-      </Card>
-    </>
+      </SectionCard>
+    </ProfilePageLayout>
   )
 }

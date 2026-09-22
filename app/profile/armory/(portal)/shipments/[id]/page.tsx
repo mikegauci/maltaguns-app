@@ -33,23 +33,26 @@ import { ItemForm } from '@/components/armory/item-form'
 import { ItemsTable } from '@/components/armory/items-table'
 import { NotesLog } from '@/components/armory/notes-log'
 import { StatusControls } from './status-controls'
+import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
+import { SectionCard } from '@/components/armory/section-card'
+import { StatCard } from '@/components/armory/stat-card'
+import { StatusBadge } from '@/components/armory/status-badge'
+import { FormField } from '@/components/armory/form-field'
+import { BackLink } from '@/components/armory/back-link'
+import { WarningList } from '@/components/armory/warning-list'
+import { NativeSelect } from '@/components/armory/native-select'
+import { fmtDate } from '@/lib/armory/format'
+import { SHIPMENT_STATUS_TONE } from '@/lib/armory/status-tones'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import {
-  Card,
-  Field,
-  Input,
-  Select,
-  Textarea,
-  Badge,
-  SHIPMENT_STATUS_TONE,
   Table,
-  th,
-  td,
-  Empty,
-  fmtDate,
-  Stat,
-  Warn,
-  BackLink,
-} from '@/components/armory/ui'
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 
 const BASE = '/profile/armory'
@@ -89,22 +92,16 @@ export default async function ShipmentPage({
     shipment.status
 
   return (
-    <>
+    <ProfilePageLayout
+      title={shipment.reference}
+      description={`Created ${fmtDate(shipment.createdAt)} · ${items.length} items (${items.filter(i => i.itemType === 'FIREARM').length} firearms)${shipment.priorConsentRef ? ` · Prior consent ${shipment.priorConsentRef}` : ''}`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <BackLink href={BASE}>All shipments</BackLink>
-          <h1 className="text-xl font-semibold mt-1 flex items-center gap-2">
-            {shipment.reference}{' '}
-            <Badge tone={SHIPMENT_STATUS_TONE[shipment.status]}>
-              {statusLabel}
-            </Badge>
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Created {fmtDate(shipment.createdAt)} · {items.length} items (
-            {items.filter(i => i.itemType === 'FIREARM').length} firearms)
-            {shipment.priorConsentRef &&
-              ` · Prior consent ${shipment.priorConsentRef}`}
-          </p>
+          <StatusBadge tone={SHIPMENT_STATUS_TONE[shipment.status]}>
+            {statusLabel}
+          </StatusBadge>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
@@ -129,11 +126,11 @@ export default async function ShipmentPage({
       )}
 
       <section className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <Stat
+        <StatCard
           label="Acquisition (items + DE shipping)"
           value={eur(summary.acquisition)}
         />
-        <Stat
+        <StatCard
           label="Shipment costs"
           value={eur(summary.shippingCosts)}
           sub={
@@ -142,21 +139,21 @@ export default async function ShipmentPage({
             )?.label
           }
         />
-        <Stat label="Revenue (sales + fees)" value={eur(summary.revenue)} />
-        <Stat
+        <StatCard label="Revenue (sales + fees)" value={eur(summary.revenue)} />
+        <StatCard
           label="Profit so far"
           value={eur(summary.profit)}
           tone={summary.profit >= 0 ? 'good' : 'bad'}
           sub={`${eur(summary.unsoldCost)} still in stock`}
         />
-        <Stat
+        <StatCard
           label="Outstanding from buyers"
           value={eur(summary.outstanding)}
           tone={summary.outstanding > 0 ? 'bad' : undefined}
         />
       </section>
 
-      <Card
+      <SectionCard
         title="Status"
         description="Moving to Prior consent submitted, Shipped or Ready for collection can notify buyers who opted in."
       >
@@ -191,16 +188,16 @@ export default async function ShipmentPage({
           </div>
         </dl>
         {shipment.status === 'PERMIT_REJECTED' && (
-          <Warn
+          <WarningList
             tone="red"
             items={[
               `Prior consent rejected${shipment.permitRejectedReason ? `: ${shipment.permitRejectedReason}` : ''}. Fix the missing information and re-submit.`,
             ]}
           />
         )}
-      </Card>
+      </SectionCard>
 
-      <Card
+      <SectionCard
         title={`Items (${items.length})`}
         description="Firearms and essential components go on the Prior Consent annex."
       >
@@ -219,10 +216,10 @@ export default async function ShipmentPage({
             </div>
           </details>
         )}
-      </Card>
+      </SectionCard>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Card
+        <SectionCard
           title="Origin dealer (sender)"
           description="Section 3 of the Prior Consent."
         >
@@ -231,133 +228,137 @@ export default async function ShipmentPage({
             submitLabel="Save sender"
           >
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Reference">
+              <FormField label="Reference">
                 <Input
                   name="reference"
                   defaultValue={shipment.reference}
                   required
                 />
-              </Field>
-              <Field label="Sender is a">
-                <Select
+              </FormField>
+              <FormField label="Sender is a">
+                <NativeSelect
                   name="senderType"
                   defaultValue={shipment.senderType ?? 'COMPANY'}
                 >
                   <option value="COMPANY">Company / dealer</option>
                   <option value="PERSON">Natural person</option>
-                </Select>
-              </Field>
-              <Field label="Company name">
+                </NativeSelect>
+              </FormField>
+              <FormField label="Company name">
                 <Input
                   name="senderCompanyName"
                   defaultValue={shipment.senderCompanyName ?? ''}
                 />
-              </Field>
-              <Field label="Country">
+              </FormField>
+              <FormField label="Country">
                 <Input
                   name="senderCountry"
                   defaultValue={shipment.senderCountry ?? ''}
                 />
-              </Field>
-              <Field label="Address" className="col-span-2">
+              </FormField>
+              <FormField label="Address" className="col-span-2">
                 <Textarea
                   name="senderAddress"
                   defaultValue={shipment.senderAddress ?? ''}
                   rows={2}
                 />
-              </Field>
+              </FormField>
             </div>
           </ActionForm>
-        </Card>
+        </SectionCard>
 
-        <Card title="Transit & delivery">
+        <SectionCard title="Transit & delivery">
           <ActionForm
             action={updateShipment.bind(null, id)}
             submitLabel="Save transit"
           >
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Carrier">
+              <FormField label="Carrier">
                 <Input name="carrier" defaultValue={shipment.carrier ?? ''} />
-              </Field>
-              <Field label="Transit countries">
+              </FormField>
+              <FormField label="Transit countries">
                 <Input
                   name="transitCountries"
                   defaultValue={shipment.transitCountries ?? ''}
                 />
-              </Field>
-              <Field label="Delivery address" className="col-span-2">
+              </FormField>
+              <FormField label="Delivery address" className="col-span-2">
                 <Textarea
                   name="deliveryAddress"
                   defaultValue={shipment.deliveryAddress ?? ''}
                   rows={2}
                 />
-              </Field>
-              <Field label="Notes" className="col-span-2">
+              </FormField>
+              <FormField label="Notes" className="col-span-2">
                 <Textarea
                   name="notes"
                   defaultValue={shipment.notes ?? ''}
                   rows={2}
                 />
-              </Field>
+              </FormField>
             </div>
           </ActionForm>
-        </Card>
+        </SectionCard>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Card title="Shipping quotes">
+        <SectionCard title="Shipping quotes">
           {quotes.length === 0 ? (
-            <Empty>No quotes yet.</Empty>
+            <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+              No quotes yet.
+            </p>
           ) : (
-            <Table>
-              <thead>
-                <tr>
-                  <th className={th}>Carrier</th>
-                  <th className={th}>Amount</th>
-                  <th className={th}>Status</th>
-                  <th className={th}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {quotes.map(q => (
-                  <tr key={q.id}>
-                    <td className={td}>{q.carrierName}</td>
-                    <td className={td}>{eur(q.quotedAmount)}</td>
-                    <td className={td}>
-                      <Badge
-                        tone={q.status === 'ACCEPTED' ? 'green' : 'neutral'}
-                      >
-                        {q.status}
-                      </Badge>
-                    </td>
-                    <td className={td}>
-                      <div className="flex gap-1">
-                        {q.status !== 'ACCEPTED' && (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Carrier</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {quotes.map(q => (
+                    <TableRow key={q.id}>
+                      <TableCell>{q.carrierName}</TableCell>
+                      <TableCell>{eur(q.quotedAmount)}</TableCell>
+                      <TableCell>
+                        <StatusBadge
+                          tone={q.status === 'ACCEPTED' ? 'green' : 'neutral'}
+                        >
+                          {q.status}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          {q.status !== 'ACCEPTED' && (
+                            <ActionButton
+                              small
+                              action={setQuoteStatus.bind(
+                                null,
+                                id,
+                                q.id,
+                                'ACCEPTED'
+                              )}
+                            >
+                              Accept
+                            </ActionButton>
+                          )}
                           <ActionButton
                             small
-                            action={setQuoteStatus.bind(
-                              null,
-                              id,
-                              q.id,
-                              'ACCEPTED'
-                            )}
+                            variant="danger"
+                            action={deleteQuote.bind(null, id, q.id)}
                           >
-                            Accept
+                            Delete
                           </ActionButton>
-                        )}
-                        <ActionButton
-                          small
-                          variant="danger"
-                          action={deleteQuote.bind(null, id, q.id)}
-                        >
-                          Delete
-                        </ActionButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
           {approved && (
             <ActionForm
@@ -378,38 +379,42 @@ export default async function ShipmentPage({
               </div>
             </ActionForm>
           )}
-        </Card>
+        </SectionCard>
 
-        <Card title="Shipment costs">
+        <SectionCard title="Shipment costs">
           {costs.length === 0 ? (
-            <Empty>No costs recorded.</Empty>
+            <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+              No costs recorded.
+            </p>
           ) : (
-            <Table>
-              <thead>
-                <tr>
-                  <th className={th}>Label</th>
-                  <th className={th}>Amount</th>
-                  <th className={th}></th>
-                </tr>
-              </thead>
-              <tbody>
-                {costs.map(c => (
-                  <tr key={c.id}>
-                    <td className={td}>{c.label}</td>
-                    <td className={td}>{eur(c.amount)}</td>
-                    <td className={td}>
-                      <ActionButton
-                        small
-                        variant="danger"
-                        action={deleteCost.bind(null, id, c.id)}
-                      >
-                        Delete
-                      </ActionButton>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Label</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {costs.map(c => (
+                    <TableRow key={c.id}>
+                      <TableCell>{c.label}</TableCell>
+                      <TableCell>{eur(c.amount)}</TableCell>
+                      <TableCell>
+                        <ActionButton
+                          small
+                          variant="danger"
+                          action={deleteCost.bind(null, id, c.id)}
+                        >
+                          Delete
+                        </ActionButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
           {approved && (
             <ActionForm
@@ -430,19 +435,19 @@ export default async function ShipmentPage({
               </div>
             </ActionForm>
           )}
-        </Card>
+        </SectionCard>
       </div>
 
-      <Card title="Notes">
+      <SectionCard title="Notes">
         <NotesLog
           notes={notes}
           addNote={addNote.bind(null, 'SHIPMENT', id)}
           deleteNote={deleteNote.bind(null, 'SHIPMENT', id)}
         />
-      </Card>
+      </SectionCard>
 
       {docs.length > 0 && (
-        <Card title="Generated documents">
+        <SectionCard title="Generated documents">
           <ul className="text-sm space-y-1">
             {docs.map(d => (
               <li key={d.id}>
@@ -455,11 +460,11 @@ export default async function ShipmentPage({
               </li>
             ))}
           </ul>
-        </Card>
+        </SectionCard>
       )}
 
       {approved && items.length === 0 && (
-        <Card title="Danger zone">
+        <SectionCard title="Danger zone">
           <ActionButton
             variant="danger"
             action={deleteShipment.bind(null, id)}
@@ -467,8 +472,8 @@ export default async function ShipmentPage({
           >
             Delete shipment
           </ActionButton>
-        </Card>
+        </SectionCard>
       )}
-    </>
+    </ProfilePageLayout>
   )
 }

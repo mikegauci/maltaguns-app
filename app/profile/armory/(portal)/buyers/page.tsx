@@ -1,9 +1,19 @@
 import Link from 'next/link'
+import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
+import { SectionCard } from '@/components/armory/section-card'
+import { StatusBadge } from '@/components/armory/status-badge'
+import { BuyerForm } from '@/components/armory/buyer-form'
 import { requireDealerAccount } from '@/lib/armory/auth'
 import { listBuyers } from '@/lib/armory/queries'
 import { createBuyer } from '@/lib/armory/actions/buyers'
-import { BuyerForm } from '@/components/armory/buyer-form'
-import { Card, Table, th, td, Empty, Badge } from '@/components/armory/ui'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 const BASE = '/profile/armory'
 
@@ -13,73 +23,80 @@ export default async function BuyersPage() {
   const approved = ctx.isApproved
 
   return (
-    <>
-      <Card
-        title={`Buyers (${buyers.length})`}
-        description="The people your imported items are transferred to."
-      >
+    <ProfilePageLayout
+      title="Buyers"
+      description="The people your imported items are transferred to."
+    >
+      <SectionCard title={`Buyers (${buyers.length})`}>
         {buyers.length === 0 ? (
-          <Empty>No buyers yet.</Empty>
+          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+            No buyers yet.
+          </p>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <th className={th}>Name</th>
-                <th className={th}>Licence</th>
-                <th className={th}>Phone</th>
-                <th className={th}>Notify</th>
-                <th className={th}>Items</th>
-              </tr>
-            </thead>
-            <tbody>
-              {buyers.map(b => (
-                <tr key={b.id} className="hover:bg-muted/50">
-                  <td className={td}>
-                    <Link
-                      href={`${BASE}/buyers/${b.id}`}
-                      className="font-medium hover:underline"
-                    >
-                      {b.firstNames} {b.surname}
-                    </Link>
-                    {b.nickname && (
-                      <span className="text-muted-foreground">
-                        {' '}
-                        &ldquo;{b.nickname}&rdquo;
-                      </span>
-                    )}
-                    {b.anonymisedAt && (
-                      <Badge tone="neutral" className="ml-2">
-                        anonymised
-                      </Badge>
-                    )}
-                  </td>
-                  <td className={td + ' text-muted-foreground'}>
-                    {b.licenceType ? b.licenceType.split(',').join(', ') : '—'}
-                    {b.licenceNumber ? ` · ${b.licenceNumber}` : ''}
-                  </td>
-                  <td className={td}>{b.phoneNumber ?? '—'}</td>
-                  <td className={td + ' text-xs'}>
-                    {[
-                      b.whatsappOptIn ? 'WhatsApp' : null,
-                      b.smsOptIn ? 'SMS' : null,
-                    ]
-                      .filter(Boolean)
-                      .join(', ') || (
-                      <span className="text-muted-foreground">none</span>
-                    )}
-                  </td>
-                  <td className={td}>{b.itemCount}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Licence</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Notify</TableHead>
+                  <TableHead>Items</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {buyers.map(b => (
+                  <TableRow key={b.id}>
+                    <TableCell>
+                      <Link
+                        href={`${BASE}/buyers/${b.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {b.firstNames} {b.surname}
+                      </Link>
+                      {b.nickname && (
+                        <span className="text-muted-foreground">
+                          {' '}
+                          &ldquo;{b.nickname}&rdquo;
+                        </span>
+                      )}
+                      {b.anonymisedAt && (
+                        <StatusBadge tone="neutral" className="ml-2">
+                          anonymised
+                        </StatusBadge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {b.licenceType
+                        ? b.licenceType.split(',').join(', ')
+                        : '—'}
+                      {b.licenceNumber ? ` · ${b.licenceNumber}` : ''}
+                    </TableCell>
+                    <TableCell>{b.phoneNumber ?? '—'}</TableCell>
+                    <TableCell className="text-xs">
+                      {[
+                        b.whatsappOptIn ? 'WhatsApp' : null,
+                        b.smsOptIn ? 'SMS' : null,
+                      ]
+                        .filter(Boolean)
+                        .join(', ') || (
+                        <span className="text-muted-foreground">none</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{b.itemCount}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
-      </Card>
+      </SectionCard>
+
       {approved && (
-        <Card title="Add buyer">
+        <SectionCard title="Add buyer">
           <BuyerForm action={createBuyer} submitLabel="Add buyer" />
-        </Card>
+        </SectionCard>
       )}
-    </>
+    </ProfilePageLayout>
   )
 }

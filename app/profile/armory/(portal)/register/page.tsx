@@ -2,8 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, Field, Input } from '@/components/armory/ui'
+import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
+import { SectionCard } from '@/components/armory/section-card'
+import { FormField } from '@/components/armory/form-field'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function RegisterPage() {
@@ -39,43 +42,45 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card
+    <ProfilePageLayout
       title="Register as a dealership"
       description="Apply for the full Armory dealer dashboard. Your licence will be verified by platform admin."
     >
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-      <form onSubmit={onSubmit} className="space-y-4 max-w-xl">
-        <Field label="Company name">
-          <Input name="companyName" required />
-        </Field>
-        <Field label="Licence holder full name">
-          <Input
-            name="contactName"
-            required
-            placeholder="First and last name on the dealer licence"
-          />
-        </Field>
-        <Field label="Phone number">
-          <Input name="phoneNumber" required />
-        </Field>
-        <Field label="Dealer licence number">
-          <Input
-            name="dealerLicenceNumber"
-            required
-            placeholder="SB/WO/00000/2010"
-          />
-        </Field>
-        <Field label="Licence expiry date">
-          <Input name="dealerLicenceExpiry" type="date" required />
-        </Field>
-        <Button type="submit" disabled={pending}>
-          {pending ? 'Submitting…' : 'Submit registration'}
-        </Button>
-      </form>
-    </Card>
+      <SectionCard>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <form onSubmit={onSubmit} className="max-w-xl space-y-4">
+          <FormField label="Company name">
+            <Input name="companyName" required />
+          </FormField>
+          <FormField label="Licence holder full name">
+            <Input
+              name="contactName"
+              required
+              placeholder="First and last name on the dealer licence"
+            />
+          </FormField>
+          <FormField label="Phone number">
+            <Input name="phoneNumber" required />
+          </FormField>
+          <FormField label="Dealer licence number">
+            <Input
+              name="dealerLicenceNumber"
+              required
+              placeholder="SB/WO/00000/2010"
+            />
+          </FormField>
+          <FormField label="Licence expiry date">
+            <Input name="dealerLicenceExpiry" type="date" required />
+          </FormField>
+          <Button type="submit" disabled={pending}>
+            {pending ? 'Submitting…' : 'Submit registration'}
+          </Button>
+        </form>
+      </SectionCard>
+    </ProfilePageLayout>
   )
 }

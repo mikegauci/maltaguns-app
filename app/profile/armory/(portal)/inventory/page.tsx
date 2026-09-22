@@ -1,14 +1,17 @@
 import Link from 'next/link'
+import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
+import { SectionCard } from '@/components/armory/section-card'
+import { NativeSelect } from '@/components/armory/native-select'
 import { requireArmoryContext, requireDealerAccount } from '@/lib/armory/auth'
 import { listAllItems, listBuyers } from '@/lib/armory/queries'
 import { createDirectItem } from '@/lib/armory/actions/items'
 import { ItemsTable } from '@/components/armory/items-table'
 import { ItemForm } from '@/components/armory/item-form'
-import { Card, Input, Select } from '@/components/armory/ui'
+import { PersonalInventoryPanel } from '@/components/armory/PersonalInventoryPanel'
 import { createClient } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { PersonalInventoryPanel } from '@/components/armory/PersonalInventoryPanel'
+import { Input } from '@/components/ui/input'
 
 const BASE = '/profile/armory'
 
@@ -27,7 +30,14 @@ export default async function InventoryPage({
       .select('*')
       .eq('profile_id', ctx.userId)
       .order('created_at', { ascending: false })
-    return <PersonalInventoryPanel initialItems={personal ?? []} />
+    return (
+      <ProfilePageLayout
+        title="Inventory"
+        description="Manage your personal firearm collection"
+      >
+        <PersonalInventoryPanel initialItems={personal ?? []} />
+      </ProfilePageLayout>
+    )
   }
 
   const dealerCtx = await requireDealerAccount()
@@ -76,14 +86,17 @@ export default async function InventoryPage({
   ]
 
   return (
-    <>
+    <ProfilePageLayout
+      title="Inventory"
+      description="Dealer stock across all shipments."
+    >
       {approved && (
-        <Card
+        <SectionCard
           title="Add item"
           description="Bought locally rather than imported? Add it straight to inventory."
         >
           <details className="group">
-            <summary className="cursor-pointer text-sm font-medium select-none">
+            <summary className="cursor-pointer select-none text-sm font-medium">
               + Add item to inventory
             </summary>
             <div className="mt-3 rounded border border-dashed p-4">
@@ -94,15 +107,16 @@ export default async function InventoryPage({
               />
             </div>
           </details>
-        </Card>
+        </SectionCard>
       )}
+
       <div className="flex gap-1 border-b">
         {tabs.map(t => (
           <Link
             key={t.key}
             href={tabHref(t.key)}
             className={cn(
-              'px-3 py-2 text-sm font-medium border-b-2 -mb-px',
+              '-mb-px border-b-2 px-3 py-2 text-sm font-medium',
               activeTab === t.key
                 ? 'border-primary text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground'
@@ -112,28 +126,28 @@ export default async function InventoryPage({
           </Link>
         ))}
       </div>
-      <Card
+
+      <SectionCard
         title={`Inventory (${items.length})`}
-        description="Dealer stock across all shipments."
         actions={
           <form className="flex flex-wrap gap-2" method="get">
             <Input
               name="q"
               defaultValue={sp.q ?? ''}
               placeholder="Search make, model, serial…"
-              className="!w-56"
+              className="w-56"
             />
-            <Select
+            <NativeSelect
               name="status"
               defaultValue={sp.status ?? ''}
-              className="!w-44"
+              className="w-44"
             >
               <option value="">All statuses</option>
               <option value="AVAILABLE">In stock</option>
               <option value="RESERVED">Reserved</option>
               <option value="PENDING_TRANSFER">Pending transfer</option>
               <option value="TRANSFERRED">Transferred</option>
-            </Select>
+            </NativeSelect>
             <Button type="submit" variant="outline" size="sm">
               Filter
             </Button>
@@ -147,7 +161,7 @@ export default async function InventoryPage({
           buyers={buyers}
           firearmsOnly={activeTab === 'FIREARM'}
         />
-      </Card>
-    </>
+      </SectionCard>
+    </ProfilePageLayout>
   )
 }

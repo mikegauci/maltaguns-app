@@ -3,8 +3,9 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ActionResult } from '@/components/armory/action-form'
-import { Input, cx } from '@/components/armory/ui'
+import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 type Status = { value: string; label: string }
 
@@ -48,10 +49,10 @@ export function StatusControls({
             return (
               <li
                 key={s.value}
-                className={cx(
-                  'rounded-full px-2 py-0.5 border',
+                className={cn(
+                  'rounded-full border px-2 py-0.5',
                   done
-                    ? 'bg-primary text-primary-foreground border-primary'
+                    ? 'border-primary bg-primary text-primary-foreground'
                     : 'border-border text-muted-foreground'
                 )}
               >
@@ -61,7 +62,7 @@ export function StatusControls({
           })}
       </ol>
       <div className="flex flex-wrap items-end gap-2">
-        <label className="text-xs space-y-1">
+        <label className="space-y-1 text-xs">
           <span className="block text-muted-foreground">Move to</span>
           <select
             name="status"
@@ -77,7 +78,7 @@ export function StatusControls({
           </select>
         </label>
         {next === 'PERMIT_REJECTED' && (
-          <label className="text-xs space-y-1 flex-1 min-w-48">
+          <label className="min-w-48 flex-1 space-y-1 text-xs">
             <span className="block text-muted-foreground">
               Reason given by the Weapons Office
             </span>
@@ -89,7 +90,7 @@ export function StatusControls({
           </label>
         )}
         {notifies && (
-          <label className="inline-flex items-center gap-1 text-xs pb-2">
+          <label className="inline-flex items-center gap-1 pb-2 text-xs">
             <input
               type="checkbox"
               checked={notify}
@@ -121,7 +122,7 @@ export function StatusControls({
       </div>
       {msg && (
         <p
-          className={cx(
+          className={cn(
             'text-xs',
             msg.ok ? 'text-emerald-600' : 'text-red-600'
           )}

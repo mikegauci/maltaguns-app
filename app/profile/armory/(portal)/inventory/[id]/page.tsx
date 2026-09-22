@@ -25,19 +25,16 @@ import { addNote, deleteNote } from '@/lib/armory/actions/notes'
 import { ActionForm, ActionButton } from '@/components/armory/action-form'
 import { ItemForm } from '@/components/armory/item-form'
 import { NotesLog } from '@/components/armory/notes-log'
-import {
-  Card,
-  Field,
-  Input,
-  Select,
-  Badge,
-  ITEM_STATUS_LABEL,
-  ITEM_STATUS_TONE,
-  fmtDate,
-  Warn,
-  BackLink,
-  Empty,
-} from '@/components/armory/ui'
+import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
+import { SectionCard } from '@/components/armory/section-card'
+import { StatusBadge } from '@/components/armory/status-badge'
+import { FormField } from '@/components/armory/form-field'
+import { BackLink } from '@/components/armory/back-link'
+import { WarningList } from '@/components/armory/warning-list'
+import { NativeSelect } from '@/components/armory/native-select'
+import { fmtDate } from '@/lib/armory/format'
+import { ITEM_STATUS_LABEL, ITEM_STATUS_TONE } from '@/lib/armory/status-tones'
+import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
 const BASE = '/profile/armory'
@@ -69,27 +66,23 @@ export default async function ItemPage({
   const revenue = (item.salePrice ?? 0) + (item.clientHandlingFee ?? 0)
 
   return (
-    <>
+    <ProfilePageLayout
+      title={title}
+      description={`${item.itemType.replace('_', ' ').toLowerCase()} · s/n ${item.serialNumber ?? '—'} · ${item.calibreDisplay ?? item.calibreRaw ?? 'no calibre'} · holder: ${item.buyerName ?? 'dealer stock'}`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <BackLink href={`${BASE}/shipments/${item.shipmentId}`}>
             Shipment {item.shipmentReference}
           </BackLink>
-          <h1 className="text-xl font-semibold mt-1 flex flex-wrap items-center gap-2">
-            {title}{' '}
-            <Badge tone={ITEM_STATUS_TONE[item.status]}>
+          <div className="mt-1 flex flex-wrap items-center gap-2">
+            <StatusBadge tone={ITEM_STATUS_TONE[item.status]}>
               {ITEM_STATUS_LABEL[item.status]}
-            </Badge>
+            </StatusBadge>
             {item.scheduleProforma && (
-              <Badge tone="blue">{item.scheduleProforma}</Badge>
+              <StatusBadge tone="blue">{item.scheduleProforma}</StatusBadge>
             )}
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            {item.itemType.replace('_', ' ').toLowerCase()} · s/n{' '}
-            {item.serialNumber ?? '—'} ·{' '}
-            {item.calibreDisplay ?? item.calibreRaw ?? 'no calibre'} · holder:{' '}
-            {item.buyerName ?? 'dealer stock'}
-          </p>
+          </div>
         </div>
         {item.itemType === 'FIREARM' && item.currentHolderBuyerId && (
           <Button asChild size="sm">
@@ -101,12 +94,12 @@ export default async function ItemPage({
       </div>
 
       {engine.blockers.length > 0 && (
-        <Warn tone="red" items={engine.blockers} />
+        <WarningList tone="red" items={engine.blockers} />
       )}
-      {engine.warnings.length > 0 && <Warn items={engine.warnings} />}
+      {engine.warnings.length > 0 && <WarningList items={engine.warnings} />}
 
       {item.itemType === 'FIREARM' && (
-        <Card
+        <SectionCard
           title="Transfer"
           description="Printing the proforma marks the firearm as pending transfer."
         >
@@ -162,11 +155,11 @@ export default async function ItemPage({
               )}
             </div>
           )}
-        </Card>
+        </SectionCard>
       )}
 
       <div className="grid md:grid-cols-3 gap-6">
-        <Card title="Buyer & payment" className="md:col-span-1">
+        <SectionCard title="Buyer & payment" className="md:col-span-1">
           {approved && !locked ? (
             <>
               <ActionForm
@@ -177,8 +170,8 @@ export default async function ItemPage({
                 }}
                 submitLabel="Update buyer"
               >
-                <Field label="Buyer">
-                  <Select
+                <FormField label="Buyer">
+                  <NativeSelect
                     name="buyerId"
                     defaultValue={item.currentHolderBuyerId ?? ''}
                   >
@@ -188,24 +181,24 @@ export default async function ItemPage({
                         {b.firstNames} {b.surname}
                       </option>
                     ))}
-                  </Select>
-                </Field>
-                <Field label="Sale price (€)">
+                  </NativeSelect>
+                </FormField>
+                <FormField label="Sale price (€)">
                   <Input
                     name="salePrice"
                     type="number"
                     step="0.01"
                     defaultValue={item.salePrice ?? ''}
                   />
-                </Field>
-                <Field label="Handling fee (€)">
+                </FormField>
+                <FormField label="Handling fee (€)">
                   <Input
                     name="clientHandlingFee"
                     type="number"
                     step="0.01"
                     defaultValue={item.clientHandlingFee ?? ''}
                   />
-                </Field>
+                </FormField>
               </ActionForm>
               {item.currentHolderType === 'BUYER' && (
                 <ActionForm
@@ -213,21 +206,21 @@ export default async function ItemPage({
                   submitLabel="Save payment"
                   className="mt-4"
                 >
-                  <Field label="Amount paid (€)">
+                  <FormField label="Amount paid (€)">
                     <Input
                       name="amountPaid"
                       type="number"
                       step="0.01"
                       defaultValue={item.amountPaid ?? 0}
                     />
-                  </Field>
-                  <Field label="Date paid">
+                  </FormField>
+                  <FormField label="Date paid">
                     <Input
                       name="datePaid"
                       type="date"
                       defaultValue={item.datePaid ?? ''}
                     />
-                  </Field>
+                  </FormField>
                 </ActionForm>
               )}
             </>
@@ -237,11 +230,11 @@ export default async function ItemPage({
               {item.paymentStatus}
             </p>
           )}
-        </Card>
+        </SectionCard>
 
-        <Card title="Ownership history" className="md:col-span-2">
+        <SectionCard title="Ownership history" className="md:col-span-2">
           {events.length === 0 ? (
-            <Empty>No events recorded.</Empty>
+            <p className="text-sm text-muted-foreground">No events recorded.</p>
           ) : (
             <ol className="text-sm space-y-2">
               {events.map(e => (
@@ -251,10 +244,10 @@ export default async function ItemPage({
               ))}
             </ol>
           )}
-        </Card>
+        </SectionCard>
       </div>
 
-      <Card title="Item details">
+      <SectionCard title="Item details">
         {approved && !locked ? (
           <ItemForm
             action={updateItem.bind(null, id)}
@@ -266,18 +259,18 @@ export default async function ItemPage({
             This record is locked after transfer.
           </p>
         )}
-      </Card>
+      </SectionCard>
 
-      <Card title="Notes">
+      <SectionCard title="Notes">
         <NotesLog
           notes={notes}
           addNote={addNote.bind(null, 'ITEM', id)}
           deleteNote={deleteNote.bind(null, 'ITEM', id)}
         />
-      </Card>
+      </SectionCard>
 
       {docs.length > 0 && (
-        <Card title="Generated documents">
+        <SectionCard title="Generated documents">
           <ul className="text-sm space-y-1">
             {docs.map(d => (
               <li key={d.id}>
@@ -290,11 +283,11 @@ export default async function ItemPage({
               </li>
             ))}
           </ul>
-        </Card>
+        </SectionCard>
       )}
 
       {approved && !locked && (
-        <Card title="Danger zone">
+        <SectionCard title="Danger zone">
           <ActionButton
             variant="danger"
             action={deleteItem.bind(null, id)}
@@ -302,8 +295,8 @@ export default async function ItemPage({
           >
             Delete item
           </ActionButton>
-        </Card>
+        </SectionCard>
       )}
-    </>
+    </ProfilePageLayout>
   )
 }

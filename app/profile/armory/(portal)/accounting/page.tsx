@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
+import { SectionCard } from '@/components/armory/section-card'
+import { StatCard } from '@/components/armory/stat-card'
+import { StatusBadge } from '@/components/armory/status-badge'
 import { requireDealerAccount } from '@/lib/armory/auth'
 import {
   listShipments,
@@ -12,7 +16,14 @@ import {
   allocateShipment,
   itemEconomics,
 } from '@/lib/armory/accounting'
-import { Card, Table, th, td, Stat, Empty, Badge } from '@/components/armory/ui'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 const BASE = '/profile/armory'
 
@@ -65,19 +76,22 @@ export default async function AccountingPage() {
   })
 
   return (
-    <>
-      <section className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        <Stat label="Items bought" value={eur(tot.acquisition)} />
-        <Stat label="Shipping & fees" value={eur(tot.costs)} />
-        <Stat label="Total cost" value={eur(tot.acquisition + tot.costs)} />
-        <Stat label="Revenue" value={eur(tot.revenue)} />
-        <Stat
+    <ProfilePageLayout
+      title="Accounting"
+      description="Shipment economics, margins, and outstanding balances"
+    >
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-6">
+        <StatCard label="Items bought" value={eur(tot.acquisition)} />
+        <StatCard label="Shipping & fees" value={eur(tot.costs)} />
+        <StatCard label="Total cost" value={eur(tot.acquisition + tot.costs)} />
+        <StatCard label="Revenue" value={eur(tot.revenue)} />
+        <StatCard
           label="Profit (sold + stock at cost)"
           value={eur(tot.profit)}
           tone={tot.profit >= 0 ? 'good' : 'bad'}
           sub={`${eur(tot.stock)} of cost still in stock`}
         />
-        <Stat
+        <StatCard
           label="Owed by buyers"
           value={eur(tot.outstanding)}
           tone={tot.outstanding > 0 ? 'bad' : undefined}
@@ -89,123 +103,137 @@ export default async function AccountingPage() {
           {ALLOCATION_METHODS.find(m => m.value === method)?.label}
         </strong>{' '}
         — change this in your{' '}
-        <Link href={`${BASE}/profile`} className="underline">
+        <Link href={`${BASE}/company-profile`} className="underline">
           company profile
         </Link>
         .
       </p>
 
-      <Card title="By shipment">
+      <SectionCard title="By shipment">
         {rows.length === 0 ? (
-          <Empty>No shipments yet.</Empty>
+          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+            No shipments yet.
+          </p>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <th className={th}>Shipment</th>
-                <th className={th}>Items</th>
-                <th className={th}>Bought</th>
-                <th className={th}>Costs</th>
-                <th className={th}>Revenue</th>
-                <th className={th}>Profit</th>
-                <th className={th}>Owed</th>
-                <th className={th}>In stock (cost)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(({ summary: s }) => (
-                <tr key={s.shipment.id}>
-                  <td className={td}>
-                    <Link
-                      href={`${BASE}/shipments/${s.shipment.id}`}
-                      className="font-medium hover:underline"
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Shipment</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Bought</TableHead>
+                  <TableHead>Costs</TableHead>
+                  <TableHead>Revenue</TableHead>
+                  <TableHead>Profit</TableHead>
+                  <TableHead>Owed</TableHead>
+                  <TableHead>In stock (cost)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map(({ summary: s }) => (
+                  <TableRow key={s.shipment.id}>
+                    <TableCell>
+                      <Link
+                        href={`${BASE}/shipments/${s.shipment.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {s.shipment.reference}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{s.itemCount}</TableCell>
+                    <TableCell className="tabular-nums">
+                      {eur(s.acquisition)}
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {eur(s.shippingCosts)}
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {eur(s.revenue)}
+                    </TableCell>
+                    <TableCell
+                      className={`tabular-nums ${s.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}
                     >
-                      {s.shipment.reference}
-                    </Link>
-                  </td>
-                  <td className={td}>{s.itemCount}</td>
-                  <td className={td + ' tabular-nums'}>{eur(s.acquisition)}</td>
-                  <td className={td + ' tabular-nums'}>
-                    {eur(s.shippingCosts)}
-                  </td>
-                  <td className={td + ' tabular-nums'}>{eur(s.revenue)}</td>
-                  <td
-                    className={
-                      td +
-                      ' tabular-nums ' +
-                      (s.profit >= 0 ? 'text-emerald-600' : 'text-red-600')
-                    }
-                  >
-                    {eur(s.profit)}
-                  </td>
-                  <td className={td + ' tabular-nums'}>{eur(s.outstanding)}</td>
-                  <td className={td + ' tabular-nums'}>{eur(s.unsoldCost)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+                      {eur(s.profit)}
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {eur(s.outstanding)}
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {eur(s.unsoldCost)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
-      </Card>
+      </SectionCard>
 
-      <Card title="Sold items — margin per item">
+      <SectionCard title="Sold items — margin per item">
         {sold.length === 0 ? (
-          <Empty>Nothing assigned to a buyer yet.</Empty>
+          <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+            Nothing assigned to a buyer yet.
+          </p>
         ) : (
-          <Table>
-            <thead>
-              <tr>
-                <th className={th}>Item</th>
-                <th className={th}>Buyer</th>
-                <th className={th}>Shipment</th>
-                <th className={th}>Total cost</th>
-                <th className={th}>Revenue</th>
-                <th className={th}>Margin</th>
-                <th className={th}>Paid</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sold.map(({ item: i, e, ref }) => (
-                <tr key={i.id}>
-                  <td className={td}>
-                    <Link
-                      href={`${BASE}/inventory/${i.id}`}
-                      className="hover:underline"
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Item</TableHead>
+                  <TableHead>Buyer</TableHead>
+                  <TableHead>Shipment</TableHead>
+                  <TableHead>Total cost</TableHead>
+                  <TableHead>Revenue</TableHead>
+                  <TableHead>Margin</TableHead>
+                  <TableHead>Paid</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sold.map(({ item: i, e, ref }) => (
+                  <TableRow key={i.id}>
+                    <TableCell>
+                      <Link
+                        href={`${BASE}/inventory/${i.id}`}
+                        className="hover:underline"
+                      >
+                        {[i.make, i.model].filter(Boolean).join(' ')}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{i.buyerName}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {ref}
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {eur(e.totalCost)}
+                    </TableCell>
+                    <TableCell className="tabular-nums">
+                      {eur(e.revenue)}
+                    </TableCell>
+                    <TableCell
+                      className={`tabular-nums ${e.profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}
                     >
-                      {[i.make, i.model].filter(Boolean).join(' ')}
-                    </Link>
-                  </td>
-                  <td className={td}>{i.buyerName}</td>
-                  <td className={td + ' text-muted-foreground'}>{ref}</td>
-                  <td className={td + ' tabular-nums'}>{eur(e.totalCost)}</td>
-                  <td className={td + ' tabular-nums'}>{eur(e.revenue)}</td>
-                  <td
-                    className={
-                      td +
-                      ' tabular-nums ' +
-                      (e.profit >= 0 ? 'text-emerald-600' : 'text-red-600')
-                    }
-                  >
-                    {eur(e.profit)}
-                  </td>
-                  <td className={td}>
-                    <Badge
-                      tone={
-                        i.paymentStatus === 'PAID'
-                          ? 'green'
-                          : i.paymentStatus === 'PARTIAL'
-                            ? 'amber'
-                            : 'red'
-                      }
-                    >
-                      {i.paymentStatus}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
+                      {eur(e.profit)}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        tone={
+                          i.paymentStatus === 'PAID'
+                            ? 'green'
+                            : i.paymentStatus === 'PARTIAL'
+                              ? 'amber'
+                              : 'red'
+                        }
+                      >
+                        {i.paymentStatus}
+                      </StatusBadge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
-      </Card>
-    </>
+      </SectionCard>
+    </ProfilePageLayout>
   )
 }

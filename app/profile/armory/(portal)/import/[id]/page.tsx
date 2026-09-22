@@ -1,10 +1,15 @@
 import { notFound } from 'next/navigation'
+import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
+import { BackLink } from '@/components/armory/back-link'
+import { SectionCard } from '@/components/armory/section-card'
+import { FormField } from '@/components/armory/form-field'
+import { NativeSelect } from '@/components/armory/native-select'
+import { ActionForm } from '@/components/armory/action-form'
 import { requireDealerAccount } from '@/lib/armory/auth'
 import { listShipments } from '@/lib/armory/queries'
 import { IMPORT_TARGETS, guessItemType } from '@/lib/armory/import'
 import { confirmImport } from '@/lib/armory/actions/import'
-import { ActionForm } from '@/components/armory/action-form'
-import { Card, Field, Input, Select, BackLink } from '@/components/armory/ui'
+import { Input } from '@/components/ui/input'
 import { createClient } from '@/lib/supabase/server'
 
 const BASE = '/profile/armory'
@@ -32,66 +37,65 @@ export default async function ImportReviewPage({
 
   if (batch.status !== 'PENDING') {
     return (
-      <Card title="Import already processed">
+      <ProfilePageLayout title="Import already processed">
         <BackLink href={`${BASE}/import`}>Back to imports</BackLink>
-      </Card>
+      </ProfilePageLayout>
     )
   }
 
   const shipments = await listShipments(ctx.dealerAccount.id)
 
   return (
-    <>
-      <div>
-        <BackLink href={`${BASE}/import`}>Imports</BackLink>
-        <h1 className="text-xl font-semibold mt-1">
-          Review: {batch.file_name}
-          {batch.sheet_name ? ` — ${batch.sheet_name}` : ''}
-        </h1>
-        <p className="text-xs text-muted-foreground">{rows.length} rows</p>
-      </div>
+    <ProfilePageLayout
+      title={`Review: ${batch.file_name}${batch.sheet_name ? ` — ${batch.sheet_name}` : ''}`}
+      description={`${rows.length} rows`}
+    >
+      <BackLink href={`${BASE}/import`}>Imports</BackLink>
+
       <ActionForm
         action={confirmImport.bind(null, id)}
         submitLabel="Import to inventory"
         submitAtTop
       >
-        <Card title="Target shipment">
-          <div className="grid md:grid-cols-2 gap-3">
-            <Field label="Existing shipment">
-              <Select name="shipmentId" defaultValue="">
+        <SectionCard title="Target shipment">
+          <div className="grid gap-3 md:grid-cols-2">
+            <FormField label="Existing shipment">
+              <NativeSelect name="shipmentId" defaultValue="">
                 <option value="">— choose —</option>
                 {shipments.map(s => (
                   <option key={s.id} value={s.id}>
                     {s.reference} ({s.itemCount} items)
                   </option>
                 ))}
-              </Select>
-            </Field>
-            <Field label="…or create a new shipment with reference">
+              </NativeSelect>
+            </FormField>
+            <FormField label="…or create a new shipment with reference">
               <Input
                 name="newShipmentReference"
                 placeholder={batch.sheet_name ?? 'e.g. Shipment 62'}
               />
-            </Field>
+            </FormField>
           </div>
-        </Card>
-        <Card title="Column mapping">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        </SectionCard>
+
+        <SectionCard title="Column mapping">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             {headers.map((h, i) => (
-              <Field key={i} label={h}>
-                <Select name={`map_${i}`} defaultValue={mapping[i] ?? ''}>
+              <FormField key={i} label={h}>
+                <NativeSelect name={`map_${i}`} defaultValue={mapping[i] ?? ''}>
                   <option value="">(ignore)</option>
                   {IMPORT_TARGETS.map(t => (
                     <option key={t.key} value={t.key}>
                       {t.label}
                     </option>
                   ))}
-                </Select>
-              </Field>
+                </NativeSelect>
+              </FormField>
             ))}
           </div>
-        </Card>
-        <Card title="Preview (first 10 rows)">
+        </SectionCard>
+
+        <SectionCard title="Preview (first 10 rows)">
           <div className="overflow-x-auto text-xs">
             <table className="w-full border-collapse">
               <thead>
@@ -123,8 +127,8 @@ export default async function ImportReviewPage({
               </tbody>
             </table>
           </div>
-        </Card>
+        </SectionCard>
       </ActionForm>
-    </>
+    </ProfilePageLayout>
   )
 }

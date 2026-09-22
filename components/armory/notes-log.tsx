@@ -4,7 +4,8 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import type { ActionResult } from '@/components/armory/action-form'
 import { Button } from '@/components/ui/button'
-import { Textarea, Empty, cx } from '@/components/armory/ui'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 
 export type NoteItem = {
   id: string
@@ -46,11 +47,13 @@ export function NotesLog({
   return (
     <div className="space-y-3">
       {notes.length === 0 ? (
-        <Empty>No notes yet.</Empty>
+        <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+          No notes yet.
+        </p>
       ) : (
-        <ol className="space-y-2 max-h-96 overflow-y-auto pr-1">
+        <ol className="max-h-96 space-y-2 overflow-y-auto pr-1">
           {notes.map(n => (
-            <li key={n.id} className="text-sm rounded border px-3 py-2">
+            <li key={n.id} className="rounded border px-3 py-2 text-sm">
               <div className="flex items-start justify-between gap-2">
                 <div className="text-xs text-muted-foreground">
                   {n.createdByLabel ?? 'Unknown'} · {fmtDateTime(n.createdAt)}
@@ -101,7 +104,7 @@ export function NotesLog({
           </Button>
           {msg && (
             <span
-              className={cx(
+              className={cn(
                 'text-xs',
                 msg.ok ? 'text-emerald-600' : 'text-red-600'
               )}

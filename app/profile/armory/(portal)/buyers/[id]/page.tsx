@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation'
-import { requireDealerAccount } from '@/lib/armory/auth'
-import { getBuyer, listBuyers, listBuyerItems } from '@/lib/armory/queries'
-import { updateBuyer, anonymiseBuyer } from '@/lib/armory/actions/buyers'
+import { ProfilePageLayout } from '@/components/profile/ProfilePageLayout'
+import { BackLink } from '@/components/armory/back-link'
+import { SectionCard } from '@/components/armory/section-card'
 import { BuyerForm } from '@/components/armory/buyer-form'
 import { ItemsTable } from '@/components/armory/items-table'
 import { ActionButton } from '@/components/armory/action-form'
-import { Card, BackLink } from '@/components/armory/ui'
+import { requireDealerAccount } from '@/lib/armory/auth'
+import { getBuyer, listBuyers, listBuyerItems } from '@/lib/armory/queries'
+import { updateBuyer, anonymiseBuyer } from '@/lib/armory/actions/buyers'
 import { Button } from '@/components/ui/button'
 
 const BASE = '/profile/armory'
@@ -29,20 +31,12 @@ export default async function BuyerPage({
   )
 
   return (
-    <>
+    <ProfilePageLayout
+      title={`${buyer.firstNames} ${buyer.surname}${buyer.nickname ? ` "${buyer.nickname}"` : ''}`}
+      description="Buyer details and assigned items"
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <BackLink href={`${BASE}/buyers`}>All buyers</BackLink>
-          <h1 className="text-xl font-semibold mt-1">
-            {buyer.firstNames} {buyer.surname}
-            {buyer.nickname && (
-              <span className="text-muted-foreground font-normal">
-                {' '}
-                &ldquo;{buyer.nickname}&rdquo;
-              </span>
-            )}
-          </h1>
-        </div>
+        <BackLink href={`${BASE}/buyers`}>All buyers</BackLink>
         {printable.length > 0 && (
           <Button asChild size="sm">
             <a
@@ -55,10 +49,12 @@ export default async function BuyerPage({
           </Button>
         )}
       </div>
-      <Card title={`Items (${items.length})`}>
+
+      <SectionCard title={`Items (${items.length})`}>
         <ItemsTable items={items} showShipment showEconomics buyers={buyers} />
-      </Card>
-      <Card title="Details">
+      </SectionCard>
+
+      <SectionCard title="Details">
         {buyer.anonymisedAt ? (
           <p className="text-sm text-muted-foreground">
             This record was anonymised. Ownership history is retained without
@@ -71,9 +67,10 @@ export default async function BuyerPage({
             submitLabel="Save buyer"
           />
         ) : null}
-      </Card>
+      </SectionCard>
+
       {approved && !buyer.anonymisedAt && ctx.staffRole === 'owner' && (
-        <Card
+        <SectionCard
           title="Data protection"
           description="GDPR right to erasure while keeping Arms Act records."
         >
@@ -84,8 +81,8 @@ export default async function BuyerPage({
           >
             Anonymise buyer
           </ActionButton>
-        </Card>
+        </SectionCard>
       )}
-    </>
+    </ProfilePageLayout>
   )
 }

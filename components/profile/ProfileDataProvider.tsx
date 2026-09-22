@@ -1,34 +1,31 @@
 'use client'
 
-import { useState } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import nextDynamic from 'next/dynamic'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { useToast } from '@/hooks/use-toast'
-import Link from 'next/link'
+import { useForm, type UseFormReturn } from 'react-hook-form'
 import {
   FeatureCreditDialog,
   DeleteConfirmationDialog,
   RemoveFeatureDialog,
 } from '@/components/dialogs'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
-import { LoadingState } from '@/components/ui/loading-state'
-import { BackButton } from '@/components/ui/back-button'
-import { profileSchema, ProfileForm } from './types'
-import { useProfileData } from './hooks/useProfileData'
-import { createProfileHandlers } from './handlers/profileHandlers'
-import { createContentHandlers } from './handlers/contentHandlers'
-import { ProfileTabs } from '../../components/profile/ProfileTabs'
-import { PageHeader } from '@/components/ui/page-header'
-import { PageLayout } from '@/components/ui/page-layout'
+import { useToast } from '@/hooks/use-toast'
+import { profileSchema, type ProfileForm } from '@/app/profile/types'
+import { useProfileData } from '@/app/profile/hooks/useProfileData'
+import { createProfileHandlers } from '@/app/profile/handlers/profileHandlers'
+import {
+  createContentHandlers,
+  type EstablishmentTable,
+} from '@/app/profile/handlers/contentHandlers'
+import type {
+  Profile,
+  Listing,
+  BlogPost,
+  Event,
+  CreditTransaction,
+  Store,
+} from '@/app/profile/types'
 
 const CreditDialog = nextDynamic(
   () => import('@/components/dialogs/CreditDialog').then(m => m.CreditDialog),
@@ -43,11 +40,75 @@ const EventCreditDialog = nextDynamic(
   { ssr: false }
 )
 
-export default function ProfilePage() {
+type ProfileDataContextValue = {
+  profile: Profile | null
+  setProfile: React.Dispatch<React.SetStateAction<Profile | null>>
+  listings: Listing[]
+  listingCredits: number
+  blogPosts: BlogPost[]
+  events: Event[]
+  eventCredits: number
+  stores: Store[]
+  clubs: Store[]
+  servicing: Store[]
+  ranges: Store[]
+  creditTransactions: CreditTransaction[]
+  listingIdToTitleMap: Record<string, string>
+  loading: boolean
+  form: UseFormReturn<ProfileForm>
+  isEditing: boolean
+  setIsEditing: (value: boolean) => void
+  uploadingLicense: boolean
+  licenseUploadProgress: number
+  establishmentInfoOpen: boolean
+  setEstablishmentInfoOpen: (value: boolean) => void
+  onSubmit: (data: ProfileForm) => Promise<void>
+  handleLicenseUpload: (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => Promise<void>
+  handleRemoveLicense: () => Promise<void>
+  onIdentityChange: (update: {
+    identity_verified: boolean
+    identity_status: string | null
+    identity_first_name: string | null
+    identity_last_name: string | null
+    identity_document_type: string | null
+    identity_review_notes: string[] | null
+  }) => void
+  handleListingStatusChange: (
+    listingId: string,
+    newStatus: string
+  ) => Promise<void>
+  handleRenewListing: (listingId: string) => Promise<void>
+  confirmDeleteListing: (listingId: string) => void
+  handleDeletePost: (postId: string) => Promise<void>
+  handleDeleteEvent: (eventId: string) => Promise<void>
+  handleDeleteEstablishment: (
+    establishmentId: string,
+    table: EstablishmentTable
+  ) => Promise<void>
+  setListingToFeature: (listingId: string | null) => void
+  setFeatureDialogOpen: (open: boolean) => void
+  setListingToRemoveFeature: (listingId: string | null) => void
+  setRemoveFeatureDialogOpen: (open: boolean) => void
+  setShowCreditDialog: (open: boolean) => void
+  setShowEventCreditDialog: (open: boolean) => void
+}
+
+const ProfileDataContext = createContext<ProfileDataContextValue | null>(null)
+
+export function useProfileContext() {
+  const context = useContext(ProfileDataContext)
+  if (!context) {
+    throw new Error('useProfileContext must be used within ProfileDataProvider')
+  }
+  return context
+}
+
+export function ProfileDataProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast()
   const { supabase, session } = useSupabase()
 
-  // UI State
   const [isEditing, setIsEditing] = useState(false)
   const [uploadingLicense, setUploadingLicense] = useState(false)
   const [licenseUploadProgress, setLicenseUploadProgress] = useState(0)
@@ -74,7 +135,6 @@ export default function ProfilePage() {
     },
   })
 
-  // Use custom hook for data management
   const {
     profile,
     setProfile,
@@ -97,10 +157,8 @@ export default function ProfilePage() {
     loading,
     listingCredits,
     eventCredits,
-    refreshCredits,
   } = useProfileData({ supabase, session, form })
 
-  // Create handlers
   const profileHandlers = createProfileHandlers({
     supabase,
     toast,
@@ -121,7 +179,6 @@ export default function ProfilePage() {
     setRanges,
   })
 
-  // Wrapper functions for handlers that need additional state
   const handleLicenseUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -159,95 +216,50 @@ export default function ProfilePage() {
     setDeleteDialogOpen(true)
   }
 
-  if (loading) {
-    return (
-      <PageLayout>
-        <LoadingState message="Loading profile..." />
-      </PageLayout>
-    )
-  }
-
-  if (!session?.user) {
-    return (
-      <div className="min-h-[calc(100vh-64px)] bg-background flex items-center justify-center px-4 py-8">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Profile Access</CardTitle>
-            <CardDescription>
-              You need to log in to view your profile
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-4">
-              <Link href="/login">
-                <Button className="w-full">Log In</Button>
-              </Link>
-              <BackButton
-                label="Back to Home"
-                href="/"
-                hideLabelOnMobile={false}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (!profile) {
-    return (
-      <PageLayout>
-        <LoadingState message="Loading profile data..." />
-      </PageLayout>
-    )
+  const value: ProfileDataContextValue = {
+    profile,
+    setProfile,
+    listings,
+    listingCredits,
+    blogPosts,
+    events,
+    eventCredits,
+    stores,
+    clubs,
+    servicing,
+    ranges,
+    creditTransactions,
+    listingIdToTitleMap,
+    loading,
+    form,
+    isEditing,
+    setIsEditing,
+    uploadingLicense,
+    licenseUploadProgress,
+    establishmentInfoOpen,
+    setEstablishmentInfoOpen,
+    onSubmit,
+    handleLicenseUpload,
+    handleRemoveLicense: profileHandlers.handleRemoveLicense,
+    onIdentityChange: handleIdentityChange,
+    handleListingStatusChange: profileHandlers.handleListingStatusChange,
+    handleRenewListing: profileHandlers.handleRenewListing,
+    confirmDeleteListing,
+    handleDeletePost: contentHandlers.handleDeletePost,
+    handleDeleteEvent: contentHandlers.handleDeleteEvent,
+    handleDeleteEstablishment: contentHandlers.handleDeleteEstablishment,
+    setListingToFeature,
+    setFeatureDialogOpen,
+    setListingToRemoveFeature,
+    setRemoveFeatureDialogOpen,
+    setShowCreditDialog,
+    setShowEventCreditDialog,
   }
 
   return (
-    <PageLayout>
-      <PageHeader
-        title="My Profile"
-        description="Manage your account and content"
-      />
+    <ProfileDataContext.Provider value={value}>
+      {children}
 
-      <ProfileTabs
-        profile={profile}
-        listings={listings}
-        listingCredits={listingCredits}
-        blogPosts={blogPosts}
-        events={events}
-        eventCredits={eventCredits}
-        stores={stores}
-        clubs={clubs}
-        servicing={servicing}
-        ranges={ranges}
-        creditTransactions={creditTransactions}
-        listingIdToTitleMap={listingIdToTitleMap}
-        form={form}
-        isEditing={isEditing}
-        setIsEditing={setIsEditing}
-        uploadingLicense={uploadingLicense}
-        licenseUploadProgress={licenseUploadProgress}
-        establishmentInfoOpen={establishmentInfoOpen}
-        setEstablishmentInfoOpen={setEstablishmentInfoOpen}
-        onSubmit={onSubmit}
-        handleLicenseUpload={handleLicenseUpload}
-        handleRemoveLicense={profileHandlers.handleRemoveLicense}
-        onIdentityChange={handleIdentityChange}
-        handleListingStatusChange={profileHandlers.handleListingStatusChange}
-        handleRenewListing={profileHandlers.handleRenewListing}
-        confirmDeleteListing={confirmDeleteListing}
-        handleDeletePost={contentHandlers.handleDeletePost}
-        handleDeleteEvent={contentHandlers.handleDeleteEvent}
-        handleDeleteStore={contentHandlers.handleDeleteStore}
-        setListingToFeature={setListingToFeature}
-        setFeatureDialogOpen={setFeatureDialogOpen}
-        setListingToRemoveFeature={setListingToRemoveFeature}
-        setRemoveFeatureDialogOpen={setRemoveFeatureDialogOpen}
-        setShowCreditDialog={setShowCreditDialog}
-        setShowEventCreditDialog={setShowEventCreditDialog}
-      />
-
-      {/* Dialogs */}
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
@@ -259,12 +271,12 @@ export default function ProfilePage() {
         confirmLabel="Delete Listing"
       />
 
-      {listingToFeature && (
+      {listingToFeature && profile && (
         <FeatureCreditDialog
           open={featureDialogOpen}
           onOpenChange={setFeatureDialogOpen}
-          userId={profile?.id ?? ''}
-          listingId={listingToFeature ?? ''}
+          userId={profile.id}
+          listingId={listingToFeature}
         />
       )}
 
@@ -280,22 +292,22 @@ export default function ProfilePage() {
         }}
       />
 
-      {showCreditDialog && (
+      {showCreditDialog && profile && (
         <CreditDialog
           open={showCreditDialog}
           onOpenChange={setShowCreditDialog}
-          userId={profile?.id || ''}
+          userId={profile.id}
           source="profile"
         />
       )}
 
-      {showEventCreditDialog && (
+      {showEventCreditDialog && profile && (
         <EventCreditDialog
           open={showEventCreditDialog}
           onOpenChange={setShowEventCreditDialog}
-          userId={profile?.id || ''}
+          userId={profile.id}
         />
       )}
-    </PageLayout>
+    </ProfileDataContext.Provider>
   )
 }
