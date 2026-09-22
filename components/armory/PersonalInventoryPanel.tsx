@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { FileSpreadsheet, Pencil, Trash2 } from 'lucide-react'
 import { SectionCard } from '@/components/armory/section-card'
 import { FormField } from '@/components/armory/form-field'
+import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
+import { useImageUpload } from '@/app/marketplace/create/hooks/useImageUpload'
+import { MAX_FILES } from '@/app/marketplace/create/constants'
+import { parsePersonalItemImages } from '@/lib/armory/personal-items'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -35,6 +39,8 @@ type PersonalItem = {
   serial_number: string | null
   acquisition_date: string | null
   notes: string | null
+  image_url: string | null
+  images?: string[] | null
 }
 
 const emptyForm = {
@@ -62,7 +68,20 @@ export function PersonalInventoryPanel({
   const [form, setForm] = useState(emptyForm)
   const [showForm, setShowForm] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [formImages, setFormImages] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const {
+    uploadedImages,
+    uploading,
+    handleImageUpload,
+    handleDeleteImage,
+    handleSetPrimaryImage,
+  } = useImageUpload({
+    toast,
+    images: formImages,
+    setImages: setFormImages,
+    removedMessage: 'The image has been removed from your item',
+  })
 
   const loadItems = useCallback(async () => {
     const res = await fetch('/api/armory/personal-items')
@@ -81,12 +100,14 @@ export function PersonalInventoryPanel({
       acquisition_date: item.acquisition_date ?? '',
       notes: item.notes ?? '',
     })
+    setFormImages(parsePersonalItemImages(item))
     setShowForm(true)
   }
 
   function resetForm() {
     setEditingId(null)
     setForm(emptyForm)
+    setFormImages([])
     setShowForm(false)
   }
 
@@ -101,6 +122,7 @@ export function PersonalInventoryPanel({
       serial_number: form.serial_number || null,
       acquisition_date: form.acquisition_date || null,
       notes: form.notes || null,
+      images: uploadedImages,
     }
     const url = editingId
       ? `/api/armory/personal-items/${editingId}`
@@ -192,7 +214,13 @@ export function PersonalInventoryPanel({
               <FileSpreadsheet className="mr-1.5 h-4 w-4" />
               {importing ? 'Importing…' : 'Import spreadsheet'}
             </Button>
-            <Button size="sm" onClick={() => setShowForm(true)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setFormImages([])
+                setShowForm(true)
+              }}
+            >
               Add item
             </Button>
           </div>
@@ -265,6 +293,21 @@ export function PersonalInventoryPanel({
               rows={3}
             />
           </FormField>
+          <div className="space-y-2">
+            <Label>Photos</Label>
+            <ListingImageGrid
+              images={uploadedImages}
+              uploading={uploading}
+              maxFiles={MAX_FILES}
+              onUpload={handleImageUpload}
+              onRemove={handleDeleteImage}
+              onSetPrimary={handleSetPrimaryImage}
+            />
+            <p className="text-sm text-muted-foreground">
+              Upload up to {MAX_FILES} images (max 5MB each). Tap &quot;Set as
+              main&quot; to choose the primary photo.
+            </p>
+          </div>
           <div className="flex gap-2">
             <Button type="submit" disabled={pending}>
               {pending ? 'Saving…' : editingId ? 'Update item' : 'Add item'}

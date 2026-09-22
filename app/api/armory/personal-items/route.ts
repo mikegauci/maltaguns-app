@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { normalisePersonalItemImages } from '@/lib/armory/personal-items'
 
 export async function GET() {
   const auth = await requireAuthenticatedUser()
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
     serial_number,
     acquisition_date,
     notes,
-    image_url,
+    images,
   } = body
 
   if (!item_type) {
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  const normalisedImages = normalisePersonalItemImages(images)
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('armory_personal_items')
@@ -55,7 +57,8 @@ export async function POST(req: NextRequest) {
       serial_number: serial_number ?? null,
       acquisition_date: acquisition_date ?? null,
       notes: notes ?? null,
-      image_url: image_url ?? null,
+      images: normalisedImages,
+      image_url: normalisedImages[0] ?? null,
     })
     .select()
     .single()

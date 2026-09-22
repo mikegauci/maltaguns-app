@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { normalisePersonalItemImages } from '@/lib/armory/personal-items'
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -10,6 +11,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
 
   const { id } = await params
   const body = await req.json()
+  const normalisedImages = normalisePersonalItemImages(body.images)
 
   const supabase = await createClient()
   const { data, error } = await supabase
@@ -22,7 +24,8 @@ export async function PATCH(req: NextRequest, { params }: RouteParams) {
       serial_number: body.serial_number ?? null,
       acquisition_date: body.acquisition_date ?? null,
       notes: body.notes ?? null,
-      image_url: body.image_url ?? null,
+      images: normalisedImages,
+      image_url: normalisedImages[0] ?? null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
