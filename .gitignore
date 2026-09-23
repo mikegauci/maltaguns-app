@@ -44,3 +44,6 @@ browser-tools-mcp/
 .vercel
 .env*
 !.env.example
+
+backups/
+supabase/.temp/

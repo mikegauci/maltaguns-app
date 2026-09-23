@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 export async function POST(request: Request) {
   try {
@@ -40,47 +41,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Relist via RPC (uses SECURITY DEFINER and also locks seller edits)
-    try {
-      const { data: rpcResult, error: rpcError } = await supabase.rpc(
-        'extend_listing_expiry',
-        { listing_id: listingId }
-      )
+    const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc(
+      'extend_listing_expiry',
+      { listing_id: listingId }
+    )
 
-      if (rpcError) {
-        // Continue to fallback method
-      } else {
-        return NextResponse.json({
-          success: true,
-          message: 'Listing relisted successfully',
-          listing: rpcResult,
-        })
-      }
-    } catch (rpcAttemptError) {
-      // Continue to fallback method
-    }
-
-    // Fallback: legacy RPC that returns void, then re-fetch listing
-    const { error: legacyError } = await supabase.rpc('relist_listing', {
-      listing_id: listingId,
-    })
-
-    if (legacyError) {
+    if (rpcError) {
       return NextResponse.json(
-        { error: `Failed to relist: ${legacyError.message}` },
-        { status: 500 }
-      )
-    }
-
-    const { data: refreshedListing, error: refreshedError } = await supabase
-      .from('listings')
-      .select('id, expires_at, status, editable_until, relisted_at')
-      .eq('id', listingId)
-      .single()
-
-    if (refreshedError || !refreshedListing) {
-      return NextResponse.json(
-        { error: 'Relisted, but failed to fetch updated listing' },
+        { error: `Failed to relist: ${rpcError.message}` },
         { status: 500 }
       )
     }
@@ -88,7 +56,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: 'Listing relisted successfully',
-      listing: refreshedListing,
+      listing: rpcResult,
     })
   } catch (error: any) {
     return NextResponse.json(
