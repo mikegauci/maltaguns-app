@@ -243,18 +243,20 @@ export default function CategoryListings({
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         backHref={getBackHref(type, category)}
         title={title}
         description={description}
-        actions={
-          <Link href="/marketplace/create">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Listing
-            </Button>
-          </Link>
-        }
+        className="mb-4"
       />
+      <div className="mb-6 flex justify-center">
+        <Link href="/marketplace/create">
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Listing
+          </Button>
+        </Link>
+      </div>
 
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">

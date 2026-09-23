@@ -45,6 +45,7 @@ export default function ClubsPage() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         backHref="/establishments"
         title="Shooting Clubs"
         description="Find shooting clubs and ranges across Malta"

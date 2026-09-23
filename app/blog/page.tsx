@@ -14,6 +14,7 @@ export default async function BlogPage() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         title="Blog"
         description="Read the latest news, guides, and insights from Malta's firearms community. Stay informed about industry updates, safety practices, and expert advice from local dealers and enthusiasts."
       />

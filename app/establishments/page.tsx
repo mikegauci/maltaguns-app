@@ -66,6 +66,7 @@ export default function EstablishmentsPage() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         title="Establishments"
         description="Discover trusted firearms dealers, shooting clubs, training ranges, and servicing businesses across Malta. Connect with licensed professionals and certified establishments for all your shooting sports needs."
       />

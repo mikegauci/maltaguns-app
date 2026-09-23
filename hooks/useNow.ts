@@ -1,18 +1,27 @@
 import { useSyncExternalStore } from 'react'
 
+const SERVER_SNAPSHOT = 0
+
+let clientSnapshot = SERVER_SNAPSHOT
+
 function subscribe(onStoreChange: () => void) {
-  const intervalId = window.setInterval(onStoreChange, 60_000)
+  clientSnapshot = Date.now()
+  onStoreChange()
+  const intervalId = window.setInterval(() => {
+    clientSnapshot = Date.now()
+    onStoreChange()
+  }, 60_000)
   return () => window.clearInterval(intervalId)
 }
 
-function getNow() {
-  return Date.now()
+function getSnapshot() {
+  return clientSnapshot
 }
 
-function getServerNow() {
-  return 0
+function getServerSnapshot() {
+  return SERVER_SNAPSHOT
 }
 
 export function useNow() {
-  return useSyncExternalStore(subscribe, getNow, getServerNow)
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }

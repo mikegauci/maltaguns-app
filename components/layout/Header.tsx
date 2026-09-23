@@ -90,8 +90,8 @@ export function Header({ impersonation = false }: HeaderProps) {
 
   const navClass = (path: string) =>
     isActive(path)
-      ? 'rounded-sm bg-[var(--chrome-slate)] text-[var(--chrome-brand)]'
-      : 'rounded-sm text-[var(--chrome-ink)] hover:bg-[var(--chrome-slate)] hover:text-[var(--chrome-brand)]'
+      ? 'rounded-sm bg-[var(--chrome-slate)] !text-white'
+      : 'rounded-sm text-[var(--chrome-ink)] hover:bg-[var(--chrome-slate)] hover:!text-white'
 
   const menuPanelClass =
     'bg-[var(--chrome-surface)] border-[var(--chrome-border)] text-[var(--chrome-ink)]'

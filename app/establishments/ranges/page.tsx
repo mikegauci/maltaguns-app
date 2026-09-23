@@ -46,6 +46,7 @@ export default function RangesPage() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         backHref="/establishments"
         title="Shooting Ranges"
         description="Find shooting ranges and facilities across Malta"

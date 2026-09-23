@@ -173,6 +173,7 @@ export default function MarketplaceClient({
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         title="Marketplace"
         description="Browse firearms, accessories, and related items from verified sellers across Malta. Buy and sell with confidence in a secure, legally compliant platform dedicated to responsible firearm ownership."
       />

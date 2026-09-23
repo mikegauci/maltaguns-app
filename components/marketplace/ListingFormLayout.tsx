@@ -1,12 +1,7 @@
 import { ReactNode } from 'react'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { BackButton } from '@/components/ui/back-button'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
+import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
 
 interface ListingFormLayoutProps {
@@ -15,7 +10,9 @@ interface ListingFormLayoutProps {
   children: ReactNode
   credits?: number
   showCredits?: boolean
+  actions?: ReactNode
   backHref?: string
+  maxWidth?: '2xl' | '3xl'
 }
 
 export function ListingFormLayout({
@@ -24,32 +21,54 @@ export function ListingFormLayout({
   children,
   credits,
   showCredits = false,
+  actions,
   backHref = '/marketplace/create',
+  maxWidth = '2xl',
 }: ListingFormLayoutProps) {
+  const creditsBadge =
+    showCredits && credits !== undefined ? (
+      <Badge variant="secondary" className="rounded-sm px-3 py-1 text-sm">
+        Credits: {credits}
+      </Badge>
+    ) : null
+
+  const headerActions =
+    creditsBadge || actions ? (
+      <div className="flex items-center gap-2">
+        {creditsBadge ? (
+          <span className="hidden md:contents">{creditsBadge}</span>
+        ) : null}
+        {actions}
+      </div>
+    ) : undefined
+
   return (
     <PageLayout>
+      <PageHeader
+        align="center"
+        backHref={backHref}
+        title={title}
+        description={description}
+        afterDescription={
+          creditsBadge ? (
+            <span className="md:hidden">{creditsBadge}</span>
+          ) : undefined
+        }
+        actions={headerActions}
+        showMobileToolbar={Boolean(actions)}
+        className="mb-6"
+      />
       <div
-        className={`mb-6 ${showCredits ? 'flex items-center justify-between' : ''}`}
+        className={
+          maxWidth === '3xl'
+            ? 'mx-auto w-full max-w-3xl'
+            : 'mx-auto w-full max-w-2xl'
+        }
       >
-        <BackButton label="Back" href={backHref} hideLabelOnMobile={false} />
-        {showCredits && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              Credits remaining:
-            </span>
-            <span className="font-semibold">{credits}</span>
-          </div>
-        )}
+        <Card className="rounded-sm border-border p-6 shadow-none">
+          {children}
+        </Card>
       </div>
-      <Card className="rounded-sm border-border shadow-none">
-        <CardHeader>
-          <CardTitle className="app-display uppercase tracking-tight">
-            {title}
-          </CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>{children}</CardContent>
-      </Card>
     </PageLayout>
   )
 }

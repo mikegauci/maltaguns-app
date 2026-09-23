@@ -29,14 +29,16 @@ import { nonFirearmsSchema, NonFirearmsForm } from '../schemas'
 import { useImageUpload } from '../hooks/useImageUpload'
 import { useAuthSession } from '../hooks/useAuthSession'
 import { createListingHandlers } from '../handlers/listingHandlers'
-import { ListingFormLayout } from '../../../../components/marketplace/ListingFormLayout'
+import { ListingFormLayout } from '@/components/marketplace/ListingFormLayout'
+import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
 import {
   TitleField,
   DescriptionField,
   PriceField,
   ImageUploadField,
-} from '../../../../components/marketplace/FormFields'
+} from '@/components/marketplace/FormFields'
 import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
 import { getSafeInternalPath } from '@/lib/navigation'
 
 function CreateNonFirearmsListing() {
@@ -102,7 +104,14 @@ function CreateNonFirearmsListing() {
   if (isLoading || isPrefilling) {
     return (
       <PageLayout>
-        <p className="text-muted-foreground">Loading...</p>
+        <PageHeader
+          align="center"
+          backHref={backHref}
+          title="Create Non-Firearms Listing"
+          description="List accessories, equipment, and related items for sale"
+          className="mb-6"
+        />
+        <p className="text-center text-muted-foreground">Loading...</p>
       </PageLayout>
     )
   }
@@ -114,96 +123,107 @@ function CreateNonFirearmsListing() {
       backHref={backHref}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category</FormLabel>
-                <Select
-                  onValueChange={value => {
-                    field.onChange(value)
-                    setSelectedCategory(
-                      value as keyof typeof nonFirearmsSubcategories
-                    )
-                  }}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.entries(nonFirearmsCategories).map(
-                      ([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      )
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <ListingFormSection title="Details" first>
+            <TitleField control={form.control} name="title" />
+            <DescriptionField control={form.control} name="description" />
+            <PriceField control={form.control} name="price" />
+          </ListingFormSection>
 
-          <FormField
-            control={form.control}
-            name="subcategory"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Subcategory</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a subcategory" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {Object.entries(
-                      nonFirearmsSubcategories[selectedCategory]
-                    ).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <ListingFormSection title="Classification">
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category</FormLabel>
+                    <Select
+                      onValueChange={value => {
+                        field.onChange(value)
+                        setSelectedCategory(
+                          value as keyof typeof nonFirearmsSubcategories
+                        )
+                      }}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(nonFirearmsCategories).map(
+                          ([value, label]) => (
+                            <SelectItem key={value} value={value}>
+                              {label}
+                            </SelectItem>
+                          )
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <TitleField control={form.control} name="title" />
-          <DescriptionField control={form.control} name="description" />
-          <PriceField control={form.control} name="price" />
-          <ImageUploadField
-            control={form.control}
-            name="images"
-            uploadedImages={uploadedImages}
-            uploading={uploading}
-            handleImageUpload={handleImageUpload}
-            handleDeleteImage={handleDeleteImage}
-            handleSetPrimaryImage={handleSetPrimaryImage}
-          />
+              <FormField
+                control={form.control}
+                name="subcategory"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a subcategory" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.entries(
+                          nonFirearmsSubcategories[selectedCategory]
+                        ).map(([value, label]) => (
+                          <SelectItem key={value} value={value}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </ListingFormSection>
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isSubmitting || uploading}
-          >
-            {isSubmitting || uploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {uploading ? 'Uploading Images...' : 'Creating...'}
-              </>
-            ) : (
-              'Create Listing'
-            )}
-          </Button>
+          <ListingFormSection title="Photos">
+            <ImageUploadField
+              control={form.control}
+              name="images"
+              uploadedImages={uploadedImages}
+              uploading={uploading}
+              handleImageUpload={handleImageUpload}
+              handleDeleteImage={handleDeleteImage}
+              handleSetPrimaryImage={handleSetPrimaryImage}
+            />
+          </ListingFormSection>
+
+          <div className="border-t border-border pt-6">
+            <Button
+              type="submit"
+              className="h-11 w-full"
+              disabled={isSubmitting || uploading}
+            >
+              {isSubmitting || uploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {uploading ? 'Uploading Images...' : 'Creating...'}
+                </>
+              ) : (
+                'Create Listing'
+              )}
+            </Button>
+          </div>
         </form>
       </Form>
     </ListingFormLayout>

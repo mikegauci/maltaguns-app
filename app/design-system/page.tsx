@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import {
@@ -14,6 +14,7 @@ import {
   AppPageToolbar,
   AppSectionHeading,
 } from '@/components/design-system'
+import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
 
 const swatches = [
   { name: 'chrome-bg', className: 'bg-chrome-bg', hex: '#0f1114' },
@@ -161,6 +162,94 @@ export default function DesignSystemPage() {
               actions={<Button>Create Listing</Button>}
               className="mb-0 border-b-0 pb-0"
             />
+          </div>
+        </section>
+
+        <section>
+          <AppSectionHeading>PageHeader centered + back</AppSectionHeading>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Mobile stacks icon back and actions above a full-width centered
+            title. Desktop uses a balanced three-column grid.
+          </p>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-sm border border-border p-6">
+              <p className="mb-4 text-xs uppercase tracking-wide text-muted-foreground">
+                Mobile width
+              </p>
+              <div className="mx-auto max-w-sm">
+                <PageHeader
+                  align="center"
+                  backHref="/marketplace"
+                  title="My Wishlist"
+                  description="Compare and manage your saved listings"
+                  className="mb-0 border-b-0 pb-0"
+                />
+              </div>
+            </div>
+            <div className="rounded-sm border border-border p-6">
+              <p className="mb-4 text-xs uppercase tracking-wide text-muted-foreground">
+                With action
+              </p>
+              <PageHeader
+                align="center"
+                backHref="/establishments"
+                title="Charles Wallbank"
+                description="Attard"
+                actions={<Button size="sm">Edit Profile</Button>}
+                className="mb-0 border-b-0 pb-0"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <AppSectionHeading>Listing form layout</AppSectionHeading>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Centered PageHeader + max-w-2xl Card with grouped sections.
+          </p>
+          <div className="mx-auto max-w-2xl space-y-6">
+            <PageHeader
+              align="center"
+              backHref="/marketplace/create"
+              title="Create Firearms Listing"
+              description="List your firearm for sale on the marketplace"
+              actions={
+                <Badge
+                  variant="secondary"
+                  className="rounded-sm px-3 py-1 text-sm"
+                >
+                  Credits: 7
+                </Badge>
+              }
+              className="mb-0 border-b-0 pb-0"
+            />
+            <Card className="rounded-sm border-border p-6 shadow-none">
+              <ListingFormSection title="Details" first>
+                <div className="space-y-2">
+                  <Label htmlFor="ds-listing-title">Title</Label>
+                  <Input
+                    id="ds-listing-title"
+                    placeholder="Enter a descriptive title"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ds-listing-price">Price (€)</Label>
+                  <Input id="ds-listing-price" placeholder="Enter price" />
+                </div>
+              </ListingFormSection>
+              <ListingFormSection title="Classification">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Input placeholder="Airguns" readOnly />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Calibre</Label>
+                    <Input placeholder="e.g., 9mm" readOnly />
+                  </div>
+                </div>
+              </ListingFormSection>
+            </Card>
           </div>
         </section>
 
