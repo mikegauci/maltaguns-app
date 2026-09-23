@@ -1,7 +1,6 @@
 import { createAndEmailNotification } from '@/lib/notify-created'
 import { sendNotificationEmail } from '@/lib/notification-email'
-
-export const ADMIN_SUPPORT_EMAIL = 'support@maltaguns.com'
+import { getAdminSupportEmail } from '@/lib/support-email'
 
 type DealerRegistrationAccount = {
   id: string
@@ -48,7 +47,7 @@ export async function notifyAdminOfDealerRegistration(
         link_url: '/admin/armory-dealers?status=pending',
         created_at: account.created_at ?? new Date().toISOString(),
       },
-      to: ADMIN_SUPPORT_EMAIL,
+      to: getAdminSupportEmail(),
     })
 
     if (!result.success) {
