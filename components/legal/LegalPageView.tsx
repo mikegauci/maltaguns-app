@@ -7,6 +7,7 @@ import {
   type LegalPage,
 } from '@/lib/legal-pages'
 import { LEGAL_PAGE_PROSE_CLASS } from '@/lib/rich-text-prose'
+import { prepareCookiePolicyHtml } from '@/lib/legal-pages.server'
 import { sanitizeBlogHtml } from '@/lib/sanitize-html'
 
 type LegalPageViewProps = {
@@ -19,7 +20,10 @@ export function LegalPageView({ page }: LegalPageViewProps) {
   const lastUpdated = formatLegalDate(page.last_updated)
   const hasDates = Boolean(effectiveDate || lastUpdated)
   const hasSubtitle = Boolean(definition.subtitle)
-  const sanitizedContent = sanitizeBlogHtml(page.content)
+  const isCookiePolicy = page.slug === 'cookie-policy'
+  const cookiePolicyParts = isCookiePolicy
+    ? prepareCookiePolicyHtml(page.content)
+    : null
 
   return (
     <PageLayout>
@@ -43,16 +47,34 @@ export function LegalPageView({ page }: LegalPageViewProps) {
         </p>
       ) : null}
 
-      <div
-        className={LEGAL_PAGE_PROSE_CLASS}
-        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
-      />
-
-      {page.slug === 'cookie-policy' ? (
-        <div className="not-prose mt-4">
-          <CookieSettingsButton />
-        </div>
-      ) : null}
+      {cookiePolicyParts ? (
+        <>
+          <div
+            className={LEGAL_PAGE_PROSE_CLASS}
+            dangerouslySetInnerHTML={{
+              __html: sanitizeBlogHtml(cookiePolicyParts.beforeSettings),
+            }}
+          />
+          <div className="not-prose mt-4">
+            <CookieSettingsButton />
+          </div>
+          {cookiePolicyParts.afterSettings ? (
+            <div
+              className={LEGAL_PAGE_PROSE_CLASS}
+              dangerouslySetInnerHTML={{
+                __html: sanitizeBlogHtml(cookiePolicyParts.afterSettings),
+              }}
+            />
+          ) : null}
+        </>
+      ) : (
+        <div
+          className={LEGAL_PAGE_PROSE_CLASS}
+          dangerouslySetInnerHTML={{
+            __html: sanitizeBlogHtml(page.content),
+          }}
+        />
+      )}
     </PageLayout>
   )
 }

@@ -18,3 +18,31 @@ export async function getLegalPage(
 
   return data as LegalPage | null
 }
+
+const COOKIE_POLICY_CONTACT_HEADING = '<h2>4. Contact</h2>'
+const COOKIE_POLICY_GA_FALLBACK = ' We use Google Analytics 4 when configured.'
+
+export function prepareCookiePolicyHtml(html: string): {
+  beforeSettings: string
+  afterSettings: string
+} {
+  let content = html
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+
+  if (gaId) {
+    content = content.replace(
+      COOKIE_POLICY_GA_FALLBACK,
+      ` Measurement ID: ${gaId} (Google Analytics 4).`
+    )
+  }
+
+  const contactIndex = content.indexOf(COOKIE_POLICY_CONTACT_HEADING)
+  if (contactIndex === -1) {
+    return { beforeSettings: content, afterSettings: '' }
+  }
+
+  return {
+    beforeSettings: content.slice(0, contactIndex).trimEnd(),
+    afterSettings: content.slice(contactIndex),
+  }
+}
