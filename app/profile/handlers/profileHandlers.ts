@@ -265,16 +265,16 @@ export function createProfileHandlers(deps: HandlerDependencies) {
     value: string
   ): Promise<void> {
     try {
-      const { data: userData, error: authError } = await supabase.auth.getUser()
-      if (authError) throw authError
-
-      const { error } = await supabase.rpc('update_listing_status', {
-        listing_id: id,
-        new_status: value,
-        user_id: userData.user.id,
+      const response = await fetch('/api/listings/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listingId: id, status: value }),
       })
 
-      if (error) throw error
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to update listing status')
+      }
 
       setListings(prevListings =>
         prevListings.map(listing =>
@@ -358,10 +358,8 @@ export function createProfileHandlers(deps: HandlerDependencies) {
       })
 
       if (!response.ok) {
-        const { error } = await supabase.rpc('relist_listing', {
-          listing_id: listingId,
-        })
-        if (error) throw new Error('Failed to renew listing')
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to renew listing')
       }
 
       setListings(prevListings =>

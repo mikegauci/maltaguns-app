@@ -40,3 +40,8 @@ browser-tools-mcp/
 *.swn
 # Vercel
 .vercel/
+.vercel
+.env*
+!.env.example
+
+backups/
