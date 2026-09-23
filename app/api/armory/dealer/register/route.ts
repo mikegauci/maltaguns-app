@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
 import { audit } from '@/lib/armory/audit'
+import { notifyAdminOfDealerRegistration } from '@/lib/armory/dealer-notifications'
 
 export async function POST(req: NextRequest) {
   const auth = await requireAuthenticatedUser()
@@ -141,6 +142,8 @@ export async function POST(req: NextRequest) {
     entityId: account.id,
     details: { action: 'register', companyName },
   })
+
+  void notifyAdminOfDealerRegistration(account).catch(console.error)
 
   return NextResponse.json({ account })
 }

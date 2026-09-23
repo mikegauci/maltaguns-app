@@ -49,6 +49,11 @@ export function ctaLabelForType(type: string): string {
       return 'Go to profile'
     case 'establishment_approved':
       return 'View establishment'
+    case 'armory_dealer_registration':
+      return 'Review registration'
+    case 'armory_dealer_approved':
+    case 'armory_dealer_suspended':
+      return 'Go to Armory'
     default:
       return 'View'
   }

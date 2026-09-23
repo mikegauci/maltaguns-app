@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
 import { audit } from '@/lib/armory/audit'
+import { notifyDealerOwnerOfStatusChange } from '@/lib/armory/dealer-notifications'
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     const { data: current, error: fetchError } = await supabaseAdmin
       .from('armory_dealer_accounts')
-      .select('id, account_status, company_name')
+      .select('id, account_status, company_name, owner_id')
       .eq('id', id)
       .single()
 
@@ -70,6 +71,16 @@ export async function POST(req: NextRequest) {
         details: { status, note, companyName: current.company_name },
       }
     )
+
+    if (status === 'approved' || status === 'suspended') {
+      void notifyDealerOwnerOfStatusChange({
+        dealerAccountId: id,
+        ownerId: current.owner_id,
+        companyName: current.company_name,
+        status,
+        note,
+      }).catch(console.error)
+    }
 
     return NextResponse.json({
       success: true,
