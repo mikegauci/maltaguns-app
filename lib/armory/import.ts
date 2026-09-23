@@ -2,6 +2,7 @@
 // sheet, guess which column is which, let the dealer confirm, then create
 // the items through the same classification engine as manual entry.
 import ExcelJS from 'exceljs'
+import * as XLSX from 'xlsx'
 
 export type ParsedSheet = {
   sheetName: string
@@ -17,7 +18,15 @@ export const IMPORT_TARGETS: {
   {
     key: 'egunListingId',
     label: 'eGun listing ID',
-    aliases: ['egun', 'egun id', 'listing', 'listing id', 'auction', 'artikel'],
+    aliases: [
+      'egun',
+      'egun id',
+      'egun no',
+      'listing',
+      'listing id',
+      'auction',
+      'artikel',
+    ],
   },
   {
     key: 'buyerInitials',
@@ -179,12 +188,49 @@ function cellText(v: ExcelJS.CellValue): string {
   return String(v)
 }
 
+function sheetFromRows(
+  sheetName: string,
+  rows: string[][]
+): ParsedSheet | null {
+  if (rows.length === 0) return null
+  const hIdx = Math.max(
+    0,
+    rows.findIndex(r => r.filter(Boolean).length >= 3)
+  )
+  const headers = rows[hIdx].map((h, i) => h || `Column ${i + 1}`)
+  const body = rows.slice(hIdx + 1).filter(r => r.some(Boolean))
+  if (body.length === 0) return null
+  return { sheetName, headers, rows: body }
+}
+
+function parseLegacyXls(buffer: Buffer): ParsedSheet[] {
+  const wb = XLSX.read(buffer, { type: 'buffer' })
+  const sheets: ParsedSheet[] = []
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName]
+    const raw = XLSX.utils.sheet_to_json<(string | number | null)[]>(ws, {
+      header: 1,
+      defval: '',
+      raw: false,
+    })
+    const rows = raw.map(r =>
+      r.map(c => (c === null || c === undefined ? '' : String(c).trim()))
+    )
+    const sheet = sheetFromRows(sheetName, rows)
+    if (sheet) sheets.push(sheet)
+  }
+  return sheets
+}
+
 export async function parseWorkbook(
   buffer: Buffer,
   fileName: string
 ): Promise<ParsedSheet[]> {
   if (/\.csv$/i.test(fileName)) {
     return [parseCsv(buffer.toString('utf8'))]
+  }
+  if (/\.xls$/i.test(fileName) && !/\.xlsx$/i.test(fileName)) {
+    return parseLegacyXls(buffer)
   }
   const wb = new ExcelJS.Workbook()
   await wb.xlsx.load(buffer as unknown as ArrayBuffer)
@@ -197,15 +243,8 @@ export async function parseWorkbook(
         vals.push(cellText(row.getCell(c).value).trim())
       rows.push(vals)
     })
-    if (rows.length === 0) return
-    // Header row = the first row with at least 3 non-empty cells.
-    const hIdx = Math.max(
-      0,
-      rows.findIndex(r => r.filter(Boolean).length >= 3)
-    )
-    const headers = rows[hIdx].map((h, i) => h || `Column ${i + 1}`)
-    const body = rows.slice(hIdx + 1).filter(r => r.some(Boolean))
-    sheets.push({ sheetName: ws.name, headers, rows: body })
+    const sheet = sheetFromRows(ws.name, rows)
+    if (sheet) sheets.push(sheet)
   })
   return sheets
 }

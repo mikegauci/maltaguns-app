@@ -9,6 +9,7 @@ import { createDirectItem } from '@/lib/armory/actions/items'
 import { ItemsTable } from '@/components/armory/items-table'
 import { ItemForm } from '@/components/armory/item-form'
 import { PersonalInventoryPanel } from '@/components/armory/PersonalInventoryPanel'
+import { InventoryIntakePanel } from '@/components/armory/inventory-intake-panel'
 import { createClient } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -50,9 +51,18 @@ export default async function InventoryPage({
   const dealerCtx = await requireDealerAccount()
   const account = dealerCtx.dealerAccount
   const approved = dealerCtx.isApproved
+  const supabase = await createClient()
   const filter = { q: sp.q, status: sp.status, itemType: sp.itemType }
-  const items = await listAllItems(account.id, filter)
-  const buyers = (await listBuyers(account.id)).filter(b => !b.anonymisedAt)
+  const [items, buyers, { data: importBatches }] = await Promise.all([
+    listAllItems(account.id, filter),
+    listBuyers(account.id).then(r => r.filter(b => !b.anonymisedAt)),
+    supabase
+      .from('armory_import_batches')
+      .select('id, file_name, sheet_name, status, created_at, undone_at')
+      .eq('dealer_account_id', account.id)
+      .order('created_at', { ascending: false })
+      .limit(20),
+  ])
 
   const [allCount, firearmCount, nonFirearmCount] = await Promise.all([
     listAllItems(account.id, { q: sp.q, status: sp.status }).then(
@@ -97,25 +107,19 @@ export default async function InventoryPage({
       title="Inventory"
       description="Dealer stock across all shipments."
     >
-      {approved && (
-        <SectionCard
-          title="Add item"
-          description="Bought locally rather than imported? Add it straight to inventory."
-        >
-          <details className="group">
-            <summary className="cursor-pointer select-none text-sm font-medium">
-              + Add item to inventory
-            </summary>
-            <div className="mt-3 rounded border border-dashed p-4">
-              <ItemForm
-                action={createDirectItem}
-                submitLabel="Add to inventory"
-                compact
-              />
-            </div>
-          </details>
-        </SectionCard>
-      )}
+      <InventoryIntakePanel
+        approved={approved}
+        batches={importBatches ?? []}
+        manualAdd={
+          approved ? (
+            <ItemForm
+              action={createDirectItem}
+              submitLabel="Add to inventory"
+              compact
+            />
+          ) : undefined
+        }
+      />
 
       <div className="flex gap-1 border-b">
         {tabs.map(t => (
@@ -136,14 +140,26 @@ export default async function InventoryPage({
 
       <SectionCard
         title={`Inventory (${items.length})`}
+        description="Tick items to bulk-set CIP proof, bulk-fix the item type, or print transfer proformas."
         actions={
           <form className="flex flex-wrap gap-2" method="get">
             <Input
               name="q"
               defaultValue={sp.q ?? ''}
-              placeholder="Search make, model, serial…"
+              placeholder="Search make, model, serial, buyer…"
               className="w-56"
             />
+            <NativeSelect
+              name="itemType"
+              defaultValue={sp.itemType ?? ''}
+              className="w-40"
+            >
+              <option value="">All types</option>
+              <option value="FIREARM">Firearms</option>
+              <option value="NON_FIREARM">Non-firearms</option>
+              <option value="REGULATED_COMPONENT">— Components only</option>
+              <option value="ACCESSORY">— Accessories only</option>
+            </NativeSelect>
             <NativeSelect
               name="status"
               defaultValue={sp.status ?? ''}
@@ -157,6 +173,18 @@ export default async function InventoryPage({
             </NativeSelect>
             <Button type="submit" variant="outline" size="sm">
               Filter
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <a
+                href={`${BASE}/inventory/export?${new URLSearchParams({
+                  ...(sp.q ? { q: sp.q } : {}),
+                  ...(sp.itemType ? { itemType: sp.itemType } : {}),
+                  ...(sp.status ? { status: sp.status } : {}),
+                }).toString()}`}
+                title="Download the filtered list as an Excel file"
+              >
+                Export XLS
+              </a>
             </Button>
           </form>
         }

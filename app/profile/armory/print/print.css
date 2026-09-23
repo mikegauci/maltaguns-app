@@ -1,0 +1,424 @@
+/* Print-ready government documents. Always light, always A4. */
+.print-root {
+  background: #e5e5e5;
+  color: #000;
+  min-height: 100vh;
+  padding: 16px 0 40px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.3;
+}
+.print-toolbar {
+  max-width: 210mm;
+  margin: 0 auto 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  color: #333;
+}
+.print-toolbar button {
+  background: #111;
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.page {
+  background: #fff;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 12px;
+  padding: 14mm 14mm 12mm;
+  box-sizing: border-box;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  position: relative;
+  page-break-after: always;
+}
+.page:last-child {
+  page-break-after: auto;
+}
+.doc-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 13pt;
+  margin: 0 0 2mm;
+  text-transform: uppercase;
+}
+.doc-subtitle {
+  text-align: center;
+  font-size: 9pt;
+  margin: 0 0 5mm;
+}
+.sec {
+  border: 1px solid #000;
+  margin-bottom: 3mm;
+}
+.sec-h {
+  background: #f0f0f0;
+  border-bottom: 1px solid #000;
+  padding: 1.5mm 2.5mm;
+  font-weight: 700;
+  font-size: 9.5pt;
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.grid > .cell:nth-child(odd) {
+  border-right: 1px solid #000;
+}
+.cell {
+  padding: 1.5mm 2.5mm;
+  border-bottom: 1px solid #ccc;
+  min-height: 8.5mm;
+}
+.cell.full {
+  grid-column: 1 / -1;
+  border-right: 0;
+}
+.cell .lbl {
+  display: block;
+  font-size: 7.5pt;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.cell .val {
+  display: block;
+  font-size: 10.5pt;
+  min-height: 4.5mm;
+}
+.missing {
+  background: #fff3a3;
+  color: #7a5b00;
+  font-style: italic;
+  font-size: 9pt;
+  padding: 0 1mm;
+  border-bottom: 1px dashed #7a5b00;
+}
+.blank-line {
+  display: inline-block;
+  width: 100%;
+  border-bottom: 1px solid #000;
+  height: 4.5mm;
+}
+table.annex {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 8.5pt;
+}
+table.annex th,
+table.annex td {
+  border: 1px solid #000;
+  padding: 1.2mm 1.5mm;
+  vertical-align: top;
+}
+table.annex th {
+  background: #f0f0f0;
+  font-weight: 700;
+  font-size: 7.5pt;
+  text-transform: uppercase;
+}
+table.annex td.num {
+  text-align: center;
+  width: 6mm;
+}
+.sig-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8mm;
+  margin-top: 6mm;
+}
+.sig {
+  border-top: 1px solid #000;
+  padding-top: 1.5mm;
+  font-size: 8.5pt;
+}
+.stamp-box {
+  border: 1px dashed #000;
+  height: 28mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 8.5pt;
+}
+.tick {
+  display: inline-block;
+  width: 4mm;
+  height: 4mm;
+  border: 1px solid #000;
+  vertical-align: middle;
+  margin-right: 1.5mm;
+  text-align: center;
+  line-height: 3.8mm;
+  font-size: 9pt;
+}
+.foot {
+  position: absolute;
+  bottom: 8mm;
+  left: 14mm;
+  right: 14mm;
+  font-size: 7pt;
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+}
+.warnings {
+  max-width: 210mm;
+  margin: 0 auto 10px;
+  background: #fff3a3;
+  border: 1px solid #d8b400;
+  padding: 8px 12px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+.warnings ul {
+  margin: 4px 0 0 16px;
+  padding: 0;
+}
+/* Transfer proforma — the dealer's own redesigned layout (clean typeset
+   re-creation of the Weapons Office "Proforma for the Transfer of a
+   Firearm", not an overlay on the scanned original). All checkbox groups
+   and classification wording were checked against the real government
+   form; see the comments in src/lib/classification.ts for what's verbatim
+   vs relabelled. */
+.pf2-crest {
+  position: absolute;
+  top: 10mm;
+  right: 14mm;
+  width: 20mm;
+  height: auto;
+}
+.pf2-header {
+  text-align: center;
+  margin-bottom: 4mm;
+}
+.pf2-header .pf2-title {
+  font-weight: 700;
+  font-size: 14pt;
+  letter-spacing: 0.02em;
+}
+.pf2-header .pf2-subtitle {
+  font-weight: 700;
+  font-size: 10.5pt;
+  letter-spacing: 0.02em;
+  margin-top: 1mm;
+}
+.pf2-section-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 10.5pt;
+  margin: 5mm 0 3mm;
+}
+.pf2-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2mm 8mm;
+  margin-bottom: 2mm;
+}
+.pf2-field {
+  display: flex;
+  align-items: baseline;
+  gap: 2mm;
+  font-size: 9.5pt;
+  border-bottom: 1px solid #000;
+  padding-bottom: 0.5mm;
+}
+.pf2-field .pf2-field-label {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pf2-field .pf2-field-value {
+  flex: 1;
+  min-height: 4mm;
+  font-weight: 600;
+  color: #14208c;
+}
+.pf2-field .pf2-field-value.pf2-missing {
+  color: #b91c1c;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 8pt;
+}
+.pf2-spec-row {
+  display: flex;
+  gap: 6mm;
+  align-items: flex-start;
+}
+.pf2-spec-col {
+  flex: 1;
+  display: flex;
+  gap: 2mm;
+}
+.pf2-spec-labels {
+  flex: 1;
+}
+.pf2-row-h {
+  height: 5mm;
+  display: flex;
+  align-items: center;
+  font-size: 9pt;
+}
+.pf2-checkcol {
+  border: 1px solid #000;
+  width: 6mm;
+  flex-shrink: 0;
+}
+/* The Capacity cell holds a two-digit number (19, 30, 60…), not just a tick
+   — give that one column more room so it doesn't clip or wrap. */
+.pf2-checkcol-wide {
+  width: 10mm;
+}
+.pf2-checkcell {
+  height: 5mm;
+  border-bottom: 1px solid #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 8.5pt;
+  color: #14208c;
+}
+.pf2-checkcell:last-child {
+  border-bottom: none;
+}
+.pf2-schedule-block {
+  display: flex;
+  gap: 3mm;
+  margin-bottom: 1mm;
+}
+.pf2-schedule-labels {
+  flex: 1;
+}
+.pf2-schedule-labels .pf2-row-h {
+  font-size: 8.5pt;
+}
+.pf2-purpose-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0 6mm;
+}
+.pf2-sig-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8mm;
+  margin-top: 10mm;
+}
+.pf2-sig-line {
+  border-top: 1px solid #000;
+  padding-top: 1mm;
+  font-style: italic;
+  font-size: 9pt;
+  text-align: center;
+}
+.pf2-sig-id {
+  font-size: 8.5pt;
+  margin-top: 3mm;
+}
+.pf2-footer {
+  text-align: center;
+  font-size: 7.5pt;
+  color: #333;
+  margin-top: 6mm;
+}
+.pf2-missing-flag {
+  background: #fff3a3;
+  border: 1px solid #d8b400;
+  color: #7a5b00;
+  font-size: 7pt;
+  padding: 1mm 2mm;
+  border-radius: 3px;
+  display: inline-block;
+  margin-bottom: 2mm;
+}
+
+/* Inline editing from the "Transfer" preview (?edit=1). Never present on
+   the plain print/PDF path — see editable.tsx. Inputs are .no-print so a
+   field the dealer never got round to filling in just prints blank, same
+   as before this existed. */
+.pf2-edit-input {
+  border: none;
+  border-bottom: 1px dashed #999;
+  background: #fffbe6;
+  font: inherit;
+  font-weight: 600;
+  color: #14208c;
+  width: 100%;
+  padding: 0;
+}
+.pf2-edit-input:focus {
+  outline: none;
+  border-bottom-color: #14208c;
+  background: #fff3a3;
+}
+.pf2-edit-input-cell {
+  height: 5mm;
+  text-align: center;
+  border-bottom: none;
+  font-size: 9pt;
+  padding: 0 0.5mm;
+  /* No up/down steppers — Charles just types the number in. */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.pf2-edit-input-cell::-webkit-outer-spin-button,
+.pf2-edit-input-cell::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.pf2-edit-err {
+  display: block;
+  color: #b91c1c;
+  font-size: 7pt;
+  font-style: italic;
+}
+.pf2-checkcell-btn {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 8.5pt;
+  color: #14208c;
+}
+.pf2-checkcell-btn:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+@media screen {
+  .pf2-checkcell-btn:hover {
+    background: #eef1ff;
+  }
+}
+
+@media print {
+  .pf2-missing-flag {
+    display: none !important;
+  }
+  .no-print,
+  .warnings {
+    display: none !important;
+  }
+  .print-root {
+    background: #fff;
+    padding: 0;
+  }
+  .page {
+    box-shadow: none;
+    margin: 0;
+    width: auto;
+    min-height: auto;
+  }
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}

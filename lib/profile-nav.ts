@@ -117,11 +117,6 @@ export function buildArmoryNavItems(
       iconKey: 'file-text',
     },
     {
-      title: 'Import',
-      href: `${ARMORY_BASE}/import`,
-      iconKey: 'upload',
-    },
-    {
       title: 'Bin',
       href: `${ARMORY_BASE}/bin`,
       iconKey: 'trash',

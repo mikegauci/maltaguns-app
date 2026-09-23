@@ -16,6 +16,8 @@ import {
   eur,
   ALLOCATION_METHODS,
 } from '@/lib/armory/accounting'
+import { buildPriorConsent } from '@/lib/armory/documents'
+import { PriorConsentPrintMenu } from '@/components/armory/prior-consent-print-menu'
 import {
   updateShipment,
   setShipmentStatus,
@@ -88,6 +90,7 @@ export default async function ShipmentPage({
     costs,
     account.shippingAllocationMethod
   )
+  const pc = buildPriorConsent(account, shipment, items)
   const statusLabel =
     SHIPMENT_STATUSES.find(s => s.value === shipment.status)?.label ??
     shipment.status
@@ -107,13 +110,12 @@ export default async function ShipmentPage({
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild variant="outline" size="sm">
-            <a
-              href={`${BASE}/print/prior-consent/${id}?mode=full`}
-              target="_blank"
-            >
-              Print Prior Consent
-            </a>
+            <a href={`${BASE}/shipments/${id}/export`}>Export XLS</a>
           </Button>
+          <PriorConsentPrintMenu
+            shipmentId={id}
+            missingCount={pc.missing.length}
+          />
         </div>
       </div>
 
@@ -265,33 +267,77 @@ export default async function ShipmentPage({
                   rows={2}
                 />
               </FormField>
+              <FormField label="Telephone">
+                <Input
+                  name="senderPhone"
+                  defaultValue={shipment.senderPhone ?? ''}
+                />
+              </FormField>
+              <FormField label="Fax">
+                <Input
+                  name="senderFax"
+                  defaultValue={shipment.senderFax ?? ''}
+                />
+              </FormField>
             </div>
           </ActionForm>
         </SectionCard>
 
-        <SectionCard title="Transit & delivery">
-          <ActionForm
-            action={updateShipment.bind(null, id)}
-            submitLabel="Save transit"
-          >
-            <div className="grid grid-cols-2 gap-3">
+        <SectionCard
+          title="Permits, export & transport"
+          description="Filled in as the paperwork comes back: the Police reference on the accepted Prior Consent, then the origin country's export notification, carrier and delivery point."
+        >
+          <ActionForm action={updateShipment.bind(null, id)} submitLabel="Save">
+            <div className="grid md:grid-cols-4 gap-3">
+              <FormField label="Prior consent ref. (Police)">
+                <Input
+                  name="priorConsentRef"
+                  defaultValue={shipment.priorConsentRef ?? ''}
+                />
+              </FormField>
+              <FormField label="Prior consent date">
+                <Input
+                  name="priorConsentDate"
+                  type="date"
+                  defaultValue={shipment.priorConsentDate ?? ''}
+                />
+              </FormField>
+              <FormField label="Export authorisation ref.">
+                <Input
+                  name="exportAuthorisationRef"
+                  defaultValue={shipment.exportAuthorisationRef ?? ''}
+                  placeholder="e.g. 01-2026-2636"
+                />
+              </FormField>
+              <FormField label="Export authorisation date">
+                <Input
+                  name="exportAuthorisationDate"
+                  type="date"
+                  defaultValue={shipment.exportAuthorisationDate ?? ''}
+                />
+              </FormField>
               <FormField label="Carrier">
-                <Input name="carrier" defaultValue={shipment.carrier ?? ''} />
+                <Input
+                  name="carrier"
+                  defaultValue={shipment.carrier ?? ''}
+                  placeholder="e.g. Lufthansa Cargo (air freight)"
+                />
               </FormField>
               <FormField label="Transit countries">
                 <Input
                   name="transitCountries"
                   defaultValue={shipment.transitCountries ?? ''}
+                  placeholder="none"
                 />
               </FormField>
-              <FormField label="Delivery address" className="col-span-2">
-                <Textarea
+              <FormField label="Delivery address" className="md:col-span-2">
+                <Input
                   name="deliveryAddress"
                   defaultValue={shipment.deliveryAddress ?? ''}
-                  rows={2}
+                  placeholder="e.g. Malta International Airport"
                 />
               </FormField>
-              <FormField label="Notes" className="col-span-2">
+              <FormField label="Notes" className="md:col-span-4">
                 <Textarea
                   name="notes"
                   defaultValue={shipment.notes ?? ''}
