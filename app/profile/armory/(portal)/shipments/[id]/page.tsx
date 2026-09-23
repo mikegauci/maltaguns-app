@@ -9,8 +9,14 @@ import {
   listCosts,
   listDocuments,
   listNotes,
+  listNotificationsForShipment,
   SHIPMENT_STATUSES,
 } from '@/lib/armory/queries'
+import {
+  TRIGGER_LABEL,
+  notificationsConfigured,
+  type Trigger,
+} from '@/lib/armory/notifications'
 import {
   summariseShipment,
   eur,
@@ -75,14 +81,16 @@ export default async function ShipmentPage({
   if (!shipment) notFound()
   const approved = ctx.isApproved
 
-  const [items, buyers, quotes, costs, docs, notes] = await Promise.all([
-    listItemsForShipment(account.id, id),
-    listBuyers(account.id),
-    listQuotes(id),
-    listCosts(id),
-    listDocuments(account.id, { shipmentId: id }),
-    listNotes(account.id, 'SHIPMENT', id),
-  ])
+  const [items, buyers, quotes, costs, docs, notes, notifications] =
+    await Promise.all([
+      listItemsForShipment(account.id, id),
+      listBuyers(account.id),
+      listQuotes(id),
+      listCosts(id),
+      listDocuments(account.id, { shipmentId: id }),
+      listNotes(account.id, 'SHIPMENT', id),
+      listNotificationsForShipment(account.id, id),
+    ])
   const activeBuyers = buyers.filter(b => !b.anonymisedAt)
   const summary = summariseShipment(
     shipment,
@@ -165,6 +173,7 @@ export default async function ShipmentPage({
           shipmentId={id}
           current={shipment.status}
           statuses={SHIPMENT_STATUSES}
+          providerConfigured={notificationsConfigured()}
           setStatus={setShipmentStatus}
         />
         <dl className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-muted-foreground">
@@ -486,13 +495,66 @@ export default async function ShipmentPage({
         </SectionCard>
       </div>
 
-      <SectionCard title="Notes">
-        <NotesLog
-          notes={notes}
-          addNote={addNote.bind(null, 'SHIPMENT', id)}
-          deleteNote={deleteNote.bind(null, 'SHIPMENT', id)}
-        />
-      </SectionCard>
+      <div className="grid md:grid-cols-2 gap-6">
+        <SectionCard
+          title="Buyer notifications"
+          description={
+            notificationsConfigured()
+              ? 'Sent via Twilio.'
+              : 'No SMS/WhatsApp provider configured — messages are logged here so you can see exactly what would go out. Set TWILIO_* in .env to send for real.'
+          }
+        >
+          {notifications.length === 0 ? (
+            <p className="px-2 py-6 text-center text-sm text-muted-foreground">
+              No notifications yet.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border text-sm">
+              {notifications.map(n => (
+                <li key={n.id} className="py-2">
+                  <div className="flex flex-wrap justify-between gap-2">
+                    <span>
+                      <strong>{n.buyerName}</strong> ·{' '}
+                      {TRIGGER_LABEL[n.trigger as Trigger] ?? n.trigger} ·{' '}
+                      {n.channel}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <StatusBadge
+                        tone={
+                          n.deliveryStatus === 'SENT'
+                            ? 'green'
+                            : n.deliveryStatus === 'FAILED'
+                              ? 'red'
+                              : 'neutral'
+                        }
+                      >
+                        {n.deliveryStatus}
+                      </StatusBadge>
+                      <span className="text-xs text-muted-foreground">
+                        {fmtDate(n.createdAt)}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {n.messageContent}
+                  </div>
+                  {n.error && (
+                    <div className="text-xs text-red-600">{n.error}</div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Notes">
+          <NotesLog
+            notes={notes}
+            addNote={addNote.bind(null, 'SHIPMENT', id)}
+            deleteNote={deleteNote.bind(null, 'SHIPMENT', id)}
+          />
+        </SectionCard>
+      </div>
 
       {docs.length > 0 && (
         <SectionCard title="Generated documents">

@@ -157,12 +157,45 @@ export async function disableStaff(staffId: string): Promise<ActionResult> {
 }
 
 export async function resetStaffPassword(
-  _staffId: string,
-  _password: string
+  staffId: string
 ): Promise<ActionResult> {
-  return {
-    ok: false,
-    error:
-      'Passwords are managed through MaltaGuns account settings (Supabase Auth).',
-  }
+  return run(async () => {
+    const ctx = await ownerCtx()
+    const supabase = await createClient()
+    const { data: staff, error: fetchError } = await supabase
+      .from('armory_dealer_staff')
+      .select('id, profile_id, role, profiles(email)')
+      .eq('id', staffId)
+      .eq('dealer_account_id', ctx.dealerAccount.id)
+      .maybeSingle()
+
+    if (fetchError) throw new ActionError(fetchError.message)
+    if (!staff || staff.role === 'owner')
+      throw new ActionError('Staff member not found')
+
+    const profile = staff.profiles as unknown as { email: string | null } | null
+    const email = profile?.email
+    if (!email) throw new ActionError('Staff member has no email on file')
+
+    const siteUrl =
+      process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ??
+      'https://maltaguns.com'
+    const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/reset-password`,
+    })
+    if (error) throw new ActionError(error.message)
+
+    await audit('USER_PASSWORD_RESET', {
+      userId: ctx.userId,
+      dealerAccountId: ctx.dealerAccount.id,
+      entityType: 'staff',
+      entityId: staffId,
+      details: { email, by: 'dealer_owner' },
+    })
+    revalidatePath(`${BASE}/team`)
+    return {
+      ok: true,
+      message: `Password reset email sent to ${email}.`,
+    }
+  })
 }

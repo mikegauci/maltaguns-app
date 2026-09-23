@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
@@ -209,6 +210,11 @@ export default function ArmoryDealersPage() {
                       {format(new Date(dealer.created_at), 'dd MMM yyyy')}
                     </TableCell>
                     <TableCell className="text-right space-x-2">
+                      <Button asChild size="sm" variant="ghost">
+                        <Link href={`/admin/armory-dealers/${dealer.id}`}>
+                          View
+                        </Link>
+                      </Button>
                       {dealer.account_status === 'pending' && (
                         <Button
                           size="sm"

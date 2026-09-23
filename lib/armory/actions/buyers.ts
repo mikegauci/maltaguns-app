@@ -163,6 +163,11 @@ export async function anonymiseBuyer(id: string): Promise<ActionResult> {
     if (error) throw new ActionError(error.message)
 
     await supabase
+      .from('armory_notification_events')
+      .update({ message_content: '[anonymised]' })
+      .eq('buyer_id', id)
+
+    await supabase
       .from('armory_inventory_items')
       .update({ buyer_licence_number: null })
       .eq('current_holder_buyer_id', id)

@@ -32,22 +32,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Dealer not found' }, { status: 404 })
     }
 
-    if (current.account_status === status) {
-      return NextResponse.json(
-        { error: `Dealer is already ${status}` },
-        { status: 400 }
-      )
-    }
+    const noteOnly = current.account_status === status
 
     const update: Record<string, unknown> = {
-      account_status: status,
       status_note: note ?? null,
       updated_at: new Date().toISOString(),
     }
 
-    if (status === 'approved') {
-      update.approved_at = new Date().toISOString()
-      update.approved_by = auth.user.id
+    if (!noteOnly) {
+      update.account_status = status
+      if (status === 'approved') {
+        update.approved_at = new Date().toISOString()
+        update.approved_by = auth.user.id
+      }
     }
 
     const { data, error } = await supabaseAdmin
@@ -61,18 +58,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    await audit(
-      status === 'approved' ? 'DEALER_APPROVED' : 'DEALER_SUSPENDED',
-      {
+    if (noteOnly) {
+      await audit('DEALER_PROFILE_UPDATED', {
         userId: auth.user.id,
         dealerAccountId: id,
         entityType: 'dealer_account',
         entityId: id,
-        details: { status, note, companyName: current.company_name },
-      }
-    )
+        details: { statusNote: note, companyName: current.company_name },
+      })
+    } else {
+      await audit(
+        status === 'approved' ? 'DEALER_APPROVED' : 'DEALER_SUSPENDED',
+        {
+          userId: auth.user.id,
+          dealerAccountId: id,
+          entityType: 'dealer_account',
+          entityId: id,
+          details: { status, note, companyName: current.company_name },
+        }
+      )
+    }
 
-    if (status === 'approved' || status === 'suspended') {
+    if (!noteOnly && (status === 'approved' || status === 'suspended')) {
       void notifyDealerOwnerOfStatusChange({
         dealerAccountId: id,
         ownerId: current.owner_id,
@@ -85,8 +92,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       dealer: data,
-      message:
-        status === 'approved'
+      message: noteOnly
+        ? 'Dealer note saved'
+        : status === 'approved'
           ? 'Dealer approved — full Armory access unlocked'
           : status === 'suspended'
             ? 'Dealer suspended'

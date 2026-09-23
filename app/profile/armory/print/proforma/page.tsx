@@ -311,6 +311,12 @@ function ProformaPage({
 
   return (
     <div className="page">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className="pf2-crest"
+        src="/forms/police-crest.png"
+        alt="Malta Police Force"
+      />
       <div className="pf2-header">
         <div className="pf2-title">PROFORMA</div>
         <div className="pf2-subtitle">FOR THE TRANSFER OF A FIREARM</div>

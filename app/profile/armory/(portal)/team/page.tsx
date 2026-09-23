@@ -6,7 +6,11 @@ import { StatusBadge } from '@/components/armory/status-badge'
 import { ActionForm, ActionButton } from '@/components/armory/action-form'
 import { requireDealerAccount } from '@/lib/armory/auth'
 import { listStaff } from '@/lib/armory/queries'
-import { createStaff, disableStaff } from '@/lib/armory/actions/dealer'
+import {
+  createStaff,
+  disableStaff,
+  resetStaffPassword,
+} from '@/lib/armory/actions/dealer'
 import { Input } from '@/components/ui/input'
 import {
   Table,
@@ -35,7 +39,7 @@ export default async function TeamPage() {
                 <TableHead>User</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead></TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -60,16 +64,28 @@ export default async function TeamPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {u.role === 'staff' && !u.disabledAt && (
-                      <ActionButton
-                        small
-                        variant="danger"
-                        action={disableStaff.bind(null, u.id)}
-                        confirm={`Disable ${u.email}?`}
-                      >
-                        Disable
-                      </ActionButton>
-                    )}
+                    <div className="flex flex-wrap gap-1">
+                      {u.role === 'staff' && !u.disabledAt && (
+                        <>
+                          <ActionButton
+                            small
+                            variant="secondary"
+                            action={resetStaffPassword.bind(null, u.id)}
+                            confirm={`Send a password reset email to ${u.email}?`}
+                          >
+                            Reset password
+                          </ActionButton>
+                          <ActionButton
+                            small
+                            variant="danger"
+                            action={disableStaff.bind(null, u.id)}
+                            confirm={`Disable ${u.email}?`}
+                          >
+                            Disable
+                          </ActionButton>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

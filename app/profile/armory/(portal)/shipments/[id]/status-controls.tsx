@@ -13,6 +13,7 @@ export function StatusControls({
   shipmentId,
   current,
   statuses,
+  providerConfigured = false,
   setStatus,
 }: {
   shipmentId: string
@@ -96,7 +97,7 @@ export function StatusControls({
               checked={notify}
               onChange={e => setNotify(e.target.checked)}
             />{' '}
-            Notify buyers
+            Notify buyers{providerConfigured ? '' : ' (log only)'}
           </label>
         )}
         <Button

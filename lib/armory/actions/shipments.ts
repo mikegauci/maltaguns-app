@@ -4,7 +4,15 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { audit } from '@/lib/armory/audit'
-import { getShipment, SHIPMENT_STATUSES } from '@/lib/armory/queries'
+import {
+  notifyShipmentBuyers,
+  TRIGGER_FOR_STATUS,
+} from '@/lib/armory/notifications'
+import {
+  getDealerAccount,
+  getShipment,
+  SHIPMENT_STATUSES,
+} from '@/lib/armory/queries'
 import type { ShipmentStatus } from '@/lib/armory/types'
 import { ActionError, run, str, num, type ActionResult } from './action-utils'
 import { dealerCtx } from './_helpers'
@@ -168,11 +176,28 @@ export async function setShipmentStatus(
     })
 
     let message = `Status set to ${SHIPMENT_STATUSES.find(x => x.value === st)?.label}`
-    if (
-      ['PERMIT_APPLIED', 'SHIPPED', 'READY_FOR_COLLECTION'].includes(st) &&
-      opts?.notify !== false
-    ) {
-      message += ' · buyer notifications are not configured yet'
+    const trigger = TRIGGER_FOR_STATUS[st as keyof typeof TRIGGER_FOR_STATUS]
+    if (trigger && opts?.notify !== false) {
+      const account = (await getDealerAccount(ctx.dealerAccount.id))!
+      const results = await notifyShipmentBuyers({
+        dealerAccountId: ctx.dealerAccount.id,
+        dealerName: account.companyName,
+        shipmentId: id,
+        reference: sh.reference,
+        trigger,
+      })
+      const sent = results.filter(r => r.status === 'SENT').length
+      const logged = results.filter(r => r.status === 'LOGGED').length
+      const skipped = results.filter(r => r.status.startsWith('SKIPPED')).length
+      const failed = results.filter(r => r.status === 'FAILED').length
+      message += ` · buyers notified: ${sent} sent, ${logged} logged (no SMS/WhatsApp provider configured), ${skipped} skipped (no opt-in), ${failed} failed`
+      await audit('NOTIFICATION_SENT', {
+        userId: ctx.userId,
+        dealerAccountId: ctx.dealerAccount.id,
+        entityType: 'shipment',
+        entityId: id,
+        details: { trigger, results },
+      })
     }
 
     revalidatePath(`${BASE}/shipments/${id}`)

@@ -15,6 +15,7 @@ next-env.d.ts
 .env.development.local
 .env.test.local
 .env.production.local
+.env.vercel
 
 # TypeScript build output
 *.tsbuildinfo
@@ -40,3 +41,6 @@ browser-tools-mcp/
 *.swn
 # Vercel
 .vercel/
+.vercel
+.env*
+!.env.example

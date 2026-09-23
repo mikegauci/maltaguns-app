@@ -79,6 +79,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         description: 'Approve Armory dealership registrations',
         badgeKey: 'armoryDealersPending',
       },
+      {
+        title: 'Armory Audit',
+        href: '/admin/armory-audit',
+        icon: FileText,
+        description: 'Cross-dealer Armory audit log',
+      },
     ],
   },
   {

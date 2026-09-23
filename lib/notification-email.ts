@@ -1,5 +1,8 @@
 import { Resend } from 'resend'
 import { escapeHtml } from '@/lib/escape-html'
+import { getSiteBaseUrl } from '@/lib/site-base-url'
+
+export { getSiteBaseUrl }
 
 export type NotificationEmailPayload = {
   id: string
@@ -16,11 +19,6 @@ function getResend(): Resend {
     throw new Error('Missing env.RESEND_API_KEY')
   }
   return new Resend(process.env.RESEND_API_KEY)
-}
-
-export function getSiteBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_APP_URL || 'https://maltaguns.com'
-  return raw.replace(/\/$/, '')
 }
 
 export function toAbsoluteUrl(url: string): string {

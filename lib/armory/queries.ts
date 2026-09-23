@@ -34,6 +34,10 @@ import {
   type ShipmentStatus,
   type StaffRow,
   type StaffRowDb,
+  type NotificationRow,
+  type NotificationRowDb,
+  type AuditLogRow,
+  type AuditLogRowDb,
 } from './types'
 
 export const SHIPMENT_STATUSES: { value: ShipmentStatus; label: string }[] = [
@@ -278,6 +282,43 @@ export async function listNotes(
 
   if (error) throw error
   return ((data ?? []) as NoteRowDb[]).map(mapNote)
+}
+
+export async function listNotificationsForShipment(
+  dealerAccountId: string,
+  shipmentId: string
+): Promise<NotificationRow[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('armory_notification_events')
+    .select('*, buyer:armory_buyers(first_names, surname)')
+    .eq('dealer_account_id', dealerAccountId)
+    .eq('shipment_id', shipmentId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  return (data ?? []).map(row => {
+    const buyer = row.buyer as {
+      first_names: string
+      surname: string
+    } | null
+    const n = row as NotificationRowDb
+    return {
+      id: n.id,
+      buyerId: n.buyer_id,
+      shipmentId: n.shipment_id,
+      trigger: n.trigger_type,
+      channel: n.channel,
+      messageContent: n.message_content,
+      deliveryStatus: n.delivery_status,
+      sentAt: n.sent_at,
+      providerRef: n.provider_ref,
+      error: n.error,
+      createdAt: n.created_at,
+      buyerName: buyer ? `${buyer.first_names} ${buyer.surname}`.trim() : null,
+    }
+  })
 }
 
 export async function listStaff(dealerAccountId: string): Promise<StaffRow[]> {

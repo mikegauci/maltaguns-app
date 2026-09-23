@@ -304,6 +304,63 @@ export type BuyerRowDb = {
   created_at: string
 }
 
+export type NotificationRowDb = {
+  id: string
+  dealer_account_id: string
+  buyer_id: string
+  shipment_id: string | null
+  inventory_item_id: string | null
+  trigger_type: string
+  channel: string
+  message_content: string | null
+  delivery_status: string
+  provider_ref: string | null
+  error: string | null
+  sent_at: string | null
+  created_at: string
+}
+
+export type NotificationRow = {
+  id: string
+  buyerId: string
+  shipmentId: string | null
+  trigger: string
+  channel: string
+  messageContent: string | null
+  deliveryStatus: string
+  sentAt: string | null
+  providerRef: string | null
+  error: string | null
+  createdAt: string
+  buyerName?: string | null
+}
+
+export type AuditLogRowDb = {
+  id: string
+  profile_id: string | null
+  dealer_account_id: string | null
+  action: string
+  entity_type: string | null
+  entity_id: string | null
+  details: Json | null
+  ip: string | null
+  created_at: string
+}
+
+export type AuditLogRow = {
+  id: string
+  profileId: string | null
+  dealerAccountId: string | null
+  action: string
+  entityType: string | null
+  entityId: string | null
+  details: string | null
+  ip: string | null
+  createdAt: string
+  userEmail?: string | null
+  dealerName?: string | null
+}
+
 export type BuyerRow = {
   id: string
   dealerAccountId: string
