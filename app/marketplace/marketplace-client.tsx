@@ -22,11 +22,13 @@ import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
 import { cn } from '@/lib/utils'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
-import { formatPrice, slugify } from '@/lib/format'
+import { formatPrice } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 
 interface Listing {
   id: string
   title: string
+  slug?: string
   description: string
   price: number
   category: string
@@ -81,7 +83,7 @@ export default function MarketplaceClient({
   const error = null
 
   const renderListingCard = (listing: Listing) => {
-    const listingHref = `/marketplace/listing/${slugify(listing.title)}`
+    const listingHref = listingPublicPath(listing)
     const categoryHref = `/marketplace/${
       listing.type === 'firearms' ? 'firearms' : 'non-firearms'
     }/${listing.category}`

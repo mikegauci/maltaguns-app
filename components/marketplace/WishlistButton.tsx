@@ -1,12 +1,18 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Heart } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { scheduleEffectWork } from '@/lib/schedule-effect-work'
+import {
+  fetchWishlistItems,
+  invalidateWishlist,
+  setListingWishlistedInCache,
+  wishlistQueryKey,
+} from '@/lib/wishlist-query'
 
 interface WishlistButtonProps {
   listingId: string
@@ -23,41 +29,23 @@ export function WishlistButton({
   variant = 'outline',
   showText = false,
 }: WishlistButtonProps) {
-  const [isInWishlist, setIsInWishlist] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isCheckingStatus, setIsCheckingStatus] = useState(true)
-  const { session } = useSupabase()
+  const { session, isLoading: authLoading } = useSupabase()
+  const queryClient = useQueryClient()
+  const userId = session?.user?.id
 
-  const checkWishlistStatus = useCallback(async () => {
-    if (!session?.user) {
-      setIsCheckingStatus(false)
-      return
-    }
+  const wishlistQuery = useQuery({
+    queryKey: userId ? wishlistQueryKey(userId) : ['wishlist'],
+    enabled: !!userId && !authLoading,
+    queryFn: fetchWishlistItems,
+    staleTime: 60_000,
+  })
 
-    try {
-      const response = await fetch('/api/wishlist')
-      if (response.ok) {
-        const data = await response.json()
-        const isWishlisted = data.wishlistItems?.some(
-          (item: { listing_id: string }) => item.listing_id === listingId
-        )
-        setIsInWishlist(isWishlisted)
-      }
-    } catch (error) {
-      console.error('Error checking wishlist status:', error)
-    } finally {
-      setIsCheckingStatus(false)
-    }
-  }, [session?.user, listingId])
-
-  useEffect(() => {
-    scheduleEffectWork(() => {
-      void checkWishlistStatus()
-    })
-  }, [checkWishlistStatus])
+  const isInWishlist =
+    wishlistQuery.data?.some(item => item.listing_id === listingId) ?? false
 
   async function handleWishlistToggle() {
-    if (!session?.user) {
+    if (!userId) {
       return
     }
 
@@ -73,11 +61,13 @@ export function WishlistButton({
         )
 
         if (response.ok) {
-          setIsInWishlist(false)
+          setListingWishlistedInCache(queryClient, userId, listingId, false)
+          invalidateWishlist(queryClient, userId)
           toast.success('Removed from wishlist')
         } else {
           const error = await response.json()
           toast.error(error.error || 'Failed to remove from wishlist')
+          invalidateWishlist(queryClient, userId)
         }
       } else {
         const response = await fetch('/api/wishlist/add', {
@@ -89,22 +79,25 @@ export function WishlistButton({
         })
 
         if (response.ok) {
-          setIsInWishlist(true)
+          setListingWishlistedInCache(queryClient, userId, listingId, true)
+          invalidateWishlist(queryClient, userId)
           toast.success('Added to wishlist')
         } else {
           const error = await response.json()
           toast.error(error.error || 'Failed to add to wishlist')
+          invalidateWishlist(queryClient, userId)
         }
       }
     } catch (error) {
       console.error('Error toggling wishlist:', error)
       toast.error('Something went wrong')
+      invalidateWishlist(queryClient, userId)
     } finally {
       setIsLoading(false)
     }
   }
 
-  if (!session?.user || isCheckingStatus) {
+  if (authLoading || !userId || wishlistQuery.isLoading) {
     return null
   }
 

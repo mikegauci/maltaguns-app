@@ -28,6 +28,7 @@ export interface BlogPost {
 export interface Listing {
   id: string
   title: string
+  slug?: string
   type: 'firearms' | 'non_firearms'
   category: string
   price: number

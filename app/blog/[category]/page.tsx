@@ -8,9 +8,9 @@ import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
 import { getSectionMetadata } from '@/lib/seo'
 import type { SectionKey } from '@/lib/seo-defaults'
+import { BLOG_CARD_SELECT } from '@/lib/query-selects'
 
-// Force dynamic rendering for this page
-export const dynamic = 'force-dynamic'
+export const revalidate = 30
 
 const validCategories = ['news', 'guides'] as const
 
@@ -47,24 +47,21 @@ export default async function CategoryArchive(props: {
 
   const { data: posts, error } = await supabase
     .from('blog_posts')
-    .select(
-      `
-      *,
-      author:profiles!blog_posts_author_id_fkey (*),
-      stores:store_id (*),
-      clubs:club_id (*),
-      ranges:range_id (*),
-      servicing:servicing_id (*)
-    `
-    )
+    .select(BLOG_CARD_SELECT)
     .eq('category', category)
     .eq('published', true)
     .order('created_at', { ascending: false })
+    .limit(50)
 
   if (error) {
     console.error('Error fetching posts:', error)
     throw new Error('Failed to fetch posts')
   }
+
+  const normalizedPosts = (posts || []).map((post: any) => ({
+    ...post,
+    author: Array.isArray(post.author) ? post.author[0] : post.author,
+  }))
 
   return (
     <PageLayout>
@@ -85,13 +82,13 @@ export default async function CategoryArchive(props: {
         ))}
       </div>
 
-      {!posts || posts.length === 0 ? (
+      {normalizedPosts.length === 0 ? (
         <p className="text-muted-foreground text-lg">
           No {category} articles found.
         </p>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {posts.map(post => (
+          {normalizedPosts.map(post => (
             <BlogPostCard key={post.id} post={post} />
           ))}
         </div>

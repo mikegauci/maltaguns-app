@@ -12,13 +12,13 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Package, Star, Plus } from 'lucide-react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase/public'
 import { StorageImage } from '@/components/ui/storage-image'
 import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 import { AppCard, AppSectionHeading } from '@/components/design-system'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { formatPrice, slugify } from '@/lib/format'
+import { formatPrice } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 
 function getBackHref(type?: 'firearms' | 'non_firearms', category?: string) {
   if (category && type === 'firearms') return '/marketplace/firearms'
@@ -31,6 +31,7 @@ function getBackHref(type?: 'firearms' | 'non_firearms', category?: string) {
 interface Listing {
   id: string
   title: string
+  slug?: string
   description: string
   price: number
   category: string
@@ -50,6 +51,28 @@ interface CategoryListingsProps {
   subcategory?: string
   title: string
   description?: string
+  initialFeaturedListings?: Listing[]
+  initialRegularListings?: Listing[]
+}
+
+async function fetchCategoryListingsFromApi(
+  type?: 'firearms' | 'non_firearms',
+  category?: string,
+  subcategory?: string
+) {
+  const params = new URLSearchParams()
+  if (type) params.set('type', type)
+  if (category) params.set('category', category)
+  if (subcategory) params.set('subcategory', subcategory)
+
+  const res = await fetch(
+    `/api/public/marketplace/category?${params.toString()}`
+  )
+  if (!res.ok) throw new Error('Failed to load listings')
+  return res.json() as Promise<{
+    featuredListings: Listing[]
+    regularListings: Listing[]
+  }>
 }
 
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
@@ -85,88 +108,37 @@ export default function CategoryListings({
   subcategory,
   title,
   description,
+  initialFeaturedListings,
+  initialRegularListings,
 }: CategoryListingsProps) {
-  const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
-  const [regularListings, setRegularListings] = useState<Listing[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [featuredListings, setFeaturedListings] = useState<Listing[]>(
+    initialFeaturedListings ?? []
+  )
+  const [regularListings, setRegularListings] = useState<Listing[]>(
+    initialRegularListings ?? []
+  )
+  const [isLoading, setIsLoading] = useState(
+    initialFeaturedListings === undefined &&
+      initialRegularListings === undefined
+  )
 
   useEffect(() => {
+    if (
+      initialFeaturedListings !== undefined &&
+      initialRegularListings !== undefined
+    ) {
+      return
+    }
+
     async function fetchListings() {
       try {
-        // Get current date
-        const now = new Date()
-
-        // Calculate date 7 days ago
-        const sevenDaysAgo = new Date()
-        sevenDaysAgo.setDate(now.getDate() - 7)
-
-        // Format for Supabase query
-        const sevenDaysAgoStr = sevenDaysAgo.toISOString()
-
-        // Start building the query - include active non-expired listings and recent sold listings
-        let query = supabase
-          .from('listings')
-          .select('*')
-          .or(
-            `and(status.eq.active,expires_at.gt.${new Date().toISOString()}),and(status.eq.sold,updated_at.gt.${sevenDaysAgoStr})`
-          )
-
-        // Add type filter if provided
-        if (type) {
-          query = query.eq('type', type)
-        }
-
-        // Add category filter if provided
-        if (category) {
-          query = query.eq('category', category)
-        }
-
-        // Add subcategory filter if provided
-        if (subcategory) {
-          query = query.eq('subcategory', subcategory)
-        }
-
-        // Order by created_at
-        query = query.order('created_at', { ascending: false })
-
-        // Execute the query
-        const { data, error } = await query
-
-        if (error) throw error
-
-        // Filter out inactive listings
-        const filteredListings = data
-          ? data.filter(listing => listing.status !== 'inactive')
-          : []
-
-        // Fetch featured listings
-        const { data: featuredData, error: featuredError } = await supabase
-          .from('featured_listings')
-          .select('listing_id')
-          .gt('end_date', new Date().toISOString())
-
-        if (featuredError) throw featuredError
-
-        // Create a set of featured listing IDs for quick lookup
-        const featuredIds = new Set(
-          featuredData?.map(item => item.listing_id) || []
+        const data = await fetchCategoryListingsFromApi(
+          type,
+          category,
+          subcategory
         )
-
-        // Separate featured and regular listings
-        const featured: Listing[] = []
-        const regular: Listing[] = []
-
-        filteredListings.forEach(listing => {
-          const isFeatured = featuredIds.has(listing.id)
-          const withFlag = { ...listing, is_featured: isFeatured }
-
-          if (isFeatured) featured.push(withFlag)
-
-          regular.push(withFlag)
-        })
-
-        setFeaturedListings(featured)
-        setRegularListings(regular)
+        setFeaturedListings(data.featuredListings)
+        setRegularListings(data.regularListings)
       } catch (error) {
         console.error('Error fetching listings:', error)
       } finally {
@@ -175,14 +147,17 @@ export default function CategoryListings({
     }
 
     fetchListings()
-  }, [type, category, subcategory])
+  }, [
+    type,
+    category,
+    subcategory,
+    initialFeaturedListings,
+    initialRegularListings,
+  ])
 
   // Function to render a listing card
   const renderListingCard = (listing: Listing) => (
-    <Link
-      key={listing.id}
-      href={`/marketplace/listing/${slugify(listing.title)}`}
-    >
+    <Link key={listing.id} href={listingPublicPath(listing)}>
       <AppCard featured={listing.is_featured}>
         <div className="aspect-video relative overflow-hidden">
           <StorageImage

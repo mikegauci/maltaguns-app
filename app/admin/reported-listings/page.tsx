@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
-import { slugify } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -39,7 +39,9 @@ interface ReportedListing {
   created_at: string
   status: string
   listing?: {
+    id?: string
     title: string
+    slug?: string
     seller_id: string
     status: string
     seller?: {
@@ -127,7 +129,11 @@ function ReportedListingsPageComponent() {
                 size="sm"
                 onClick={() =>
                   window.open(
-                    `/marketplace/listing/${slugify(listing.title)}`,
+                    listingPublicPath({
+                      slug: listing.slug,
+                      title: listing.title,
+                      id: listing.id || row.original.listing_id,
+                    }),
                     '_blank'
                   )
                 }

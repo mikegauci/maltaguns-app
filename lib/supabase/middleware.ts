@@ -26,3 +26,10 @@ export function createMiddlewareClient(
     }
   )
 }
+
+export async function refreshSession(request: NextRequest) {
+  const response = NextResponse.next({ request })
+  const supabase = createMiddlewareClient(request, response)
+  await supabase.auth.getUser()
+  return response
+}

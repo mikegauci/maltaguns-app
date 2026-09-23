@@ -1,0 +1,274 @@
+'use client'
+
+import { useState } from 'react'
+import nextDynamic from 'next/dynamic'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { useToast } from '@/hooks/use-toast'
+import Link from 'next/link'
+import {
+  FeatureCreditDialog,
+  DeleteConfirmationDialog,
+  RemoveFeatureDialog,
+} from '@/components/dialogs'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { LoadingState } from '@/components/ui/loading-state'
+import { BackButton } from '@/components/ui/back-button'
+import { profileSchema, ProfileForm } from './types'
+import { useProfileData } from './hooks/useProfileData'
+import { createProfileHandlers } from './handlers/profileHandlers'
+import { createContentHandlers } from './handlers/contentHandlers'
+import { ProfileTabs } from '../../components/profile/ProfileTabs'
+import { PageHeader } from '@/components/ui/page-header'
+import { PageLayout } from '@/components/ui/page-layout'
+
+const CreditDialog = nextDynamic(
+  () => import('@/components/dialogs/CreditDialog').then(m => m.CreditDialog),
+  { ssr: false }
+)
+
+const EventCreditDialog = nextDynamic(
+  () =>
+    import('@/components/dialogs/EventCreditDialog').then(
+      m => m.EventCreditDialog
+    ),
+  { ssr: false }
+)
+
+export default function ProfileClient() {
+  const { toast } = useToast()
+  const { supabase, session, isLoading: authLoading } = useSupabase()
+
+  // UI State
+  const [isEditing, setIsEditing] = useState(false)
+  const [uploadingLicense, setUploadingLicense] = useState(false)
+  const [licenseUploadProgress, setLicenseUploadProgress] = useState(0)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [listingToDelete, setListingToDelete] = useState<string | null>(null)
+  const [featureDialogOpen, setFeatureDialogOpen] = useState(false)
+  const [listingToFeature, setListingToFeature] = useState<string | null>(null)
+  const [removeFeatureDialogOpen, setRemoveFeatureDialogOpen] = useState(false)
+  const [listingToRemoveFeature, setListingToRemoveFeature] = useState<
+    string | null
+  >(null)
+  const [showCreditDialog, setShowCreditDialog] = useState(false)
+  const [showEventCreditDialog, setShowEventCreditDialog] = useState(false)
+  const [establishmentInfoOpen, setEstablishmentInfoOpen] = useState(false)
+
+  const form = useForm<ProfileForm>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      first_name: '',
+      last_name: '',
+      birthday: '',
+      phone: '',
+      address: '',
+    },
+  })
+
+  // Use custom hook for data management
+  const {
+    profile,
+    setProfile,
+    listings,
+    setListings,
+    stores,
+    setStores,
+    clubs,
+    setClubs,
+    servicing,
+    setServicing,
+    ranges,
+    setRanges,
+    blogPosts,
+    setBlogPosts,
+    events,
+    setEvents,
+    creditTransactions,
+    listingIdToTitleMap,
+    loading,
+    listingCredits,
+    eventCredits,
+    refreshCredits,
+  } = useProfileData({ supabase, session, form, authLoading })
+
+  // Create handlers
+  const profileHandlers = createProfileHandlers({
+    supabase,
+    toast,
+    setProfile,
+    setListings,
+    profile,
+    setLicenseUploadProgress,
+  })
+
+  const contentHandlers = createContentHandlers({
+    supabase,
+    toast,
+    setBlogPosts,
+    setEvents,
+    setStores,
+    setClubs,
+    setServicing,
+    setRanges,
+  })
+
+  // Wrapper functions for handlers that need additional state
+  const handleLicenseUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    await profileHandlers.handleLicenseUpload(
+      event,
+      uploadingLicense,
+      setUploadingLicense
+    )
+  }
+
+  const handleIdentityChange = (update: {
+    identity_verified: boolean
+    identity_status: string | null
+    identity_first_name: string | null
+    identity_last_name: string | null
+    identity_document_type: string | null
+    identity_review_notes: string[] | null
+  }) => {
+    setProfile(prev => (prev ? { ...prev, ...update } : null))
+  }
+
+  const handleDeleteListing = (listingId: string) =>
+    profileHandlers.handleDeleteListing(
+      listingId,
+      setDeleteDialogOpen,
+      setListingToDelete
+    )
+
+  const onSubmit = async (data: ProfileForm) => {
+    await profileHandlers.onSubmit(data, setIsEditing)
+  }
+
+  const confirmDeleteListing = (listingId: string) => {
+    setListingToDelete(listingId)
+    setDeleteDialogOpen(true)
+  }
+
+  if (authLoading || loading) {
+    return (
+      <PageLayout>
+        <LoadingState message="Loading profile..." />
+      </PageLayout>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <PageLayout>
+        <LoadingState message="Loading profile data..." />
+      </PageLayout>
+    )
+  }
+
+  return (
+    <PageLayout>
+      <PageHeader
+        title="My Profile"
+        description="Manage your account and content"
+      />
+
+      <ProfileTabs
+        profile={profile}
+        listings={listings}
+        listingCredits={listingCredits}
+        blogPosts={blogPosts}
+        events={events}
+        eventCredits={eventCredits}
+        stores={stores}
+        clubs={clubs}
+        servicing={servicing}
+        ranges={ranges}
+        creditTransactions={creditTransactions}
+        listingIdToTitleMap={listingIdToTitleMap}
+        form={form}
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
+        uploadingLicense={uploadingLicense}
+        licenseUploadProgress={licenseUploadProgress}
+        establishmentInfoOpen={establishmentInfoOpen}
+        setEstablishmentInfoOpen={setEstablishmentInfoOpen}
+        onSubmit={onSubmit}
+        handleLicenseUpload={handleLicenseUpload}
+        handleRemoveLicense={profileHandlers.handleRemoveLicense}
+        onIdentityChange={handleIdentityChange}
+        handleListingStatusChange={profileHandlers.handleListingStatusChange}
+        handleRenewListing={profileHandlers.handleRenewListing}
+        confirmDeleteListing={confirmDeleteListing}
+        handleDeletePost={contentHandlers.handleDeletePost}
+        handleDeleteEvent={contentHandlers.handleDeleteEvent}
+        handleDeleteStore={contentHandlers.handleDeleteStore}
+        setListingToFeature={setListingToFeature}
+        setFeatureDialogOpen={setFeatureDialogOpen}
+        setListingToRemoveFeature={setListingToRemoveFeature}
+        setRemoveFeatureDialogOpen={setRemoveFeatureDialogOpen}
+        setShowCreditDialog={setShowCreditDialog}
+        setShowEventCreditDialog={setShowEventCreditDialog}
+      />
+
+      {/* Dialogs */}
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Listing"
+        description="Are you sure you want to delete this listing? This action cannot be undone."
+        onConfirm={() =>
+          listingToDelete && handleDeleteListing(listingToDelete)
+        }
+        confirmLabel="Delete Listing"
+      />
+
+      {listingToFeature && (
+        <FeatureCreditDialog
+          open={featureDialogOpen}
+          onOpenChange={setFeatureDialogOpen}
+          userId={profile?.id ?? ''}
+          listingId={listingToFeature ?? ''}
+        />
+      )}
+
+      <RemoveFeatureDialog
+        open={removeFeatureDialogOpen}
+        onOpenChange={setRemoveFeatureDialogOpen}
+        onConfirm={() => {
+          if (listingToRemoveFeature) {
+            profileHandlers.handleRemoveFeature(listingToRemoveFeature)
+            setRemoveFeatureDialogOpen(false)
+            setListingToRemoveFeature(null)
+          }
+        }}
+      />
+
+      {showCreditDialog && (
+        <CreditDialog
+          open={showCreditDialog}
+          onOpenChange={setShowCreditDialog}
+          userId={profile?.id || ''}
+          source="profile"
+        />
+      )}
+
+      {showEventCreditDialog && (
+        <EventCreditDialog
+          open={showEventCreditDialog}
+          onOpenChange={setShowEventCreditDialog}
+          userId={profile?.id || ''}
+        />
+      )}
+    </PageLayout>
+  )
+}

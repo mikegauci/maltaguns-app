@@ -1,7 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime'
-import { slugify } from '@/lib/format'
-import { formatImageUrls, resolveThumbnail } from '@/lib/listing-images'
+import { listingPublicPath } from '@/lib/listing-slug'
 import { postNotifyCreated } from '@/lib/notify-created-client'
 
 interface CreateListingDependencies {
@@ -16,7 +15,7 @@ interface CreateListingDependencies {
 }
 
 export function createListingHandlers(deps: CreateListingDependencies) {
-  const { supabase, router, toast, setIsSubmitting } = deps
+  const { router, toast, setIsSubmitting } = deps
 
   async function notifyListingCreated(listingId: string): Promise<boolean> {
     return postNotifyCreated('/api/listings/notify-created', { listingId })
@@ -26,6 +25,25 @@ export function createListingHandlers(deps: CreateListingDependencies) {
     const params = new URLSearchParams({ created: '1' })
     if (!notifyOk) params.set('notify', '0')
     router.push(`${listingPath}?${params.toString()}`)
+  }
+
+  async function createListingViaApi(payload: Record<string, unknown>) {
+    const response = await fetch('/api/listings/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+
+    const result = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to create listing')
+    }
+
+    return result.listing as {
+      id: string
+      title: string
+      slug?: string
+    }
   }
 
   async function createFirearmsListing(data: {
@@ -45,103 +63,24 @@ export function createListingHandlers(deps: CreateListingDependencies) {
         throw new Error('Insufficient credits')
       }
 
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (sessionError) {
-        console.error('Session error:', sessionError)
-        throw new Error('Authentication error: ' + sessionError.message)
-      }
-
-      if (!session?.user.id) {
-        throw new Error('Not authenticated')
-      }
-
-      // Check if user is verified and has a valid license and identity
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_verified, identity_verified, license_image')
-        .eq('id', session.user.id)
-        .single()
-
-      if (profileError) {
-        console.error('Error fetching profile:', profileError)
-        throw new Error('Failed to verify user profile')
-      }
-
-      if (!profile) {
-        throw new Error('User profile not found')
-      }
-
-      // Check if user has verified license
-      if (!profile.is_verified || !profile.license_image) {
-        throw new Error(
-          'You must have a verified firearms license to create a firearms listing. Please upload your license in your profile.'
-        )
-      }
-
-      // Check if user has a verified identity
-      if (!profile.identity_verified) {
-        throw new Error(
-          'You must have a verified identity to create a firearms listing. Please verify your identity in your profile.'
-        )
-      }
-
       const imageUrls = data.images.map(img =>
         typeof img === 'string' ? img : img.toString()
       )
 
-      console.log('Attempting to create firearms listing with simplified data')
-
-      const listingData = {
-        seller_id: session.user.id,
+      const listing = await createListingViaApi({
         type: 'firearms',
         category: data.category,
         calibre: data.calibre,
         title: data.title,
         description: data.description,
         price: data.price,
-        images: formatImageUrls(imageUrls),
-        thumbnail: resolveThumbnail(imageUrls),
-        status: 'active',
-        expires_at: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-      }
-
-      console.log('Creating listing with data:', listingData)
-
-      // Create the listing
-      const { data: listing, error: listingError } = await supabase
-        .from('listings')
-        .insert(listingData)
-        .select('id, title')
-        .single()
-
-      if (listingError) {
-        console.error('Error creating listing:', listingError)
-        throw listingError
-      }
-
-      // Deduct one credit
-      const { error: creditError } = await supabase
-        .from('credits')
-        .update({
-          amount: data.credits - 1,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', session.user.id)
-
-      if (creditError) {
-        console.error('Error updating credits:', creditError)
-        throw creditError
-      }
+        images: imageUrls,
+        currentCredits: data.credits,
+      })
 
       data.setCredits(data.credits - 1)
 
-      const listingPath = `/marketplace/listing/${slugify(listing.title)}`
+      const listingPath = listingPublicPath(listing)
       const notifyOk = await notifyListingCreated(listing.id)
       redirectAfterCreate(listingPath, notifyOk)
     } catch (error) {
@@ -167,57 +106,21 @@ export function createListingHandlers(deps: CreateListingDependencies) {
     try {
       setIsSubmitting(true)
 
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (sessionError) {
-        console.error('Session error:', sessionError)
-        throw new Error('Authentication error: ' + sessionError.message)
-      }
-
-      if (!session?.user.id) {
-        throw new Error('Not authenticated')
-      }
-
       const imageUrls = data.images.map(img =>
         typeof img === 'string' ? img : img.toString()
       )
 
-      console.log('Attempting to create non-firearms listing')
-
-      const listingData = {
-        seller_id: session.user.id,
+      const listing = await createListingViaApi({
         type: 'non_firearms',
         category: data.category,
         subcategory: data.subcategory,
         title: data.title,
         description: data.description,
         price: data.price,
-        images: formatImageUrls(imageUrls),
-        thumbnail: resolveThumbnail(imageUrls),
-        status: 'active',
-        expires_at: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
-        ).toISOString(),
-      }
+        images: imageUrls,
+      })
 
-      console.log('Creating listing with data:', listingData)
-
-      // Create the listing
-      const { data: listing, error: listingError } = await supabase
-        .from('listings')
-        .insert(listingData)
-        .select('id, title')
-        .single()
-
-      if (listingError) {
-        console.error('Error creating listing:', listingError)
-        throw listingError
-      }
-
-      const listingPath = `/marketplace/listing/${slugify(listing.title)}`
+      const listingPath = listingPublicPath(listing)
       const notifyOk = await notifyListingCreated(listing.id)
       redirectAfterCreate(listingPath, notifyOk)
     } catch (error) {

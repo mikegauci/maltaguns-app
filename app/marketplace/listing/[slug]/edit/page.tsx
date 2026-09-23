@@ -35,6 +35,7 @@ import {
   withoutDefaultListingImage,
 } from '@/lib/listing-images'
 import { buildListingContentUpdatePayload } from '@/lib/listing-update-payload'
+import { resolveUniqueListingSlug } from '@/lib/listing-slug'
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
 import { ListingFormLayout } from '@/components/marketplace/ListingFormLayout'
 import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
@@ -139,6 +140,7 @@ export default function EditListing(props: {
   const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [listingId, setListingId] = useState<string | null>(null)
+  const [originalTitle, setOriginalTitle] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<
     'firearms' | 'non_firearms' | null
   >(null)
@@ -267,6 +269,7 @@ export default function EditListing(props: {
 
         if (mounted) {
           setListingId(listing.id)
+          setOriginalTitle(listing.title)
           setSelectedType(listing.type)
           setSelectedCategory(listing.category)
           setIsAuthorized(true)
@@ -482,9 +485,18 @@ export default function EditListing(props: {
         throw new Error(contentResult.error)
       }
 
+      const updatePayload = { ...contentResult.payload }
+      if (originalTitle && data.title !== originalTitle) {
+        updatePayload.slug = await resolveUniqueListingSlug(
+          supabase,
+          data.title,
+          listingId
+        )
+      }
+
       const { error: updateError } = await supabase
         .from('listings')
-        .update(contentResult.payload)
+        .update(updatePayload)
         .eq('id', listingId)
 
       if (updateError) {

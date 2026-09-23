@@ -34,10 +34,6 @@ export default function SupabaseProvider({
 
         if (error) {
           console.error('Error getting initial session:', error)
-          if (mounted) {
-            setSession(null)
-          }
-          return
         }
 
         if (mounted) {

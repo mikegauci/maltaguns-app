@@ -20,9 +20,10 @@ import {
   EstablishmentType,
 } from '@/app/establishments/types'
 import { getEstablishmentConfig } from '@/app/establishments/config'
+import { listingPublicPath } from '@/lib/listing-slug'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { formatPrice, slugify } from '@/lib/format'
+import { formatPrice } from '@/lib/format'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 
 interface EstablishmentClientProps {
@@ -71,7 +72,7 @@ export default function EstablishmentClient({
             id,
             title,
             slug,
-            content,
+            meta_description,
             featured_image,
             created_at,
             category,
@@ -219,10 +220,7 @@ export default function EstablishmentClient({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {establishment.listings.map(listing => (
-              <Link
-                key={listing.id}
-                href={`/marketplace/listing/${slugify(listing.title)}`}
-              >
+              <Link key={listing.id} href={listingPublicPath(listing)}>
                 <AppCard>
                   <div className="aspect-video relative overflow-hidden">
                     <StorageImage

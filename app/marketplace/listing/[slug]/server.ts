@@ -1,6 +1,8 @@
+import { cache } from 'react'
 import { supabase } from '@/lib/supabase/public'
 import type { ListingDetails } from './types'
 import { slugify } from '@/lib/format'
+import { LISTING_DETAIL_SELECT } from '@/lib/query-selects'
 
 function parseImageUrls(images: string): string[] {
   if (images.startsWith('{') && images.endsWith('}')) {
@@ -12,68 +14,68 @@ function parseImageUrls(images: string): string[] {
   return images.split(',').map(url => url.trim())
 }
 
-const LISTING_SELECT = `
-  *,
-  seller:profiles(username, email, phone, contact_preference)
-`
+export const fetchListingBySlug = cache(
+  async (slug: string): Promise<ListingDetails | null> => {
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        slug
+      )
 
-/**
- * Fetch a marketplace listing by its id (uuid) or slugified title.
- * Shared by the public API route and the listing detail page, so the
- * page never has to self-fetch its own API over HTTP.
- */
-export async function fetchListingBySlug(
-  slug: string
-): Promise<ListingDetails | null> {
-  const isUuid =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug)
+    let listingData: any | null = null
 
-  let listingData: any | null = null
-
-  if (isUuid) {
-    const { data, error } = await supabase
-      .from('listings')
-      .select(LISTING_SELECT)
-      .eq('id', slug)
-      .single()
-    if (error || !data) return null
-    listingData = data
-  } else {
-    // Avoid fetching ALL listings. Use a rough title filter and then match slugify in-memory.
-    const rough = slug.replace(/-/g, ' ')
-    const { data, error } = await supabase
-      .from('listings')
-      .select(LISTING_SELECT)
-      .ilike('title', `%${rough}%`)
-      .limit(100)
-
-    if (error || !data) return null
-
-    listingData = data.find((l: any) => slugify(l.title) === slug) ?? null
-    if (!listingData) {
-      // As a fallback, try a wider fetch (still capped) and match.
-      const { data: data2 } = await supabase
+    if (isUuid) {
+      const { data, error } = await supabase
         .from('listings')
-        .select(LISTING_SELECT)
-        .order('created_at', { ascending: false })
-        .limit(300)
-      listingData =
-        (data2 || []).find((l: any) => slugify(l.title) === slug) ?? null
+        .select(LISTING_DETAIL_SELECT)
+        .eq('id', slug)
+        .single()
+      if (error || !data) return null
+      listingData = data
+    } else {
+      const { data: bySlug, error: slugError } = await supabase
+        .from('listings')
+        .select(LISTING_DETAIL_SELECT)
+        .eq('slug', slug)
+        .maybeSingle()
+
+      if (!slugError && bySlug) {
+        listingData = bySlug
+      } else {
+        const rough = slug.replace(/-/g, ' ')
+        const { data, error } = await supabase
+          .from('listings')
+          .select(LISTING_DETAIL_SELECT)
+          .ilike('title', `%${rough}%`)
+          .limit(100)
+
+        if (error || !data) return null
+
+        listingData = data.find((l: any) => slugify(l.title) === slug) ?? null
+        if (!listingData) {
+          const { data: data2 } = await supabase
+            .from('listings')
+            .select(LISTING_DETAIL_SELECT)
+            .order('created_at', { ascending: false })
+            .limit(300)
+          listingData =
+            (data2 || []).find((l: any) => slugify(l.title) === slug) ?? null
+        }
+
+        if (!listingData) return null
+      }
     }
 
-    if (!listingData) return null
-  }
-
-  let processedImages: string[] = []
-  if (typeof listingData.images === 'string') {
-    try {
-      processedImages = JSON.parse(listingData.images)
-    } catch {
-      processedImages = parseImageUrls(listingData.images)
+    let processedImages: string[] = []
+    if (typeof listingData.images === 'string') {
+      try {
+        processedImages = JSON.parse(listingData.images)
+      } catch {
+        processedImages = parseImageUrls(listingData.images)
+      }
+    } else if (Array.isArray(listingData.images)) {
+      processedImages = listingData.images
     }
-  } else if (Array.isArray(listingData.images)) {
-    processedImages = listingData.images
-  }
 
-  return { ...listingData, images: processedImages } as ListingDetails
-}
+    return { ...listingData, images: processedImages } as ListingDetails
+  }
+)

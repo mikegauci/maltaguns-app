@@ -47,7 +47,8 @@ import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
 import { AppAlert } from '@/components/design-system'
 import type { ListingDetails } from './types'
-import { formatPrice, slugify } from '@/lib/format'
+import { formatPrice } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 
 const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
 
@@ -131,7 +132,11 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
   )
 }
 
-function CreatedSuccessBanner({ listingTitle }: { listingTitle: string }) {
+function CreatedSuccessBanner({
+  listing,
+}: {
+  listing: Pick<ListingDetails, 'slug' | 'title' | 'id'>
+}) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [dismissed, setDismissed] = useState(false)
@@ -147,8 +152,8 @@ function CreatedSuccessBanner({ listingTitle }: { listingTitle: string }) {
       setNotifyFailed(failed)
       setShowBanner(true)
     })
-    router.replace(`/marketplace/listing/${slugify(listingTitle)}`)
-  }, [createdParam, router, listingTitle, searchParams])
+    router.replace(listingPublicPath(listing))
+  }, [createdParam, router, listing, searchParams])
 
   if (!showBanner || dismissed) return null
 
@@ -848,7 +853,7 @@ export default function ListingClient({
   return (
     <PageLayout>
       <Suspense fallback={null}>
-        <CreatedSuccessBanner listingTitle={listing.title} />
+        <CreatedSuccessBanner listing={listing} />
       </Suspense>
 
       <div className="mb-6 flex items-center justify-between">
@@ -863,7 +868,7 @@ export default function ListingClient({
             {canEditNow && (
               <EditButton
                 label="Edit"
-                href={`/marketplace/listing/${slugify(listing.title)}/edit`}
+                href={`${listingPublicPath(listing)}/edit`}
                 hideLabelOnMobile={false}
               />
             )}

@@ -21,6 +21,7 @@ interface BlogPost {
   range_id?: string
   servicing_id?: string
   content?: string
+  meta_description?: string | null
   author?: {
     username: string
   } | null
@@ -39,6 +40,9 @@ export default function BlogPostCard({ post }: BlogPostCardProps) {
 
   // Create excerpt from content by stripping HTML tags (if content exists)
   const getExcerpt = () => {
+    if (post.meta_description?.trim()) {
+      return post.meta_description.trim()
+    }
     if (!post.content) return ''
     const contentText = post.content.replace(/<[^>]*>/g, '')
     return contentText.length > 150

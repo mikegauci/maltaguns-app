@@ -263,6 +263,7 @@ export interface Database {
           subcategory: string | null
           calibre: string | null
           title: string
+          slug: string
           description: string
           price: number
           images: string // PostgreSQL array literal string format: {url1,url2,...}
@@ -284,6 +285,7 @@ export interface Database {
           subcategory?: string | null
           calibre?: string | null
           title: string
+          slug: string
           description: string
           price: number
           images?: string
@@ -305,6 +307,7 @@ export interface Database {
           subcategory?: string | null
           calibre?: string | null
           title?: string
+          slug?: string
           description?: string
           price?: number
           images?: string
@@ -564,6 +567,7 @@ export interface Database {
           slug: string
           content: string
           featured_image: string | null
+          meta_description: string | null
           published: boolean
           created_at: string
           updated_at: string
@@ -582,6 +586,7 @@ export interface Database {
           slug: string
           content: string
           featured_image?: string | null
+          meta_description?: string | null
           published?: boolean
           created_at?: string
           updated_at?: string
@@ -600,6 +605,7 @@ export interface Database {
           slug?: string
           content?: string
           featured_image?: string | null
+          meta_description?: string | null
           published?: boolean
           created_at?: string
           updated_at?: string

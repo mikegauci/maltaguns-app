@@ -30,7 +30,8 @@ import {
   Plus,
 } from 'lucide-react'
 import { Listing } from '../../app/profile/types'
-import { formatPrice, slugify } from '../../app/profile/utils'
+import { formatPrice } from '../../app/profile/utils'
+import { listingPublicPath } from '@/lib/listing-slug'
 import { StatusSelect } from './StatusSelect'
 
 function formatTimeLeft(ms: number): string {
@@ -312,7 +313,7 @@ export const MyListings = ({
                       {/* Action buttons */}
                       <div className="flex flex-col sm:flex-row gap-2">
                         <Link
-                          href={`/marketplace/listing/${slugify(listing.title)}`}
+                          href={listingPublicPath(listing)}
                           className="w-full sm:w-auto"
                         >
                           <Button
@@ -337,7 +338,7 @@ export const MyListings = ({
                           </Button>
                         ) : (
                           <Link
-                            href={`/marketplace/listing/${slugify(listing.title)}/edit`}
+                            href={`${listingPublicPath(listing)}/edit`}
                             className="w-full sm:w-auto"
                           >
                             <Button

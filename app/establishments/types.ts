@@ -25,6 +25,7 @@ export interface BaseEstablishment {
 export interface Listing {
   id: string
   title: string
+  slug?: string
   type: 'firearms' | 'non_firearms'
   category: string
   price: number
@@ -36,7 +37,8 @@ export interface BlogPost {
   id: string
   title: string
   slug: string
-  content: string
+  content?: string
+  meta_description?: string | null
   featured_image: string | null
   created_at: string
   category: string

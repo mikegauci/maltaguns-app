@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
-import { slugify } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format, parseISO } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -61,6 +61,7 @@ interface Listing {
   subcategory: string | null
   calibre: string | null
   title: string
+  slug?: string
   description: string
   price: string
   images: string | string[]
@@ -275,12 +276,7 @@ function ListingsPageComponent() {
           <ActionCell
             onEdit={() => handleEdit(listing)}
             onDelete={() => handleDelete(listing)}
-            onView={() =>
-              window.open(
-                `/marketplace/listing/${slugify(listing.title)}`,
-                '_blank'
-              )
-            }
+            onView={() => window.open(listingPublicPath(listing), '_blank')}
             customActions={[
               {
                 label: 'Refresh edit window (48h)',

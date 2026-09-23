@@ -13,11 +13,13 @@ import { StorageImage } from '@/components/ui/storage-image'
 import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { formatPrice, slugify } from '@/lib/format'
+import { formatPrice } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 
 interface Listing {
   id: string
   title: string
+  slug?: string
   description: string
   price: number
   category: string
@@ -126,11 +128,7 @@ function SearchResultsContent() {
   const isLoading = searchQuery.isLoading
 
   const renderListingCard = (listing: Listing) => (
-    <Link
-      key={listing.id}
-      href={`/marketplace/listing/${slugify(listing.title)}`}
-      className="block"
-    >
+    <Link key={listing.id} href={listingPublicPath(listing)} className="block">
       <AppCard>
         <div className="aspect-video relative overflow-hidden">
           <StorageImage

@@ -1,5 +1,7 @@
+import { cache } from 'react'
 import type { Metadata } from 'next'
 import { supabase } from '@/lib/supabase/public'
+import { SITE_SETTINGS_SELECT } from '@/lib/query-selects'
 import {
   SECTION_SEO_DEFAULTS,
   type PageSeoMap,
@@ -41,10 +43,10 @@ const LEGACY_SECTION_KEYS = [
   'establishments',
 ] as const
 
-export async function getSiteSettings(): Promise<SiteSettings | null> {
+export const getSiteSettings = cache(async (): Promise<SiteSettings | null> => {
   const { data, error } = await (supabase as any)
     .from('site_settings')
-    .select('*')
+    .select(SITE_SETTINGS_SELECT)
     .eq('id', 1)
     .maybeSingle()
 
@@ -54,7 +56,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
   }
 
   return data as SiteSettings | null
-}
+})
 
 function stripHtml(html: string): string {
   return html
