@@ -6,7 +6,6 @@ import { format } from 'date-fns'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
-import { createClient } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 import { Button } from '@/components/ui/button'
@@ -77,54 +76,32 @@ export default function ArmoryDealersPage() {
   } | null>(null)
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const supabase = createClient()
 
   const loadDealers = useCallback(async () => {
     setLoading(true)
-    let query = supabase
-      .from('armory_dealer_accounts')
-      .select('*')
-      .order('created_at', { ascending: false })
-
+    const params = new URLSearchParams()
     if (statusFilter !== 'all') {
-      query = query.eq('account_status', statusFilter)
+      params.set('status', statusFilter)
     }
 
-    const { data, error } = await query
+    const res = await fetch(
+      `/api/admin/armory-dealers${params.size ? `?${params.toString()}` : ''}`
+    )
+    const data = await res.json()
 
-    if (error) {
+    if (!res.ok) {
       toast({
         title: 'Error loading dealers',
-        description: error.message,
+        description: data.error ?? 'Failed to load dealers',
         variant: 'destructive',
       })
       setLoading(false)
       return
     }
 
-    const ownerIds = Array.from(new Set((data ?? []).map(d => d.owner_id)))
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, email, first_name, last_name, username')
-      .in('id', ownerIds)
-
-    const profileMap = new Map((profiles ?? []).map(p => [p.id, p]))
-
-    setDealers(
-      (data ?? []).map(d => {
-        const p = profileMap.get(d.owner_id)
-        return {
-          ...d,
-          ownerEmail: p?.email ?? undefined,
-          ownerName:
-            [p?.first_name, p?.last_name].filter(Boolean).join(' ') ||
-            p?.username ||
-            undefined,
-        }
-      })
-    )
+    setDealers(data.dealers ?? [])
     setLoading(false)
-  }, [statusFilter, supabase, toast])
+  }, [statusFilter, toast])
 
   useEffect(() => {
     if (!isAuthorized) return
