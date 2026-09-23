@@ -7,13 +7,6 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
   Form,
   FormControl,
   FormField,
@@ -22,7 +15,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -44,7 +36,13 @@ import {
 } from '@/lib/listing-images'
 import { buildListingContentUpdatePayload } from '@/lib/listing-update-payload'
 import { ListingImageGrid } from '@/components/marketplace/ListingImageGrid'
-import { BackButton } from '@/components/ui/back-button'
+import { ListingFormLayout } from '@/components/marketplace/ListingFormLayout'
+import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
+import {
+  TitleField,
+  DescriptionField,
+  PriceField,
+} from '@/components/marketplace/FormFields'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { Trash2 } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -597,109 +595,37 @@ export default function EditListing(props: {
   }
 
   return (
-    <PageLayout>
-      <div className="mb-6 flex items-center justify-between">
-        <BackButton
-          label="Back"
-          href={`/marketplace/listing/${params.slug}`}
-          hideLabelOnMobile={false}
-        />
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => setDeleteDialogOpen(true)}
-          className="flex items-center gap-2"
-          disabled={isUploading}
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete Listing
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Listing</CardTitle>
-          <CardDescription>Update your listing information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid gap-6 sm:grid-cols-1">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Title
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter listing title"
-                          className="h-10"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid gap-6 sm:grid-cols-1">
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Description
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe your item in detail"
-                          className="min-h-32 resize-y"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid gap-6 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Price (€)
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="0.00"
-                          className="h-10"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+    <>
+      <ListingFormLayout
+        title="Edit Listing"
+        description="Update your listing information"
+        backHref={`/marketplace/listing/${params.slug}`}
+        actions={
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteDialogOpen(true)}
+            className="flex items-center gap-2"
+            disabled={isUploading}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Delete Listing</span>
+          </Button>
+        }
+      >
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <ListingFormSection title="Details" first>
+              <TitleField control={form.control} name="title" />
+              <DescriptionField control={form.control} name="description" />
+              <div className="grid gap-4 md:grid-cols-2">
+                <PriceField control={form.control} name="price" />
                 <FormField
                   control={form.control}
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Type
-                      </FormLabel>
+                      <FormLabel>Type</FormLabel>
                       <Select
                         disabled={isUploading}
                         onValueChange={(value: 'firearms' | 'non_firearms') => {
@@ -711,7 +637,7 @@ export default function EditListing(props: {
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className="h-10">
+                          <SelectTrigger>
                             <SelectValue placeholder="Select type" />
                           </SelectTrigger>
                         </FormControl>
@@ -727,16 +653,16 @@ export default function EditListing(props: {
                   )}
                 />
               </div>
+            </ListingFormSection>
 
-              <div className="grid gap-6 sm:grid-cols-2">
+            <ListingFormSection title="Classification">
+              <div className="grid gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Category
-                      </FormLabel>
+                      <FormLabel>Category</FormLabel>
                       <Select
                         disabled={!selectedType || isUploading}
                         onValueChange={value => {
@@ -747,7 +673,7 @@ export default function EditListing(props: {
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className="h-10">
+                          <SelectTrigger>
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                         </FormControl>
@@ -786,16 +712,14 @@ export default function EditListing(props: {
                       name="subcategory"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-base font-medium">
-                            Subcategory
-                          </FormLabel>
+                          <FormLabel>Subcategory</FormLabel>
                           <Select
                             disabled={isUploading}
                             onValueChange={field.onChange}
                             defaultValue={field.value}
                           >
                             <FormControl>
-                              <SelectTrigger className="h-10">
+                              <SelectTrigger>
                                 <SelectValue placeholder="Select subcategory" />
                               </SelectTrigger>
                             </FormControl>
@@ -823,13 +747,10 @@ export default function EditListing(props: {
                     name="calibre"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-base font-medium">
-                          Calibre
-                        </FormLabel>
+                        <FormLabel>Calibre</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="e.g. 9mm, .22LR, 12 gauge"
-                            className="h-10"
                             {...field}
                             value={field.value || ''}
                           />
@@ -840,53 +761,45 @@ export default function EditListing(props: {
                   />
                 )}
               </div>
+            </ListingFormSection>
 
-              <div className="space-y-4 pt-4 border-t">
-                <div>
-                  <FormLabel className="text-base font-medium">
-                    Images
-                  </FormLabel>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Upload up to {MAX_FILES} images. Tap &quot;Set as main&quot;
-                    to choose the display image shown on listings.
-                  </p>
-
-                  <ListingImageGrid
-                    images={previewUrls}
-                    uploading={isUploading}
-                    maxFiles={MAX_FILES}
-                    accept={ACCEPTED_IMAGE_TYPES.join(',')}
-                    onUpload={handleImageUpload}
-                    onRemove={handleRemoveImage}
-                    onSetPrimary={handleSetPrimaryImage}
+            <ListingFormSection title="Photos">
+              <p className="text-sm text-muted-foreground">
+                Upload up to {MAX_FILES} images. Tap &quot;Set as main&quot; to
+                choose the display image shown on listings.
+              </p>
+              <ListingImageGrid
+                images={previewUrls}
+                uploading={isUploading}
+                maxFiles={MAX_FILES}
+                accept={ACCEPTED_IMAGE_TYPES.join(',')}
+                onUpload={handleImageUpload}
+                onRemove={handleRemoveImage}
+                onSetPrimary={handleSetPrimaryImage}
+              />
+              {isUploading && (
+                <div className="h-3 w-full rounded-full bg-muted">
+                  <div
+                    className="h-3 rounded-full bg-primary transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
+              )}
+            </ListingFormSection>
 
-                {isUploading && (
-                  <div className="w-full bg-muted rounded-full h-3 mb-6">
-                    <div
-                      className="bg-primary h-3 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
-                )}
+            <div className="border-t border-border pt-6">
+              <Button
+                type="submit"
+                className="h-11 w-full"
+                disabled={isUploading}
+              >
+                {isUploading ? 'Updating...' : 'Update Listing'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </ListingFormLayout>
 
-                <div className="pt-4">
-                  <Button
-                    type="submit"
-                    className="w-full h-12 text-base font-medium"
-                    disabled={isUploading}
-                  >
-                    {isUploading ? 'Updating...' : 'Update Listing'}
-                  </Button>
-                </div>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-
-      {/* Delete Confirmation Dialog */}
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
@@ -895,6 +808,6 @@ export default function EditListing(props: {
         onConfirm={handleDeleteListing}
         confirmLabel="Delete Listing"
       />
-    </PageLayout>
+    </>
   )
 }

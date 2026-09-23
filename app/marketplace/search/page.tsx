@@ -196,6 +196,7 @@ function SearchResultsContent() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         backHref="/marketplace"
         title={pageTitle}
         description={pageDescription}

@@ -104,6 +104,7 @@ export default function EventsPage() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         title="Calendar of Events"
         description="Discover upcoming shooting tournaments, training sessions, club activities, and international trips. Connect with Malta's firearms community and participate in events suited for all skill levels."
       />

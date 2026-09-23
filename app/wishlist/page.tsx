@@ -194,6 +194,7 @@ export default function WishlistPage() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         backHref="/marketplace"
         title="My Wishlist"
         description="Compare and manage your saved listings"

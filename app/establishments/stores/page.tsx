@@ -46,6 +46,7 @@ export default function StoresPage() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         backHref="/establishments"
         title="Firearms Stores"
         description="Find licensed firearms dealers and stores across Malta"

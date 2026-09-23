@@ -64,6 +64,7 @@ export default function CreateListing() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         title="Create Listing"
         description="Choose the type of listing you want to create"
         className="mb-8"

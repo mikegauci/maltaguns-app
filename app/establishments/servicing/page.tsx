@@ -46,6 +46,7 @@ export default function ServicingPage() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         backHref="/establishments"
         title="Firearms Servicing"
         description="Find firearms repair, servicing and maintenance providers across Malta"

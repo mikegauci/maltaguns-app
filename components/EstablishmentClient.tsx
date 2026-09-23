@@ -12,7 +12,6 @@ import { EditButton } from '@/components/ui/edit-button'
 import {
   AppAlert,
   AppCard,
-  AppPageToolbar,
   AppSectionHeading,
 } from '@/components/design-system'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
@@ -106,8 +105,11 @@ export default function EstablishmentClient({
 
   return (
     <PageLayout>
-      <AppPageToolbar
+      <PageHeader
+        align="center"
         backHref={config.baseUrl}
+        title={establishment.business_name}
+        description={establishment.location}
         actions={
           isOwner && isLive ? (
             <EditButton
@@ -117,11 +119,6 @@ export default function EstablishmentClient({
             />
           ) : undefined
         }
-      />
-
-      <PageHeader
-        title={establishment.business_name}
-        description={establishment.location}
       />
 
       {!isLive && (

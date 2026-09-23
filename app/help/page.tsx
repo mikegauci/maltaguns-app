@@ -11,6 +11,7 @@ export default async function HelpPage() {
   return (
     <PageLayout>
       <PageHeader
+        align="center"
         title="Help Center"
         description="Find guides, tutorials, FAQs, and support resources to help you get the most out of MaltaGuns."
       />
