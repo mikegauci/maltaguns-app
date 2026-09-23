@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { getSiteBaseUrl } from '@/lib/site-base-url'
 import { verifyUnsubscribeToken } from '@/lib/unsubscribe'
-
-function getSiteBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_APP_URL || 'https://maltaguns.com'
-  return raw.replace(/\/$/, '')
-}
 
 // Sets the article email opt-out for the given user. Returns true on success.
 async function applyOptOut(userId: string, token: string): Promise<boolean> {

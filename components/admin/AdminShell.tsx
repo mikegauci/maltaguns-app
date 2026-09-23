@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -21,6 +21,7 @@ import {
   ADMIN_OVERVIEW,
   SITE_NAV_ITEMS,
   isAdminNavActive,
+  type AdminNavBadgeKey,
 } from '@/lib/admin-nav'
 import { ADMIN_SECURITY_ROUTES } from '@/lib/admin-security'
 import { cn } from '@/lib/utils'
@@ -67,6 +68,9 @@ export function AdminShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [sidebarInitialized, setSidebarInitialized] = useState(false)
+  const [navBadges, setNavBadges] = useState<
+    Partial<Record<AdminNavBadgeKey, number>>
+  >({})
 
   const stickyTopClass = impersonating ? 'top-10' : 'top-0'
   const sidebarStickyTopClass = impersonating
@@ -86,6 +90,29 @@ export function AdminShell({
       setSidebarInitialized(true)
     })
   }, [])
+
+  const refreshNavBadges = useCallback(() => {
+    if (!session?.user) return
+    void fetch('/api/admin/nav-badges')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (data) setNavBadges(data)
+      })
+      .catch(() => {})
+  }, [session?.user])
+
+  useEffect(() => {
+    scheduleEffectWork(() => {
+      refreshNavBadges()
+    })
+  }, [pathname, refreshNavBadges])
+
+  useEffect(() => {
+    const handleRefresh = () => refreshNavBadges()
+    window.addEventListener('admin-nav-badges-refresh', handleRefresh)
+    return () =>
+      window.removeEventListener('admin-nav-badges-refresh', handleRefresh)
+  }, [refreshNavBadges])
 
   const toggleSidebar = () => {
     setSidebarCollapsed(current => {
@@ -120,6 +147,7 @@ export function AdminShell({
     <AdminSidebarNav
       pathname={pathname}
       collapsed={collapsed}
+      navBadges={navBadges}
       onNavigate={() => setMobileNavOpen(false)}
       prefetchPublic={prefetchPublic}
     />
@@ -285,11 +313,13 @@ export function AdminShell({
 function AdminSidebarNav({
   pathname,
   collapsed,
+  navBadges,
   onNavigate,
   prefetchPublic,
 }: {
   pathname: string
   collapsed: boolean
+  navBadges: Partial<Record<AdminNavBadgeKey, number>>
   onNavigate: () => void
   prefetchPublic: (queryKey: string, url: string) => void
 }) {
@@ -331,6 +361,9 @@ function AdminSidebarNav({
                     item={item}
                     pathname={pathname}
                     collapsed={collapsed}
+                    badgeCount={
+                      item.badgeKey ? (navBadges[item.badgeKey] ?? 0) : 0
+                    }
                     onNavigate={onNavigate}
                   />
                 ))}
@@ -499,16 +532,19 @@ function AdminNavLink({
   item,
   pathname,
   collapsed,
+  badgeCount = 0,
   onNavigate,
 }: {
   item:
     (typeof ADMIN_NAV_GROUPS)[number]['items'][number] | typeof ADMIN_OVERVIEW
   pathname: string
   collapsed: boolean
+  badgeCount?: number
   onNavigate: () => void
 }) {
   const active = isAdminNavActive(pathname, item.href)
   const Icon = item.icon
+  const showBadge = badgeCount > 0
 
   const link = (
     <Link
@@ -523,8 +559,24 @@ function AdminNavLink({
       )}
       aria-label={collapsed ? item.title : undefined}
     >
-      <Icon className="h-4 w-4 shrink-0" />
-      {!collapsed && item.title}
+      <span className="relative shrink-0">
+        <Icon className="h-4 w-4" />
+        {collapsed && showBadge && (
+          <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-0.5 text-[9px] font-medium leading-none text-destructive-foreground">
+            {badgeCount > 9 ? '9+' : badgeCount}
+          </span>
+        )}
+      </span>
+      {!collapsed && (
+        <>
+          <span className="flex-1">{item.title}</span>
+          {showBadge && (
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-medium text-destructive-foreground">
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </span>
+          )}
+        </>
+      )}
     </Link>
   )
 

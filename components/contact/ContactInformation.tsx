@@ -1,4 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card'
+import { PUBLIC_SUPPORT_EMAIL } from '@/lib/support-email'
 import { Mail, Phone } from 'lucide-react'
 
 export function ContactInformation() {
@@ -13,7 +14,7 @@ export function ContactInformation() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Email</p>
-              <p className="font-medium">support@maltaguns.com</p>
+              <p className="font-medium">{PUBLIC_SUPPORT_EMAIL}</p>
             </div>
           </div>
 

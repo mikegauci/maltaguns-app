@@ -16,13 +16,31 @@ interface UseImageUploadProps {
     description?: string
     variant?: 'default' | 'destructive'
   }) => void
-  setValue: UseFormSetValue<any>
+  setValue?: UseFormSetValue<any>
+  imagesField?: string
+  images?: string[]
+  setImages?: (images: string[]) => void
+  removedMessage?: string
 }
 
-export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
+export function useImageUpload({
+  toast,
+  setValue,
+  imagesField = 'images',
+  images: controlledImages,
+  setImages: setControlledImages,
+  removedMessage = 'The image has been removed from your listing',
+}: UseImageUploadProps) {
   const { supabase } = useSupabase()
-  const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [internalImages, setInternalImages] = useState<string[]>([])
+  const uploadedImages = controlledImages ?? internalImages
   const [uploading, setUploading] = useState(false)
+
+  function updateImages(newImages: string[]) {
+    if (setControlledImages) setControlledImages(newImages)
+    else setInternalImages(newImages)
+    setValue?.(imagesField, newImages)
+  }
 
   async function handleImageUpload(
     event: React.ChangeEvent<HTMLInputElement>
@@ -61,9 +79,7 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
         userId: sessionData.session.user.id,
       })
 
-      const newImages = [...uploadedImages, ...uploadedUrls]
-      setUploadedImages(newImages)
-      setValue('images', newImages)
+      updateImages([...uploadedImages, ...uploadedUrls])
 
       toast({
         title: 'Images uploaded',
@@ -86,20 +102,18 @@ export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
   function handleDeleteImage(indexToDelete: number): void {
     const newImages = [...uploadedImages]
     newImages.splice(indexToDelete, 1)
-    setUploadedImages(newImages)
-    setValue('images', newImages)
+    updateImages(newImages)
 
     toast({
       title: 'Image removed',
-      description: 'The image has been removed from your listing',
+      description: removedMessage,
     })
   }
 
   function handleSetPrimaryImage(index: number): void {
     const next = moveImageToPrimary(uploadedImages, index)
     if (next === uploadedImages) return
-    setUploadedImages(next)
-    setValue('images', next)
+    updateImages(next)
   }
 
   return {

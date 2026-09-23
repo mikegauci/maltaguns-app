@@ -1,9 +1,9 @@
 'use client'
 
 import { UseFormReturn } from 'react-hook-form'
+import { AppCard } from '@/components/design-system'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -31,6 +31,17 @@ interface ProfileInformationProps {
   onSubmit: (data: ProfileForm) => Promise<void>
 }
 
+function SpecField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 text-sm text-foreground">{value}</p>
+    </div>
+  )
+}
+
 export const ProfileInformation = ({
   profile,
   isEditing,
@@ -39,10 +50,12 @@ export const ProfileInformation = ({
   onSubmit,
 }: ProfileInformationProps) => {
   return (
-    <Card>
-      <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 pb-4">
+    <AppCard>
+      <CardHeader className="flex flex-col gap-3 pb-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <CardTitle className="mb-2 sm:mb-0">Profile Information</CardTitle>
+          <CardTitle className="app-display mb-2 text-lg uppercase tracking-tight sm:mb-0">
+            Profile Information
+          </CardTitle>
           <CardDescription>
             Your personal information and account details
           </CardDescription>
@@ -51,9 +64,9 @@ export const ProfileInformation = ({
           variant="outline"
           size="sm"
           onClick={() => setIsEditing(!isEditing)}
-          className="w-full sm:w-auto shrink-0"
+          className="w-full shrink-0 sm:w-auto"
         >
-          <Pencil className="h-4 w-4 mr-2" />
+          <Pencil className="mr-2 h-4 w-4" />
           {isEditing ? 'Cancel' : 'Edit'}
         </Button>
       </CardHeader>
@@ -61,7 +74,7 @@ export const ProfileInformation = ({
         {isEditing ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="first_name"
@@ -163,44 +176,30 @@ export const ProfileInformation = ({
             </form>
           </Form>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Username
-              </p>
-              <p className="text-lg">{profile.username}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Email</p>
-              <p className="text-lg">{profile.email || 'Not provided'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                First Name
-              </p>
-              <p className="text-lg">{profile.first_name || 'Not provided'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Last Name
-              </p>
-              <p className="text-lg">{profile.last_name || 'Not provided'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">
-                Date of birth
-              </p>
-              <p className="text-lg">{profile.birthday || 'Not provided'}</p>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Phone</p>
-              <p className="text-lg">{profile.phone || 'Not provided'}</p>
-            </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <SpecField
+              label="Username"
+              value={profile.username || 'Not provided'}
+            />
+            <SpecField label="Email" value={profile.email || 'Not provided'} />
+            <SpecField
+              label="First Name"
+              value={profile.first_name || 'Not provided'}
+            />
+            <SpecField
+              label="Last Name"
+              value={profile.last_name || 'Not provided'}
+            />
+            <SpecField
+              label="Date of birth"
+              value={profile.birthday || 'Not provided'}
+            />
+            <SpecField label="Phone" value={profile.phone || 'Not provided'} />
             <div className="md:col-span-2">
-              <p className="text-sm font-medium text-muted-foreground">
-                Address
-              </p>
-              <p className="text-lg">{profile.address || 'Not provided'}</p>
+              <SpecField
+                label="Address"
+                value={profile.address || 'Not provided'}
+              />
             </div>
           </div>
         )}
@@ -209,6 +208,6 @@ export const ProfileInformation = ({
           <NotificationPreferences profile={profile} />
         </div>
       </CardContent>
-    </Card>
+    </AppCard>
   )
 }

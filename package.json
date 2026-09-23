@@ -15,7 +15,12 @@
     "format:check": "prettier --check .",
     "type-check": "next typegen && tsc --noEmit",
     "fix": "npm run lint:fix && npm run format",
-    "prepare": "husky"
+    "prepare": "husky",
+    "vercel": "vercel",
+    "vercel:login": "vercel login",
+    "vercel:link": "vercel link",
+    "vercel:env:pull": "vercel env pull .env.vercel",
+    "vercel:env:sync": "node scripts/sync-vercel-env.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -71,6 +76,7 @@
     "encoding": "^0.1.13",
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.2.11",
+    "exceljs": "^4.4.0",
     "heic2any": "^0.0.4",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.446.0",
@@ -92,6 +98,7 @@
     "tesseract.js": "^6.0.1",
     "typescript": "5.2.2",
     "vaul": "^1.1.2",
+    "xlsx": "^0.18.5",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -104,6 +111,7 @@
     "eslint-plugin-unused-imports": "^4.4.1",
     "husky": "^9.1.7",
     "prettier": "^3.6.2",
-    "utf-8-validate": "^6.0.5"
+    "utf-8-validate": "^6.0.5",
+    "vercel": "^59.25.4"
   }
 }
