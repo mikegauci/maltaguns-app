@@ -4,10 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { audit } from '@/lib/armory/audit'
-import {
-  notifyShipmentBuyers,
-  TRIGGER_FOR_STATUS,
-} from '@/lib/armory/notifications'
+import { notifyShipmentBuyers } from '@/lib/armory/notifications'
+import { TRIGGER_FOR_STATUS } from '@/lib/armory/shipment-notification-triggers'
 import {
   getDealerAccount,
   getShipment,

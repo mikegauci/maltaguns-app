@@ -16,7 +16,7 @@ import {
   TRIGGER_LABEL,
   notificationsConfigured,
   type Trigger,
-} from '@/lib/armory/notifications'
+} from '@/lib/armory/shipment-notification-triggers'
 import {
   summariseShipment,
   eur,

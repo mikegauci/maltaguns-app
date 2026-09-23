@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { SHIPMENT_STATUSES, TRASH_RETENTION_DAYS } from './constants'
 import { daysSince } from './format'
 import {
   mapBuyer,
@@ -31,7 +32,6 @@ import {
   type QuoteRowDb,
   type ShipmentRow,
   type ShipmentRowDb,
-  type ShipmentStatus,
   type StaffRow,
   type StaffRowDb,
   type NotificationRow,
@@ -40,18 +40,7 @@ import {
   type AuditLogRowDb,
 } from './types'
 
-export const SHIPMENT_STATUSES: { value: ShipmentStatus; label: string }[] = [
-  { value: 'PRE_ORDER', label: 'Pre-order (collecting items)' },
-  { value: 'PERMIT_APPLIED', label: 'Prior consent submitted' },
-  { value: 'PERMIT_REJECTED', label: 'Prior consent rejected' },
-  { value: 'SHIPPED', label: 'Shipped from origin' },
-  { value: 'ARRIVED', label: 'Arrived in Malta' },
-  { value: 'PROCESSING', label: 'Processing / customs' },
-  { value: 'READY_FOR_COLLECTION', label: 'Ready for collection' },
-  { value: 'CLOSED', label: 'Closed' },
-]
-
-export const TRASH_RETENTION_DAYS = 30
+export { SHIPMENT_STATUSES, TRASH_RETENTION_DAYS }
 
 const ITEM_SELECT = `
   *,
