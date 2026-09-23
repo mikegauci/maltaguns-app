@@ -21,12 +21,14 @@ interface UseProfileDataProps {
   supabase: SupabaseClient
   session: any
   form: UseFormReturn<ProfileForm>
+  authLoading?: boolean
 }
 
 export function useProfileData({
   supabase,
   session,
   form,
+  authLoading = false,
 }: UseProfileDataProps) {
   const { toast } = useToast()
 
@@ -54,6 +56,10 @@ export function useProfileData({
     let isMounted = true
 
     async function loadProfile() {
+      if (authLoading) {
+        return
+      }
+
       if (!session?.user) {
         setLoading(false)
         return
@@ -282,7 +288,7 @@ export function useProfileData({
     }
     // Only reload if user ID changes - not on every render
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id])
+  }, [authLoading, session?.user?.id])
 
   // Refresh credits (can be called manually when needed)
   const refreshCredits = useCallback(async () => {

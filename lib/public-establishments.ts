@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase/public'
+import { ESTABLISHMENT_CARD_SELECT } from '@/lib/query-selects'
 
 const ESTABLISHMENT_CACHE_HEADERS = {
   'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
@@ -13,7 +14,7 @@ export async function getActiveEstablishmentsResponse(
 ) {
   const { data, error } = await supabase
     .from(table)
-    .select('*')
+    .select(ESTABLISHMENT_CARD_SELECT)
     .eq('status', 'active')
     .order('business_name', { ascending: true })
 

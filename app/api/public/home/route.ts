@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { fetchHomePageData } from '@/lib/public-data'
+import { PUBLIC_API_CACHE_CONTROL } from '@/lib/query-selects'
 
 export const revalidate = 30
 
@@ -8,7 +9,7 @@ export async function GET() {
     const data = await fetchHomePageData()
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=150',
+        'Cache-Control': PUBLIC_API_CACHE_CONTROL,
       },
     })
   } catch (error) {

@@ -17,13 +17,17 @@ import {
   Loader2,
   Image as ImageIcon,
   Link as LinkIcon,
+  Table as TableIcon,
+  Trash2,
 } from 'lucide-react'
 import { LinkDialog, ImageAltDialog } from '@/components/dialogs'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
+import { TableKit } from '@tiptap/extension-table'
 import { Database } from '@/lib/database.types'
+import { EDITOR_PROSE_CLASS } from '@/lib/rich-text-prose'
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 const ACCEPTED_IMAGE_TYPES = [
@@ -93,6 +97,9 @@ export default function BlogEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
+      TableKit.configure({
+        table: { resizable: false },
+      }),
       Image.configure({
         HTMLAttributes: {
           class: 'cursor-pointer hover:ring-2 hover:ring-primary/50 rounded-md',
@@ -109,8 +116,7 @@ export default function BlogEditor({
     },
     editorProps: {
       attributes: {
-        class:
-          'prose prose-neutral dark:prose-invert prose-strong:text-foreground prose-b:text-foreground focus:outline-none min-h-[200px] text-foreground',
+        class: EDITOR_PROSE_CLASS,
       },
       handleClick: (_view, _pos, event) => {
         const domEvent = event as MouseEvent
@@ -408,6 +414,80 @@ export default function BlogEditor({
                 <LinkIcon className="h-4 w-4" />
                 Remove
               </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                editor
+                  .chain()
+                  .focus()
+                  .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+                  .run()
+              }
+            >
+              <TableIcon className="h-4 w-4" />
+            </Button>
+            {editor.isActive('table') && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editor.chain().focus().addRowBefore().run()}
+                >
+                  Row +
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editor.chain().focus().addRowAfter().run()}
+                >
+                  + Row
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editor.chain().focus().addColumnBefore().run()}
+                >
+                  Col +
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editor.chain().focus().addColumnAfter().run()}
+                >
+                  + Col
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editor.chain().focus().deleteRow().run()}
+                >
+                  Del row
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editor.chain().focus().deleteColumn().run()}
+                >
+                  Del col
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => editor.chain().focus().deleteTable().run()}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
             )}
           </div>
         )}

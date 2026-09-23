@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { requireAuthenticatedUser } from '@/lib/api-auth'
+import { resolveUniqueListingSlug } from '@/lib/listing-slug'
 
 export async function POST(request: Request) {
   try {
@@ -61,6 +62,8 @@ export async function POST(request: Request) {
         ? `{${imageUrls.map((url: string) => `"${url}"`).join(',')}}`
         : `{}`
 
+    const slug = await resolveUniqueListingSlug(supabase, data.title)
+
     const listingData = {
       seller_id: user.id,
       type: data.type,
@@ -68,6 +71,7 @@ export async function POST(request: Request) {
       subcategory: data.subcategory,
       calibre: data.calibre,
       title: data.title,
+      slug,
       description: data.description,
       price: data.price,
       images: formattedImages,
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
     const { data: listing, error: listingError } = await supabase
       .from('listings')
       .insert(listingData)
-      .select('id, title, editable_until')
+      .select('id, title, slug, editable_until')
       .single()
 
     if (listingError) {

@@ -5,6 +5,7 @@ import { Store, MapPin, Wrench, Users } from 'lucide-react'
 import { StorageImage } from '@/components/ui/storage-image'
 import { HomeSectionHeader } from './HomeSectionHeader'
 import { HomeSectionShell } from './HomeSectionShell'
+import { establishmentPublicPath } from '@/lib/establishment-routes'
 
 interface Establishment {
   id: string
@@ -53,9 +54,11 @@ export const FeaturedEstablishmentsSection = ({
             return (
               <Link
                 key={`${establishment.type}-${establishment.id}`}
-                href={`/establishments/${establishment.type === 'store' ? 'stores' : establishment.type}/${
-                  establishment.slug || establishment.id
-                }`}
+                href={establishmentPublicPath(
+                  establishment.type,
+                  establishment.slug || '',
+                  establishment.id
+                )}
                 className="group block"
               >
                 <div className="home-card h-full rounded-sm p-3 md:p-4 bg-[var(--home-surface)]">

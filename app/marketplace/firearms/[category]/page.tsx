@@ -1,128 +1,41 @@
-'use client'
-
-import { useEffect, useState, use } from 'react'
-import { useRouter } from 'next/navigation'
 import { notFound } from 'next/navigation'
-import CategoryListings from '@/components/marketplace/CategoryListings'
-import { useSupabase } from '@/components/providers/SupabaseProvider'
-import { useToast } from '@/hooks/use-toast'
 import {
   firearmsCategories,
   slugToCategoryKey,
 } from '@/app/marketplace/create/constants'
-import { PageLayout } from '@/components/ui/page-layout'
+import { fetchCategoryListings } from '@/lib/category-listings-data'
+import FirearmsCategoryClient from './firearms-category-client'
 
-interface FirearmsCategoryPageProps {
-  params: Promise<{
-    category: string
-  }>
-}
+export const revalidate = 30
 
-// Valid firearms categories from constants
 const VALID_CATEGORIES = Object.keys(firearmsCategories) as Array<
   keyof typeof firearmsCategories
 >
 
-export default function FirearmsCategoryPage(props: FirearmsCategoryPageProps) {
-  const params = use(props.params)
-  const router = useRouter()
-  const { toast } = useToast()
-  const { supabase } = useSupabase()
-  const [isLoading, setIsLoading] = useState(true)
-  const [canAccess, setCanAccess] = useState(false)
-
-  // Convert URL slug to category key (e.g., "schedule-1" -> "schedule_1")
+export default async function FirearmsCategoryPage(props: {
+  params: Promise<{ category: string }>
+}) {
+  const params = await props.params
   const categorySlug = params.category
   const categoryKey = slugToCategoryKey(categorySlug)
 
-  // Validate category exists - trigger 404 if not valid
-  if (!VALID_CATEGORIES.includes(categoryKey as any)) {
+  if (
+    !VALID_CATEGORIES.includes(categoryKey as keyof typeof firearmsCategories)
+  ) {
     notFound()
   }
 
-  const isAmmunitionPage = categoryKey === 'ammunition'
-
-  useEffect(() => {
-    async function checkAccess() {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-
-        // If ammunition page, check retailer status
-        if (isAmmunitionPage) {
-          if (!session?.user) {
-            router.push('/login')
-            return
-          }
-
-          // Check if user is a retailer (has a store)
-          const { data: storeData, error: storeError } = await supabase
-            .from('stores')
-            .select('id')
-            .eq('owner_id', session.user.id)
-            .limit(1)
-
-          if (storeError) {
-            console.error('Error checking store status:', storeError)
-          }
-
-          if (storeData && storeData.length > 0) {
-            setCanAccess(true)
-          } else {
-            // Not a retailer, show toast and redirect
-            toast({
-              variant: 'destructive',
-              title: 'Access Denied',
-              description:
-                'Ammunition listings are only available to registered retailers.',
-            })
-            router.push('/marketplace/firearms')
-            return
-          }
-        } else {
-          // For all other firearms categories, allow access
-          setCanAccess(true)
-        }
-
-        setIsLoading(false)
-      } catch (error) {
-        console.error('Error checking access:', error)
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to load page. Please try again.',
-        })
-        router.push('/marketplace/firearms')
-      }
-    }
-
-    checkAccess()
-  }, [categoryKey, isAmmunitionPage, router, toast, supabase])
-
-  if (isLoading) {
-    return (
-      <PageLayout>
-        <p className="text-muted-foreground">Loading...</p>
-      </PageLayout>
-    )
-  }
-
-  if (!canAccess) {
-    return null
-  }
-
-  // Get the category label from constants
-  const categoryLabel =
-    firearmsCategories[categoryKey as keyof typeof firearmsCategories] ||
-    categoryKey.charAt(0).toUpperCase() + categoryKey.slice(1)
+  const { featuredListings, regularListings } = await fetchCategoryListings({
+    type: 'firearms',
+    category: categoryKey,
+  })
 
   return (
-    <CategoryListings
-      type="firearms"
-      category={categoryKey}
-      title={categoryLabel}
-      description={`Browse ${categoryLabel.toLowerCase()} listings from licensed sellers`}
+    <FirearmsCategoryClient
+      categoryKey={categoryKey as keyof typeof firearmsCategories}
+      categorySlug={categorySlug}
+      initialFeaturedListings={featuredListings as any}
+      initialRegularListings={regularListings as any}
     />
   )
 }

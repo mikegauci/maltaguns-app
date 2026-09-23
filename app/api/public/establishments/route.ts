@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase/public'
+import { ESTABLISHMENT_CARD_SELECT, PUBLIC_API_CACHE_CONTROL } from '@/lib/query-selects'
 
 export const revalidate = 30
 
 export async function GET() {
   const [storesRes, clubsRes, servicingRes, rangesRes] = await Promise.all([
-    supabase.from('stores').select('*').eq('status', 'active'),
-    supabase.from('clubs').select('*').eq('status', 'active'),
-    supabase.from('servicing').select('*').eq('status', 'active'),
-    supabase.from('ranges').select('*').eq('status', 'active'),
+    supabase.from('stores').select(ESTABLISHMENT_CARD_SELECT).eq('status', 'active'),
+    supabase.from('clubs').select(ESTABLISHMENT_CARD_SELECT).eq('status', 'active'),
+    supabase.from('servicing').select(ESTABLISHMENT_CARD_SELECT).eq('status', 'active'),
+    supabase.from('ranges').select(ESTABLISHMENT_CARD_SELECT).eq('status', 'active'),
   ])
 
   const anyError =
@@ -28,7 +29,7 @@ export async function GET() {
     { establishments: all },
     {
       headers: {
-        'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120',
+        'Cache-Control': PUBLIC_API_CACHE_CONTROL,
       },
     }
   )

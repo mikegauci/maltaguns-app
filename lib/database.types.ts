@@ -227,6 +227,33 @@ export interface Database {
           updated_at?: string
         }
       }
+      legal_pages: {
+        Row: {
+          slug: string
+          title: string
+          content: string
+          effective_date: string | null
+          last_updated: string | null
+          updated_at: string
+        }
+        Insert: {
+          slug: string
+          title: string
+          content?: string
+          effective_date?: string | null
+          last_updated?: string | null
+          updated_at?: string
+        }
+        Update: {
+          slug?: string
+          title?: string
+          content?: string
+          effective_date?: string | null
+          last_updated?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       listings: {
         Row: {
           id: string
@@ -236,6 +263,7 @@ export interface Database {
           subcategory: string | null
           calibre: string | null
           title: string
+          slug: string
           description: string
           price: number
           images: string // PostgreSQL array literal string format: {url1,url2,...}
@@ -257,6 +285,7 @@ export interface Database {
           subcategory?: string | null
           calibre?: string | null
           title: string
+          slug: string
           description: string
           price: number
           images?: string
@@ -278,6 +307,7 @@ export interface Database {
           subcategory?: string | null
           calibre?: string | null
           title?: string
+          slug?: string
           description?: string
           price?: number
           images?: string
@@ -537,6 +567,7 @@ export interface Database {
           slug: string
           content: string
           featured_image: string | null
+          meta_description: string | null
           published: boolean
           created_at: string
           updated_at: string
@@ -555,6 +586,7 @@ export interface Database {
           slug: string
           content: string
           featured_image?: string | null
+          meta_description?: string | null
           published?: boolean
           created_at?: string
           updated_at?: string
@@ -573,6 +605,7 @@ export interface Database {
           slug?: string
           content?: string
           featured_image?: string | null
+          meta_description?: string | null
           published?: boolean
           created_at?: string
           updated_at?: string

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { fetchMarketplacePageData } from '@/lib/public-data'
+import { PUBLIC_API_CACHE_CONTROL } from '@/lib/query-selects'
 
 export const revalidate = 30
 
@@ -8,8 +9,7 @@ export async function GET() {
     const data = await fetchMarketplacePageData()
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control':
-          'public, max-age=0, must-revalidate, s-maxage=10, stale-while-revalidate=50',
+        'Cache-Control': PUBLIC_API_CACHE_CONTROL,
       },
     })
   } catch (error) {

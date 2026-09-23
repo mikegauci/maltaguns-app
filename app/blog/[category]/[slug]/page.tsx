@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -7,12 +6,13 @@ import { Badge } from '@/components/ui/badge'
 import ViewTracker from '@/components/blog/ViewTracker'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
-import { EditButton } from '@/components/ui/edit-button'
+import { BlogPostEditActions } from '@/components/blog/BlogPostEditActions'
 import { StorageImage } from '@/components/ui/storage-image'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
 import { sanitizeBlogHtml } from '@/lib/sanitize-html'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { buildArticleSchema, buildBreadcrumbList } from '@/lib/seo-jsonld'
+import { fetchBlogPostBySlug } from '@/app/blog/server'
 
 interface BlogPostType {
   id: string
@@ -44,23 +44,13 @@ interface BlogPostType {
   servicing?: { id: string; business_name: string; slug: string }[]
 }
 
-// Force dynamic rendering (disable static export)
-export const dynamic = 'force-dynamic'
-export const dynamicParams = true
+export const revalidate = 30
 
 export async function generateMetadata(props: {
   params: Promise<{ category: string; slug: string }>
 }): Promise<Metadata> {
   const params = await props.params
-  const supabase = await createClient()
-
-  const { data: post } = await supabase
-    .from('blog_posts')
-    .select('title, content, featured_image, meta_title, meta_description')
-    .eq('slug', params.slug)
-    .eq('category', params.category)
-    .eq('published', true)
-    .single()
+  const post = await fetchBlogPostBySlug(params.category, params.slug)
 
   if (!post) {
     return buildMetadata({
@@ -86,40 +76,9 @@ export default async function BlogPost(props: {
   params: Promise<{ category: string; slug: string }>
 }) {
   const params = await props.params
-  const supabase = await createClient()
+  const post = await fetchBlogPostBySlug(params.category, params.slug)
 
-  const { data: post, error } = await supabase
-    .from('blog_posts')
-    .select(
-      `
-      id,
-      title,
-      content,
-      slug,
-      featured_image,
-      published,
-      created_at,
-      author_id,
-      store_id,
-      club_id,
-      range_id,
-      servicing_id,
-      meta_title,
-      meta_description,
-      author:profiles(username),
-      retailer:stores(id, business_name, slug, logo_url),
-      store:stores(id, business_name, slug),
-      club:clubs(id, business_name, slug),
-      range:ranges(id, business_name, slug),
-      servicing:servicing(id, business_name, slug)
-    `
-    )
-    .eq('slug', params.slug)
-    .eq('category', params.category)
-    .eq('published', true)
-    .single()
-
-  if (error || !post) {
+  if (!post) {
     notFound()
   }
 
@@ -274,28 +233,11 @@ export default async function BlogPost(props: {
     author: {
       username: authorUsername,
     },
-    retailer: post.retailer?.[0] || undefined,
     store: post.store || [],
     club: post.club || [],
     range: post.range || [],
     servicing: post.servicing || [],
   }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  let isAdmin = false
-  if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-    isAdmin = !!profile?.is_admin
-  }
-
-  const canEdit = isAdmin || user?.id === post.author_id
 
   // Get the establishment icon based on type
   const getEstablishmentIcon = () => {
@@ -346,13 +288,11 @@ export default async function BlogPost(props: {
       <ViewTracker postId={post.id} />
       <div className="flex justify-between items-center mb-8">
         <BackButton label="Back" href="/blog" hideLabelOnMobile={false} />
-        {canEdit && (
-          <EditButton
-            label="Edit Post"
-            href={`/blog/${params.category}/${params.slug}/edit`}
-            hideLabelOnMobile={false}
-          />
-        )}
+        <BlogPostEditActions
+          category={params.category}
+          slug={params.slug}
+          authorId={post.author_id}
+        />
       </div>
 
       <article className="prose prose-sm mx-auto max-w-none text-foreground">

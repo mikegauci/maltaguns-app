@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase/public'
 import { getAppUrl } from '@/lib/seo'
-import { slugify } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const appUrl = getAppUrl()
@@ -46,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ] = await Promise.all([
     supabase
       .from('listings')
-      .select('title, updated_at, created_at, expires_at')
+      .select('slug, title, updated_at, created_at, expires_at')
       .eq('status', 'active'),
     supabase.from('events').select('slug, id, updated_at, created_at'),
     supabase
@@ -72,7 +72,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       return listing.expires_at > nowIso
     })
     .map((listing: any) => ({
-      url: `${appUrl}/marketplace/listing/${slugify(listing.title)}`,
+      url: `${appUrl}${listingPublicPath(listing)}`,
       lastModified: new Date(listing.updated_at || listing.created_at || now),
       changeFrequency: 'daily' as const,
       priority: 0.8,
