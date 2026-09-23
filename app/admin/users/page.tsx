@@ -1134,6 +1134,7 @@ function UsersPageComponent() {
         data={displayedUsers}
         searchKeys={[...ADMIN_USER_FULL_SEARCH_KEYS]}
         searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
+        initialColumnVisibility={{ notes: false, is_admin: false }}
         onCreateNew={handleCreate}
         createButtonText="Create User"
       />

@@ -38,6 +38,7 @@ interface DataTableProps<TData, TValue> {
   searchKey?: string
   searchKeys?: string[]
   searchPlaceholder?: string
+  initialColumnVisibility?: VisibilityState
   onCreateNew?: () => void
   createButtonText?: string
 }
@@ -48,6 +49,7 @@ export function DataTable<TData, TValue>({
   searchKey,
   searchKeys,
   searchPlaceholder = 'Search...',
+  initialColumnVisibility,
   onCreateNew,
   createButtonText = 'Create New',
 }: DataTableProps<TData, TValue>) {
@@ -55,7 +57,9 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    initialColumnVisibility ?? {}
+  )
   const [rowSelection, setRowSelection] = useState({})
 
   const useMultiFieldSearch = Boolean(searchKeys?.length)
