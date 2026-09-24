@@ -1,31 +1,29 @@
-import Link from 'next/link'
+'use client'
+
+import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { canUseBrowserBack, getSafeInternalPath } from '@/lib/navigation'
 
 interface BackButtonProps {
   label?: string
   href: string
   className?: string
   hideLabelOnMobile?: boolean
+  preferHref?: boolean
+  size?: 'default' | 'sm' | 'lg' | 'icon'
 }
 
-/**
- * Reusable back button component with consistent styling across the app
- * Uses Next.js Link for optimal SEO, accessibility, and UX.
- *
- * @example
- * <BackButton label="Back to blog" href="/blog" />
- * <BackButton label="Back to post" href="/blog/news/my-post" hideLabelOnMobile={false} />
- */
 export function BackButton({
   label = 'Back',
   href,
   className,
-  hideLabelOnMobile = true,
+  hideLabelOnMobile = false,
+  preferHref = false,
+  size,
 }: BackButtonProps) {
-  const wrapperClasses = hideLabelOnMobile
-    ? 'absolute md:top-0.5 top-0 right-auto left-auto'
-    : ''
+  const router = useRouter()
+  const fallbackHref = getSafeInternalPath(href, '/')
 
   const labelClasses = hideLabelOnMobile ? 'hidden md:inline' : ''
 
@@ -35,17 +33,25 @@ export function BackButton({
 
   const iconClasses = hideLabelOnMobile ? 'h-4 w-4 md:mr-2' : 'h-4 w-4 mr-2'
 
+  const handleClick = () => {
+    if (!preferHref && canUseBrowserBack()) {
+      router.back()
+    } else {
+      router.push(fallbackHref)
+    }
+  }
+
   return (
-    <div className={wrapperClasses}>
-      <Link href={href}>
-        <Button
-          variant="outline"
-          className={`${buttonClasses} ${className || ''}`}
-        >
-          <ArrowLeft className={iconClasses} />
-          <span className={labelClasses}>{label}</span>
-        </Button>
-      </Link>
-    </div>
+    <Button
+      type="button"
+      variant="outline"
+      size={size}
+      aria-label={label}
+      className={`rounded-sm ${buttonClasses} ${className || ''}`}
+      onClick={handleClick}
+    >
+      <ArrowLeft className={iconClasses} />
+      <span className={labelClasses}>{label}</span>
+    </Button>
   )
 }

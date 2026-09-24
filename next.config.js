@@ -9,7 +9,29 @@ const nextConfig = {
         destination: '/cookie-policy',
         permanent: true,
       },
+      {
+        source: '/establishments/store/:slug',
+        destination: '/establishments/stores/:slug',
+        permanent: true,
+      },
+      {
+        source: '/establishments/club/:slug',
+        destination: '/establishments/clubs/:slug',
+        permanent: true,
+      },
+      {
+        source: '/establishments/range/:slug',
+        destination: '/establishments/ranges/:slug',
+        permanent: true,
+      },
     ]
+  },
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      'date-fns',
+      '@tanstack/react-table',
+    ],
   },
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -28,8 +50,19 @@ const nextConfig = {
         'utf-8-validate': 'utf-8-validate',
       })
     }
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      {
+        module: /node_modules\/@supabase\/realtime-js/,
+        message: /Critical dependency/,
+      },
+    ]
     return config
   },
 }
 
-module.exports = withBotId(nextConfig)
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === '1',
+})
+
+module.exports = withBundleAnalyzer(withBotId(nextConfig))

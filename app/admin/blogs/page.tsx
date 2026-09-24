@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   Card,
@@ -53,11 +53,15 @@ import {
   ArrowUpDown,
   BarChart3,
   FileText,
+  UserPen,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import { getBlogPostPublicPath } from '@/lib/blog-paths'
+import { loadPublishedHelpGuidePostIds } from '@/lib/help-guide-utils'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { FormDialog } from '@/app/admin/components/FormDialog'
+import { AdminUserPicker } from '@/app/admin/components/AdminUserPicker'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
@@ -93,10 +97,11 @@ interface BlogPost {
 export default function AdminBlogsPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const { isAuthorized } = useRequireAdmin({ preset: 'admin-toast' })
 
   const [posts, setPosts] = useState<BlogPost[]>([])
+  const [helpGuideIds, setHelpGuideIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -106,7 +111,10 @@ export default function AdminBlogsPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [isSeoDialogOpen, setIsSeoDialogOpen] = useState(false)
   const [isSeoSubmitting, setIsSeoSubmitting] = useState(false)
+  const [isAuthorDialogOpen, setIsAuthorDialogOpen] = useState(false)
+  const [isAuthorSubmitting, setIsAuthorSubmitting] = useState(false)
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null)
+  const [authorId, setAuthorId] = useState('')
   const [seoFormData, setSeoFormData] = useState({
     meta_title: '',
     meta_description: '',
@@ -120,7 +128,10 @@ export default function AdminBlogsPage() {
       try {
         setLoading(true)
 
-        // First try basic query that should always work
+        const publishedHelpGuideIds =
+          await loadPublishedHelpGuidePostIds(supabase)
+        setHelpGuideIds(publishedHelpGuideIds)
+
         const { data: basicPosts, error: basicError } = await supabase
           .from('blog_posts')
           .select(
@@ -396,6 +407,65 @@ export default function AdminBlogsPage() {
       meta_description: post.meta_description || '',
     })
     setIsSeoDialogOpen(true)
+  }
+
+  function handleEditAuthor(post: BlogPost) {
+    setSelectedPost(post)
+    setAuthorId(post.author_id)
+    setIsAuthorDialogOpen(true)
+  }
+
+  async function handleAuthorSubmit() {
+    if (!selectedPost || !authorId) return
+
+    try {
+      setIsAuthorSubmitting(true)
+      const response = await fetch('/api/admin/blogs/update-author', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          postId: selectedPost.id,
+          authorId,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update author')
+      }
+
+      setPosts(
+        posts.map(post =>
+          post.id === selectedPost.id
+            ? {
+                ...post,
+                author_id: authorId,
+                author: data.author,
+                updated_at: new Date().toISOString(),
+              }
+            : post
+        )
+      )
+
+      toast({
+        title: 'Success',
+        description: 'Author updated successfully.',
+      })
+      setIsAuthorDialogOpen(false)
+    } catch (error) {
+      console.error('Error updating author:', error)
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'Failed to update author.',
+      })
+    } finally {
+      setIsAuthorSubmitting(false)
+    }
   }
 
   async function handleSeoSubmit() {
@@ -688,7 +758,14 @@ export default function AdminBlogsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link href={`/blog/${post.category}/${post.slug}`}>
+                            <Link
+                              href={getBlogPostPublicPath(
+                                post.category,
+                                post.slug,
+                                helpGuideIds.has(post.id),
+                                post.published
+                              )}
+                            >
                               <Button variant="ghost" size="sm">
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -700,6 +777,14 @@ export default function AdminBlogsPage() {
                                 <Edit className="h-4 w-4" />
                               </Button>
                             </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              title="Edit Author"
+                              onClick={() => handleEditAuthor(post)}
+                            >
+                              <UserPen className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
@@ -756,6 +841,33 @@ export default function AdminBlogsPage() {
           )}
         </CardContent>
       </Card>
+
+      <FormDialog
+        title="Edit Author"
+        description={`Change the author for "${selectedPost?.title || 'this post'}"`}
+        isOpen={isAuthorDialogOpen}
+        onClose={() => setIsAuthorDialogOpen(false)}
+        onSubmit={handleAuthorSubmit}
+        isSubmitting={isAuthorSubmitting}
+        submitLabel="Save Author"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Current author:{' '}
+            <span className="font-medium text-foreground">
+              {selectedPost?.author?.username || 'Unknown'}
+            </span>
+          </p>
+          <div className="space-y-2">
+            <Label>New author</Label>
+            <AdminUserPicker
+              value={authorId}
+              onChange={setAuthorId}
+              placeholder="Search for a user..."
+            />
+          </div>
+        </div>
+      </FormDialog>
 
       <FormDialog
         title="Edit Blog SEO"

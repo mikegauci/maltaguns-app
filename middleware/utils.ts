@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { PROTECTED_ROUTE_PREFIXES } from './config'
 
-/**
- * Create a timeout promise that cleans up properly
- */
 export function createTimeoutPromise(ms: number): {
   promise: Promise<never>
   cleanup: () => void
@@ -25,9 +23,6 @@ export function createTimeoutPromise(ms: number): {
   return { promise, cleanup }
 }
 
-/**
- * Execute a promise with timeout and proper cleanup
- */
 export async function withTimeout<T>(
   promise: Promise<T>,
   ms: number
@@ -44,9 +39,6 @@ export async function withTimeout<T>(
   }
 }
 
-/**
- * Check if session is near expiry
- */
 export function isSessionNearExpiry(
   expiresAt: number | undefined,
   thresholdMinutes: number = 5
@@ -61,9 +53,6 @@ export function isSessionNearExpiry(
   return timeUntilExpiry < threshold
 }
 
-/**
- * Fetch user profile with admin and disabled status
- */
 export async function getUserProfile(
   supabase: SupabaseClient,
   userId: string
@@ -86,9 +75,6 @@ export async function getUserProfile(
   return profile
 }
 
-/**
- * Helper function to handle login redirects
- */
 export function redirectToLogin(
   req: NextRequest,
   errorMessage?: string
@@ -107,21 +93,29 @@ export function redirectToLogin(
   return response
 }
 
-/**
- * Add security headers to response
- */
 export function addSecurityHeaders(res: NextResponse): NextResponse {
   res.headers.set('Cache-Control', 'no-store, must-revalidate')
   res.headers.set('Pragma', 'no-cache')
   return res
 }
 
-/**
- * Check if route is protected
- */
-export function isProtectedRoute(
-  pathname: string,
-  routes: readonly string[]
-): boolean {
-  return routes.some(route => pathname.startsWith(route))
+export function isProtectedRoute(pathname: string): boolean {
+  if (PROTECTED_ROUTE_PREFIXES.some(route => pathname.startsWith(route))) {
+    return true
+  }
+
+  if (pathname.endsWith('/edit')) {
+    return true
+  }
+
+  return false
+}
+
+export function isPrefetchRequest(req: NextRequest): boolean {
+  const purpose = req.headers.get('purpose') || req.headers.get('sec-purpose')
+  return (
+    purpose === 'prefetch' ||
+    req.headers.get('x-middleware-prefetch') === '1' ||
+    req.headers.get('next-router-prefetch') === '1'
+  )
 }

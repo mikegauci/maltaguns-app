@@ -1,94 +1,60 @@
-import { Card, CardContent } from '@/components/ui/card'
-import { BookOpen, Globe } from 'lucide-react'
 import Link from 'next/link'
+import { BookOpen, Newspaper } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { HomeSectionHeader } from './HomeSectionHeader'
+import { HomeSectionShell } from './HomeSectionShell'
 
 export const ResourcesSection = () => {
   return (
-    <section className="py-8 md:py-12">
-      <div className="container mx-auto max-w-5xl px-6">
-        <div className="text-center mb-6 md:mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">Need Help?</h2>
-          <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-            Need help? Check out our comprehensive <strong>guides</strong> and
-            stay updated with the latest <strong>news</strong> and regulations
-            for firearm owners in Malta.
-          </p>
-        </div>
+    <HomeSectionShell tone="default">
+      <HomeSectionHeader
+        title="Guides and news"
+        description="Licensing requirements, safety resources, and regulatory updates for firearm owners in Malta."
+      />
 
-        <div className="grid grid-cols-2 gap-3 md:gap-8">
-          <Link href="/blog/guides">
-            <Card className="hover:shadow-lg transition-shadow h-full">
-              <CardContent className="p-2 md:p-6 text-center md:text-left flex flex-col items-center md:items-start">
-                <div className="rounded-lg bg-[#cb0e0e] p-2 md:p-3 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mb-3 md:mb-4">
-                  <BookOpen className="h-5 w-5 md:h-6 md:w-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-sm md:text-lg mb-3">
-                  Guides & Resources
-                </h3>
-                <p className="text-xs md:text-base text-muted-foreground mb-4">
-                  Access comprehensive guides on licensing, safety regulations,
-                  and maintenance tips for firearm owners in Malta.
-                </p>
-                <div className="flex items-center justify-center md:justify-start text-sm text-primary">
-                  <span className="mr-2">Browse guides</span>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="transition-transform transform group-hover:translate-x-1"
-                  >
-                    <path
-                      d="M6.66667 12.6667L12 7.33333L6.66667 2"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
+        <Link href="/help/guides" className="group block h-full">
+          <div className="home-card h-full rounded-sm p-5 md:p-6 flex flex-col bg-[var(--home-surface)]">
+            <div className="home-icon-badge mb-4 border border-[var(--home-border)] bg-[var(--home-slate)] text-[var(--home-amber)]">
+              <BookOpen aria-hidden="true" />
+            </div>
+            <h3 className="home-display font-bold uppercase tracking-tight text-base md:text-lg text-[var(--home-ink)] mb-2">
+              Guides and resources
+            </h3>
+            <p className="text-sm text-[var(--home-muted)] flex-1 mb-4">
+              Licensing steps, safety regulations, and maintenance advice for
+              firearm owners in Malta.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto rounded-sm border-white bg-white text-black hover:bg-white/90 hover:text-black uppercase tracking-wide text-xs font-semibold"
+            >
+              Browse guides
+            </Button>
+          </div>
+        </Link>
 
-          <Link href="/blog/news">
-            <Card className="hover:shadow-lg transition-shadow h-full">
-              <CardContent className="p-2 md:p-6 text-center md:text-left flex flex-col items-center md:items-start">
-                <div className="rounded-lg bg-[#cb0e0e] p-2 md:p-3 w-10 h-10 md:w-12 md:h-12 flex items-center justify-center mb-3 md:mb-4">
-                  <Globe className="h-5 w-5 md:h-6 md:w-6 text-white" />
-                </div>
-                <h3 className="font-semibold text-sm md:text-lg mb-3">
-                  Latest News
-                </h3>
-                <p className="text-xs md:text-base text-muted-foreground mb-4">
-                  Stay updated with the latest news, regulations, and
-                  announcements affecting the firearms community in Malta.
-                </p>
-                <div className="flex items-center justify-center md:justify-start text-sm text-primary">
-                  <span className="mr-2">Read news</span>
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="transition-transform transform group-hover:translate-x-1"
-                  >
-                    <path
-                      d="M6.66667 12.6667L12 7.33333L6.66667 2"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
+        <Link href="/blog/news" className="group block h-full">
+          <div className="home-card h-full rounded-sm p-5 md:p-6 flex flex-col bg-[var(--home-surface)]">
+            <div className="home-icon-badge mb-4 border border-[var(--home-border)] bg-[var(--home-slate)] text-[var(--home-amber)]">
+              <Newspaper aria-hidden="true" />
+            </div>
+            <h3 className="home-display font-bold uppercase tracking-tight text-base md:text-lg text-[var(--home-ink)] mb-2">
+              Latest news
+            </h3>
+            <p className="text-sm text-[var(--home-muted)] flex-1 mb-4">
+              Announcements and regulatory updates affecting the firearms
+              community in Malta.
+            </p>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto rounded-sm border-white bg-white text-black hover:bg-white/90 hover:text-black uppercase tracking-wide text-xs font-semibold"
+            >
+              Read news
+            </Button>
+          </div>
+        </Link>
       </div>
-    </section>
+    </HomeSectionShell>
   )
 }

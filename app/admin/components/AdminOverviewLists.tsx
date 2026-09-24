@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -24,7 +24,7 @@ export function AdminOverviewLists({
 }: AdminOverviewListsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <Card>
+      <AppCard>
         <CardHeader className="flex flex-row items-start justify-between gap-3">
           <div>
             <CardTitle>Recent signups</CardTitle>
@@ -38,7 +38,7 @@ export function AdminOverviewLists({
           {recentSignups.length === 0 ? (
             <p className="text-sm text-muted-foreground">No recent signups.</p>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y divide-border">
               {recentSignups.map(signup => (
                 <li
                   key={signup.id}
@@ -61,9 +61,9 @@ export function AdminOverviewLists({
             </ul>
           )}
         </CardContent>
-      </Card>
+      </AppCard>
 
-      <Card>
+      <AppCard>
         <CardHeader className="flex flex-row items-start justify-between gap-3">
           <div>
             <CardTitle>Recent payments</CardTitle>
@@ -77,7 +77,7 @@ export function AdminOverviewLists({
           {recentPayments.length === 0 ? (
             <p className="text-sm text-muted-foreground">No recent payments.</p>
           ) : (
-            <ul className="divide-y">
+            <ul className="divide-y divide-border">
               {recentPayments.map(payment => (
                 <li
                   key={payment.id}
@@ -103,7 +103,7 @@ export function AdminOverviewLists({
             </ul>
           )}
         </CardContent>
-      </Card>
+      </AppCard>
     </div>
   )
 }

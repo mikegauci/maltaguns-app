@@ -3,23 +3,27 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Phone, Mail, Globe, BookOpen, Clock, XCircle } from 'lucide-react'
 import Link from 'next/link'
 import { StorageImage } from '@/components/ui/storage-image'
 import { useEffect, useState } from 'react'
 import BlogPostCard from '@/components/blog/BlogPostCard'
-import { BackButton } from '@/components/ui/back-button'
 import { EditButton } from '@/components/ui/edit-button'
+import {
+  AppAlert,
+  AppCard,
+  AppSectionHeading,
+} from '@/components/design-system'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   EstablishmentWithDetails,
   EstablishmentType,
 } from '@/app/establishments/types'
 import { getEstablishmentConfig } from '@/app/establishments/config'
+import { listingPublicPath } from '@/lib/listing-slug'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { formatPrice, slugify } from '@/lib/format'
+import { formatPrice } from '@/lib/format'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
 
 interface EstablishmentClientProps {
@@ -61,28 +65,45 @@ export default function EstablishmentClient({
       try {
         setLoading(true)
 
-        const { data, error } = await supabase
-          .from('blog_posts')
-          .select(
-            `
+        const [{ data: publishedTabs }, { data, error }] = await Promise.all([
+          supabase.from('help_tabs').select('id').eq('published', true),
+          supabase
+            .from('blog_posts')
+            .select(
+              `
             id,
             title,
             slug,
-            content,
+            meta_description,
             featured_image,
             created_at,
             category,
             author:profiles(username)
           `
+            )
+            .eq(config.blogForeignKey, establishment.id)
+            .eq('published', true)
+            .order('created_at', { ascending: false }),
+        ])
+
+        const publishedTabIds = (publishedTabs ?? []).map(tab => tab.id)
+        let helpGuideIds = new Set<string>()
+
+        if (publishedTabIds.length > 0) {
+          const { data: assignments } = await supabase
+            .from('help_tab_guides')
+            .select('blog_post_id')
+            .in('tab_id', publishedTabIds)
+
+          helpGuideIds = new Set(
+            (assignments ?? []).map(row => row.blog_post_id)
           )
-          .eq(config.blogForeignKey, establishment.id)
-          .eq('published', true)
-          .order('created_at', { ascending: false })
+        }
 
         if (error) {
           console.error('Error fetching blog posts from client:', error)
         } else if (data) {
-          setBlogPosts(data)
+          setBlogPosts(data.filter(post => !helpGuideIds.has(post.id)))
         }
       } catch (error) {
         console.error('Error in client-side fetch:', error)
@@ -102,53 +123,52 @@ export default function EstablishmentClient({
 
   return (
     <PageLayout>
-      <BackButton label="Back" href={config.baseUrl} />
-
       <PageHeader
+        align="center"
+        backHref={config.baseUrl}
         title={establishment.business_name}
         description={establishment.location}
+        actions={
+          isOwner && isLive ? (
+            <EditButton
+              label="Edit Profile"
+              href={`${config.baseUrl}/${establishment.slug || establishment.id}/edit`}
+              hideLabelOnMobile={false}
+            />
+          ) : undefined
+        }
       />
 
       {!isLive && (
-        <Alert
-          className={
-            establishment.status === 'pending'
-              ? 'mb-6 border-amber-200 bg-amber-50 text-amber-900'
-              : 'mb-6 border-red-200 bg-red-50 text-red-900'
+        <AppAlert
+          className="mb-6"
+          variant={establishment.status === 'pending' ? 'pending' : 'rejected'}
+          icon={
+            establishment.status === 'pending' ? (
+              <Clock className="h-4 w-4" />
+            ) : (
+              <XCircle className="h-4 w-4" />
+            )
           }
         >
-          {establishment.status === 'pending' ? (
-            <Clock className="h-4 w-4" />
-          ) : (
-            <XCircle className="h-4 w-4" />
-          )}
-          <AlertDescription>
-            {establishment.status === 'pending'
-              ? 'This establishment is pending approval and is not visible to the public yet. You will be notified once it is approved.'
-              : 'This establishment was not approved and is not visible to the public.'}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {isOwner && (
-        <EditButton
-          label="Edit Profile"
-          href={`${config.baseUrl}/${establishment.slug || establishment.id}/edit`}
-        />
+          {establishment.status === 'pending'
+            ? 'This establishment is pending approval and is not visible to the public yet. You will be notified once it is approved.'
+            : 'This establishment was not approved and is not visible to the public.'}
+        </AppAlert>
       )}
 
       {/* Establishment Profile */}
-      <Card className="mb-6">
+      <Card className="mb-6 rounded-sm border-border shadow-none">
         <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
             {establishment.logo_url ? (
               <img
                 src={establishment.logo_url}
                 alt={establishment.business_name}
-                className="w-20 h-20 sm:w-32 sm:h-32 object-contain rounded-lg mx-auto sm:mx-0"
+                className="mx-auto h-20 w-20 rounded-sm object-contain sm:mx-0 sm:h-32 sm:w-32"
               />
             ) : (
-              <div className="w-20 h-20 sm:w-32 sm:h-32 bg-muted rounded-lg flex items-center justify-center mx-auto sm:mx-0">
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-sm bg-muted sm:mx-0 sm:h-32 sm:w-32">
                 <Icon className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
               </div>
             )}
@@ -204,7 +224,9 @@ export default function EstablishmentClient({
 
       {/* Listings Section */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">Available Listings</h2>
+        <AppSectionHeading className="mb-2 text-2xl">
+          Available Listings
+        </AppSectionHeading>
 
         {establishment.listings.length === 0 ? (
           <Card className="p-6 text-center">
@@ -215,11 +237,8 @@ export default function EstablishmentClient({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {establishment.listings.map(listing => (
-              <Link
-                key={listing.id}
-                href={`/marketplace/listing/${slugify(listing.title)}`}
-              >
-                <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Link key={listing.id} href={listingPublicPath(listing)}>
+                <AppCard>
                   <div className="aspect-video relative overflow-hidden">
                     <StorageImage
                       src={listing.thumbnail}
@@ -241,7 +260,7 @@ export default function EstablishmentClient({
                       {formatPrice(listing.price)}
                     </p>
                   </CardContent>
-                </Card>
+                </AppCard>
               </Link>
             ))}
           </div>
@@ -251,7 +270,9 @@ export default function EstablishmentClient({
       {/* Blog Posts Section */}
       <div>
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold mb-2">Latest Posts</h2>
+          <AppSectionHeading className="mb-2 text-2xl">
+            Latest Posts
+          </AppSectionHeading>
 
           {isOwner && isLive && (
             <Link

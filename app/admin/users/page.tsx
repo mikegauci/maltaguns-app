@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { resizeImageForUpload } from '@/lib/image-resize'
 import { CheckCircle2, AlertCircle } from 'lucide-react'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
@@ -43,6 +43,9 @@ import {
   hasAllLicenseTypes,
   hasAnyLicenseType,
 } from '@/lib/license-utils'
+import { establishmentTypeTone } from '@/lib/admin/establishment-ui'
+import { AdminInlineNotice } from '@/components/admin/AdminInlineNotice'
+import { AdminStatusBadge } from '@/components/admin/AdminStatusBadge'
 
 interface Establishment {
   type: 'store' | 'club' | 'servicing' | 'range'
@@ -77,22 +80,6 @@ interface User {
 }
 
 export default UsersPageComponent
-
-// Helper functions for establishment styling
-function getEstablishmentColor(type: string): string {
-  switch (type) {
-    case 'store':
-      return 'bg-blue-100 text-blue-800'
-    case 'club':
-      return 'bg-green-100 text-green-800'
-    case 'servicing':
-      return 'bg-orange-100 text-orange-800'
-    case 'range':
-      return 'bg-purple-100 text-purple-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
-}
 
 function getEstablishmentLabel(type: string): string {
   switch (type) {
@@ -149,7 +136,7 @@ function UsersPageComponent() {
     notes: '' as string | null,
     license_types: createEmptyLicenseTypes(),
   })
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   const columns: ColumnDef<User>[] = [
     {
@@ -187,13 +174,13 @@ function UsersPageComponent() {
             {user.establishments && user.establishments.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1">
                 {user.establishments.map((establishment, idx) => (
-                  <span
+                  <AdminStatusBadge
                     key={idx}
-                    className={`text-xs px-2 py-0.5 rounded-full ${getEstablishmentColor(establishment.type)}`}
+                    tone={establishmentTypeTone(establishment.type)}
                     title={establishment.name}
                   >
                     {getEstablishmentLabel(establishment.type)}
-                  </span>
+                  </AdminStatusBadge>
                 ))}
               </div>
             )}
@@ -309,12 +296,12 @@ function UsersPageComponent() {
         return (
           <div className="flex items-center">
             {isFullyVerified ? (
-              <span className="flex items-center gap-1 text-green-600">
+              <span className="flex items-center gap-1 text-emerald-400">
                 <CheckCircle2 className="h-4 w-4" />
                 Yes
               </span>
             ) : user.is_seller ? (
-              <span className="flex items-center gap-1 text-amber-500">
+              <span className="flex items-center gap-1 text-amber-400">
                 <AlertCircle className="h-4 w-4" />
                 {pendingText}
               </span>
@@ -343,7 +330,7 @@ function UsersPageComponent() {
                 href={licenseUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
+                className="text-primary hover:underline"
               >
                 View License
               </a>
@@ -370,12 +357,12 @@ function UsersPageComponent() {
           <div className="flex flex-col gap-1">
             {user.identity_verified ? (
               <>
-                <span className="flex items-center gap-1 text-green-600">
+                <span className="flex items-center gap-1 text-emerald-400">
                   <CheckCircle2 className="h-4 w-4" />
                   Verified
                 </span>
                 {isAdminIdentityOverride(user) ? (
-                  <span className="text-xs text-amber-600">Admin override</span>
+                  <span className="text-xs text-amber-400">Admin override</span>
                 ) : verifiedName ? (
                   <span className="text-xs text-muted-foreground">
                     {verifiedName}
@@ -384,7 +371,7 @@ function UsersPageComponent() {
               </>
             ) : user.identity_status === 'In Review' ? (
               <div className="flex flex-col gap-1">
-                <span className="flex items-center gap-1 text-amber-500">
+                <span className="flex items-center gap-1 text-amber-400">
                   <AlertCircle className="h-4 w-4" />
                   In Review
                 </span>
@@ -394,13 +381,13 @@ function UsersPageComponent() {
                       ? `/admin/identity-reviews/${user.id}?sessionId=${user.didit_session_id}`
                       : `/admin/identity-reviews/${user.id}`
                   }
-                  className="text-xs text-blue-600 hover:underline"
+                  className="text-xs text-primary hover:underline"
                 >
                   Open review
                 </Link>
               </div>
             ) : user.identity_status ? (
-              <span className="flex items-center gap-1 text-amber-500">
+              <span className="flex items-center gap-1 text-amber-400">
                 <AlertCircle className="h-4 w-4" />
                 {user.identity_status}
               </span>
@@ -421,13 +408,9 @@ function UsersPageComponent() {
           <div className="flex flex-col">
             <div className="flex items-center">
               {user.purchasedBefore ? (
-                <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
-                  Yes
-                </span>
+                <AdminStatusBadge tone="active">Yes</AdminStatusBadge>
               ) : (
-                <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-800">
-                  No
-                </span>
+                <AdminStatusBadge tone="neutral">No</AdminStatusBadge>
               )}
             </div>
             {user.purchasedBefore && (
@@ -446,13 +429,9 @@ function UsersPageComponent() {
       cell: ({ row }) => (
         <div className="flex items-center">
           {row.getValue('is_disabled') ? (
-            <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800">
-              Disabled
-            </span>
+            <AdminStatusBadge tone="rejected">Disabled</AdminStatusBadge>
           ) : (
-            <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
-              Active
-            </span>
+            <AdminStatusBadge tone="active">Active</AdminStatusBadge>
           )}
         </div>
       ),
@@ -1155,6 +1134,7 @@ function UsersPageComponent() {
         data={displayedUsers}
         searchKeys={[...ADMIN_USER_FULL_SEARCH_KEYS]}
         searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
+        initialColumnVisibility={{ notes: false, is_admin: false }}
         onCreateNew={handleCreate}
         createButtonText="Create User"
       />
@@ -1346,7 +1326,7 @@ function UsersPageComponent() {
                     href={formData.license_image}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500 hover:underline flex items-center gap-2"
+                    className="text-primary hover:underline flex items-center gap-2"
                   >
                     <img
                       src={formData.license_image}
@@ -1443,8 +1423,8 @@ function UsersPageComponent() {
                 <span
                   className={
                     selectedUser?.identity_verified
-                      ? 'text-green-600 font-medium'
-                      : 'text-amber-600 font-medium'
+                      ? 'text-emerald-400 font-medium'
+                      : 'text-amber-400 font-medium'
                   }
                 >
                   {selectedUser?.identity_verified
@@ -1483,10 +1463,10 @@ function UsersPageComponent() {
                 </p>
               )}
               {selectedUser && isAdminIdentityOverride(selectedUser) && (
-                <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-2 py-1.5 mt-1">
+                <AdminInlineNotice className="mt-1">
                   This user has not completed Didit. Identity was verified by an
                   admin.
-                </p>
+                </AdminInlineNotice>
               )}
               <p className="text-xs text-muted-foreground pt-1">
                 Document images are held by Didit and are not stored by

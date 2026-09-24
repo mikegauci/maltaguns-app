@@ -23,7 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { Loader2 } from 'lucide-react'
 import { LegalWarningDialog } from '@/components/dialogs'
 import { firearmsCategories } from '../constants'
@@ -37,13 +37,15 @@ import { useImageUpload } from '../hooks/useImageUpload'
 import { useAuthSession } from '../hooks/useAuthSession'
 import { useCredits } from '../hooks/useCredits'
 import { createListingHandlers } from '../handlers/listingHandlers'
-import { ListingFormLayout } from '../../../../components/marketplace/ListingFormLayout'
+import { ListingFormLayout } from '@/components/marketplace/ListingFormLayout'
+import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
 import {
   TitleField,
   DescriptionField,
   PriceField,
   ImageUploadField,
-} from '../../../../components/marketplace/FormFields'
+} from '@/components/marketplace/FormFields'
+import { PageHeader } from '@/components/ui/page-header'
 import {
   getAllowedCategories,
   isFullyVerified,
@@ -54,7 +56,7 @@ import { PageLayout } from '@/components/ui/page-layout'
 export default function CreateFirearmsListing() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [showCreditDialog, setShowCreditDialog] = useState(false)
   const [showLegalDialog, setShowLegalDialog] = useState(false)
   const [pendingData, setPendingData] = useState<FirearmsForm | null>(null)
@@ -180,17 +182,30 @@ export default function CreateFirearmsListing() {
   if (isLoading || isLoadingLicenses) {
     return (
       <PageLayout>
-        <p className="text-muted-foreground">Loading...</p>
+        <PageHeader
+          align="center"
+          backHref="/marketplace/create"
+          title="Create Firearms Listing"
+          description="List your firearm for sale on the marketplace"
+          className="mb-6"
+        />
+        <p className="text-center text-muted-foreground">Loading...</p>
       </PageLayout>
     )
   }
 
-  // Check if user has no allowed categories
   if (allowedCategories.length === 0) {
     return (
       <PageLayout>
-        <div className="max-w-md text-center space-y-4">
-          <h2 className="text-2xl font-bold">No License Detected</h2>
+        <PageHeader
+          align="center"
+          backHref="/marketplace/create"
+          title="Create Firearms Listing"
+          description="List your firearm for sale on the marketplace"
+          className="mb-6"
+        />
+        <div className="mx-auto flex max-w-md flex-col items-center gap-4 text-center">
+          <h2 className="text-xl font-semibold">No license detected</h2>
           <p className="text-muted-foreground">
             You need a verified firearms license to create firearms listings.
             Please upload your license in your profile to get started.
@@ -206,91 +221,101 @@ export default function CreateFirearmsListing() {
       <ListingFormLayout
         title="Create Firearms Listing"
         description="List your firearm for sale on the marketplace"
+        backHref="/marketplace/create"
         credits={credits}
         showCredits
       >
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(firearmsCategories)
-                        .filter(([value, label]) => {
-                          // Filter by allowed categories based on user's license
-                          if (!allowedCategories.includes(label)) {
-                            return false
-                          }
-                          // Additionally filter ammunition for non-retailers
-                          return value !== 'ammunition' || isRetailer
-                        })
-                        .map(([value, label]) => (
-                          <SelectItem key={value} value={value}>
-                            {label}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <ListingFormSection title="Details" first>
+              <TitleField control={form.control} name="title" />
+              <DescriptionField control={form.control} name="description" />
+              <PriceField control={form.control} name="price" />
+            </ListingFormSection>
 
-            <FormField
-              control={form.control}
-              name="calibre"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Calibre</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., 9mm" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <ListingFormSection title="Classification">
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.entries(firearmsCategories)
+                            .filter(([value, label]) => {
+                              if (!allowedCategories.includes(label)) {
+                                return false
+                              }
+                              return value !== 'ammunition' || isRetailer
+                            })
+                            .map(([value, label]) => (
+                              <SelectItem key={value} value={value}>
+                                {label}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <TitleField control={form.control} name="title" />
-            <DescriptionField control={form.control} name="description" />
-            <PriceField control={form.control} name="price" />
-            <ImageUploadField
-              control={form.control}
-              name="images"
-              uploadedImages={uploadedImages}
-              uploading={uploading}
-              handleImageUpload={handleImageUpload}
-              handleDeleteImage={handleDeleteImage}
-              handleSetPrimaryImage={handleSetPrimaryImage}
-            />
+                <FormField
+                  control={form.control}
+                  name="calibre"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Calibre</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 9mm" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </ListingFormSection>
 
-            <Button
-              type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-              disabled={isSubmitting || uploading || !hasCredits}
-            >
-              {isSubmitting || uploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {uploading ? 'Uploading Images...' : 'Creating...'}
-                </>
-              ) : !hasCredits ? (
-                'Insufficient Credits'
-              ) : (
-                'Create Listing'
-              )}
-            </Button>
+            <ListingFormSection title="Photos">
+              <ImageUploadField
+                control={form.control}
+                name="images"
+                uploadedImages={uploadedImages}
+                uploading={uploading}
+                handleImageUpload={handleImageUpload}
+                handleDeleteImage={handleDeleteImage}
+                handleSetPrimaryImage={handleSetPrimaryImage}
+              />
+            </ListingFormSection>
+
+            <div className="border-t border-border pt-6">
+              <Button
+                type="submit"
+                className="h-11 w-full"
+                disabled={isSubmitting || uploading || !hasCredits}
+              >
+                {isSubmitting || uploading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {uploading ? 'Uploading Images...' : 'Creating...'}
+                  </>
+                ) : !hasCredits ? (
+                  'Insufficient Credits'
+                ) : (
+                  'Create Listing'
+                )}
+              </Button>
+            </div>
           </form>
         </Form>
       </ListingFormLayout>

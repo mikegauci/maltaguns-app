@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { safeRedirectPath } from '@/lib/safe-redirect'
 
 /**
  * Check if a user's account is disabled
@@ -78,16 +79,14 @@ export function handleLoginRedirect(
   // Check for saved redirect location first
   const savedRedirect = localStorage.getItem('redirectAfterLogin')
   if (savedRedirect) {
-    console.log(`Redirecting to saved location: ${savedRedirect}`)
     localStorage.removeItem('redirectAfterLogin')
-    router.replace(savedRedirect)
+    router.replace(safeRedirectPath(savedRedirect))
     return
   }
 
-  // Check for redirect in URL params
   const redirectTo = searchParams.get('redirectTo')
   if (redirectTo) {
-    router.replace(redirectTo)
+    router.replace(safeRedirectPath(redirectTo))
     return
   }
 

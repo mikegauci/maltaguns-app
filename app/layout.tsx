@@ -1,7 +1,8 @@
 import './globals.css'
+import '../styles/design-tokens.css'
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
-import { Inter } from 'next/font/google'
+import { Oswald, IBM_Plex_Sans } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import QueryProvider from '@/components/providers/QueryProvider'
 import { CookieConsentProvider } from '@/components/providers/CookieConsentProvider'
@@ -16,7 +17,17 @@ import { getImpersonationState } from '@/lib/impersonation'
 import { getSectionMetadata } from '@/lib/seo'
 import { getAppUrl, isNonProductionHost } from '@/lib/seo-host'
 
-const inter = Inter({ subsets: ['latin'] })
+const oswald = Oswald({
+  subsets: ['latin'],
+  weight: ['600', '700'],
+  variable: '--font-home-display',
+})
+
+const ibmPlexSans = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-home-body',
+})
 
 export async function generateMetadata(): Promise<Metadata> {
   const homeMetadata = await getSectionMetadata('home')
@@ -50,7 +61,16 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className}${impersonation ? ' pt-10' : ''}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=location.pathname;if(!p.startsWith('/profile/armory/print')){document.documentElement.classList.add('app-dark')}}catch(e){}})();`,
+          }}
+        />
+      </head>
+      <body
+        className={`${ibmPlexSans.className} ${oswald.variable} ${ibmPlexSans.variable}${impersonation ? ' pt-10' : ''}`}
+      >
         <GoogleAnalyticsTag />
         <QueryProvider>
           <SupabaseProvider>

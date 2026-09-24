@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { Store, Users, Wrench, MapPin } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
@@ -64,7 +64,7 @@ type EstablishmentForm = z.infer<typeof establishmentSchema>
 export default function CreateEstablishmentPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
@@ -443,7 +443,7 @@ export default function CreateEstablishmentPage() {
                           <img
                             src={field.value}
                             alt="Business logo preview"
-                            className="w-32 h-32 object-contain rounded-lg"
+                            className="w-32 h-32 object-contain rounded-sm"
                           />
                         )}
                         <Input

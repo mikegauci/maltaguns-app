@@ -227,6 +227,33 @@ export interface Database {
           updated_at?: string
         }
       }
+      legal_pages: {
+        Row: {
+          slug: string
+          title: string
+          content: string
+          effective_date: string | null
+          last_updated: string | null
+          updated_at: string
+        }
+        Insert: {
+          slug: string
+          title: string
+          content?: string
+          effective_date?: string | null
+          last_updated?: string | null
+          updated_at?: string
+        }
+        Update: {
+          slug?: string
+          title?: string
+          content?: string
+          effective_date?: string | null
+          last_updated?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       listings: {
         Row: {
           id: string
@@ -236,6 +263,7 @@ export interface Database {
           subcategory: string | null
           calibre: string | null
           title: string
+          slug: string
           description: string
           price: number
           images: string // PostgreSQL array literal string format: {url1,url2,...}
@@ -257,6 +285,7 @@ export interface Database {
           subcategory?: string | null
           calibre?: string | null
           title: string
+          slug: string
           description: string
           price: number
           images?: string
@@ -278,6 +307,7 @@ export interface Database {
           subcategory?: string | null
           calibre?: string | null
           title?: string
+          slug?: string
           description?: string
           price?: number
           images?: string
@@ -413,6 +443,122 @@ export interface Database {
           },
         ]
       }
+      help_faq_items: {
+        Row: {
+          id: string
+          tab_id: string
+          question: string
+          answer: string
+          sort_order: number
+          published: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          tab_id: string
+          question: string
+          answer?: string
+          sort_order?: number
+          published?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          tab_id?: string
+          question?: string
+          answer?: string
+          sort_order?: number
+          published?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'help_faq_items_tab_id_fkey'
+            columns: ['tab_id']
+            referencedRelation: 'help_tabs'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      help_tab_guides: {
+        Row: {
+          id: string
+          tab_id: string
+          blog_post_id: string
+          sort_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tab_id: string
+          blog_post_id: string
+          sort_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tab_id?: string
+          blog_post_id?: string
+          sort_order?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'help_tab_guides_tab_id_fkey'
+            columns: ['tab_id']
+            referencedRelation: 'help_tabs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'help_tab_guides_blog_post_id_fkey'
+            columns: ['blog_post_id']
+            referencedRelation: 'blog_posts'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      help_tabs: {
+        Row: {
+          id: string
+          slug: string
+          title: string
+          section_title: string
+          section_description: string
+          banner_text: string | null
+          sort_order: number
+          published: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          title: string
+          section_title: string
+          section_description?: string
+          banner_text?: string | null
+          sort_order?: number
+          published?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          title?: string
+          section_title?: string
+          section_description?: string
+          banner_text?: string | null
+          sort_order?: number
+          published?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_posts: {
         Row: {
           id: string
@@ -421,6 +567,7 @@ export interface Database {
           slug: string
           content: string
           featured_image: string | null
+          meta_description: string | null
           published: boolean
           created_at: string
           updated_at: string
@@ -439,6 +586,7 @@ export interface Database {
           slug: string
           content: string
           featured_image?: string | null
+          meta_description?: string | null
           published?: boolean
           created_at?: string
           updated_at?: string
@@ -457,6 +605,7 @@ export interface Database {
           slug?: string
           content?: string
           featured_image?: string | null
+          meta_description?: string | null
           published?: boolean
           created_at?: string
           updated_at?: string

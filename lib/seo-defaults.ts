@@ -14,6 +14,7 @@ export type SectionKey =
   | 'establishments_servicing'
   | 'contact'
   | 'help'
+  | 'help_guides'
   | 'privacy'
   | 'terms'
   | 'cookies'
@@ -129,6 +130,13 @@ export const SECTION_SEO_DEFAULTS: Record<
     description:
       'Find guides, tutorials, FAQs, and support resources to help you get the most out of MaltaGuns.',
     path: '/help',
+    group: 'Info',
+  },
+  help_guides: {
+    title: 'Help Guides | MaltaGuns',
+    description:
+      'Step-by-step help guides for using MaltaGuns, licensing, safety, and account management.',
+    path: '/help/guides',
     group: 'Info',
   },
   privacy: {

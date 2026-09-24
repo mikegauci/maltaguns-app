@@ -26,7 +26,6 @@ import {
   Store,
   CheckCircle,
   ShieldAlert,
-  X,
 } from 'lucide-react'
 import Link from 'next/link'
 import { BackButton } from '@/components/ui/back-button'
@@ -34,8 +33,8 @@ import { format } from 'date-fns'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { FeatureCreditDialog, ReportListingDialog } from '@/components/dialogs'
 import { LoadingState } from '@/components/ui/loading-state'
-import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
+import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 import { WishlistButton } from '@/components/marketplace/WishlistButton'
 import { ImageLightbox } from '@/components/marketplace/ImageLightbox'
 import {
@@ -46,9 +45,10 @@ import {
 } from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
 import { EditButton } from '@/components/ui/edit-button'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AppAlert } from '@/components/design-system'
 import type { ListingDetails } from './types'
-import { formatPrice, slugify } from '@/lib/format'
+import { formatPrice } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 
 const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
 
@@ -132,7 +132,11 @@ function getSubcategoryLabel(category: string, subcategory: string): string {
   )
 }
 
-function CreatedSuccessBanner({ listingTitle }: { listingTitle: string }) {
+function CreatedSuccessBanner({
+  listing,
+}: {
+  listing: Pick<ListingDetails, 'slug' | 'title' | 'id'>
+}) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [dismissed, setDismissed] = useState(false)
@@ -148,53 +152,44 @@ function CreatedSuccessBanner({ listingTitle }: { listingTitle: string }) {
       setNotifyFailed(failed)
       setShowBanner(true)
     })
-    router.replace(`/marketplace/listing/${slugify(listingTitle)}`)
-  }, [createdParam, router, listingTitle, searchParams])
+    router.replace(listingPublicPath(listing))
+  }, [createdParam, router, listing, searchParams])
 
   if (!showBanner || dismissed) return null
 
   return (
-    <Alert
-      className={
-        notifyFailed
-          ? 'mb-6 border-amber-200 bg-amber-50 text-amber-950 pr-12'
-          : 'mb-6 border-green-200 bg-green-50 text-green-900 pr-12'
+    <AppAlert
+      className="mb-6"
+      variant={notifyFailed ? 'pending' : 'success'}
+      title="Listing successfully created"
+      dismissible
+      onDismiss={() => setDismissed(true)}
+      icon={
+        <CheckCircle
+          className={
+            notifyFailed ? 'h-4 w-4 text-amber-300' : 'h-4 w-4 text-green-300'
+          }
+        />
       }
     >
-      <CheckCircle
-        className={
-          notifyFailed ? 'h-4 w-4 text-amber-700' : 'h-4 w-4 text-green-700'
-        }
-      />
-      <AlertTitle>Listing successfully created</AlertTitle>
-      <AlertDescription>
-        {notifyFailed ? (
-          <>
-            Your listing is now live on MaltaGuns, but we couldn&apos;t send the
-            confirmation notification. You can still manage it from your{' '}
-            <Link href="/profile" className="font-medium underline">
-              profile
-            </Link>
-            .
-          </>
-        ) : (
-          <>
-            Your listing is now live on MaltaGuns.{' '}
-            <Link href="/profile" className="font-medium underline">
-              View all your listings
-            </Link>
-          </>
-        )}
-      </AlertDescription>
-      <button
-        type="button"
-        onClick={() => setDismissed(true)}
-        className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100"
-        aria-label="Dismiss"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </Alert>
+      {notifyFailed ? (
+        <>
+          Your listing is now live on MaltaGuns, but we couldn&apos;t send the
+          confirmation notification. You can still manage it from your{' '}
+          <Link href="/profile" className="font-medium underline">
+            profile
+          </Link>
+          .
+        </>
+      ) : (
+        <>
+          Your listing is now live on MaltaGuns.{' '}
+          <Link href="/profile" className="font-medium underline">
+            View all your listings
+          </Link>
+        </>
+      )}
+    </AppAlert>
   )
 }
 
@@ -432,31 +427,28 @@ export default function ListingClient({
 
   useEffect(() => {
     let mounted = true
-    let timeoutId: NodeJS.Timeout
+    let completed = false
 
     async function initializeData() {
       try {
         setIsLoading(true)
 
-        // First check session and ownership
         const currentSession = await checkOwnership()
         console.log('Initial session check complete:', {
           hasSession: !!currentSession,
           userId: currentSession?.user?.id,
         })
 
-        // If we're not logged in, we can skip other checks
         if (!currentSession || !currentSession.user) {
           if (mounted) {
+            completed = true
             setIsLoading(false)
           }
           return
         }
 
-        // Get the user ID from the session
         const currentUserId = currentSession.user.id
 
-        // Run remaining checks in parallel only if we have a session
         if (mounted) {
           await Promise.all([
             checkIfFeatured(),
@@ -467,27 +459,27 @@ export default function ListingClient({
         }
 
         if (mounted) {
+          completed = true
           setIsLoading(false)
         }
       } catch (error) {
         console.error('Error initializing data:', error)
         if (mounted) {
+          completed = true
           setIsLoading(false)
         }
       }
     }
 
-    // Initialize data when session changes
     initializeData()
 
-    // Set a timeout to show loading state if initialization takes too long
-    timeoutId = setTimeout(() => {
-      if (mounted && isLoading) {
+    const timeoutId = setTimeout(() => {
+      if (mounted && !completed) {
         console.log('Loading timeout reached, forcing state update')
         setIsLoading(false)
         setSessionChecked(true)
       }
-    }, 3000) // 3 seconds timeout
+    }, 3000)
 
     return () => {
       mounted = false
@@ -502,7 +494,6 @@ export default function ListingClient({
     checkIfRetailer,
     checkIfSellerVerified,
     checkUserLicenseAccess,
-    isLoading,
   ])
 
   // Check license access whenever userId changes
@@ -600,7 +591,7 @@ export default function ListingClient({
           <div className="flex items-center gap-2">
             <p className="font-semibold">{listing.seller.username}</p>
             {isSellerVerified && (
-              <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1">
+              <Badge className="flex items-center gap-1 border-primary/40 bg-primary/15 text-primary hover:bg-primary/20">
                 <CheckCircle className="h-3 w-3" />
                 Verified Gun Seller
               </Badge>
@@ -659,7 +650,7 @@ export default function ListingClient({
           <div className="flex items-center gap-2">
             <p className="font-semibold">{listing.seller.username}</p>
             {isSellerVerified && (
-              <Badge className="bg-green-600 text-white hover:bg-green-700 flex items-center gap-1">
+              <Badge className="flex items-center gap-1 border-primary/40 bg-primary/15 text-primary hover:bg-primary/20">
                 <CheckCircle className="h-3 w-3" />
                 Verified Gun Seller
               </Badge>
@@ -862,7 +853,7 @@ export default function ListingClient({
   return (
     <PageLayout>
       <Suspense fallback={null}>
-        <CreatedSuccessBanner listingTitle={listing.title} />
+        <CreatedSuccessBanner listing={listing} />
       </Suspense>
 
       <div className="mb-6 flex items-center justify-between">
@@ -877,7 +868,7 @@ export default function ListingClient({
             {canEditNow && (
               <EditButton
                 label="Edit"
-                href={`/marketplace/listing/${slugify(listing.title)}/edit`}
+                href={`${listingPublicPath(listing)}/edit`}
                 hideLabelOnMobile={false}
               />
             )}
@@ -997,13 +988,7 @@ export default function ListingClient({
             <CardContent className="p-6 space-y-6">
               <div className="flex items-center gap-2 mb-4">
                 {listing.type === 'firearms' ? (
-                  <Image
-                    src="/images/pistol-gun-icon.svg"
-                    alt="Firearms"
-                    width={20}
-                    height={20}
-                    className="mr-2"
-                  />
+                  <PistolGunIcon className="mr-2 h-5 w-5" />
                 ) : (
                   <Package className="h-5 w-5 mr-2" />
                 )}
@@ -1044,7 +1029,7 @@ export default function ListingClient({
               {/* Description Section */}
               <div className="border-t pt-4">
                 <h2 className="text-xl font-semibold mb-3">Description</h2>
-                <p className="text-gray-700 whitespace-pre-line">
+                <p className="whitespace-pre-line text-muted-foreground">
                   {listing.description}
                 </p>
               </div>

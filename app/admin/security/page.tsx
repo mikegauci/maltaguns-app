@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { Button } from '@/components/ui/button'
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -18,7 +18,7 @@ export default function AdminSecurityPage() {
       description="Manage your admin password and two-factor authentication."
     >
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <AppCard>
           <CardHeader>
             <CardTitle>Password</CardTitle>
             <CardDescription>
@@ -33,8 +33,8 @@ export default function AdminSecurityPage() {
               </Link>
             </Button>
           </CardContent>
-        </Card>
-        <Card>
+        </AppCard>
+        <AppCard>
           <CardHeader>
             <CardTitle>Two-factor authentication</CardTitle>
             <CardDescription>
@@ -46,7 +46,7 @@ export default function AdminSecurityPage() {
               <Link href="/admin/security/mfa">Manage 2FA</Link>
             </Button>
           </CardContent>
-        </Card>
+        </AppCard>
       </div>
     </AdminPageLayout>
   )

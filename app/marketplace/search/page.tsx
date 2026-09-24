@@ -5,17 +5,21 @@ import { useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { AppCard } from '@/components/design-system'
 import { Badge } from '@/components/ui/badge'
-import { Package, ArrowLeft, Star } from 'lucide-react'
+import { Package, Star } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
+import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 import { PageLayout } from '@/components/ui/page-layout'
-import { formatPrice, slugify } from '@/lib/format'
+import { PageHeader } from '@/components/ui/page-header'
+import { formatPrice } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 
 interface Listing {
   id: string
   title: string
+  slug?: string
   description: string
   price: number
   category: string
@@ -124,12 +128,8 @@ function SearchResultsContent() {
   const isLoading = searchQuery.isLoading
 
   const renderListingCard = (listing: Listing) => (
-    <Link
-      key={listing.id}
-      href={`/marketplace/listing/${slugify(listing.title)}`}
-      className="block"
-    >
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+    <Link key={listing.id} href={listingPublicPath(listing)} className="block">
+      <AppCard>
         <div className="aspect-video relative overflow-hidden">
           <StorageImage
             src={listing.thumbnail}
@@ -146,13 +146,7 @@ function SearchResultsContent() {
           <div className="flex items-center gap-2 mb-2 sm:mb-3">
             {listing.type === 'firearms' ? (
               <div className="inline-flex">
-                <Image
-                  src="/images/pistol-gun-icon.svg"
-                  alt="Firearms"
-                  width={16}
-                  height={16}
-                  className="mr-2"
-                />
+                <PistolGunIcon className="mr-2 h-4 w-4" />
               </div>
             ) : (
               <div className="inline-flex">
@@ -175,42 +169,36 @@ function SearchResultsContent() {
             </p>
           </div>
         </CardContent>
-      </Card>
+      </AppCard>
     </Link>
   )
 
+  const pageTitle = isLoading
+    ? 'Loading...'
+    : query
+      ? 'Search Results'
+      : category
+        ? getCategoryLabel(category, type as 'firearms' | 'non_firearms')
+        : type
+          ? type === 'firearms'
+            ? 'Firearms'
+            : 'Non-Firearms'
+          : 'All Listings'
+
+  const pageDescription = isLoading
+    ? 'Searching...'
+    : query
+      ? `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"`
+      : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`
+
   return (
     <PageLayout>
-      <div className="space-y-2 mb-8 text-center">
-        <h1 className="text-4xl font-bold tracking-tight">
-          {isLoading
-            ? 'Loading...'
-            : query
-              ? 'Search Results'
-              : category
-                ? `${getCategoryLabel(category, type as 'firearms' | 'non_firearms')}`
-                : type
-                  ? type === 'firearms'
-                    ? 'Firearms'
-                    : 'Non-Firearms'
-                  : 'All Listings'}
-        </h1>
-        <p className="text-lg text-muted-foreground">
-          {isLoading
-            ? 'Searching...'
-            : query
-              ? `Found ${listings.length} result${listings.length !== 1 ? 's' : ''} for "${query}"`
-              : `Showing ${listings.length} listing${listings.length !== 1 ? 's' : ''}`}
-        </p>
-        <div className="mb-6">
-          <Link href="/marketplace">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        align="center"
+        backHref="/marketplace"
+        title={pageTitle}
+        description={pageDescription}
+      />
 
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">

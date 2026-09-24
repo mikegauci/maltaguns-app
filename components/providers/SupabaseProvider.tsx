@@ -17,7 +17,7 @@ export default function SupabaseProvider({
 }: {
   children: React.ReactNode
 }) {
-  const [supabase] = useState(() => createClient())
+  const supabase = createClient()
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -34,10 +34,6 @@ export default function SupabaseProvider({
 
         if (error) {
           console.error('Error getting initial session:', error)
-          if (mounted) {
-            setSession(null)
-          }
-          return
         }
 
         if (mounted) {

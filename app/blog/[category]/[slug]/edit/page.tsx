@@ -8,13 +8,6 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
   Form,
   FormControl,
   FormField,
@@ -24,10 +17,11 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useFeaturedImageUpload } from '@/hooks/useFeaturedImageUpload'
-import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
+import { ListingFormLayout } from '@/components/marketplace/ListingFormLayout'
+import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
 import { Loader2 } from 'lucide-react'
 import slug from 'slug'
 import {
@@ -67,7 +61,7 @@ export default function EditBlogPost(props: {
   const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [postId, setPostId] = useState<string | null>(null)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
@@ -154,7 +148,15 @@ export default function EditBlogPost(props: {
           return
         }
 
-        if (post.author_id !== session.user.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single()
+
+        const isAdmin = !!profile?.is_admin
+
+        if (!isAdmin && post.author_id !== session.user.id) {
           toast({
             variant: 'destructive',
             title: 'Unauthorized',
@@ -289,176 +291,171 @@ export default function EditBlogPost(props: {
   }
 
   return (
-    <PageLayout>
-      <div className="mb-6">
-        <BackButton
-          label="Back"
-          href={`/blog/${params.category}/${params.slug}`}
-          hideLabelOnMobile={false}
-        />
-      </div>
+    <ListingFormLayout
+      title="Edit Blog Post"
+      description="Update your blog post content and settings"
+      backHref={`/blog/${params.category}/${params.slug}`}
+      maxWidth="3xl"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <ListingFormSection title="Details" first>
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter post title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Blog Post</CardTitle>
-          <CardDescription>
-            Update your blog post content and settings
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
-                      <Input placeholder="Enter post title" {...field} />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    <SelectContent>
+                      <SelectItem value="news">News</SelectItem>
+                      <SelectItem value="guides">Guides</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </ListingFormSection>
 
-              <FormField
-                control={form.control}
-                name="featuredImage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Featured Image</FormLabel>
-                    <FormControl>
-                      <div className="space-y-4">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          disabled={uploadingImage}
+          <ListingFormSection title="Featured Image">
+            <FormField
+              control={form.control}
+              name="featuredImage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Featured Image</FormLabel>
+                  <FormControl>
+                    <div className="space-y-4">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
+                      />
+                      <Input type="hidden" {...field} />
+                      {uploadingImage && (
+                        <p className="text-sm text-muted-foreground">
+                          Uploading image...
+                        </p>
+                      )}
+                      {field.value && (
+                        <img
+                          src={field.value}
+                          alt="Featured image preview"
+                          className="max-h-[300px] w-full rounded-lg object-cover"
                         />
-                        <Input type="hidden" {...field} />
-                        {uploadingImage && (
-                          <p className="text-sm text-muted-foreground">
-                            Uploading image...
-                          </p>
-                        )}
-                        {field.value && (
-                          <img
-                            src={field.value}
-                            alt="Featured image preview"
-                            className="w-full max-h-[300px] object-cover rounded-lg"
-                          />
-                        )}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </ListingFormSection>
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="news">News</SelectItem>
-                        <SelectItem value="guides">Guides</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <ListingFormSection title="SEO">
+            <FormField
+              control={form.control}
+              name="meta_title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meta Title (optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Overrides the page title for search engines"
+                      maxLength={70}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="meta_title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Meta Title (optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Overrides the page title for search engines"
-                        maxLength={70}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="meta_description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Meta Description (optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Overrides the meta description for search engines"
+                      maxLength={200}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </ListingFormSection>
 
-              <FormField
-                control={form.control}
-                name="meta_description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Meta Description (optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Overrides the meta description for search engines"
-                        maxLength={200}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <ListingFormSection title="Content">
+            <FormField
+              control={form.control}
+              name="content"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Content</FormLabel>
+                  <FormControl>
+                    <BlogEditor
+                      initialContent={initialContent}
+                      onChange={html => form.setValue('content', html)}
+                      onUploadingChange={setUploadingContentImage}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </ListingFormSection>
 
-              <FormField
-                control={form.control}
-                name="content"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Content</FormLabel>
-                    <FormControl>
-                      <BlogEditor
-                        initialContent={initialContent}
-                        onChange={html => form.setValue('content', html)}
-                        onUploadingChange={setUploadingContentImage}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={
-                  isSubmitting || uploadingImage || uploadingContentImage
-                }
-              >
-                {isSubmitting || uploadingImage || uploadingContentImage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {uploadingImage
-                      ? 'Uploading Image...'
-                      : uploadingContentImage
-                        ? 'Adding Image...'
-                        : 'Saving Changes...'}
-                  </>
-                ) : (
-                  'Save Changes'
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </PageLayout>
+          <div className="border-t border-border pt-6">
+            <Button
+              type="submit"
+              className="h-11 w-full"
+              disabled={isSubmitting || uploadingImage || uploadingContentImage}
+            >
+              {isSubmitting || uploadingImage || uploadingContentImage ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {uploadingImage
+                    ? 'Uploading Image...'
+                    : uploadingContentImage
+                      ? 'Adding Image...'
+                      : 'Saving Changes...'}
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </ListingFormLayout>
   )
 }

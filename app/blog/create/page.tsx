@@ -8,13 +8,6 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
   Form,
   FormControl,
   FormField,
@@ -24,15 +17,17 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   findFirstActiveEstablishment,
   isActiveEstablishmentOwnedByUser,
   userHasActiveEstablishment,
 } from '@/lib/establishments'
 import { useFeaturedImageUpload } from '@/hooks/useFeaturedImageUpload'
-import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
+import { PageHeader } from '@/components/ui/page-header'
+import { ListingFormLayout } from '@/components/marketplace/ListingFormLayout'
+import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
 import { Loader2 } from 'lucide-react'
 import slug from 'slug'
 import {
@@ -66,8 +61,9 @@ type BlogPostForm = z.infer<typeof blogPostSchema>
 export default function CreateBlogPost() {
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
-  const [isLoading, setIsLoading] = useState(true)
+  const { supabase } = useSupabase()
+  const [isPageLoading, setIsPageLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const [uploadingContentImage, setUploadingContentImage] = useState(false)
   const [storeId, setStoreId] = useState<string | null>(null)
@@ -223,7 +219,7 @@ export default function CreateBlogPost() {
         if (hasActiveEstablishment) {
           if (mounted) {
             setIsAuthorized(true)
-            setIsLoading(false)
+            setIsPageLoading(false)
           }
         } else {
           toast({
@@ -237,7 +233,7 @@ export default function CreateBlogPost() {
       } catch (error) {
         console.error('Error in session initialization:', error)
         if (mounted) {
-          setIsLoading(false)
+          setIsPageLoading(false)
         }
         router.push('/login')
       }
@@ -267,7 +263,7 @@ export default function CreateBlogPost() {
   })
 
   async function onSubmit(data: BlogPostForm) {
-    setIsLoading(true)
+    setIsSubmitting(true)
     try {
       const {
         data: { session },
@@ -331,14 +327,21 @@ export default function CreateBlogPost() {
         description: 'Failed to create blog post. Please try again.',
       })
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
-  if (isLoading) {
+  if (isPageLoading) {
     return (
       <PageLayout>
-        <p className="text-muted-foreground">Loading...</p>
+        <PageHeader
+          align="center"
+          backHref="/blog"
+          title="Create Blog Post"
+          description="Share your knowledge and experience with the community"
+          className="mb-6"
+        />
+        <p className="text-center text-muted-foreground">Loading...</p>
       </PageLayout>
     )
   }
@@ -348,137 +351,133 @@ export default function CreateBlogPost() {
   }
 
   return (
-    <PageLayout>
-      <BackButton
-        label="Back"
-        href="/blog"
-        className="mb-6"
-        hideLabelOnMobile={false}
-      />
+    <ListingFormLayout
+      title="Create Blog Post"
+      description="Share your knowledge and experience with the community"
+      backHref="/blog"
+      maxWidth="3xl"
+    >
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <ListingFormSection title="Details" first>
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter post title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Create Blog Post</CardTitle>
-          <CardDescription>
-            Share your knowledge and experience with the community
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Title</FormLabel>
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
-                      <Input placeholder="Enter post title" {...field} />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    <SelectContent>
+                      <SelectItem value="news">News</SelectItem>
+                      <SelectItem value="guides">Guides</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </ListingFormSection>
 
-              <FormField
-                control={form.control}
-                name="featuredImage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Featured Image</FormLabel>
-                    <FormControl>
-                      <div className="space-y-4">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          disabled={uploadingImage}
-                        />
-                        <Input type="hidden" {...field} />
-                        {uploadingImage && (
-                          <p className="text-sm text-muted-foreground">
-                            Uploading image...
-                          </p>
-                        )}
-                        {field.value && (
-                          <img
-                            src={field.value}
-                            alt="Featured image preview"
-                            className="w-full max-h-[300px] object-cover rounded-lg"
-                          />
-                        )}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="news">News</SelectItem>
-                        <SelectItem value="guides">Guides</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="content"
-                render={() => (
-                  <FormItem>
-                    <FormLabel>Content</FormLabel>
-                    <FormControl>
-                      <BlogEditor
-                        autofocus
-                        onChange={html => form.setValue('content', html)}
-                        onUploadingChange={setUploadingContentImage}
+          <ListingFormSection title="Featured Image">
+            <FormField
+              control={form.control}
+              name="featuredImage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Featured Image</FormLabel>
+                  <FormControl>
+                    <div className="space-y-4">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={uploadingImage}
                       />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <Input type="hidden" {...field} />
+                      {uploadingImage && (
+                        <p className="text-sm text-muted-foreground">
+                          Uploading image...
+                        </p>
+                      )}
+                      {field.value && (
+                        <img
+                          src={field.value}
+                          alt="Featured image preview"
+                          className="max-h-[300px] w-full rounded-lg object-cover"
+                        />
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </ListingFormSection>
 
-              <Button
-                type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                disabled={isLoading || uploadingImage || uploadingContentImage}
-              >
-                {isLoading || uploadingImage || uploadingContentImage ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {uploadingImage
-                      ? 'Uploading Image...'
-                      : uploadingContentImage
-                        ? 'Adding Image...'
-                        : 'Publishing...'}
-                  </>
-                ) : (
-                  'Publish Post'
-                )}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </PageLayout>
+          <ListingFormSection title="Content">
+            <FormField
+              control={form.control}
+              name="content"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Content</FormLabel>
+                  <FormControl>
+                    <BlogEditor
+                      autofocus
+                      onChange={html => form.setValue('content', html)}
+                      onUploadingChange={setUploadingContentImage}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </ListingFormSection>
+
+          <div className="border-t border-border pt-6">
+            <Button
+              type="submit"
+              className="h-11 w-full"
+              disabled={isSubmitting || uploadingImage || uploadingContentImage}
+            >
+              {isSubmitting || uploadingImage || uploadingContentImage ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {uploadingImage
+                    ? 'Uploading Image...'
+                    : uploadingContentImage
+                      ? 'Adding Image...'
+                      : 'Publishing...'}
+                </>
+              ) : (
+                'Publish Post'
+              )}
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </ListingFormLayout>
   )
 }

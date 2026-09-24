@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -63,7 +63,7 @@ function ResetPasswordFormFields({
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(
@@ -217,7 +217,7 @@ export default function ResetPassword() {
   const [isValidatingLink, setIsValidatingLink] = useState(true)
   const [isAdminUser, setIsAdminUser] = useState(false)
   const [redirectTarget, setRedirectTarget] = useState('/profile')
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   useEffect(() => {
     const handleRecoveryToken = async () => {
@@ -295,9 +295,11 @@ export default function ResetPassword() {
   if (success) {
     return (
       <PageLayout>
-        <Card className="w-full max-w-md">
+        <Card className="mx-auto w-full max-w-md rounded-sm border-border shadow-none">
           <CardHeader>
-            <CardTitle>Password Reset Complete</CardTitle>
+            <CardTitle className="app-display uppercase tracking-tight">
+              Password Reset Complete
+            </CardTitle>
             <CardDescription>
               Your password has been successfully reset.
             </CardDescription>
@@ -324,9 +326,11 @@ export default function ResetPassword() {
 
   return (
     <PageLayout>
-      <Card className="w-full max-w-md">
+      <Card className="mx-auto w-full max-w-md rounded-sm border-border shadow-none">
         <CardHeader>
-          <CardTitle>Reset Your Password</CardTitle>
+          <CardTitle className="app-display uppercase tracking-tight">
+            Reset Your Password
+          </CardTitle>
           <CardDescription>
             {isAdminUser
               ? 'Admin passwords must be at least 12 characters with letters and numbers.'
@@ -344,7 +348,12 @@ export default function ResetPassword() {
           ) : error ? (
             <div className="flex flex-col gap-4">
               <div className="text-sm text-destructive mb-4">{error}</div>
-              <BackButton label="Back to Login" href="/login" />
+              <BackButton
+                label="Back to Login"
+                href="/login"
+                preferHref
+                hideLabelOnMobile={false}
+              />
             </div>
           ) : (
             <ResetPasswordFormFields

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase/public'
+import { EVENT_CARD_SELECT, PUBLIC_API_CACHE_CONTROL } from '@/lib/query-selects'
 
 export const revalidate = 30
 
@@ -11,14 +12,14 @@ export async function GET(req: Request) {
 
   const upcomingPromise = supabase
     .from('events')
-    .select('*')
+    .select(EVENT_CARD_SELECT)
     .gte('start_date', today)
     .order('start_date', { ascending: true })
     .limit(10)
 
   const pastPromise = supabase
     .from('events')
-    .select('*')
+    .select(EVENT_CARD_SELECT)
     .lt('start_date', today)
     .order('start_date', { ascending: false })
     .limit(6)
@@ -36,7 +37,7 @@ export async function GET(req: Request) {
       const end = new Date(year, m, 0)
       calendarPromise = supabase
         .from('events')
-        .select('*')
+        .select(EVENT_CARD_SELECT)
         .gte('start_date', start.toISOString())
         .lte('start_date', end.toISOString())
     }
@@ -61,7 +62,7 @@ export async function GET(req: Request) {
     },
     {
       headers: {
-        'Cache-Control': 'public, s-maxage=10, stale-while-revalidate=50',
+        'Cache-Control': PUBLIC_API_CACHE_CONTROL,
       },
     }
   )

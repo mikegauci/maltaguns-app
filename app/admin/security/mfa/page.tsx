@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -15,7 +15,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from '@/components/ui/input-otp'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   getVerifiedTotpFactors,
   unenrollUnverifiedTotpFactors,
@@ -98,7 +98,7 @@ async function prepareMfaEnrollment(
 export default function AdminMfaEnrollPage() {
   const router = useRouter()
   const { toast } = useToast()
-  const [supabase] = useState(() => createClient())
+  const { supabase } = useSupabase()
   const enrollmentRef = useRef<ReturnType<typeof prepareMfaEnrollment> | null>(
     null
   )
@@ -189,7 +189,7 @@ export default function AdminMfaEnrollPage() {
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <AppCard className="w-full max-w-md">
       <CardHeader>
         <CardTitle>Set up two-factor authentication</CardTitle>
         <CardDescription>
@@ -270,6 +270,6 @@ export default function AdminMfaEnrollPage() {
           </>
         )}
       </CardContent>
-    </Card>
+    </AppCard>
   )
 }

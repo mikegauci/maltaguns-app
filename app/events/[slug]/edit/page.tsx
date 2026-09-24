@@ -7,13 +7,6 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import {
   Form,
   FormControl,
   FormField,
@@ -24,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   deleteEventPoster,
   eventPosterValidationToast,
@@ -32,10 +25,11 @@ import {
   validateEventPoster,
 } from '@/lib/event-posters'
 import { Calendar as CalendarIcon, Clock, Trash2 } from 'lucide-react'
-import { BackButton } from '@/components/ui/back-button'
 import { DeleteConfirmationDialog } from '@/components/dialogs'
 import { format } from 'date-fns'
 import { PageLayout } from '@/components/ui/page-layout'
+import { ListingFormLayout } from '@/components/marketplace/ListingFormLayout'
+import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
 import { slugify } from '@/lib/format'
 
 const eventSchema = z.object({
@@ -67,7 +61,7 @@ export default function EditEvent(props: {
   const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [eventId, setEventId] = useState<string | null>(null)
   const [posterUrl, setPosterUrl] = useState<string | null>(null)
@@ -429,68 +423,51 @@ export default function EditEvent(props: {
   }
 
   return (
-    <PageLayout>
-      <div className="mb-6 flex items-center justify-between">
-        <BackButton
-          label="Back"
-          href={`/events/${params.slug}`}
-          hideLabelOnMobile={false}
-        />
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => setDeleteDialogOpen(true)}
-          className="flex items-center gap-2"
-          disabled={isUploading}
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete Event
-        </Button>
-      </div>
+    <>
+      <ListingFormLayout
+        title="Edit Event"
+        description="Update your event information"
+        backHref={`/events/${params.slug}`}
+        actions={
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteDialogOpen(true)}
+            className="flex items-center gap-2"
+            disabled={isUploading}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Delete Event</span>
+          </Button>
+        }
+      >
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <ListingFormSection title="Details" first>
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Event Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter event title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Event</CardTitle>
-          <CardDescription>Update your event information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid gap-6 sm:grid-cols-1">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Event Title
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter event title"
-                          className="h-10"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="type"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Event Type
-                      </FormLabel>
+                      <FormLabel>Event Type</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="e.g. Competition, Training, International Trip"
-                          className="h-10"
                           {...field}
                         />
                       </FormControl>
@@ -504,15 +481,9 @@ export default function EditEvent(props: {
                   name="organizer"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Organizer
-                      </FormLabel>
+                      <FormLabel>Organizer</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="Enter organizer name"
-                          className="h-10"
-                          {...field}
-                        />
+                        <Input placeholder="Enter organizer name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -520,29 +491,27 @@ export default function EditEvent(props: {
                 />
               </div>
 
-              <div className="grid gap-6 sm:grid-cols-1">
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Description
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe your event in detail"
-                          className="min-h-32 resize-y"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe your event in detail"
+                        className="min-h-[140px] resize-y"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </ListingFormSection>
 
-              <div className="grid gap-6 sm:grid-cols-2">
+            <ListingFormSection title="Schedule">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <FormField
                     control={form.control}
@@ -645,42 +614,33 @@ export default function EditEvent(props: {
                   />
                 </div>
               </div>
+            </ListingFormSection>
 
-              <div className="grid gap-6 sm:grid-cols-1">
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Location
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter event location"
-                          className="h-10"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <ListingFormSection title="Location & Contact">
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter event location" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className="grid gap-6 sm:grid-cols-2">
+              <div className="grid gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Contact Phone (optional)
-                      </FormLabel>
+                      <FormLabel>Contact Phone (optional)</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Contact phone number"
-                          className="h-10"
                           {...field}
                           value={field.value || ''}
                           onChange={e => field.onChange(e.target.value || null)}
@@ -696,14 +656,11 @@ export default function EditEvent(props: {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Contact Email (optional)
-                      </FormLabel>
+                      <FormLabel>Contact Email (optional)</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
                           placeholder="Contact email address"
-                          className="h-10"
                           {...field}
                           value={field.value || ''}
                           onChange={e => field.onChange(e.target.value || null)}
@@ -715,105 +672,93 @@ export default function EditEvent(props: {
                 />
               </div>
 
-              <div className="grid gap-6 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-base font-medium">
-                        Price (€) (optional)
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="0.00"
-                          className="h-10"
-                          {...field}
-                          value={field.value === null ? '' : field.value}
-                          onChange={e =>
-                            field.onChange(
-                              e.target.value === ''
-                                ? null
-                                : parseFloat(e.target.value)
-                            )
-                          }
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="price"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price (€) (optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        {...field}
+                        value={field.value === null ? '' : field.value}
+                        onChange={e =>
+                          field.onChange(
+                            e.target.value === ''
+                              ? null
+                              : parseFloat(e.target.value)
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </ListingFormSection>
 
-                <div>
-                  <FormLabel className="text-base font-medium">
-                    Event Poster (optional)
-                  </FormLabel>
-
-                  <div className="mt-2">
-                    {posterPreview ? (
-                      <div className="relative rounded-md overflow-hidden border shadow-sm w-full aspect-[3/2]">
-                        <img
-                          src={posterPreview}
-                          alt="Event poster preview"
-                          className="w-full h-full object-cover"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          className="absolute top-2 right-2 h-7 w-7 p-0 rounded-full shadow-md"
-                          onClick={handleRemovePoster}
-                          disabled={isUploading}
-                        >
-                          ✕
-                        </Button>
-                      </div>
-                    ) : (
-                      <label className="border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer aspect-[3/2] hover:bg-muted/50 transition-colors">
-                        <span className="text-3xl mb-1">+</span>
-                        <span className="text-sm text-center text-muted-foreground px-2">
-                          Add Poster
-                        </span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handlePosterUpload}
-                          disabled={isUploading}
-                        />
-                      </label>
-                    )}
-                  </div>
+            <ListingFormSection title="Poster">
+              {posterPreview ? (
+                <div className="relative aspect-[3/2] w-full overflow-hidden rounded-md border shadow-sm">
+                  <img
+                    src={posterPreview}
+                    alt="Event poster preview"
+                    className="h-full w-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute right-2 top-2 h-7 w-7 rounded-full p-0 shadow-md"
+                    onClick={handleRemovePoster}
+                    disabled={isUploading}
+                  >
+                    ✕
+                  </Button>
                 </div>
-              </div>
-
-              {isUploading && (
-                <div className="w-full bg-muted rounded-full h-3 mb-6">
-                  <div
-                    className="bg-primary h-3 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
+              ) : (
+                <label className="flex aspect-[3/2] cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed transition-colors hover:bg-muted/50">
+                  <span className="mb-1 text-3xl">+</span>
+                  <span className="px-2 text-center text-sm text-muted-foreground">
+                    Add Poster
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePosterUpload}
+                    disabled={isUploading}
+                  />
+                </label>
               )}
 
-              <div className="pt-4">
-                <Button
-                  type="submit"
-                  className="w-full h-12 text-base font-medium"
-                  disabled={isUploading}
-                >
-                  {isUploading ? 'Updating...' : 'Update Event'}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+              {isUploading && (
+                <div className="h-3 w-full rounded-full bg-muted">
+                  <div
+                    className="h-3 rounded-full bg-primary transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              )}
+            </ListingFormSection>
 
-      {/* Delete Confirmation Dialog */}
+            <div className="border-t border-border pt-6">
+              <Button
+                type="submit"
+                className="h-11 w-full"
+                disabled={isUploading}
+              >
+                {isUploading ? 'Updating...' : 'Update Event'}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </ListingFormLayout>
+
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
@@ -822,6 +767,6 @@ export default function EditEvent(props: {
         onConfirm={handleDeleteEvent}
         confirmLabel="Delete Event"
       />
-    </PageLayout>
+    </>
   )
 }

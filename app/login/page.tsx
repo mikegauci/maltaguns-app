@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useRef, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -45,7 +45,7 @@ type ResetPasswordForm = z.infer<typeof resetPasswordSchema>
 function LoginContent() {
   const router = useRouter()
   const { toast } = useToast()
-  const [supabase] = useState(() => createClient())
+  const { supabase } = useSupabase()
   const loginInFlightRef = useRef(false)
 
   // Custom hook for auth state management
@@ -214,10 +214,12 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-6">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-[calc(100vh-var(--header-height))] items-center justify-center bg-background p-6">
+      <Card className="w-full max-w-md rounded-sm border-border shadow-none">
         <CardHeader>
-          <CardTitle>Welcome Back</CardTitle>
+          <CardTitle className="app-display uppercase tracking-tight">
+            Welcome Back
+          </CardTitle>
           <CardDescription>Sign in to your MaltaGuns account</CardDescription>
         </CardHeader>
         <CardContent>

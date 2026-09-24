@@ -17,6 +17,8 @@ import { AdminEmptyState } from '@/app/admin/components/AdminEmptyState'
 import { AdminDataCount } from '@/app/admin/components/AdminDataCount'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { AdminStatusBadge } from '@/components/admin/AdminStatusBadge'
+import type { AdminStatusTone } from '@/lib/admin/status-tones'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { useToast } from '@/hooks/use-toast'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
@@ -374,18 +376,14 @@ function IdFrontThumbnail({
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const className =
+  const tone: AdminStatusTone =
     status === 'Approved'
-      ? 'bg-green-100 text-green-800 border-green-200'
+      ? 'active'
       : status === 'Declined'
-        ? 'bg-red-100 text-red-800 border-red-200'
+        ? 'rejected'
         : status === 'In Review'
-          ? 'bg-amber-100 text-amber-800 border-amber-200'
-          : 'bg-muted text-muted-foreground'
+          ? 'pending'
+          : 'neutral'
 
-  return (
-    <Badge variant="outline" className={className}>
-      {status}
-    </Badge>
-  )
+  return <AdminStatusBadge tone={tone}>{status}</AdminStatusBadge>
 }

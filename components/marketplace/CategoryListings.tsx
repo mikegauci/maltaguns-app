@@ -12,17 +12,26 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Package, Star, Plus } from 'lucide-react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase/public'
-import Image from 'next/image'
 import { StorageImage } from '@/components/ui/storage-image'
+import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
+import { AppCard, AppSectionHeading } from '@/components/design-system'
 import { PageLayout } from '@/components/ui/page-layout'
 import { PageHeader } from '@/components/ui/page-header'
-import { BackButton } from '../ui/back-button'
-import { formatPrice, slugify } from '@/lib/format'
+import { formatPrice } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
+
+function getBackHref(type?: 'firearms' | 'non_firearms', category?: string) {
+  if (category && type === 'firearms') return '/marketplace/firearms'
+  if (category && type === 'non_firearms') return '/marketplace/non-firearms'
+  if (type === 'firearms') return '/marketplace'
+  if (type === 'non_firearms') return '/marketplace/non-firearms'
+  return '/marketplace'
+}
 
 interface Listing {
   id: string
   title: string
+  slug?: string
   description: string
   price: number
   category: string
@@ -42,6 +51,28 @@ interface CategoryListingsProps {
   subcategory?: string
   title: string
   description?: string
+  initialFeaturedListings?: Listing[]
+  initialRegularListings?: Listing[]
+}
+
+async function fetchCategoryListingsFromApi(
+  type?: 'firearms' | 'non_firearms',
+  category?: string,
+  subcategory?: string
+) {
+  const params = new URLSearchParams()
+  if (type) params.set('type', type)
+  if (category) params.set('category', category)
+  if (subcategory) params.set('subcategory', subcategory)
+
+  const res = await fetch(
+    `/api/public/marketplace/category?${params.toString()}`
+  )
+  if (!res.ok) throw new Error('Failed to load listings')
+  return res.json() as Promise<{
+    featuredListings: Listing[]
+    regularListings: Listing[]
+  }>
 }
 
 function getCategoryLabel(category: string, type: 'firearms' | 'non_firearms') {
@@ -77,88 +108,37 @@ export default function CategoryListings({
   subcategory,
   title,
   description,
+  initialFeaturedListings,
+  initialRegularListings,
 }: CategoryListingsProps) {
-  const [featuredListings, setFeaturedListings] = useState<Listing[]>([])
-  const [regularListings, setRegularListings] = useState<Listing[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [featuredListings, setFeaturedListings] = useState<Listing[]>(
+    initialFeaturedListings ?? []
+  )
+  const [regularListings, setRegularListings] = useState<Listing[]>(
+    initialRegularListings ?? []
+  )
+  const [isLoading, setIsLoading] = useState(
+    initialFeaturedListings === undefined &&
+      initialRegularListings === undefined
+  )
 
   useEffect(() => {
+    if (
+      initialFeaturedListings !== undefined &&
+      initialRegularListings !== undefined
+    ) {
+      return
+    }
+
     async function fetchListings() {
       try {
-        // Get current date
-        const now = new Date()
-
-        // Calculate date 7 days ago
-        const sevenDaysAgo = new Date()
-        sevenDaysAgo.setDate(now.getDate() - 7)
-
-        // Format for Supabase query
-        const sevenDaysAgoStr = sevenDaysAgo.toISOString()
-
-        // Start building the query - include active non-expired listings and recent sold listings
-        let query = supabase
-          .from('listings')
-          .select('*')
-          .or(
-            `and(status.eq.active,expires_at.gt.${new Date().toISOString()}),and(status.eq.sold,updated_at.gt.${sevenDaysAgoStr})`
-          )
-
-        // Add type filter if provided
-        if (type) {
-          query = query.eq('type', type)
-        }
-
-        // Add category filter if provided
-        if (category) {
-          query = query.eq('category', category)
-        }
-
-        // Add subcategory filter if provided
-        if (subcategory) {
-          query = query.eq('subcategory', subcategory)
-        }
-
-        // Order by created_at
-        query = query.order('created_at', { ascending: false })
-
-        // Execute the query
-        const { data, error } = await query
-
-        if (error) throw error
-
-        // Filter out inactive listings
-        const filteredListings = data
-          ? data.filter(listing => listing.status !== 'inactive')
-          : []
-
-        // Fetch featured listings
-        const { data: featuredData, error: featuredError } = await supabase
-          .from('featured_listings')
-          .select('listing_id')
-          .gt('end_date', new Date().toISOString())
-
-        if (featuredError) throw featuredError
-
-        // Create a set of featured listing IDs for quick lookup
-        const featuredIds = new Set(
-          featuredData?.map(item => item.listing_id) || []
+        const data = await fetchCategoryListingsFromApi(
+          type,
+          category,
+          subcategory
         )
-
-        // Separate featured and regular listings
-        const featured: Listing[] = []
-        const regular: Listing[] = []
-
-        filteredListings.forEach(listing => {
-          const isFeatured = featuredIds.has(listing.id)
-          const withFlag = { ...listing, is_featured: isFeatured }
-
-          if (isFeatured) featured.push(withFlag)
-
-          regular.push(withFlag)
-        })
-
-        setFeaturedListings(featured)
-        setRegularListings(regular)
+        setFeaturedListings(data.featuredListings)
+        setRegularListings(data.regularListings)
       } catch (error) {
         console.error('Error fetching listings:', error)
       } finally {
@@ -167,17 +147,18 @@ export default function CategoryListings({
     }
 
     fetchListings()
-  }, [type, category, subcategory])
+  }, [
+    type,
+    category,
+    subcategory,
+    initialFeaturedListings,
+    initialRegularListings,
+  ])
 
   // Function to render a listing card
   const renderListingCard = (listing: Listing) => (
-    <Link
-      key={listing.id}
-      href={`/marketplace/listing/${slugify(listing.title)}`}
-    >
-      <Card
-        className={`overflow-hidden hover:shadow-lg transition-shadow ${listing.is_featured ? 'border-2 border-red-500' : ''}`}
-      >
+    <Link key={listing.id} href={listingPublicPath(listing)}>
+      <AppCard featured={listing.is_featured}>
         <div className="aspect-video relative overflow-hidden">
           <StorageImage
             src={listing.thumbnail}
@@ -199,13 +180,7 @@ export default function CategoryListings({
           <div className="flex items-center gap-2 mb-2 sm:mb-3">
             {listing.type === 'firearms' ? (
               <div className="inline-flex">
-                <Image
-                  src="/images/pistol-gun-icon.svg"
-                  alt="Firearms"
-                  width={16}
-                  height={16}
-                  className="mr-2"
-                />
+                <PistolGunIcon className="mr-2 h-4 w-4" />
               </div>
             ) : (
               <div className="inline-flex">
@@ -236,16 +211,20 @@ export default function CategoryListings({
             )}
           </div>
         </CardContent>
-      </Card>
+      </AppCard>
     </Link>
   )
 
   return (
     <PageLayout>
-      <PageHeader title={title} description={description} />
-      <BackButton label="Back" href="/marketplace" />
-
-      <div className="mb-8 flex justify-center">
+      <PageHeader
+        align="center"
+        backHref={getBackHref(type, category)}
+        title={title}
+        description={description}
+        className="mb-4"
+      />
+      <div className="mb-6 flex justify-center">
         <Link href="/marketplace/create">
           <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -280,10 +259,11 @@ export default function CategoryListings({
         <div className="space-y-8">
           {featuredListings.length > 0 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4 flex items-center">
-                <Star className="h-5 w-5 mr-2 text-red-500" />
+              <AppSectionHeading
+                icon={<Star className="mr-2 h-5 w-5 text-primary" />}
+              >
                 Featured Listings
-              </h2>
+              </AppSectionHeading>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
                 {featuredListings.map(renderListingCard)}
               </div>
@@ -292,9 +272,9 @@ export default function CategoryListings({
 
           {regularListings.length > 0 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4">
+              <AppSectionHeading>
                 {featuredListings.length > 0 ? 'All Listings' : 'Listings'}
-              </h2>
+              </AppSectionHeading>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-6">
                 {regularListings.map(renderListingCard)}
               </div>

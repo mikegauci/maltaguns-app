@@ -38,6 +38,7 @@ interface DataTableProps<TData, TValue> {
   searchKey?: string
   searchKeys?: string[]
   searchPlaceholder?: string
+  initialColumnVisibility?: VisibilityState
   onCreateNew?: () => void
   createButtonText?: string
 }
@@ -48,6 +49,7 @@ export function DataTable<TData, TValue>({
   searchKey,
   searchKeys,
   searchPlaceholder = 'Search...',
+  initialColumnVisibility,
   onCreateNew,
   createButtonText = 'Create New',
 }: DataTableProps<TData, TValue>) {
@@ -55,7 +57,9 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [globalFilter, setGlobalFilter] = useState('')
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    initialColumnVisibility ?? {}
+  )
   const [rowSelection, setRowSelection] = useState({})
 
   const useMultiFieldSearch = Boolean(searchKeys?.length)
@@ -102,16 +106,24 @@ export function DataTable<TData, TValue>({
     },
   })
 
+  const searchColumn = useMemo(
+    () =>
+      searchKey
+        ? table.getAllColumns().find(column => column.id === searchKey)
+        : undefined,
+    [searchKey, table]
+  )
+
   const searchValue = useMultiFieldSearch
     ? (table.getState().globalFilter ?? '')
-    : ((table.getColumn(searchKey ?? '')?.getFilterValue() as string) ?? '')
+    : ((searchColumn?.getFilterValue() as string) ?? '')
 
   const handleSearchChange = (value: string) => {
     if (useMultiFieldSearch) {
       setGlobalFilter(value)
       return
     }
-    table.getColumn(searchKey ?? '')?.setFilterValue(value)
+    searchColumn?.setFilterValue(value)
   }
 
   if (!isMounted) {
@@ -161,11 +173,11 @@ export function DataTable<TData, TValue>({
           </Button>
         )}
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-sm border border-border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map(headerGroup => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="border-border">
                 {headerGroup.headers.map(header => {
                   return (
                     <TableHead
@@ -207,6 +219,7 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  className="border-border hover:bg-muted/20"
                 >
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>

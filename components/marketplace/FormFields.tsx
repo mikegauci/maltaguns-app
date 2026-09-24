@@ -62,7 +62,7 @@ export function DescriptionField<T extends FieldValues>({
           <FormControl>
             <Textarea
               placeholder="Provide detailed information about the item"
-              className="min-h-[120px]"
+              className="min-h-[140px] resize-y"
               {...field}
             />
           </FormControl>

@@ -19,12 +19,12 @@ export function AppChrome({ children, impersonation }: AppChromeProps) {
 
   return (
     <>
-      <Header />
+      <Header impersonation={impersonation} />
       <main
         className={
           impersonation
-            ? 'min-h-[calc(100vh-64px-40px)]'
-            : 'min-h-[calc(100vh-64px)]'
+            ? 'min-h-[calc(100vh-var(--header-height)-2.5rem)] pt-[var(--header-height)]'
+            : 'min-h-[calc(100vh-var(--header-height))] pt-[var(--header-height)]'
         }
       >
         {children}

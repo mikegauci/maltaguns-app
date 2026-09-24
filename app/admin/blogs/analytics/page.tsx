@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 import {
   Card,
@@ -24,6 +24,8 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import { getBlogPostPublicPath } from '@/lib/blog-paths'
+import { loadPublishedHelpGuidePostIds } from '@/lib/help-guide-utils'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 
 // Remove hardcoded admin list - use database is_admin field instead
@@ -61,10 +63,11 @@ interface BlogAnalytics {
 
 export default function BlogAnalyticsPage() {
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const { isAuthorized } = useRequireAdmin({ preset: 'admin-toast' })
 
   const [analytics, setAnalytics] = useState<BlogAnalytics | null>(null)
+  const [helpGuideIds, setHelpGuideIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
 
   // Fetch analytics data
@@ -75,7 +78,10 @@ export default function BlogAnalyticsPage() {
       try {
         setLoading(true)
 
-        // First, try to fetch posts with basic columns that should always exist
+        const publishedHelpGuideIds =
+          await loadPublishedHelpGuidePostIds(supabase)
+        setHelpGuideIds(publishedHelpGuideIds)
+
         const { data: allPosts, error: postsError } = await supabase.from(
           'blog_posts'
         ).select(`
@@ -427,7 +433,11 @@ export default function BlogAnalyticsPage() {
                       </Badge>
                     </div>
                     <Link
-                      href={`/blog/${post.category}/${post.slug}`}
+                      href={getBlogPostPublicPath(
+                        post.category,
+                        post.slug,
+                        helpGuideIds.has(post.id)
+                      )}
                       className="font-medium line-clamp-1 hover:text-primary"
                     >
                       {post.title}

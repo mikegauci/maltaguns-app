@@ -23,11 +23,13 @@ export interface BlogPost {
   category: string
   published: boolean
   created_at: string
+  is_help_guide?: boolean
 }
 
 export interface Listing {
   id: string
   title: string
+  slug?: string
   type: 'firearms' | 'non_firearms'
   category: string
   price: number

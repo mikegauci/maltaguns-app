@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   MapPin,
   Package,
+  Scale,
   Search,
   Store,
   Ticket,
@@ -107,6 +108,29 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         href: '/admin/blogs',
         icon: FileText,
         description: 'Manage blog posts',
+      },
+      {
+        title: 'Legal Pages',
+        href: '/admin/legal',
+        icon: Scale,
+        description: 'Manage policies and terms',
+      },
+    ],
+  },
+  {
+    label: 'Help',
+    items: [
+      {
+        title: 'Help Center',
+        href: '/admin/help',
+        icon: HelpCircle,
+        description: 'Manage help tabs and FAQs',
+      },
+      {
+        title: 'Help Guides',
+        href: '/admin/help/guides',
+        icon: FileText,
+        description: 'Create and assign help guides',
       },
     ],
   },

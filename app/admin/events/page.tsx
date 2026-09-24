@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import {
   Popover,
   PopoverContent,
@@ -22,6 +22,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { CalendarIcon } from 'lucide-react'
+import { AdminTableLoader } from '@/components/admin/AdminTableLoader'
 import { cn } from '@/lib/utils'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
@@ -83,7 +84,7 @@ function EventsPageComponent() {
     meta_title: '',
     meta_description: '',
   })
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   const columns: ColumnDef<Event>[] = [
     {
@@ -387,16 +388,15 @@ function EventsPageComponent() {
 
   return (
     <AdminPageLayout title="Event Management" description="Manage events">
-      <DataTable
-        columns={columns}
-        data={isLoading ? [] : events}
-        searchKey="title"
-        searchPlaceholder="Search events..."
-      />
-      {isLoading && (
-        <div className="w-full flex justify-center my-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
+      {isLoading ? (
+        <AdminTableLoader />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={events}
+          searchKey="title"
+          searchPlaceholder="Search events..."
+        />
       )}
 
       {/* Edit Event Dialog */}

@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { BackButton } from '@/components/ui/back-button'
 import { PageLayout } from '@/components/ui/page-layout'
@@ -55,7 +55,7 @@ export default function EditRangePage(props: {
   const params = use(props.params)
   const router = useRouter()
   const { toast } = useToast()
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [isLoading, setIsLoading] = useState(true)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [rangeId, setRangeId] = useState<string | null>(null)
@@ -372,7 +372,7 @@ export default function EditRangePage(props: {
                           <img
                             src={field.value}
                             alt="Range logo preview"
-                            className="w-32 h-32 object-contain rounded-lg"
+                            className="w-32 h-32 object-contain rounded-sm"
                           />
                         )}
                         <Input

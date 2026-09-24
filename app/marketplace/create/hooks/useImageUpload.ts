@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { UseFormSetValue } from 'react-hook-form'
 import {
   moveImageToPrimary,
@@ -20,7 +20,7 @@ interface UseImageUploadProps {
 }
 
 export function useImageUpload({ toast, setValue }: UseImageUploadProps) {
-  const supabase = createClient()
+  const { supabase } = useSupabase()
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
 

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { AdminDataTable as DataTable } from '@/app/admin/components/AdminDataTable'
-import { slugify } from '@/lib/format'
+import { listingPublicPath } from '@/lib/listing-slug'
 import type { ColumnDef } from '@tanstack/react-table'
 import { format } from 'date-fns'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -21,8 +21,9 @@ import {
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { Badge } from '@/components/ui/badge'
+import { AdminTableLoader } from '@/components/admin/AdminTableLoader'
 import { Button } from '@/components/ui/button'
 import { ExternalLink } from 'lucide-react'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
@@ -38,7 +39,9 @@ interface ReportedListing {
   created_at: string
   status: string
   listing?: {
+    id?: string
     title: string
+    slug?: string
     seller_id: string
     status: string
     seller?: {
@@ -79,7 +82,7 @@ function ReportedListingsPageComponent() {
     null
   )
   const [newStatus, setNewStatus] = useState('')
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   function formatReason(reason: string): string {
     return reason.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
@@ -109,7 +112,8 @@ function ReportedListingsPageComponent() {
       enableHiding: false,
     },
     {
-      accessorKey: 'listing.title',
+      id: 'listingTitle',
+      accessorFn: row => row.listing?.title ?? '',
       header: 'Listing Title',
       enableSorting: true,
       cell: ({ row }) => {
@@ -125,7 +129,11 @@ function ReportedListingsPageComponent() {
                 size="sm"
                 onClick={() =>
                   window.open(
-                    `/marketplace/listing/${slugify(listing.title)}`,
+                    listingPublicPath({
+                      slug: listing.slug,
+                      title: listing.title,
+                      id: listing.id || row.original.listing_id,
+                    }),
                     '_blank'
                   )
                 }
@@ -138,7 +146,8 @@ function ReportedListingsPageComponent() {
       },
     },
     {
-      accessorKey: 'listing.seller.username',
+      id: 'listingOwner',
+      accessorFn: row => row.listing?.seller?.username ?? '',
       header: 'Listing Owner',
       enableSorting: true,
       cell: ({ row }) => {
@@ -147,7 +156,8 @@ function ReportedListingsPageComponent() {
       },
     },
     {
-      accessorKey: 'reporter.username',
+      id: 'reporter',
+      accessorFn: row => row.reporter?.username ?? '',
       header: 'Reporter',
       enableSorting: true,
       cell: ({ row }) => {
@@ -399,17 +409,15 @@ function ReportedListingsPageComponent() {
           </Link>
         </p>
       )}
-      <DataTable
-        columns={columns}
-        data={isLoading ? [] : displayedReports}
-        searchKey="listing.title"
-        searchPlaceholder="Search by listing title..."
-      />
-
-      {isLoading && (
-        <div className="w-full flex justify-center my-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
+      {isLoading ? (
+        <AdminTableLoader />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={displayedReports}
+          searchKey="listingTitle"
+          searchPlaceholder="Search by listing title..."
+        />
       )}
 
       {/* Status Update Dialog */}

@@ -1,5 +1,14 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { supabase } from '@/lib/supabase/public'
+import {
+  BLOG_CARD_SELECT,
+  BLOG_HOME_SELECT,
+  ESTABLISHMENT_CARD_SELECT,
+  EVENT_HOME_SELECT,
+  LISTING_CARD_SELECT,
+} from '@/lib/query-selects'
+import { applyExcludeHelpGuideIds } from '@/lib/help-guide-utils'
+import { fetchHelpGuidePostIdsPublic } from '@/lib/help-guides.public'
 
 export async function getHomePageData() {
   try {
@@ -11,6 +20,7 @@ export async function getHomePageData() {
       featuredListings: [],
       latestPosts: [],
       latestEvents: [],
+      eventsArePast: false,
       featuredEstablishments: [],
     }
   }
@@ -18,12 +28,14 @@ export async function getHomePageData() {
 
 export async function fetchHomePageData() {
   const now = new Date().toISOString()
+  const helpGuideIds = await fetchHelpGuidePostIdsPublic()
 
   const [
     recentListingsRes,
     featuredListingsRes,
     postsRes,
-    eventsRes,
+    upcomingEventsRes,
+    pastEventsRes,
     storesRes,
     rangesRes,
     servicingRes,
@@ -31,7 +43,7 @@ export async function fetchHomePageData() {
   ] = await Promise.all([
     supabaseAdmin
       .from('listings')
-      .select('*')
+      .select(LISTING_CARD_SELECT)
       .eq('status', 'active')
       .gt('expires_at', now)
       .order('created_at', { ascending: false })
@@ -41,7 +53,7 @@ export async function fetchHomePageData() {
       .select(
         `
           listing_id,
-          listings!inner(*)
+          listings!inner(${LISTING_CARD_SELECT})
         `
       )
       .gt('end_date', now)
@@ -49,44 +61,48 @@ export async function fetchHomePageData() {
       .gt('listings.expires_at', now)
       .order('end_date', { ascending: false })
       .limit(10),
-    supabaseAdmin
-      .from('blog_posts')
-      .select(
-        `
-          *,
-          author:profiles(username)
-        `
-      )
-      .eq('published', true)
-      .order('created_at', { ascending: false })
-      .limit(10),
+    applyExcludeHelpGuideIds(
+      supabaseAdmin
+        .from('blog_posts')
+        .select(BLOG_HOME_SELECT)
+        .eq('published', true)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      helpGuideIds
+    ),
     supabaseAdmin
       .from('events')
-      .select('*')
+      .select(EVENT_HOME_SELECT)
       .gte('start_date', now)
       .order('start_date', { ascending: true })
       .limit(10),
     supabaseAdmin
+      .from('events')
+      .select(EVENT_HOME_SELECT)
+      .lt('start_date', now)
+      .order('start_date', { ascending: false })
+      .limit(10),
+    supabaseAdmin
       .from('stores')
-      .select('*')
+      .select(ESTABLISHMENT_CARD_SELECT)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(10),
     supabaseAdmin
       .from('ranges')
-      .select('*')
+      .select(ESTABLISHMENT_CARD_SELECT)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(10),
     supabaseAdmin
       .from('servicing')
-      .select('*')
+      .select(ESTABLISHMENT_CARD_SELECT)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(10),
     supabaseAdmin
       .from('clubs')
-      .select('*')
+      .select(ESTABLISHMENT_CARD_SELECT)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(10),
@@ -97,6 +113,9 @@ export async function fetchHomePageData() {
   }
   if (featuredListingsRes.error) {
     throw new Error(featuredListingsRes.error.message)
+  }
+  if (postsRes.error) {
+    throw new Error(postsRes.error.message)
   }
 
   const featuredListings = (featuredListingsRes.data || []).map(
@@ -123,11 +142,21 @@ export async function fetchHomePageData() {
     )
     .slice(0, 10)
 
+  const upcomingEvents = upcomingEventsRes.data || []
+  const pastEvents = pastEventsRes.data || []
+  const latestEvents = upcomingEvents.length > 0 ? upcomingEvents : pastEvents
+
+  const latestPosts = (postsRes.data || []).map((post: any) => ({
+    ...post,
+    author: Array.isArray(post.author) ? post.author[0] : post.author,
+  }))
+
   return {
     recentListings: recentListingsRes.data || [],
     featuredListings,
-    latestPosts: postsRes.data || [],
-    latestEvents: eventsRes.data || [],
+    latestPosts,
+    latestEvents,
+    eventsArePast: upcomingEvents.length === 0 && pastEvents.length > 0,
     featuredEstablishments,
   }
 }
@@ -148,7 +177,7 @@ export async function fetchMarketplacePageData() {
     await Promise.all([
       supabaseAdmin
         .from('listings')
-        .select('*')
+        .select(LISTING_CARD_SELECT)
         .eq('status', 'active')
         .gt('expires_at', now)
         .order('created_at', { ascending: false })
@@ -187,21 +216,18 @@ export async function getBlogPageData() {
   }
 }
 
-async function fetchBlogPageData() {
-  const { data: posts, error } = await supabase
-    .from('blog_posts')
-    .select(
-      `
-        *,
-        author:profiles(username),
-        store:stores(id, business_name, slug),
-        club:clubs(id, business_name, slug),
-        range:ranges(id, business_name, slug),
-        servicing:servicing(id, business_name, slug)
-      `
-    )
-    .eq('published', true)
-    .order('created_at', { ascending: false })
+export async function fetchBlogPageData() {
+  const helpGuideIds = await fetchHelpGuidePostIdsPublic()
+
+  const { data: posts, error } = await applyExcludeHelpGuideIds(
+    supabase
+      .from('blog_posts')
+      .select(BLOG_CARD_SELECT)
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    helpGuideIds
+  )
 
   if (error) {
     throw new Error(error.message)

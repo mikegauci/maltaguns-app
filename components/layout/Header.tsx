@@ -50,7 +50,11 @@ function MenuSearchIcon({ className }: { className?: string }) {
   )
 }
 
-export function Header() {
+interface HeaderProps {
+  impersonation?: boolean
+}
+
+export function Header({ impersonation = false }: HeaderProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { supabase, session } = useSupabase()
@@ -77,13 +81,20 @@ export function Header() {
     })
   }, [pathname])
 
-  // Check if current path matches the menu item
   const isActive = (path: string) => {
     if (path === '/') {
       return pathname === '/'
     }
     return pathname.startsWith(path)
   }
+
+  const navClass = (path: string) =>
+    isActive(path)
+      ? 'rounded-sm bg-[var(--chrome-slate)] !text-white'
+      : 'rounded-sm text-[var(--chrome-ink)] hover:bg-[var(--chrome-slate)] hover:!text-white'
+
+  const menuPanelClass =
+    'bg-[var(--chrome-surface)] border-[var(--chrome-border)] text-[var(--chrome-ink)]'
 
   // More reliable logout that ensures complete session cleanup
   const handleLogout = async () => {
@@ -98,13 +109,14 @@ export function Header() {
   }
 
   return (
-    <>
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-3 relative flex items-center justify-between">
-          {/* Mobile: combined menu + search control (left) */}
+    <div
+      className={`site-chrome fixed inset-x-0 z-40 ${impersonation ? 'top-10' : 'top-0'}`}
+    >
+      <header className="site-chrome-header border-b border-[var(--chrome-border)]">
+        <div className="container mx-auto px-4 py-3 relative flex items-center justify-between min-h-[var(--header-height)]">
           <button
             type="button"
-            className="lg:hidden z-10 flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background"
+            className="lg:hidden z-10 flex h-10 w-10 items-center justify-center rounded-sm border border-[var(--chrome-border)] bg-[var(--chrome-surface)] text-[var(--chrome-ink)]"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label={menuOpen ? 'Close menu' : 'Open menu and search'}
             aria-expanded={menuOpen}
@@ -122,10 +134,11 @@ export function Header() {
             className="absolute left-1/2 -translate-x-1/2 z-0 flex items-center gap-2 max-w-[min(45vw,11rem)] lg:static lg:translate-x-0 lg:max-w-none lg:z-auto"
           >
             <Image
-              src="/maltaguns.png"
+              src="/maltaguns-logo-dark.png"
               alt="MaltaGuns Logo"
               width={152}
               height={28}
+              priority
               className="h-8 w-auto max-w-full object-contain"
             />
           </Link>
@@ -133,7 +146,7 @@ export function Header() {
           <nav className="hidden lg:flex items-center gap-3">
             {/* Desktop search bar - now before Marketplace */}
             <div className="hidden lg:block w-[400px] w-full">
-              <SearchBar disableShortcut={false} />
+              <SearchBar disableShortcut={false} theme="dark" />
             </div>
 
             {/* Establishments Dropdown */}
@@ -141,12 +154,14 @@ export function Header() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className={`flex items-center gap-1 ${isActive('/establishments') ? 'bg-accent' : ''}`}
+                  className={`flex items-center gap-1 ${navClass('/establishments')}`}
                 >
                   Establishments <ChevronDown className="h-4 w-4 ml-1" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-48 p-2 mt-2">
+              <DropdownMenuContent
+                className={`w-48 p-2 mt-2 ${menuPanelClass}`}
+              >
                 <DropdownMenuItem asChild className="cursor-pointer">
                   <Link
                     href="/establishments"
@@ -211,10 +226,7 @@ export function Header() {
                 prefetchPublic('public-marketplace', '/api/public/marketplace')
               }
             >
-              <Button
-                variant="ghost"
-                className={isActive('/marketplace') ? 'bg-accent' : ''}
-              >
+              <Button variant="ghost" className={navClass('/marketplace')}>
                 Marketplace
               </Button>
             </Link>
@@ -228,10 +240,7 @@ export function Header() {
                 prefetchPublic('public-events', '/api/public/events')
               }
             >
-              <Button
-                variant="ghost"
-                className={isActive('/events') ? 'bg-accent' : ''}
-              >
+              <Button variant="ghost" className={navClass('/events')}>
                 Events
               </Button>
             </Link>
@@ -242,18 +251,12 @@ export function Header() {
               }
               onFocus={() => prefetchPublic('public-blog', '/api/public/blog')}
             >
-              <Button
-                variant="ghost"
-                className={isActive('/blog') ? 'bg-accent' : ''}
-              >
+              <Button variant="ghost" className={navClass('/blog')}>
                 Blog
               </Button>
             </Link>
             <Link href="/help">
-              <Button
-                variant="ghost"
-                className={isActive('/help') ? 'bg-accent' : ''}
-              >
+              <Button variant="ghost" className={navClass('/help')}>
                 Help
               </Button>
             </Link>
@@ -268,12 +271,15 @@ export function Header() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className={`aspect-square rounded-full w-10 flex items-center justify-center bg-background focus:outline-none p-2 ${session?.user ? 'border-green-500 border-2 focus:border-green-500' : 'border'}`}
+                    className={`aspect-square rounded-sm w-10 flex items-center justify-center bg-[var(--chrome-surface)] border border-[var(--chrome-border)] text-[var(--chrome-ink)] focus:outline-none p-2 ${session?.user ? 'border-green-500 border-2 focus:border-green-500' : ''}`}
                   >
                     <User className="h-5 w-5" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-40 p-2 mt-2" align="end">
+                <DropdownMenuContent
+                  className={`w-40 p-2 mt-2 ${menuPanelClass}`}
+                  align="end"
+                >
                   {session?.user ? (
                     <>
                       <DropdownMenuItem asChild className="cursor-pointer">
@@ -314,11 +320,12 @@ export function Header() {
       </header>
 
       {menuOpen && (
-        <nav className="lg:hidden bg-background border-b">
+        <nav className="lg:hidden site-chrome-header border-b border-[var(--chrome-border)] max-h-[calc(100dvh-var(--header-height))] overflow-y-auto">
           <div className="container mx-auto px-4 py-3 flex flex-col gap-4">
             <SearchBar
               variant="inline"
               disableShortcut
+              theme="dark"
               onSearchComplete={() => setMenuOpen(false)}
             />
 
@@ -326,17 +333,16 @@ export function Header() {
               <Button
                 variant="ghost"
                 onClick={() => setMenuOpen(false)}
-                className={isActive('/marketplace') ? 'bg-accent' : ''}
+                className={`w-full justify-start ${navClass('/marketplace')}`}
               >
                 Marketplace
               </Button>
             </Link>
 
-            {/* Mobile Establishments Section */}
             <div>
               <Button
                 variant="ghost"
-                className={`w-full justify-start ${isActive('/establishments') ? 'bg-accent' : ''}`}
+                className={`w-full justify-start ${navClass('/establishments')}`}
                 onClick={e => {
                   e.preventDefault()
                   if (pathname === '/establishments' && establishmentsOpen) {
@@ -405,7 +411,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 onClick={() => setMenuOpen(false)}
-                className={isActive('/events') ? 'bg-accent' : ''}
+                className={`w-full justify-start ${navClass('/events')}`}
               >
                 Events
               </Button>
@@ -414,7 +420,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 onClick={() => setMenuOpen(false)}
-                className={isActive('/blog') ? 'bg-accent' : ''}
+                className={`w-full justify-start ${navClass('/blog')}`}
               >
                 Blog
               </Button>
@@ -423,7 +429,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 onClick={() => setMenuOpen(false)}
-                className={isActive('/help') ? 'bg-accent' : ''}
+                className={`w-full justify-start ${navClass('/help')}`}
               >
                 Help
               </Button>
@@ -432,7 +438,7 @@ export function Header() {
               <Button
                 variant="ghost"
                 onClick={() => setMenuOpen(false)}
-                className={isActive('/contact') ? 'bg-accent' : ''}
+                className={`w-full justify-start ${navClass('/contact')}`}
               >
                 Contact
               </Button>
@@ -453,6 +459,7 @@ export function Header() {
                 </Link>
                 <Button
                   variant="outline"
+                  className="w-full border-white bg-white text-black hover:bg-white/90 hover:text-black"
                   onClick={() => {
                     handleLogout()
                     setMenuOpen(false)
@@ -469,13 +476,18 @@ export function Header() {
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button onClick={() => setMenuOpen(false)}>Register</Button>
+                  <Button
+                    onClick={() => setMenuOpen(false)}
+                    className="rounded-sm bg-[var(--chrome-brand)] text-white hover:bg-[var(--chrome-brand)]/90"
+                  >
+                    Register
+                  </Button>
                 </Link>
               </>
             )}
           </div>
         </nav>
       )}
-    </>
+    </div>
   )
 }

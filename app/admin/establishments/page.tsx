@@ -22,11 +22,18 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { scheduleEffectWork } from '@/lib/schedule-effect-work'
-import { createClient } from '@/lib/supabase/client'
+import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { uploadEstablishmentLogo } from '@/lib/establishments'
 import { Store, Building, Wrench, Target, Upload, X } from 'lucide-react'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { AdminLoadingState } from '@/app/admin/components/AdminLoadingState'
+import { AdminStatusBadge } from '@/components/admin/AdminStatusBadge'
+import {
+  establishmentStatTileClass,
+  establishmentStatusTone,
+  establishmentTypeTone,
+  typeSelectorCardClass,
+} from '@/lib/admin/establishment-ui'
 import { useRequireAdmin } from '@/hooks/useRequireAdmin'
 
 interface Establishment {
@@ -126,7 +133,7 @@ function EstablishmentsPageComponent() {
   const [statusFilter, setStatusFilter] = useState<
     'all' | 'pending' | 'active' | 'rejected'
   >(() => parseEstablishmentStatusFilter(searchParams.get('status')))
-  const supabase = createClient()
+  const { supabase } = useSupabase()
 
   function getTypePath(type: string) {
     return type === 'servicing' ? 'servicing' : `${type}s`
@@ -172,7 +179,7 @@ function EstablishmentsPageComponent() {
                 className="w-10 h-10 object-cover rounded-md"
               />
             ) : (
-              <div className="w-10 h-10 bg-gray-200 rounded-md flex items-center justify-center">
+              <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center">
                 {getTypeIcon(establishment.type)}
               </div>
             )}
@@ -193,13 +200,9 @@ function EstablishmentsPageComponent() {
       cell: ({ row }) => {
         const type = row.getValue('type') as string
         return (
-          <div className="flex items-center">
-            <span
-              className={`px-2 py-1 rounded-full text-xs ${getTypeColor(type)}`}
-            >
-              {getTypeLabel(type)}
-            </span>
-          </div>
+          <AdminStatusBadge tone={establishmentTypeTone(type)}>
+            {getTypeLabel(type)}
+          </AdminStatusBadge>
         )
       },
     },
@@ -239,24 +242,10 @@ function EstablishmentsPageComponent() {
       enableSorting: true,
       cell: ({ row }) => {
         const status = row.getValue('status') as string
-        if (status === 'pending') {
-          return (
-            <span className="px-2 py-1 rounded text-xs bg-amber-100 text-amber-800">
-              Pending
-            </span>
-          )
-        }
-        if (status === 'rejected') {
-          return (
-            <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800">
-              Rejected
-            </span>
-          )
-        }
         return (
-          <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
-            Active
-          </span>
+          <AdminStatusBadge tone={establishmentStatusTone(status)}>
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </AdminStatusBadge>
         )
       },
     },
@@ -735,34 +724,34 @@ function EstablishmentsPageComponent() {
       title="Establishment Management"
       description="Manage establishments"
     >
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-blue-50 p-4 rounded-lg">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className={establishmentStatTileClass()}>
           <div className="flex justify-between items-center">
             <h3 className="font-medium">Stores</h3>
-            <Store className="h-5 w-5 text-blue-500" />
+            <Store className="h-5 w-5 text-sky-400" />
           </div>
-          <p className="text-2xl font-bold">{counts.stores}</p>
+          <p className="text-2xl font-bold tabular-nums">{counts.stores}</p>
         </div>
-        <div className="bg-green-50 p-4 rounded-lg">
+        <div className={establishmentStatTileClass()}>
           <div className="flex justify-between items-center">
             <h3 className="font-medium">Clubs</h3>
-            <Building className="h-5 w-5 text-green-500" />
+            <Building className="h-5 w-5 text-emerald-400" />
           </div>
-          <p className="text-2xl font-bold">{counts.clubs}</p>
+          <p className="text-2xl font-bold tabular-nums">{counts.clubs}</p>
         </div>
-        <div className="bg-orange-50 p-4 rounded-lg">
+        <div className={establishmentStatTileClass()}>
           <div className="flex justify-between items-center">
             <h3 className="font-medium">Servicing</h3>
-            <Wrench className="h-5 w-5 text-orange-500" />
+            <Wrench className="h-5 w-5 text-amber-400" />
           </div>
-          <p className="text-2xl font-bold">{counts.servicing}</p>
+          <p className="text-2xl font-bold tabular-nums">{counts.servicing}</p>
         </div>
-        <div className="bg-purple-50 p-4 rounded-lg">
+        <div className={establishmentStatTileClass()}>
           <div className="flex justify-between items-center">
             <h3 className="font-medium">Ranges</h3>
-            <Target className="h-5 w-5 text-purple-500" />
+            <Target className="h-5 w-5 text-violet-400" />
           </div>
-          <p className="text-2xl font-bold">{counts.ranges}</p>
+          <p className="text-2xl font-bold tabular-nums">{counts.ranges}</p>
         </div>
       </div>
 
@@ -843,39 +832,47 @@ function EstablishmentsPageComponent() {
             <Label htmlFor="create-type">Establishment Type</Label>
             <div className="grid grid-cols-4 gap-2">
               <div
-                className={`border rounded-md p-3 cursor-pointer ${createFormData.type === 'store' ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}
+                className={typeSelectorCardClass(
+                  createFormData.type === 'store'
+                )}
                 onClick={() =>
                   setCreateFormData({ ...createFormData, type: 'store' })
                 }
               >
-                <Store className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+                <Store className="h-5 w-5 text-sky-400 mx-auto mb-1" />
                 <p className="text-xs text-center">Store</p>
               </div>
               <div
-                className={`border rounded-md p-3 cursor-pointer ${createFormData.type === 'club' ? 'bg-green-50 border-green-300' : 'bg-white'}`}
+                className={typeSelectorCardClass(
+                  createFormData.type === 'club'
+                )}
                 onClick={() =>
                   setCreateFormData({ ...createFormData, type: 'club' })
                 }
               >
-                <Building className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                <Building className="h-5 w-5 text-emerald-400 mx-auto mb-1" />
                 <p className="text-xs text-center">Club</p>
               </div>
               <div
-                className={`border rounded-md p-3 cursor-pointer ${createFormData.type === 'servicing' ? 'bg-orange-50 border-orange-300' : 'bg-white'}`}
+                className={typeSelectorCardClass(
+                  createFormData.type === 'servicing'
+                )}
                 onClick={() =>
                   setCreateFormData({ ...createFormData, type: 'servicing' })
                 }
               >
-                <Wrench className="h-5 w-5 text-orange-500 mx-auto mb-1" />
+                <Wrench className="h-5 w-5 text-amber-400 mx-auto mb-1" />
                 <p className="text-xs text-center">Servicing</p>
               </div>
               <div
-                className={`border rounded-md p-3 cursor-pointer ${createFormData.type === 'range' ? 'bg-purple-50 border-purple-300' : 'bg-white'}`}
+                className={typeSelectorCardClass(
+                  createFormData.type === 'range'
+                )}
                 onClick={() =>
                   setCreateFormData({ ...createFormData, type: 'range' })
                 }
               >
-                <Target className="h-5 w-5 text-purple-500 mx-auto mb-1" />
+                <Target className="h-5 w-5 text-violet-400 mx-auto mb-1" />
                 <p className="text-xs text-center">Range</p>
               </div>
             </div>
@@ -1039,39 +1036,41 @@ function EstablishmentsPageComponent() {
             <Label htmlFor="edit-type">Type</Label>
             <div className="grid grid-cols-4 gap-2">
               <div
-                className={`border rounded-md p-3 cursor-pointer ${editFormData.type === 'store' ? 'bg-blue-50 border-blue-300' : 'bg-white'}`}
+                className={typeSelectorCardClass(editFormData.type === 'store')}
                 onClick={() =>
                   setEditFormData({ ...editFormData, type: 'store' })
                 }
               >
-                <Store className="h-5 w-5 text-blue-500 mx-auto mb-1" />
+                <Store className="h-5 w-5 text-sky-400 mx-auto mb-1" />
                 <p className="text-xs text-center">Store</p>
               </div>
               <div
-                className={`border rounded-md p-3 cursor-pointer ${editFormData.type === 'club' ? 'bg-green-50 border-green-300' : 'bg-white'}`}
+                className={typeSelectorCardClass(editFormData.type === 'club')}
                 onClick={() =>
                   setEditFormData({ ...editFormData, type: 'club' })
                 }
               >
-                <Building className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                <Building className="h-5 w-5 text-emerald-400 mx-auto mb-1" />
                 <p className="text-xs text-center">Club</p>
               </div>
               <div
-                className={`border rounded-md p-3 cursor-pointer ${editFormData.type === 'servicing' ? 'bg-orange-50 border-orange-300' : 'bg-white'}`}
+                className={typeSelectorCardClass(
+                  editFormData.type === 'servicing'
+                )}
                 onClick={() =>
                   setEditFormData({ ...editFormData, type: 'servicing' })
                 }
               >
-                <Wrench className="h-5 w-5 text-orange-500 mx-auto mb-1" />
+                <Wrench className="h-5 w-5 text-amber-400 mx-auto mb-1" />
                 <p className="text-xs text-center">Servicing</p>
               </div>
               <div
-                className={`border rounded-md p-3 cursor-pointer ${editFormData.type === 'range' ? 'bg-purple-50 border-purple-300' : 'bg-white'}`}
+                className={typeSelectorCardClass(editFormData.type === 'range')}
                 onClick={() =>
                   setEditFormData({ ...editFormData, type: 'range' })
                 }
               >
-                <Target className="h-5 w-5 text-purple-500 mx-auto mb-1" />
+                <Target className="h-5 w-5 text-violet-400 mx-auto mb-1" />
                 <p className="text-xs text-center">Range</p>
               </div>
             </div>
@@ -1262,22 +1261,6 @@ function EstablishmentsPageComponent() {
       />
     </AdminPageLayout>
   )
-}
-
-// Helper functions for type styling
-function getTypeColor(type: string): string {
-  switch (type) {
-    case 'store':
-      return 'bg-blue-100 text-blue-800'
-    case 'club':
-      return 'bg-green-100 text-green-800'
-    case 'servicing':
-      return 'bg-orange-100 text-orange-800'
-    case 'range':
-      return 'bg-purple-100 text-purple-800'
-    default:
-      return 'bg-gray-100 text-gray-800'
-  }
 }
 
 function getTypeLabel(type: string): string {

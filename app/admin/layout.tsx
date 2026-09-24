@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import { AdminSecurityGate } from '@/components/admin/AdminSecurityGate'
 import { AdminShell } from '@/components/admin/AdminShell'
 import { getImpersonationState } from '@/lib/impersonation'
+import { requireAdminUser } from '@/lib/require-auth'
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard - MaltaGuns',
@@ -17,6 +18,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
+  await requireAdminUser('/admin')
   const impersonation = await getImpersonationState()
 
   return (

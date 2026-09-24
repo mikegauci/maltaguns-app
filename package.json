@@ -53,6 +53,7 @@
     "@tanstack/react-table": "^8.21.2",
     "@tiptap/extension-image": "^3.31.3",
     "@tiptap/extension-link": "^3.31.3",
+    "@tiptap/extension-table": "^3.31.3",
     "@tiptap/pm": "^3.31.3",
     "@tiptap/react": "^3.31.3",
     "@tiptap/starter-kit": "^3.31.3",
@@ -95,6 +96,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.6",
+    "@next/bundle-analyzer": "^16.3.6",
     "@types/sanitize-html": "^2.16.1",
     "bufferutil": "^4.0.9",
     "eslint-config-prettier": "^10.1.5",

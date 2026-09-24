@@ -4,6 +4,7 @@ import { getFeatureEndDate } from '@/lib/featured-listings'
 import { MAX_FILES } from '@/app/marketplace/create/constants'
 import { isAllowedListingImageUrl } from '@/lib/listing-images'
 import { buildListingContentUpdatePayload } from '@/lib/listing-update-payload'
+import { resolveUniqueListingSlug } from '@/lib/listing-slug'
 
 type UpdateListingBody = {
   listingId: string
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
     const { data: existingListing, error: existingError } = await supabaseAdmin
       .from('listings')
-      .select('id, seller_id')
+      .select('id, seller_id, title')
       .eq('id', body.listingId)
       .single()
 
@@ -97,6 +98,14 @@ export async function POST(request: Request) {
     }
 
     const updatePayload = contentResult.payload
+
+    if (body.title !== undefined && body.title !== existingListing.title) {
+      updatePayload.slug = await resolveUniqueListingSlug(
+        supabaseAdmin,
+        body.title,
+        body.listingId
+      )
+    }
 
     if (body.status !== undefined) updatePayload.status = body.status
     if (body.meta_title !== undefined)

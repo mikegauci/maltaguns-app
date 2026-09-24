@@ -1,19 +1,11 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import { Package } from 'lucide-react'
+import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 
 const categories = [
   {
     title: 'Firearms',
-    icon: (
-      <Image
-        src="/images/pistol-gun-icon.svg"
-        alt=""
-        width={16}
-        height={16}
-        aria-hidden
-      />
-    ),
+    icon: <PistolGunIcon className="h-4 w-4" />,
     href: '/marketplace/firearms',
     subcategories: [
       { name: 'Airguns', href: '/marketplace/firearms/airguns' },
@@ -47,13 +39,13 @@ const categories = [
 
 export function MarketplaceCategoryNav() {
   return (
-    <div className="mb-8 rounded-lg border bg-card p-3 sm:p-4 text-center">
+    <div className="mb-8 rounded-sm border border-border bg-card p-3 sm:p-4 text-center">
       <div className="grid gap-4 sm:gap-5 md:grid-cols-2 md:gap-x-8">
         {categories.map(category => (
           <div key={category.title} className="flex flex-col items-center">
             <Link
               href={category.href}
-              className="mb-2 inline-flex items-center gap-1.5 text-sm font-semibold hover:text-primary"
+              className="app-display mb-2 inline-flex items-center gap-1.5 text-sm font-semibold uppercase tracking-wide hover:text-primary"
             >
               {category.icon}
               {category.title}
@@ -63,7 +55,7 @@ export function MarketplaceCategoryNav() {
                 <Link
                   key={subcategory.name}
                   href={subcategory.href}
-                  className="rounded-full border px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
+                  className="rounded-sm border border-border px-2.5 py-0.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
                 >
                   {subcategory.name}
                 </Link>
