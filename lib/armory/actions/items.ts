@@ -20,7 +20,7 @@ import {
   aiConfigured,
   type Correction,
 } from '@/lib/armory/ai'
-import { guessItemType } from '@/lib/armory/import'
+import { guessItemType, toNumber } from '@/lib/armory/import'
 import { fetchEgunListing, downloadImages } from '@/lib/armory/egun'
 import {
   getDealerAccount,
@@ -867,6 +867,7 @@ const QUICK_EDIT_FIELDS = [
   'calibreRaw',
   'cipProof',
   'scheduleLineItemCode',
+  'acquisitionPrice',
 ] as const
 type QuickEditField = (typeof QUICK_EDIT_FIELDS)[number]
 
@@ -877,6 +878,7 @@ const QUICK_EDIT_DB: Record<QuickEditField, string> = {
   calibreRaw: 'calibre_raw',
   cipProof: 'cip_proof',
   scheduleLineItemCode: 'schedule_line_item_code',
+  acquisitionPrice: 'acquisition_price',
 }
 
 export async function quickEditItem(
@@ -901,6 +903,23 @@ export async function quickEditItem(
       const { error } = await supabase
         .from('armory_inventory_items')
         .update({ cip_proof: v, updated_at: now })
+        .eq('id', id)
+        .eq('dealer_account_id', ctx.dealerAccount.id)
+      if (error) throw new ActionError(error.message)
+    } else if (f === 'acquisitionPrice') {
+      // Prices are always EUR; parse the same way spreadsheet imports do.
+      let price: number | null = null
+      if (value.trim()) {
+        price = toNumber(value)
+        if (price === null || !Number.isFinite(price) || price < 0)
+          throw new ActionError(
+            'Enter a valid price in euro, e.g. 450 or 450.50'
+          )
+        price = Math.round(price * 100) / 100
+      }
+      const { error } = await supabase
+        .from('armory_inventory_items')
+        .update({ acquisition_price: price, updated_at: now })
         .eq('id', id)
         .eq('dealer_account_id', ctx.dealerAccount.id)
       if (error) throw new ActionError(error.message)

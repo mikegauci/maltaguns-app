@@ -278,6 +278,89 @@ function EditableText({
   )
 }
 
+function EditablePrice({
+  id,
+  price,
+  shippingFee,
+  locked,
+}: {
+  id: string
+  price: number | null
+  shippingFee: number | null
+  locked?: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState('')
+  const [pending, start] = useTransition()
+  const router = useRouter()
+
+  const total = (price ?? 0) + (shippingFee ?? 0)
+  const shippingNote = shippingFee ? (
+    <div className="text-xs text-muted-foreground">
+      incl. {eur(shippingFee)} shipping
+    </div>
+  ) : null
+
+  if (locked)
+    return (
+      <>
+        {eur(total)}
+        {shippingNote}
+      </>
+    )
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        className={cn(
+          'w-full text-left rounded px-1 -mx-1 hover:bg-muted',
+          pending && 'opacity-50'
+        )}
+        onClick={() => {
+          setDraft(price === null ? '' : String(price))
+          setEditing(true)
+        }}
+        title="Click to edit purchase price (EUR)"
+      >
+        {eur(total)}
+        {shippingNote}
+      </button>
+    )
+  }
+
+  function save() {
+    setEditing(false)
+    if (draft.trim() === (price === null ? '' : String(price))) return
+    start(async () => {
+      const r = await quickEditItem(id, 'acquisitionPrice', draft)
+      if (!r.ok) alert(r.error)
+      router.refresh()
+    })
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <span className="text-sm text-muted-foreground">€</span>
+      <input
+        autoFocus
+        inputMode="decimal"
+        disabled={pending}
+        className="w-24 rounded border border-input bg-background px-1 py-0.5 text-sm tabular-nums"
+        value={draft}
+        placeholder="0.00"
+        onChange={e => setDraft(e.target.value)}
+        onFocus={e => e.target.select()}
+        onBlur={save}
+        onKeyDown={e => {
+          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+          if (e.key === 'Escape') setEditing(false)
+        }}
+      />
+    </div>
+  )
+}
+
 export function ItemsTable({
   items,
   showShipment,
@@ -1245,10 +1328,12 @@ export function ItemsTable({
                   )}
                   {col('cost') && (
                     <TableCell className="tabular-nums">
-                      {eur(
-                        (i.acquisitionPrice ?? 0) +
-                          (i.egunDomesticShippingFee ?? 0)
-                      )}
+                      <EditablePrice
+                        id={i.id}
+                        price={i.acquisitionPrice}
+                        shippingFee={i.egunDomesticShippingFee}
+                        locked={locked}
+                      />
                     </TableCell>
                   )}
                   {col('sale') && (
