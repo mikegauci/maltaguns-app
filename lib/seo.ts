@@ -202,6 +202,7 @@ export async function getSectionMetadata(
     title: override.title?.trim() || defaults.title,
     description: override.description?.trim() || defaults.description,
     path: defaults.path,
+    noIndex: defaults.group === 'Legal',
     siteSettings,
   })
 }
