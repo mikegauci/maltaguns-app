@@ -41,7 +41,7 @@ export const fetchHelpGuidesListing = cache(async () => {
     return []
   }
 
-  const postIds = [...helpGuideIds]
+  const postIds = Array.from(helpGuideIds)
 
   const { data: posts, error: postsError } = await supabaseClient
     .from('blog_posts')

@@ -31,7 +31,9 @@ export async function loadPublishedHelpGuidePostIds(
 
 export function formatExcludeHelpGuideIdsFilter(helpGuideIds: Set<string>) {
   if (helpGuideIds.size === 0) return null
-  return `(${[...helpGuideIds].map(id => `"${id}"`).join(',')})`
+  return `(${Array.from(helpGuideIds)
+    .map(id => `"${id}"`)
+    .join(',')})`
 }
 
 export function applyExcludeHelpGuideIds<T extends { not: Function }>(
