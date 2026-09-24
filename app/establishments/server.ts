@@ -10,8 +10,8 @@ import {
 import {
   applyExcludeHelpGuideIds,
   excludeHelpGuidePosts,
-  fetchHelpGuidePostIds,
-} from '@/lib/help-guides'
+} from '@/lib/help-guide-utils'
+import { fetchHelpGuidePostIds } from '@/lib/help-guides.server'
 
 function buildEstablishmentBlogSelect(blogForeignKey: string) {
   return `

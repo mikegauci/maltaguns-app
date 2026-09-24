@@ -6,7 +6,7 @@ import {
   resolveEstablishment,
 } from '@/components/blog/BlogPostView'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
-import { fetchHelpGuideBySlug } from '@/lib/help-guides'
+import { fetchHelpGuideBySlug } from '@/lib/help-guides.server'
 
 export const revalidate = 30
 

@@ -7,10 +7,8 @@ import {
   EVENT_HOME_SELECT,
   LISTING_CARD_SELECT,
 } from '@/lib/query-selects'
-import {
-  applyExcludeHelpGuideIds,
-  fetchHelpGuidePostIdsPublic,
-} from '@/lib/help-guides'
+import { applyExcludeHelpGuideIds } from '@/lib/help-guide-utils'
+import { fetchHelpGuidePostIdsPublic } from '@/lib/help-guides.public'
 
 export async function getHomePageData() {
   try {

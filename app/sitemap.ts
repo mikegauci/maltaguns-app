@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase/public'
 import { getAppUrl } from '@/lib/seo'
 import { listingPublicPath } from '@/lib/listing-slug'
-import { fetchHelpGuidePostIdsPublic } from '@/lib/help-guides'
+import { fetchHelpGuidePostIdsPublic } from '@/lib/help-guides.public'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const appUrl = getAppUrl()

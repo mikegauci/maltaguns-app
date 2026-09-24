@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import BlogPostCard from '@/components/blog/BlogPostCard'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
-import { fetchHelpGuidesListing } from '@/lib/help-guides'
+import { fetchHelpGuidesListing } from '@/lib/help-guides.server'
 import { getSectionMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 

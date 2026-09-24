@@ -25,7 +25,7 @@ import {
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { getBlogPostPublicPath } from '@/lib/blog-paths'
-import { loadPublishedHelpGuidePostIds } from '@/lib/help-guides'
+import { loadPublishedHelpGuidePostIds } from '@/lib/help-guide-utils'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 
 // Remove hardcoded admin list - use database is_admin field instead

@@ -9,10 +9,8 @@ import { PageHeader } from '@/components/ui/page-header'
 import { getSectionMetadata } from '@/lib/seo'
 import type { SectionKey } from '@/lib/seo-defaults'
 import { BLOG_CARD_SELECT } from '@/lib/query-selects'
-import {
-  applyExcludeHelpGuideIds,
-  fetchHelpGuidePostIds,
-} from '@/lib/help-guides'
+import { applyExcludeHelpGuideIds } from '@/lib/help-guide-utils'
+import { fetchHelpGuidePostIds } from '@/lib/help-guides.server'
 
 export const revalidate = 30
 

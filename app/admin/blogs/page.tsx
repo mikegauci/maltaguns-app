@@ -58,7 +58,7 @@ import {
 import { format } from 'date-fns'
 import Link from 'next/link'
 import { getBlogPostPublicPath } from '@/lib/blog-paths'
-import { loadPublishedHelpGuidePostIds } from '@/lib/help-guides'
+import { loadPublishedHelpGuidePostIds } from '@/lib/help-guide-utils'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { FormDialog } from '@/app/admin/components/FormDialog'
 import { AdminUserPicker } from '@/app/admin/components/AdminUserPicker'

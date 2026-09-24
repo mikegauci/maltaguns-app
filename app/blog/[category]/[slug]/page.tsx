@@ -7,10 +7,8 @@ import {
 } from '@/components/blog/BlogPostView'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
 import { fetchBlogPostBySlug } from '@/app/blog/server'
-import {
-  getHelpGuidePublicPath,
-  isPostAssignedToHelpTab,
-} from '@/lib/help-guides'
+import { getHelpGuidePublicPath } from '@/lib/help-guide-utils'
+import { isPostAssignedToHelpTab } from '@/lib/help-guides.server'
 
 export const revalidate = 30
 

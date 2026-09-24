@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase/public'
 import { BLOG_CARD_SELECT, PUBLIC_API_CACHE_CONTROL } from '@/lib/query-selects'
-import {
-  applyExcludeHelpGuideIds,
-  fetchHelpGuidePostIdsPublic,
-} from '@/lib/help-guides'
+import { applyExcludeHelpGuideIds } from '@/lib/help-guide-utils'
+import { fetchHelpGuidePostIdsPublic } from '@/lib/help-guides.public'
 
 export const revalidate = 30
 
