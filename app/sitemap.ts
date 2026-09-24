@@ -2,6 +2,7 @@ import type { MetadataRoute } from 'next'
 import { supabase } from '@/lib/supabase/public'
 import { getAppUrl } from '@/lib/seo'
 import { listingPublicPath } from '@/lib/listing-slug'
+import { fetchHelpGuidePostIdsPublic } from '@/lib/help-guides'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const appUrl = getAppUrl()
@@ -23,12 +24,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/establishments/servicing',
     '/contact',
     '/help',
+    '/help/guides',
   ].map(path => ({
     url: `${appUrl}${path}`,
     lastModified: now,
     changeFrequency: path === '' ? 'daily' : 'weekly',
     priority: path === '' ? 1 : 0.7,
   }))
+
+  let helpGuideIds = new Set<string>()
+  try {
+    helpGuideIds = await fetchHelpGuidePostIdsPublic()
+  } catch (error) {
+    console.error('[sitemap] Failed to load help guide IDs:', error)
+  }
 
   const [
     listingsResult,
@@ -46,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     supabase.from('events').select('slug, id, updated_at, created_at'),
     supabase
       .from('blog_posts')
-      .select('slug, category, updated_at, created_at')
+      .select('id, slug, category, updated_at, created_at')
       .eq('published', true),
     supabase
       .from('stores')
@@ -84,12 +93,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const blogEntries: MetadataRoute.Sitemap = (blogResult.data || [])
     .filter((post: any) => post.slug && post.category)
-    .map((post: any) => ({
-      url: `${appUrl}/blog/${post.category}/${post.slug}`,
-      lastModified: new Date(post.updated_at || post.created_at || now),
-      changeFrequency: 'weekly' as const,
-      priority: 0.7,
-    }))
+    .map((post: any) => {
+      const isHelpGuide =
+        post.category === 'guides' && helpGuideIds.has(post.id)
+      const path = isHelpGuide
+        ? `/help/guides/${post.slug}`
+        : `/blog/${post.category}/${post.slug}`
+
+      return {
+        url: `${appUrl}${path}`,
+        lastModified: new Date(post.updated_at || post.created_at || now),
+        changeFrequency: 'weekly' as const,
+        priority: 0.7,
+      }
+    })
 
   const mapEstablishments = (
     rows: any[] | null,

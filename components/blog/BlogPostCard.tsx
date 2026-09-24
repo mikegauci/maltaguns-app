@@ -7,6 +7,7 @@ import { StorageImage } from '@/components/ui/storage-image'
 import { format } from 'date-fns'
 import { Store, Users, MapPin, Wrench } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { getBlogPostPublicPath } from '@/lib/blog-paths'
 
 interface BlogPost {
   id: string
@@ -22,6 +23,7 @@ interface BlogPost {
   servicing_id?: string
   content?: string
   meta_description?: string | null
+  is_help_guide?: boolean
   author?: {
     username: string
   } | null
@@ -196,7 +198,9 @@ export default function BlogPostCard({ post }: BlogPostCardProps) {
   }
 
   return (
-    <Link href={`/blog/${post.category}/${post.slug}`}>
+    <Link
+      href={getBlogPostPublicPath(post.category, post.slug, post.is_help_guide)}
+    >
       <Card className="h-full min-h-[400px] rounded-sm border-border shadow-none transition-colors hover:border-primary">
         {post.featured_image && (
           <div className="relative w-full aspect-video">

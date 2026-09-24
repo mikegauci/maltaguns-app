@@ -57,6 +57,8 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import Link from 'next/link'
+import { getBlogPostPublicPath } from '@/lib/blog-paths'
+import { loadPublishedHelpGuidePostIds } from '@/lib/help-guides'
 import { AdminPageLayout } from '@/app/admin/components/AdminPageLayout'
 import { FormDialog } from '@/app/admin/components/FormDialog'
 import { AdminUserPicker } from '@/app/admin/components/AdminUserPicker'
@@ -99,6 +101,7 @@ export default function AdminBlogsPage() {
   const { isAuthorized } = useRequireAdmin({ preset: 'admin-toast' })
 
   const [posts, setPosts] = useState<BlogPost[]>([])
+  const [helpGuideIds, setHelpGuideIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -125,7 +128,10 @@ export default function AdminBlogsPage() {
       try {
         setLoading(true)
 
-        // First try basic query that should always work
+        const publishedHelpGuideIds =
+          await loadPublishedHelpGuidePostIds(supabase)
+        setHelpGuideIds(publishedHelpGuideIds)
+
         const { data: basicPosts, error: basicError } = await supabase
           .from('blog_posts')
           .select(
@@ -752,7 +758,14 @@ export default function AdminBlogsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link href={`/blog/${post.category}/${post.slug}`}>
+                            <Link
+                              href={getBlogPostPublicPath(
+                                post.category,
+                                post.slug,
+                                helpGuideIds.has(post.id),
+                                post.published
+                              )}
+                            >
                               <Button variant="ghost" size="sm">
                                 <Eye className="h-4 w-4" />
                               </Button>

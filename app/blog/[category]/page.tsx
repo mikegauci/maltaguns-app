@@ -9,6 +9,10 @@ import { PageHeader } from '@/components/ui/page-header'
 import { getSectionMetadata } from '@/lib/seo'
 import type { SectionKey } from '@/lib/seo-defaults'
 import { BLOG_CARD_SELECT } from '@/lib/query-selects'
+import {
+  applyExcludeHelpGuideIds,
+  fetchHelpGuidePostIds,
+} from '@/lib/help-guides'
 
 export const revalidate = 30
 
@@ -45,13 +49,19 @@ export default async function CategoryArchive(props: {
     return notFound()
   }
 
-  const { data: posts, error } = await supabase
-    .from('blog_posts')
-    .select(BLOG_CARD_SELECT)
-    .eq('category', category)
-    .eq('published', true)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const helpGuideIds =
+    category === 'guides' ? await fetchHelpGuidePostIds() : new Set<string>()
+
+  const { data: posts, error } = await applyExcludeHelpGuideIds(
+    supabase
+      .from('blog_posts')
+      .select(BLOG_CARD_SELECT)
+      .eq('category', category)
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    helpGuideIds
+  )
 
   if (error) {
     console.error('Error fetching posts:', error)

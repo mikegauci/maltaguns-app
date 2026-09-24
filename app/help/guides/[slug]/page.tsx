@@ -1,4 +1,4 @@
-import { notFound, permanentRedirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import {
   BlogPostView,
@@ -6,32 +6,22 @@ import {
   resolveEstablishment,
 } from '@/components/blog/BlogPostView'
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
-import { fetchBlogPostBySlug } from '@/app/blog/server'
-import {
-  getHelpGuidePublicPath,
-  isPostAssignedToHelpTab,
-} from '@/lib/help-guides'
+import { fetchHelpGuideBySlug } from '@/lib/help-guides'
 
 export const revalidate = 30
 
 export async function generateMetadata(props: {
-  params: Promise<{ category: string; slug: string }>
+  params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const params = await props.params
-  const post = await fetchBlogPostBySlug(params.category, params.slug)
+  const post = await fetchHelpGuideBySlug(params.slug)
 
   if (!post) {
     return buildMetadata({
-      title: 'Post Not Found | MaltaGuns',
+      title: 'Guide Not Found | MaltaGuns',
       noIndex: true,
     })
   }
-
-  const isHelpGuide =
-    params.category === 'guides' && (await isPostAssignedToHelpTab(post.id))
-  const publicPath = isHelpGuide
-    ? getHelpGuidePublicPath(params.slug)
-    : `/blog/${params.category}/${params.slug}`
 
   const siteSettings = await getSiteSettings()
   return buildMetadata({
@@ -41,33 +31,24 @@ export async function generateMetadata(props: {
       truncateDescription(post.content) ||
       undefined,
     image: post.featured_image || undefined,
-    path: publicPath,
+    path: `/help/guides/${params.slug}`,
     siteSettings,
   })
 }
 
-export default async function BlogPost(props: {
-  params: Promise<{ category: string; slug: string }>
+export default async function HelpGuidePage(props: {
+  params: Promise<{ slug: string }>
 }) {
   const params = await props.params
-  const post = await fetchBlogPostBySlug(params.category, params.slug)
+  const post = await fetchHelpGuideBySlug(params.slug)
 
   if (!post) {
     notFound()
   }
 
-  if (
-    params.category === 'guides' &&
-    (await isPostAssignedToHelpTab(post.id))
-  ) {
-    permanentRedirect(getHelpGuidePublicPath(params.slug))
-  }
-
-  const publicPath = `/blog/${params.category}/${params.slug}`
+  const publicPath = `/help/guides/${params.slug}`
   const authorUsername = resolveAuthorUsername(post.author)
   const establishment = resolveEstablishment(post)
-  const categoryLabel =
-    params.category.charAt(0).toUpperCase() + params.category.slice(1)
 
   return (
     <BlogPostView
@@ -82,17 +63,17 @@ export default async function BlogPost(props: {
         meta_description: (post as any).meta_description,
       }}
       authorUsername={authorUsername}
-      category={params.category}
+      category="guides"
       publicPath={publicPath}
       breadcrumbs={[
         { name: 'Home', path: '/' },
-        { name: 'Blog', path: '/blog' },
-        { name: categoryLabel, path: `/blog/${params.category}` },
+        { name: 'Help', path: '/help' },
+        { name: 'Guides', path: '/help/guides' },
         { name: post.title, path: publicPath },
       ]}
-      backHref="/blog"
-      categoryArchiveHref={`/blog/${params.category}`}
-      categoryLabel={categoryLabel}
+      backHref="/help"
+      categoryArchiveHref="/help/guides"
+      categoryLabel="Guides"
       establishment={establishment}
     />
   )

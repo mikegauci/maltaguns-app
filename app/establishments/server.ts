@@ -7,6 +7,11 @@ import {
   ESTABLISHMENT_CARD_SELECT,
   LISTING_CARD_SELECT,
 } from '@/lib/query-selects'
+import {
+  applyExcludeHelpGuideIds,
+  excludeHelpGuidePosts,
+  fetchHelpGuidePostIds,
+} from '@/lib/help-guides'
 
 function buildEstablishmentBlogSelect(blogForeignKey: string) {
   return `
@@ -30,6 +35,7 @@ export const fetchEstablishmentBySlug = cache(
   ): Promise<EstablishmentWithDetails | null> => {
     const config = getEstablishmentConfig(type)
     const supabase = await createClient()
+    const helpGuideIds = await fetchHelpGuidePostIds()
 
     const { data: establishment, error: establishmentError } = await supabase
       .from(config.tableName)
@@ -55,12 +61,15 @@ export const fetchEstablishmentBySlug = cache(
         .eq('status', 'active')
         .gt('expires_at', now)
         .order('created_at', { ascending: false }),
-      (supabase as any)
-        .from('blog_posts')
-        .select(buildEstablishmentBlogSelect(config.blogForeignKey))
-        .eq(config.blogForeignKey, establishment.id)
-        .eq('published', true)
-        .order('created_at', { ascending: false }),
+      applyExcludeHelpGuideIds(
+        (supabase as any)
+          .from('blog_posts')
+          .select(buildEstablishmentBlogSelect(config.blogForeignKey))
+          .eq(config.blogForeignKey, establishment.id)
+          .eq('published', true)
+          .order('created_at', { ascending: false }),
+        helpGuideIds
+      ),
     ])
 
     if (listingsRes.error) {
@@ -78,14 +87,16 @@ export const fetchEstablishmentBySlug = cache(
 
     if (blogPostsError || !blogPosts || blogPosts.length === 0) {
       try {
-        const { data: adminBlogPosts, error: adminError } = await (
-          supabaseAdmin as any
-        )
-          .from('blog_posts')
-          .select(buildEstablishmentBlogSelect(config.blogForeignKey))
-          .eq(config.blogForeignKey, establishment.id)
-          .eq('published', true)
-          .order('created_at', { ascending: false })
+        const { data: adminBlogPosts, error: adminError } =
+          await applyExcludeHelpGuideIds(
+            (supabaseAdmin as any)
+              .from('blog_posts')
+              .select(buildEstablishmentBlogSelect(config.blogForeignKey))
+              .eq(config.blogForeignKey, establishment.id)
+              .eq('published', true)
+              .order('created_at', { ascending: false }),
+            helpGuideIds
+          )
 
         if (!adminError && adminBlogPosts && adminBlogPosts.length > 0) {
           blogPosts = adminBlogPosts
@@ -98,7 +109,10 @@ export const fetchEstablishmentBySlug = cache(
       }
     }
 
-    const processedBlogPosts = (blogPosts || []).map(post => ({
+    const processedBlogPosts = excludeHelpGuidePosts(
+      blogPosts || [],
+      helpGuideIds
+    ).map(post => ({
       ...post,
       author: post.author || { username: 'Author' },
       category: post.category || 'news',

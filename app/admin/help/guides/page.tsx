@@ -328,7 +328,7 @@ export default function AdminHelpGuidesPage() {
         <AdminStatCard
           label="Published"
           value={stats.published}
-          subtitle="Visible on /blog/guides"
+          subtitle="Visible on /help/guides"
           icon={FileText}
         />
         <AdminStatCard
@@ -436,7 +436,9 @@ export default function AdminHelpGuidesPage() {
                           {guide.title}
                         </CardTitle>
                         <CardDescription className="mt-1 truncate">
-                          /blog/guides/{guide.slug}
+                          {isUnassigned || !guide.published
+                            ? `/blog/guides/${guide.slug}`
+                            : `/help/guides/${guide.slug}`}
                         </CardDescription>
                       </div>
                     </div>
@@ -556,7 +558,11 @@ export default function AdminHelpGuidesPage() {
                     <div className="ml-auto flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" asChild>
                         <Link
-                          href={`/blog/guides/${guide.slug}`}
+                          href={
+                            isUnassigned || !guide.published
+                              ? `/blog/guides/${guide.slug}`
+                              : `/help/guides/${guide.slug}`
+                          }
                           target="_blank"
                         >
                           <ExternalLink className="mr-1.5 h-3.5 w-3.5" />

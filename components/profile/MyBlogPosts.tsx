@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Eye, Pencil, Trash2, BookOpen } from 'lucide-react'
 import { format } from 'date-fns'
 import { BlogPost } from '../../app/profile/types'
+import { getBlogPostPublicPath } from '@/lib/blog-paths'
 
 interface MyBlogPostsProps {
   blogPosts: BlogPost[]
@@ -60,7 +61,12 @@ export const MyBlogPosts = ({
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <Link
-                      href={`/blog/${post.category}/${post.slug}`}
+                      href={getBlogPostPublicPath(
+                        post.category,
+                        post.slug,
+                        post.is_help_guide,
+                        post.published
+                      )}
                       className="w-full sm:w-auto"
                     >
                       <Button variant="outline" size="sm" className="w-full">

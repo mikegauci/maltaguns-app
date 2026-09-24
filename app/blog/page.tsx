@@ -23,7 +23,7 @@ export default async function BlogPage() {
         <Link href="/blog/news">
           <Button variant="outline">News</Button>
         </Link>
-        <Link href="/blog/guides">
+        <Link href="/help/guides">
           <Button variant="outline">Guides</Button>
         </Link>
       </div>

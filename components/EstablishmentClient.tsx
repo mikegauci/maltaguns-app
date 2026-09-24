@@ -65,10 +65,12 @@ export default function EstablishmentClient({
       try {
         setLoading(true)
 
-        const { data, error } = await supabase
-          .from('blog_posts')
-          .select(
-            `
+        const [{ data: publishedTabs }, { data, error }] = await Promise.all([
+          supabase.from('help_tabs').select('id').eq('published', true),
+          supabase
+            .from('blog_posts')
+            .select(
+              `
             id,
             title,
             slug,
@@ -78,15 +80,30 @@ export default function EstablishmentClient({
             category,
             author:profiles(username)
           `
+            )
+            .eq(config.blogForeignKey, establishment.id)
+            .eq('published', true)
+            .order('created_at', { ascending: false }),
+        ])
+
+        const publishedTabIds = (publishedTabs ?? []).map(tab => tab.id)
+        let helpGuideIds = new Set<string>()
+
+        if (publishedTabIds.length > 0) {
+          const { data: assignments } = await supabase
+            .from('help_tab_guides')
+            .select('blog_post_id')
+            .in('tab_id', publishedTabIds)
+
+          helpGuideIds = new Set(
+            (assignments ?? []).map(row => row.blog_post_id)
           )
-          .eq(config.blogForeignKey, establishment.id)
-          .eq('published', true)
-          .order('created_at', { ascending: false })
+        }
 
         if (error) {
           console.error('Error fetching blog posts from client:', error)
         } else if (data) {
-          setBlogPosts(data)
+          setBlogPosts(data.filter(post => !helpGuideIds.has(post.id)))
         }
       } catch (error) {
         console.error('Error in client-side fetch:', error)

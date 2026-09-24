@@ -93,7 +93,7 @@ export function HelpCenterTabs({ tabs }: HelpCenterTabsProps) {
                           {guide.description}
                         </p>
                       ) : null}
-                      <Link href={`/blog/guides/${guide.slug}`}>
+                      <Link href={`/help/guides/${guide.slug}`}>
                         <Button variant="outline" size="sm">
                           View Guide
                         </Button>

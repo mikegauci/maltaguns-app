@@ -7,6 +7,10 @@ import {
   EVENT_HOME_SELECT,
   LISTING_CARD_SELECT,
 } from '@/lib/query-selects'
+import {
+  applyExcludeHelpGuideIds,
+  fetchHelpGuidePostIdsPublic,
+} from '@/lib/help-guides'
 
 export async function getHomePageData() {
   try {
@@ -26,6 +30,7 @@ export async function getHomePageData() {
 
 export async function fetchHomePageData() {
   const now = new Date().toISOString()
+  const helpGuideIds = await fetchHelpGuidePostIdsPublic()
 
   const [
     recentListingsRes,
@@ -58,12 +63,15 @@ export async function fetchHomePageData() {
       .gt('listings.expires_at', now)
       .order('end_date', { ascending: false })
       .limit(10),
-    supabaseAdmin
-      .from('blog_posts')
-      .select(BLOG_HOME_SELECT)
-      .eq('published', true)
-      .order('created_at', { ascending: false })
-      .limit(10),
+    applyExcludeHelpGuideIds(
+      supabaseAdmin
+        .from('blog_posts')
+        .select(BLOG_HOME_SELECT)
+        .eq('published', true)
+        .order('created_at', { ascending: false })
+        .limit(10),
+      helpGuideIds
+    ),
     supabaseAdmin
       .from('events')
       .select(EVENT_HOME_SELECT)
@@ -107,6 +115,9 @@ export async function fetchHomePageData() {
   }
   if (featuredListingsRes.error) {
     throw new Error(featuredListingsRes.error.message)
+  }
+  if (postsRes.error) {
+    throw new Error(postsRes.error.message)
   }
 
   const featuredListings = (featuredListingsRes.data || []).map(
@@ -208,12 +219,17 @@ export async function getBlogPageData() {
 }
 
 export async function fetchBlogPageData() {
-  const { data: posts, error } = await supabase
-    .from('blog_posts')
-    .select(BLOG_CARD_SELECT)
-    .eq('published', true)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const helpGuideIds = await fetchHelpGuidePostIdsPublic()
+
+  const { data: posts, error } = await applyExcludeHelpGuideIds(
+    supabase
+      .from('blog_posts')
+      .select(BLOG_CARD_SELECT)
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    helpGuideIds
+  )
 
   if (error) {
     throw new Error(error.message)

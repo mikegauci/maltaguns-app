@@ -13,7 +13,7 @@ export const ResourcesSection = () => {
       />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-        <Link href="/blog/guides" className="group block h-full">
+        <Link href="/help/guides" className="group block h-full">
           <div className="home-card h-full rounded-sm p-5 md:p-6 flex flex-col bg-[var(--home-surface)]">
             <div className="home-icon-badge mb-4 border border-[var(--home-border)] bg-[var(--home-slate)] text-[var(--home-amber)]">
               <BookOpen aria-hidden="true" />

@@ -156,6 +156,7 @@ export function useProfileData({
           servicingResult,
           rangesResult,
           blogPostsResult,
+          helpGuideAssignmentsResult,
           eventsResult,
           listingCreditsResult,
           eventCreditsResult,
@@ -176,6 +177,10 @@ export function useProfileData({
             .select('id, title, slug, category, published, created_at')
             .eq('author_id', userId)
             .order('created_at', { ascending: false }),
+          supabase
+            .from('help_tabs')
+            .select('id, help_tab_guides(blog_post_id)')
+            .eq('published', true),
           supabase
             .from('events')
             .select('*')
@@ -257,7 +262,24 @@ export function useProfileData({
         if (clubsResult.data) setClubs(clubsResult.data)
         if (servicingResult.data) setServicing(servicingResult.data)
         if (rangesResult.data) setRanges(rangesResult.data)
-        if (blogPostsResult.data) setBlogPosts(blogPostsResult.data)
+        if (blogPostsResult.data) {
+          const helpGuideIds = new Set<string>()
+          for (const tab of helpGuideAssignmentsResult.data ?? []) {
+            const assignments = tab.help_tab_guides as
+              { blog_post_id: string }[] | { blog_post_id: string } | null
+            if (Array.isArray(assignments)) {
+              assignments.forEach(row => helpGuideIds.add(row.blog_post_id))
+            } else if (assignments?.blog_post_id) {
+              helpGuideIds.add(assignments.blog_post_id)
+            }
+          }
+          setBlogPosts(
+            blogPostsResult.data.map(post => ({
+              ...post,
+              is_help_guide: helpGuideIds.has(post.id),
+            }))
+          )
+        }
         if (eventsResult.data) setEvents(eventsResult.data)
         if (listingCreditsResult.data)
           setListingCredits(listingCreditsResult.data.amount || 0)

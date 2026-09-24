@@ -6,6 +6,7 @@ import { BookOpen } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { StorageImage } from '@/components/ui/storage-image'
 import { HomeSectionShell } from './HomeSectionShell'
+import { getBlogPostPublicPath } from '@/lib/blog-paths'
 
 interface BlogPost {
   id: string
@@ -14,6 +15,7 @@ interface BlogPost {
   slug: string
   featured_image: string | null
   created_at: string
+  is_help_guide?: boolean
   author: {
     username: string
   }
@@ -80,7 +82,11 @@ export function ArticlesEventsSection({
               {articleItems.map(post => (
                 <li key={post.id}>
                   <Link
-                    href={`/blog/${post.category}/${post.slug}`}
+                    href={getBlogPostPublicPath(
+                      post.category,
+                      post.slug,
+                      post.is_help_guide
+                    )}
                     className="group flex gap-3 border border-transparent p-3 transition-colors hover:border-[var(--home-border)] hover:bg-[var(--home-slate)]"
                   >
                     <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-sm border border-[var(--home-border)] bg-[var(--home-slate)]">

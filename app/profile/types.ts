@@ -23,6 +23,7 @@ export interface BlogPost {
   category: string
   published: boolean
   created_at: string
+  is_help_guide?: boolean
 }
 
 export interface Listing {
