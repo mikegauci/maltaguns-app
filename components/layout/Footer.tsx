@@ -34,6 +34,32 @@ export function Footer() {
               Your trusted source for firearms information, marketplace
               listings, and community events in Malta.
             </p>
+            <div
+              className="mt-3 grid w-full max-w-full grid-cols-4 items-center gap-1.5 self-stretch"
+              role="group"
+              aria-label="Payment and security certifications"
+            >
+              <img
+                src="/images/payments/visa.png"
+                alt="Visa"
+                className="h-9 w-full object-contain"
+              />
+              <img
+                src="/images/payments/mastercard.svg"
+                alt="Mastercard"
+                className="h-9 w-full object-contain"
+              />
+              <img
+                src="/images/payments/3ds.png"
+                alt="3-D Secure"
+                className="h-9 w-full object-contain"
+              />
+              <img
+                src="/images/payments/pci-dss.png"
+                alt="PCI DSS compliant"
+                className="h-9 w-full object-contain"
+              />
+            </div>
           </div>
 
           {/* Quick Links */}
