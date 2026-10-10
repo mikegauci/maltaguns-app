@@ -1,11 +1,14 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { LegalPageView } from '@/components/legal/LegalPageView'
-import { getLegalPageSeoKey, type LegalPageSlug } from '@/lib/legal-pages'
+import {
+  getLegalPageSeoKey,
+  type BuiltInLegalPageSlug,
+} from '@/lib/legal-pages'
 import { getLegalPage } from '@/lib/legal-pages.server'
 import { getSectionMetadata } from '@/lib/seo'
 
-export function createLegalPage(slug: LegalPageSlug) {
+export function createLegalPage(slug: BuiltInLegalPageSlug) {
   const seoKey = getLegalPageSeoKey(slug)
 
   async function generateMetadata(): Promise<Metadata> {

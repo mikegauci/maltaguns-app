@@ -5,12 +5,34 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Facebook, Mail } from 'lucide-react'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase/public'
+import { getLegalPagePath, isBuiltInLegalPageSlug } from '@/lib/legal-pages'
 import { useCookieConsent } from '@/components/providers/CookieConsentProvider'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
   const { session } = useSupabase()
   const { openPreferences } = useCookieConsent()
+
+  const [customLegalPages, setCustomLegalPages] = useState<
+    { slug: string; title: string }[]
+  >([])
+
+  useEffect(() => {
+    let cancelled = false
+    supabase
+      .from('legal_pages')
+      .select('slug, title')
+      .order('title')
+      .then(({ data }) => {
+        if (cancelled || !data) return
+        setCustomLegalPages(data.filter(p => !isBuiltInLegalPageSlug(p.slug)))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const linkClassName =
     'text-sm text-[var(--chrome-muted)] hover:text-[var(--chrome-brand)] transition-colors'
@@ -164,6 +186,16 @@ export function Footer() {
                     Refunds Policy
                   </Link>
                 </li>
+                {customLegalPages.map(page => (
+                  <li key={page.slug}>
+                    <Link
+                      href={getLegalPagePath(page.slug)}
+                      className={linkClassName}
+                    >
+                      {page.title}
+                    </Link>
+                  </li>
+                ))}
                 <li>
                   <button
                     type="button"
