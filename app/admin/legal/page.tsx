@@ -20,9 +20,10 @@ import { useToast } from '@/hooks/use-toast'
 import {
   formatLegalDate,
   getLegalPageDefinition,
+  isBuiltInLegalPageSlug,
   type LegalPageSlug,
 } from '@/lib/legal-pages'
-import { Edit, ExternalLink } from 'lucide-react'
+import { Edit, ExternalLink, Plus, Trash2 } from 'lucide-react'
 
 type LegalPageRow = {
   slug: LegalPageSlug
@@ -72,6 +73,32 @@ export default function AdminLegalPagesPage() {
     }
   }, [toast])
 
+  async function handleDelete(page: LegalPageRow) {
+    if (!window.confirm(`Delete "${page.title}"? This cannot be undone.`)) {
+      return
+    }
+    try {
+      const response = await fetch(`/api/admin/legal-pages/${page.slug}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.error || 'Failed to delete legal page')
+      }
+      setPages(current => current.filter(p => p.slug !== page.slug))
+      toast({ title: 'Deleted', description: 'Legal page deleted.' })
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete legal page',
+      })
+    }
+  }
+
   useEffect(() => {
     if (isAuthorized) {
       fetchPages()
@@ -85,8 +112,16 @@ export default function AdminLegalPagesPage() {
   return (
     <AdminPageLayout
       title="Legal Pages"
-      description="Manage policies, terms, and other legal content"
+      description="Manage policies, terms, and other legal content. All pages are listed in the site footer automatically."
     >
+      <div className="mb-4 flex justify-end">
+        <Button asChild>
+          <Link href="/admin/legal/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Add legal page
+          </Link>
+        </Button>
+      </div>
       {loading ? (
         <AdminTableLoader />
       ) : pages.length === 0 ? (
@@ -138,6 +173,16 @@ export default function AdminLegalPagesPage() {
                             Preview
                           </Link>
                         </Button>
+                        {!isBuiltInLegalPageSlug(page.slug) && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(page)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

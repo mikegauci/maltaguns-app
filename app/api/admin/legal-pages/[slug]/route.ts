@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/api-auth'
-import { isLegalPageSlug } from '@/lib/legal-pages'
+import { isBuiltInLegalPageSlug, isLegalPageSlug } from '@/lib/legal-pages'
 
 export async function GET(
   _request: Request,
@@ -42,6 +42,46 @@ export async function GET(
       {
         error:
           error instanceof Error ? error.message : 'Failed to load legal page',
+      },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ slug: string }> }
+) {
+  try {
+    const auth = await requireAdmin()
+    if ('error' in auth) return auth.error
+
+    const { slug } = await context.params
+
+    if (isBuiltInLegalPageSlug(slug) || !isLegalPageSlug(slug)) {
+      return NextResponse.json(
+        { error: 'Only custom legal pages can be deleted' },
+        { status: 400 }
+      )
+    }
+
+    const { error } = await auth.supabaseAdmin
+      .from('legal_pages')
+      .delete()
+      .eq('slug', slug)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete legal page',
       },
       { status: 500 }
     )

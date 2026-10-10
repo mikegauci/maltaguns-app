@@ -46,3 +46,9 @@ export function prepareCookiePolicyHtml(html: string): {
     afterSettings: content.slice(contactIndex),
   }
 }
+
+export async function getAllLegalPageSlugs(): Promise<string[]> {
+  const supabase = await createClient()
+  const { data } = await supabase.from('legal_pages').select('slug')
+  return (data ?? []).map(row => row.slug)
+}
