@@ -38,6 +38,7 @@ import {
   ADMIN_IDENTITY_OVERRIDE_NOTE,
   isAdminIdentityOverride,
 } from '@/lib/identity-status'
+import { normalizeBirthdayForInput } from '@/lib/format'
 import { validateAdminPassword } from '@/lib/admin-password-policy'
 import {
   createAllLicenseTypes,
@@ -148,6 +149,9 @@ function UsersPageComponent() {
     first_name: '' as string | null,
     last_name: '' as string | null,
     notes: '' as string | null,
+    phone: '',
+    address: '',
+    birthday: '',
     license_types: createEmptyLicenseTypes(),
   })
   const { supabase } = useSupabase()
@@ -581,6 +585,9 @@ function UsersPageComponent() {
       first_name: '',
       last_name: '',
       notes: '',
+      phone: '',
+      address: '',
+      birthday: '',
       license_types: createEmptyLicenseTypes(),
     })
     setIsCreateDialogOpen(true)
@@ -605,6 +612,9 @@ function UsersPageComponent() {
       first_name: user.first_name,
       last_name: user.last_name,
       notes: user.notes,
+      phone: user.phone || '',
+      address: user.address || '',
+      birthday: normalizeBirthdayForInput(user.birthday),
       license_types: parseLicenseTypes(user.license_types),
     })
     setIsEditDialogOpen(true)
@@ -851,6 +861,9 @@ function UsersPageComponent() {
           is_verified: formData.is_verified,
           is_disabled: formData.is_disabled,
           notes: formData.notes,
+          phone: formData.phone.trim() || null,
+          address: formData.address.trim() || null,
+          ...(formData.birthday ? { birthday: formData.birthday } : {}),
           license_types: hasAnyLicenseType(formData.license_types)
             ? formData.license_types
             : null,
@@ -1397,6 +1410,41 @@ function UsersPageComponent() {
                 }
               />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-phone">Phone</Label>
+              <Input
+                id="edit-phone"
+                type="tel"
+                value={formData.phone}
+                onChange={e =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-birthday">Date of Birth</Label>
+              <Input
+                id="edit-birthday"
+                type="date"
+                value={formData.birthday}
+                onChange={e =>
+                  setFormData({ ...formData, birthday: e.target.value })
+                }
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-address">Address</Label>
+            <Textarea
+              id="edit-address"
+              value={formData.address}
+              onChange={e =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+              rows={2}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-password">
