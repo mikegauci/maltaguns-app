@@ -10,6 +10,13 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { FormDialog } from '@/app/admin/components/FormDialog'
 import { ConfirmDialog } from '@/app/admin/components/ConfirmDialog'
 import { ActionCell } from '@/app/admin/components/ActionCell'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -74,6 +81,12 @@ interface User {
   last_name: string | null
   notes: string | null
   license_types: LicenseTypes | null
+  phone: string | null
+  address: string | null
+  birthday: string | null
+  contact_preference: string | null
+  license_expiry_date: string | null
+  registration_ip: string | null
   establishments: Establishment[]
   purchasedBefore: boolean
   creditAmount: number
@@ -118,6 +131,7 @@ function UsersPageComponent() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false)
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isUploadingLicense, setIsUploadingLicense] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -442,6 +456,7 @@ function UsersPageComponent() {
         const user = row.original
         return (
           <ActionCell
+            onView={() => handleView(user)}
             onEdit={() => handleEdit(user)}
             onDelete={() => handleDelete(user)}
             extraActions={[
@@ -569,6 +584,11 @@ function UsersPageComponent() {
       license_types: createEmptyLicenseTypes(),
     })
     setIsCreateDialogOpen(true)
+  }
+
+  function handleView(user: User) {
+    setSelectedUser(user)
+    setIsViewDialogOpen(true)
   }
 
   function handleEdit(user: User) {
@@ -1136,8 +1156,82 @@ function UsersPageComponent() {
         searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
         initialColumnVisibility={{ notes: false, is_admin: false }}
         onCreateNew={handleCreate}
+        onRowClick={handleEdit}
         createButtonText="Create User"
       />
+
+      {/* View User Details Dialog */}
+      <Dialog
+        open={isViewDialogOpen}
+        onOpenChange={open => !open && setIsViewDialogOpen(false)}
+      >
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{selectedUser?.username}</DialogTitle>
+            <DialogDescription>User details</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <dl className="grid grid-cols-[140px_1fr] gap-x-4 gap-y-2 text-sm">
+              {(
+                [
+                  ['Email', selectedUser.email],
+                  [
+                    'Name',
+                    [selectedUser.first_name, selectedUser.last_name]
+                      .filter(Boolean)
+                      .join(' '),
+                  ],
+                  [
+                    'Birthday',
+                    selectedUser.birthday
+                      ? format(new Date(selectedUser.birthday), 'PPP')
+                      : null,
+                  ],
+                  ['Phone', selectedUser.phone],
+                  ['Address', selectedUser.address],
+                  ['Contact preference', selectedUser.contact_preference],
+                  [
+                    'Licenses',
+                    getActiveLicenses(
+                      parseLicenseTypes(selectedUser.license_types)
+                    ).join(', '),
+                  ],
+                  [
+                    'License expiry',
+                    selectedUser.license_expiry_date
+                      ? format(
+                          new Date(selectedUser.license_expiry_date),
+                          'PPP'
+                        )
+                      : null,
+                  ],
+                  [
+                    'Establishments',
+                    selectedUser.establishments
+                      .map(e => `${getEstablishmentLabel(e.type)}: ${e.name}`)
+                      .join(', '),
+                  ],
+                  ['Registration IP', selectedUser.registration_ip],
+                  [
+                    'Created',
+                    selectedUser.created_at
+                      ? format(new Date(selectedUser.created_at), 'PPP')
+                      : null,
+                  ],
+                  ['Notes', selectedUser.notes],
+                ] as [string, string | null][]
+              ).map(([label, value]) => (
+                <div key={label} className="contents">
+                  <dt className="text-muted-foreground">{label}</dt>
+                  <dd className="break-words whitespace-pre-wrap">
+                    {value || '—'}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Create User Dialog */}
       <FormDialog
