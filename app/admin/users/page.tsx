@@ -1156,6 +1156,7 @@ function UsersPageComponent() {
         searchPlaceholder={ADMIN_USER_SEARCH_PLACEHOLDER}
         initialColumnVisibility={{ notes: false, is_admin: false }}
         onCreateNew={handleCreate}
+        onRowClick={handleEdit}
         createButtonText="Create User"
       />
 
