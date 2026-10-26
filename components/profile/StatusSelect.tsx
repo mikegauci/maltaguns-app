@@ -31,7 +31,7 @@ export const StatusSelect = ({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          'w-full text-sm border rounded h-9 px-3 bg-white flex items-center sm:justify-start justify-center gap-2 cursor-pointer relative',
+          'relative flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-sm border border-border bg-card px-3 text-sm sm:justify-start',
           className
         )}
       >
@@ -42,7 +42,7 @@ export const StatusSelect = ({
           </>
         )}
         <svg
-          className="h-4 w-4 sm:static sm:ml-2 absolute right-3"
+          className="absolute right-3 h-4 w-4 sm:static sm:ml-2"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
@@ -54,14 +54,14 @@ export const StatusSelect = ({
       {open && (
         <>
           <div className="fixed inset-0" onClick={() => setOpen(false)} />
-          <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+          <div className="absolute z-10 mt-1 w-full rounded-sm border border-border bg-card shadow-lg">
             {options.map(option => (
               <button
                 key={option.value}
                 type="button"
                 className={cn(
-                  'w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50',
-                  value === option.value && 'bg-gray-50'
+                  'flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-accent',
+                  value === option.value && 'bg-accent'
                 )}
                 onClick={() => {
                   onChange(option.value)

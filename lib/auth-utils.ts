@@ -1,3 +1,5 @@
+import { clearSellEligibilityCache } from '@/lib/sell-eligibility-cache'
+
 export async function clearImpersonationCookieClient(): Promise<void> {
   try {
     await fetch('/api/admin/impersonate/clear', { method: 'POST' })
@@ -8,6 +10,7 @@ export async function forceLogout() {
   await clearImpersonationCookieClient()
 
   if (typeof window !== 'undefined') {
+    clearSellEligibilityCache()
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i)
       if (

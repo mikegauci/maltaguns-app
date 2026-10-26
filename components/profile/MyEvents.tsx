@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -29,7 +29,7 @@ export const MyEvents = ({
   if (events.length === 0) return null
 
   return (
-    <Card className="mb-6">
+    <AppCard className="mb-6">
       <CardHeader className="space-y-4">
         <div>
           <CardTitle>My Events</CardTitle>
@@ -37,22 +37,20 @@ export const MyEvents = ({
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
-            <div className="bg-muted px-4 py-2 rounded-md text-center sm:text-left">
+            <div className="rounded-sm border border-border bg-muted/20 px-4 py-2 text-center sm:text-left">
               <span className="text-sm text-muted-foreground">
                 Credits Remaining:
               </span>
-              <span className="font-semibold ml-1">{eventCredits}</span>
+              <span className="ml-1 font-semibold tabular-nums">
+                {eventCredits}
+              </span>
             </div>
-            <Button
-              variant="default"
-              className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => setShowEventCreditDialog(true)}
-            >
+            <Button onClick={() => setShowEventCreditDialog(true)}>
               Add more credits
             </Button>
           </div>
           <Link href="/events/create" className="sm:ml-auto">
-            <Button className="bg-black text-white hover:bg-gray-800 w-full">
+            <Button className="w-full">
               <Calendar className="mr-2 h-4 w-4" />
               Create Event
             </Button>
@@ -62,7 +60,7 @@ export const MyEvents = ({
       <CardContent>
         <div className="space-y-4">
           {events.map(event => (
-            <Card key={event.id}>
+            <AppCard key={event.id}>
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-4">
                   <div className="flex gap-3">
@@ -110,7 +108,7 @@ export const MyEvents = ({
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteEvent(event.id)}
-                      className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 w-full sm:w-auto"
+                      className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 sm:w-auto"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete
@@ -118,10 +116,10 @@ export const MyEvents = ({
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </AppCard>
           ))}
         </div>
       </CardContent>
-    </Card>
+    </AppCard>
   )
 }

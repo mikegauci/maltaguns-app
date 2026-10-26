@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { isContactFormRateLimited } from '@/lib/contact-rate-limit'
 import { escapeHtml } from '@/lib/escape-html'
 import { getClientIp } from '@/lib/request-ip'
+import { getAdminSupportEmail, PUBLIC_SUPPORT_EMAIL } from '@/lib/support-email'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -53,8 +54,7 @@ export async function POST(request: NextRequest) {
     console.error('[contact-form] bot verification failed', error)
     return NextResponse.json(
       {
-        error:
-          "We couldn't verify your submission. Please try again, or email support@maltaguns.com directly.",
+        error: `We couldn't verify your submission. Please try again, or email ${PUBLIC_SUPPORT_EMAIL} directly.`,
       },
       { status: 503 }
     )
@@ -64,8 +64,7 @@ export async function POST(request: NextRequest) {
     logContactFormBlock('bot', ip)
     return NextResponse.json(
       {
-        error:
-          "We couldn't verify your submission. Please try again, or email support@maltaguns.com directly.",
+        error: `We couldn't verify your submission. Please try again, or email ${PUBLIC_SUPPORT_EMAIL} directly.`,
       },
       { status: 403 }
     )
@@ -90,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error } = await resend.emails.send({
       from: 'MaltaGuns Contact Form <contact@maltaguns.com>',
-      to: ['support@maltaguns.com'],
+      to: [getAdminSupportEmail()],
       subject: `Contact Form: ${validatedData.subject.slice(0, 200)}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

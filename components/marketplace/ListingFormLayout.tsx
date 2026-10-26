@@ -7,11 +7,11 @@ import { PageLayout } from '@/components/ui/page-layout'
 interface ListingFormLayoutProps {
   title: string
   description: string
-  backHref: string
   children: ReactNode
   credits?: number
   showCredits?: boolean
   actions?: ReactNode
+  backHref?: string
   maxWidth?: '2xl' | '3xl'
 }
 
@@ -22,7 +22,7 @@ export function ListingFormLayout({
   credits,
   showCredits = false,
   actions,
-  backHref,
+  backHref = '/marketplace/create',
   maxWidth = '2xl',
 }: ListingFormLayoutProps) {
   const creditsBadge =

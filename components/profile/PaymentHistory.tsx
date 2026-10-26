@@ -1,7 +1,7 @@
 'use client'
 
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -61,7 +61,7 @@ export const PaymentHistory = ({
   if (creditTransactions.length === 0) return null
 
   return (
-    <Card>
+    <AppCard>
       <CardHeader>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
           <div>
@@ -76,7 +76,7 @@ export const PaymentHistory = ({
         <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
           <table className="w-full border-collapse">
             <thead className="sticky top-0 bg-background z-10">
-              <tr className="text-left border-b">
+              <tr className="border-b border-border text-left">
                 <th className="pb-3 pt-1 pl-4 pr-6 font-medium text-muted-foreground bg-background w-[160px]">
                   Date
                 </th>
@@ -131,9 +131,9 @@ export const PaymentHistory = ({
                 return (
                   <tr
                     key={transaction.id}
-                    className="border-b border-muted hover:bg-muted/20"
+                    className="border-b border-border hover:bg-muted/20"
                   >
-                    <td className="py-4 pl-4 pr-6 text-sm">
+                    <td className="py-4 pl-4 pr-6 text-sm tabular-nums">
                       {format(new Date(transaction.created_at), 'PPP')}
                     </td>
                     <td className="py-4 px-4 text-sm align-top">
@@ -162,8 +162,8 @@ export const PaymentHistory = ({
                       <span
                         className={
                           transaction.type === 'credit'
-                            ? 'text-green-600 font-medium'
-                            : 'text-red-600 font-medium'
+                            ? 'font-medium text-emerald-400'
+                            : 'font-medium text-red-400'
                         }
                       >
                         {transaction.type === 'credit' ? '+' : '-'}
@@ -181,6 +181,6 @@ export const PaymentHistory = ({
           </table>
         </div>
       </CardContent>
-    </Card>
+    </AppCard>
   )
 }

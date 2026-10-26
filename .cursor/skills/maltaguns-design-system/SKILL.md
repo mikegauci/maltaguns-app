@@ -73,12 +73,12 @@ Never use absolute positioning on `BackButton` — always flow layout above or i
 
 Import from `@/components/design-system`:
 
-| Component           | Use for                                                                   |
-| ------------------- | ------------------------------------------------------------------------- |
-| `AppCard`           | Listing/establishment cards — flat border, hover primary border           |
-| `AppSectionHeading` | "Listings", "Featured Listings" section titles                            |
-| `AppPageToolbar`    | Back + right-side actions row on detail pages                             |
-| `AppAlert`          | `pending`, `rejected`, `success` status banners (public dark routes only) |
+| Component           | Use for                                                         |
+| ------------------- | --------------------------------------------------------------- |
+| `AppCard`           | Listing/establishment cards — flat border, hover primary border |
+| `AppSectionHeading` | "Listings", "Featured Listings" section titles                  |
+| `AppPageToolbar`    | Back + right-side actions row on detail pages                   |
+| `AppAlert`          | `pending`, `rejected`, `success` status banners                 |
 
 Existing shells (do not duplicate):
 

@@ -4,8 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { AppCard } from '@/components/design-system'
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -85,7 +85,7 @@ export const MyListings = ({
   const now = new Date()
 
   return (
-    <Card>
+    <AppCard>
       <CardHeader className="space-y-4">
         <div>
           <CardTitle>My Listings</CardTitle>
@@ -93,17 +93,15 @@ export const MyListings = ({
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
-            <div className="bg-muted px-4 py-2 rounded-md text-center sm:text-left">
+            <div className="rounded-sm border border-border bg-muted/20 px-4 py-2 text-center sm:text-left">
               <span className="text-sm text-muted-foreground">
                 Credits Remaining:
               </span>
-              <span className="font-semibold ml-1">{listingCredits}</span>
+              <span className="ml-1 font-semibold tabular-nums">
+                {listingCredits}
+              </span>
             </div>
-            <Button
-              variant="default"
-              className="bg-green-600 hover:bg-green-700 text-white"
-              onClick={() => setShowCreditDialog(true)}
-            >
+            <Button onClick={() => setShowCreditDialog(true)}>
               Add more credits
             </Button>
           </div>
@@ -137,7 +135,7 @@ export const MyListings = ({
             const isEditLocked = editTimeLeftMs !== null && editTimeLeftMs <= 0
 
             return (
-              <Card key={listing.id}>
+              <AppCard key={listing.id}>
                 <CardContent className="p-4">
                   {/* Top section with title and featured status */}
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-3 mb-3">
@@ -166,7 +164,7 @@ export const MyListings = ({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-6 px-2 border-red-200 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                className="h-6 border-destructive/50 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                 onClick={() => {
                                   setListingToRemoveFeature(listing.id)
                                   setRemoveFeatureDialogOpen(true)
@@ -242,7 +240,7 @@ export const MyListings = ({
                             variant="outline"
                             size="sm"
                             onClick={() => handleRenewListing(listing.id)}
-                            className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200 w-full sm:w-auto"
+                            className="w-full border-amber-700/50 text-amber-400 hover:bg-amber-950/40 hover:text-amber-300 sm:w-auto"
                           >
                             <RefreshCw className="h-4 w-4 mr-2" />
                             Relist for 30 days
@@ -257,8 +255,8 @@ export const MyListings = ({
                             <div
                               className={`flex items-center gap-2 ${
                                 (listing.featured_days_remaining ?? 0) > 3
-                                  ? 'text-green-600'
-                                  : 'text-red-500'
+                                  ? 'text-emerald-400'
+                                  : 'text-red-400'
                               }`}
                             >
                               <Star className="h-4 w-4" />
@@ -280,7 +278,7 @@ export const MyListings = ({
                                           setListingToFeature(listing.id)
                                           setFeatureDialogOpen(true)
                                         }}
-                                        className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 w-full sm:w-auto"
+                                        className="w-full border-emerald-700/50 text-emerald-400 hover:bg-emerald-950/40 hover:text-emerald-300 sm:w-auto"
                                       >
                                         <Star className="h-4 w-4 mr-2" />
                                         Renew Featured
@@ -356,7 +354,7 @@ export const MyListings = ({
                           variant="outline"
                           size="sm"
                           onClick={() => confirmDeleteListing(listing.id)}
-                          className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 w-full sm:w-auto"
+                          className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 sm:w-auto"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
@@ -365,12 +363,12 @@ export const MyListings = ({
                     </div>
                   </div>
                 </CardContent>
-              </Card>
+              </AppCard>
             )
           })}
 
           {expiredListings.length > 0 && (
-            <Card className="border-dashed">
+            <AppCard className="border-dashed">
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                   <div>
@@ -392,7 +390,7 @@ export const MyListings = ({
                 {showExpired && (
                   <div className="mt-4 space-y-4">
                     {expiredListings.map(listing => (
-                      <Card
+                      <AppCard
                         key={listing.id}
                         className="relative overflow-hidden"
                       >
@@ -423,7 +421,7 @@ export const MyListings = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleRenewListing(listing.id)}
-                                className="bg-orange-50 hover:bg-orange-100 text-orange-600 hover:text-orange-700 border-orange-200 w-full sm:w-auto"
+                                className="w-full border-amber-700/50 text-amber-400 hover:bg-amber-950/40 hover:text-amber-300 sm:w-auto"
                               >
                                 <RefreshCw className="h-4 w-4 mr-2" />
                                 Relist for 30 days
@@ -432,7 +430,7 @@ export const MyListings = ({
                                 variant="outline"
                                 size="sm"
                                 onClick={() => confirmDeleteListing(listing.id)}
-                                className="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border-red-200 w-full sm:w-auto"
+                                className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 sm:w-auto"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Delete
@@ -440,15 +438,15 @@ export const MyListings = ({
                             </div>
                           </div>
                         </CardContent>
-                      </Card>
+                      </AppCard>
                     ))}
                   </div>
                 )}
               </CardContent>
-            </Card>
+            </AppCard>
           )}
         </div>
       </CardContent>
-    </Card>
+    </AppCard>
   )
 }

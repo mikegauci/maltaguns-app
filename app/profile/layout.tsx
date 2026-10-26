@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { ProfileShellWrapper } from '@/components/profile/ProfileShellWrapper'
 import { buildMetadata } from '@/lib/seo'
 
 export const metadata: Metadata = buildMetadata({
@@ -12,5 +13,5 @@ export default function ProfileLayout({
 }: {
   children: React.ReactNode
 }) {
-  return children
+  return <ProfileShellWrapper>{children}</ProfileShellWrapper>
 }

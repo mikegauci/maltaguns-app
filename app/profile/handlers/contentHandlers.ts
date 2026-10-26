@@ -1,6 +1,8 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { BlogPost, Event, Store, Club, Servicing, Range } from '../types'
 
+export type EstablishmentTable = 'stores' | 'clubs' | 'servicing' | 'ranges'
+
 interface ContentHandlerDependencies {
   supabase: SupabaseClient
   toast: any
@@ -71,16 +73,27 @@ export function createContentHandlers(deps: ContentHandlerDependencies) {
     }
   }
 
-  async function handleDeleteStore(storeId: string) {
+  async function handleDeleteEstablishment(
+    establishmentId: string,
+    table: EstablishmentTable
+  ) {
     try {
-      const { error } = await supabase.from('stores').delete().eq('id', storeId)
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('id', establishmentId)
 
       if (error) throw error
 
-      setStores(prev => prev.filter(s => s.id !== storeId))
-      setClubs(prev => prev.filter(c => c.id !== storeId))
-      setServicing(prev => prev.filter(s => s.id !== storeId))
-      setRanges(prev => prev.filter(r => r.id !== storeId))
+      if (table === 'stores') {
+        setStores(prev => prev.filter(s => s.id !== establishmentId))
+      } else if (table === 'clubs') {
+        setClubs(prev => prev.filter(c => c.id !== establishmentId))
+      } else if (table === 'servicing') {
+        setServicing(prev => prev.filter(s => s.id !== establishmentId))
+      } else {
+        setRanges(prev => prev.filter(r => r.id !== establishmentId))
+      }
 
       toast({
         title: 'Establishment deleted',
@@ -101,6 +114,6 @@ export function createContentHandlers(deps: ContentHandlerDependencies) {
   return {
     handleDeletePost,
     handleDeleteEvent,
-    handleDeleteStore,
+    handleDeleteEstablishment,
   }
 }

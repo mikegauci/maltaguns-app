@@ -1,3 +1,5 @@
+import { getSiteBaseUrl } from '@/lib/site-base-url'
+
 const CANONICAL_ORIGIN = 'https://www.maltaguns.com'
 
 export function isNonProductionHost(host: string | null | undefined): boolean {
@@ -35,6 +37,10 @@ function normalizeAppUrl(url: string): string | null {
 }
 
 export function getAppUrl(): string {
+  if (process.env.VERCEL_ENV === 'preview') {
+    return getSiteBaseUrl()
+  }
+
   const candidates = [
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.NEXT_PUBLIC_APP_URL,
@@ -51,19 +57,7 @@ export function getAppUrl(): string {
 }
 
 export function getAuthRedirectOrigin(): string {
-  const candidates = [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.NEXT_PUBLIC_SITE_URL,
-  ]
-    .filter((value): value is string => Boolean(value))
-    .map(value => value.replace(/\/$/, ''))
-
-  for (const url of candidates) {
-    const normalized = normalizeHostname(url)
-    if (normalized) return normalized
-  }
-
-  return CANONICAL_ORIGIN
+  return getSiteBaseUrl()
 }
 
 export function toAbsoluteUrl(url: string, appUrl = getAppUrl()): string {

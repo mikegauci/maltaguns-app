@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { getSiteBaseUrl } from '@/lib/site-base-url'
 
 const DIDIT_API_BASE = 'https://verification.didit.me'
 const WEBHOOK_MAX_SKEW_SECONDS = 300
@@ -100,13 +101,7 @@ export function getVerificationCallbackUrl(origin?: string | null): string {
     return `${origin.replace(/\/$/, '')}/verification/complete`
   }
 
-  const base = (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://www.maltaguns.com'
-  ).replace(/\/$/, '')
-
-  return `${base}/verification/complete`
+  return `${getSiteBaseUrl()}/verification/complete`
 }
 
 function buildExpectedDetails(

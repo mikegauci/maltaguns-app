@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
+import { PUBLIC_SUPPORT_EMAIL } from '@/lib/support-email'
 import {
   Card,
   CardContent,
@@ -190,7 +191,7 @@ function LoginContent() {
                   Your account has been suspended. If you believe this is an
                   error, please contact our{' '}
                   <a
-                    href="mailto:support@maltaguns.com"
+                    href={`mailto:${PUBLIC_SUPPORT_EMAIL}`}
                     className="text-primary hover:underline"
                   >
                     support team

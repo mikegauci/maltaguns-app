@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useMemo } from 'react'
 import nextDynamic from 'next/dynamic'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { Button } from '@/components/ui/button'
@@ -36,6 +36,7 @@ import { firearmsSchema, FirearmsForm } from '../schemas'
 import { useImageUpload } from '../hooks/useImageUpload'
 import { useAuthSession } from '../hooks/useAuthSession'
 import { useCredits } from '../hooks/useCredits'
+import { useListingPrefillFromInventory } from '../hooks/useListingPrefillFromInventory'
 import { createListingHandlers } from '../handlers/listingHandlers'
 import { ListingFormLayout } from '@/components/marketplace/ListingFormLayout'
 import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
@@ -52,9 +53,15 @@ import {
   LicenseTypes,
 } from '@/lib/license-utils'
 import { PageLayout } from '@/components/ui/page-layout'
+import { getSafeInternalPath } from '@/lib/navigation'
 
-export default function CreateFirearmsListing() {
+function CreateFirearmsListing() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const backHref = getSafeInternalPath(
+    searchParams.get('returnTo'),
+    '/marketplace/create'
+  )
   const { toast } = useToast()
   const { supabase } = useSupabase()
   const [showCreditDialog, setShowCreditDialog] = useState(false)
@@ -63,6 +70,7 @@ export default function CreateFirearmsListing() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [allowedCategories, setAllowedCategories] = useState<string[]>([])
   const [isLoadingLicenses, setIsLoadingLicenses] = useState(true)
+  const [prefilledImages, setPrefilledImages] = useState<string[]>([])
 
   const form = useForm<FirearmsForm>({
     resolver: zodResolver(firearmsSchema),
@@ -85,7 +93,28 @@ export default function CreateFirearmsListing() {
     handleImageUpload,
     handleDeleteImage,
     handleSetPrimaryImage,
-  } = useImageUpload({ toast, setValue: form.setValue })
+  } = useImageUpload({
+    toast,
+    setValue: form.setValue,
+    images: prefilledImages,
+    setImages: setPrefilledImages,
+  })
+
+  const allowedCategoryKeys = useMemo(
+    () =>
+      Object.entries(firearmsCategories)
+        .filter(([, label]) => allowedCategories.includes(label))
+        .map(([key]) => key),
+    [allowedCategories]
+  )
+
+  const { isPrefilling } = useListingPrefillFromInventory({
+    kind: 'firearms',
+    form,
+    setImages: setPrefilledImages,
+    ready: !isLoading && !isLoadingLicenses,
+    allowedCategoryKeys,
+  })
 
   // Create handlers
   const { createFirearmsListing } = createListingHandlers({
@@ -179,12 +208,12 @@ export default function CreateFirearmsListing() {
     setShowLegalDialog(false)
   }
 
-  if (isLoading || isLoadingLicenses) {
+  if (isLoading || isLoadingLicenses || isPrefilling) {
     return (
       <PageLayout>
         <PageHeader
           align="center"
-          backHref="/marketplace/create"
+          backHref={backHref}
           title="Create Firearms Listing"
           description="List your firearm for sale on the marketplace"
           className="mb-6"
@@ -199,7 +228,7 @@ export default function CreateFirearmsListing() {
       <PageLayout>
         <PageHeader
           align="center"
-          backHref="/marketplace/create"
+          backHref={backHref}
           title="Create Firearms Listing"
           description="List your firearm for sale on the marketplace"
           className="mb-6"
@@ -221,9 +250,9 @@ export default function CreateFirearmsListing() {
       <ListingFormLayout
         title="Create Firearms Listing"
         description="List your firearm for sale on the marketplace"
-        backHref="/marketplace/create"
         credits={credits}
         showCredits
+        backHref={backHref}
       >
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -341,5 +370,19 @@ export default function CreateFirearmsListing() {
         />
       )}
     </>
+  )
+}
+
+export default function CreateFirearmsListingPage() {
+  return (
+    <Suspense
+      fallback={
+        <PageLayout>
+          <p className="text-muted-foreground">Loading...</p>
+        </PageLayout>
+      }
+    >
+      <CreateFirearmsListing />
+    </Suspense>
   )
 }
