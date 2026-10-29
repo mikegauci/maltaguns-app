@@ -10,8 +10,11 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PaymentsUnavailableNotice } from '@/components/dialogs/PaymentsUnavailableNotice'
+import { Loader2 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { startCheckout } from '@/lib/start-checkout'
 
 interface EventCreditDialogProps {
   open: boolean
@@ -24,6 +27,23 @@ export function EventCreditDialog({
   onOpenChange,
 }: EventCreditDialogProps) {
   const router = useRouter()
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
+
+  const handlePurchase = async () => {
+    setLoading(true)
+    try {
+      await startCheckout({ product: 'eventCredit' })
+    } catch (error) {
+      setLoading(false)
+      toast({
+        title: 'Could not start checkout',
+        description:
+          error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      })
+    }
+  }
 
   const handleBack = () => {
     router.back()
@@ -39,8 +59,7 @@ export function EventCreditDialog({
             Purchase credits to create events on MaltaGuns
           </DialogDescription>
         </DialogHeader>
-        <PaymentsUnavailableNotice action="purchase event credits" />
-        <Card className="p-4 opacity-60">
+        <Card className="p-4">
           <div className="flex-1">
             <h3 className="font-semibold text-lg">1 Event Credit</h3>
             <p className="text-2xl font-bold mb-2">€25</p>
@@ -48,8 +67,13 @@ export function EventCreditDialog({
               Create one event on MaltaGuns
             </p>
           </div>
-          <Button className="w-full mt-4" disabled>
-            Unavailable
+          <Button
+            className="w-full mt-4"
+            onClick={handlePurchase}
+            disabled={loading}
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {loading ? 'Redirecting...' : 'Purchase'}
           </Button>
         </Card>
         <DialogFooter className="mt-6">

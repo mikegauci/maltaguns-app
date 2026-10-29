@@ -29,6 +29,7 @@ import { createContentHandlers } from './handlers/contentHandlers'
 import { ProfileTabs } from '../../components/profile/ProfileTabs'
 import { PageHeader } from '@/components/ui/page-header'
 import { PageLayout } from '@/components/ui/page-layout'
+import { PaymentResultToast } from '@/components/payments/PaymentResultToast'
 
 const CreditDialog = nextDynamic(
   () => import('@/components/dialogs/CreditDialog').then(m => m.CreditDialog),
@@ -177,6 +178,11 @@ export default function ProfileClient() {
 
   return (
     <PageLayout>
+      <PaymentResultToast
+        successTitle="Payment successful"
+        successDescription="Your purchase has been added to your account."
+        onSuccess={refreshCredits}
+      />
       <PageHeader
         title="My Profile"
         description="Manage your account and content"

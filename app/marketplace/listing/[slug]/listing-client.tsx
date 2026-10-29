@@ -49,6 +49,7 @@ import { AppAlert } from '@/components/design-system'
 import type { ListingDetails } from './types'
 import { formatPrice } from '@/lib/format'
 import { listingPublicPath } from '@/lib/listing-slug'
+import { PaymentResultToast } from '@/components/payments/PaymentResultToast'
 
 const DEFAULT_LISTING_IMAGE = '/images/maltaguns-default-img.jpg'
 
@@ -852,6 +853,11 @@ export default function ListingClient({
 
   return (
     <PageLayout>
+      <PaymentResultToast
+        successTitle="Your listing is now featured!"
+        successDescription="It will appear at the top of search results."
+        onSuccess={() => setIsFeatured(true)}
+      />
       <Suspense fallback={null}>
         <CreatedSuccessBanner listing={listing} />
       </Suspense>

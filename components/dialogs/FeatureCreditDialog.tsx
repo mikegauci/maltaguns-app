@@ -10,13 +10,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { PaymentsUnavailableNotice } from '@/components/dialogs/PaymentsUnavailableNotice'
+import { Loader2 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { startCheckout } from '@/lib/start-checkout'
+import { PAYMENT_PRODUCTS } from '@/lib/payment-products'
 import {
   FEATURE_DAYS,
   FEATURE_RENEW_WITHIN_DAYS,
 } from '@/lib/featured-listings'
 
-const FEATURE_PRICE = 10
+const FEATURE_PRICE = PAYMENT_PRODUCTS.featuredListing.priceCents / 100
 
 interface FeatureListingDialogProps {
   open: boolean
@@ -30,8 +33,25 @@ export function FeatureCreditDialog({
   onOpenChange,
   listingId,
 }: FeatureListingDialogProps) {
+  const { toast } = useToast()
+  const [loading, setLoading] = useState(false)
   const [isRenewal, setIsRenewal] = useState(false)
   const [alreadyFeatured, setAlreadyFeatured] = useState(false)
+
+  const handlePurchase = async () => {
+    setLoading(true)
+    try {
+      await startCheckout({ product: 'featuredListing', listingId })
+    } catch (error) {
+      setLoading(false)
+      toast({
+        title: 'Could not start checkout',
+        description:
+          error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      })
+    }
+  }
 
   useEffect(() => {
     const checkFeatureStatus = async () => {
@@ -74,6 +94,7 @@ export function FeatureCreditDialog({
   }, [open, listingId])
 
   const handleOpenChange = (newOpen: boolean) => {
+    if (loading) return
     onOpenChange(newOpen)
     if (!newOpen) {
       setIsRenewal(false)
@@ -96,8 +117,7 @@ export function FeatureCreditDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
-          <PaymentsUnavailableNotice action="feature your listing" />
-          <div className="text-center p-4 bg-muted rounded-md opacity-60">
+          <div className="text-center p-4 bg-muted rounded-md">
             <p className="font-semibold text-lg">€{FEATURE_PRICE}.00</p>
             <p className="text-sm text-muted-foreground">
               One-time payment for {FEATURE_DAYS} days of featuring
@@ -106,12 +126,19 @@ export function FeatureCreditDialog({
         </div>
 
         <DialogFooter>
-          <Button className="w-full" disabled={alreadyFeatured}>
-            {alreadyFeatured
-              ? 'Already Featured'
-              : isRenewal
-                ? 'Renew Feature (Unavailable)'
-                : 'Purchase Feature (Unavailable)'}
+          <Button
+            className="w-full"
+            onClick={handlePurchase}
+            disabled={loading || alreadyFeatured}
+          >
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {loading
+              ? 'Redirecting...'
+              : alreadyFeatured
+                ? 'Already Featured'
+                : isRenewal
+                  ? `Renew Feature (€${FEATURE_PRICE})`
+                  : `Purchase Feature (€${FEATURE_PRICE})`}
           </Button>
         </DialogFooter>
       </DialogContent>

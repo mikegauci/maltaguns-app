@@ -34,6 +34,7 @@ import {
 import { postNotifyCreated } from '@/lib/notify-created-client'
 import { Loader2 } from 'lucide-react'
 import { PageLayout } from '@/components/ui/page-layout'
+import { PaymentResultToast } from '@/components/payments/PaymentResultToast'
 import { PageHeader } from '@/components/ui/page-header'
 import { ListingFormLayout } from '@/components/marketplace/ListingFormLayout'
 import { ListingFormSection } from '@/components/marketplace/ListingFormSection'
@@ -447,7 +448,7 @@ export default function CreateEventPage() {
                   align="center"
                   backHref="/events"
                   title="Event credits required"
-                  description="You need at least one event credit to create an event. Online payments are temporarily unavailable."
+                  description="You need at least one event credit to create an event."
                   className="mb-6"
                 />
                 <div className="mx-auto flex max-w-md justify-center">
@@ -464,57 +465,29 @@ export default function CreateEventPage() {
   }
 
   return (
-    <ListingFormLayout
-      title="Create Event"
-      description="Add a new event to the community calendar"
-      backHref="/events"
-      credits={credits}
-      showCredits
-    >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <ListingFormSection title="Details" first>
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Event Title</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter event title" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Provide event details"
-                      className="min-h-[140px] resize-y"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid gap-4 md:grid-cols-2">
+    <>
+      <PaymentResultToast
+        successTitle="Payment successful"
+        successDescription="Your event credit has been added to your account."
+      />
+      <ListingFormLayout
+        title="Create Event"
+        description="Add a new event to the community calendar"
+        backHref="/events"
+        credits={credits}
+        showCredits
+      >
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <ListingFormSection title="Details" first>
               <FormField
                 control={form.control}
-                name="organizer"
+                name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Organizer / Club Name</FormLabel>
+                    <FormLabel>Event Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter organizer name" {...field} />
+                      <Input placeholder="Enter event title" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -523,47 +496,209 @@ export default function CreateEventPage() {
 
               <FormField
                 control={form.control}
-                name="type"
+                name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Event Type</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Provide event details"
+                        className="min-h-[140px] resize-y"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="organizer"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organizer / Club Name</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select event type" />
-                        </SelectTrigger>
+                        <Input placeholder="Enter organizer name" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {eventTypes.map(type => (
-                          <SelectItem key={type} value={type}>
-                            {type}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Event Type</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select event type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {eventTypes.map(type => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </ListingFormSection>
+
+            <ListingFormSection title="Schedule">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Date</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          min={getTodayString()}
+                          max={getMaxDateString()}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Date (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          min={form.watch('startDate') || getTodayString()}
+                          max={getMaxDateString()}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="startTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Start Time (Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="time" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="endTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>End Time (Optional)</FormLabel>
+                      <FormControl>
+                        <Input type="time" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </ListingFormSection>
+
+            <ListingFormSection title="Location & Contact">
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter event location" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
-          </ListingFormSection>
 
-          <ListingFormSection title="Schedule">
-            <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="tel"
+                          placeholder="+356 1234 5678"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address (Optional)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="info@maltaguns.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
-                name="startDate"
-                render={({ field }) => (
+                name="price"
+                render={({ field: { onChange, ...field } }) => (
                   <FormItem>
-                    <FormLabel>Start Date</FormLabel>
+                    <FormLabel>Price (€)</FormLabel>
                     <FormControl>
                       <Input
-                        type="date"
-                        min={getTodayString()}
-                        max={getMaxDateString()}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        onChange={e =>
+                          onChange(
+                            e.target.value
+                              ? parseFloat(e.target.value)
+                              : undefined
+                          )
+                        }
                         {...field}
                       />
                     </FormControl>
@@ -571,204 +706,76 @@ export default function CreateEventPage() {
                   </FormItem>
                 )}
               />
+            </ListingFormSection>
 
+            <ListingFormSection title="Poster">
               <FormField
                 control={form.control}
-                name="endDate"
+                name="posterUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>End Date (Optional)</FormLabel>
+                    <FormLabel>Poster Image</FormLabel>
                     <FormControl>
-                      <Input
-                        type="date"
-                        min={form.watch('startDate') || getTodayString()}
-                        max={getMaxDateString()}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="startTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Time (Optional)</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="endTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Time (Optional)</FormLabel>
-                    <FormControl>
-                      <Input type="time" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </ListingFormSection>
-
-          <ListingFormSection title="Location & Contact">
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter event location" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="tel"
-                        placeholder="+356 1234 5678"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Address (Optional)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="info@maltaguns.com"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="price"
-              render={({ field: { onChange, ...field } }) => (
-                <FormItem>
-                  <FormLabel>Price (€)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      onChange={e =>
-                        onChange(
-                          e.target.value
-                            ? parseFloat(e.target.value)
-                            : undefined
-                        )
-                      }
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </ListingFormSection>
-
-          <ListingFormSection title="Poster">
-            <FormField
-              control={form.control}
-              name="posterUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Poster Image</FormLabel>
-                  <FormControl>
-                    <div className="flex flex-col gap-2">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handlePosterUpload}
-                        disabled={uploadingPoster}
-                        className="hidden"
-                        id="poster-upload"
-                      />
-                      <div className="flex items-center gap-2">
-                        <label
-                          htmlFor="poster-upload"
-                          className="cursor-pointer rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80"
-                        >
-                          {uploadingPoster ? 'Uploading...' : 'Upload Poster'}
-                        </label>
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePosterUpload}
+                          disabled={uploadingPoster}
+                          className="hidden"
+                          id="poster-upload"
+                        />
+                        <div className="flex items-center gap-2">
+                          <label
+                            htmlFor="poster-upload"
+                            className="cursor-pointer rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/80"
+                          >
+                            {uploadingPoster ? 'Uploading...' : 'Upload Poster'}
+                          </label>
+                          {field.value && (
+                            <span className="text-sm text-muted-foreground">
+                              Poster uploaded
+                            </span>
+                          )}
+                        </div>
                         {field.value && (
-                          <span className="text-sm text-muted-foreground">
-                            Poster uploaded
-                          </span>
+                          <div className="relative mt-2 h-40 w-40">
+                            <img
+                              src={field.value}
+                              alt="Event poster"
+                              className="h-full w-full rounded-md object-cover"
+                            />
+                          </div>
                         )}
                       </div>
-                      {field.value && (
-                        <div className="relative mt-2 h-40 w-40">
-                          <img
-                            src={field.value}
-                            alt="Event poster"
-                            className="h-full w-full rounded-md object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </ListingFormSection>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </ListingFormSection>
 
-          <div className="border-t border-border pt-6">
-            <Button
-              type="submit"
-              className="h-11 w-full"
-              disabled={isSubmitting || uploadingPoster || !hasCredits}
-            >
-              {isSubmitting || uploadingPoster ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {uploadingPoster ? 'Uploading Poster...' : 'Creating...'}
-                </>
-              ) : !hasCredits ? (
-                'Insufficient Credits'
-              ) : (
-                'Create Event'
-              )}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </ListingFormLayout>
+            <div className="border-t border-border pt-6">
+              <Button
+                type="submit"
+                className="h-11 w-full"
+                disabled={isSubmitting || uploadingPoster || !hasCredits}
+              >
+                {isSubmitting || uploadingPoster ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {uploadingPoster ? 'Uploading Poster...' : 'Creating...'}
+                  </>
+                ) : !hasCredits ? (
+                  'Insufficient Credits'
+                ) : (
+                  'Create Event'
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </ListingFormLayout>
+    </>
   )
 }
