@@ -26,6 +26,7 @@ import { PistolGunIcon } from '@/components/icons/PistolGunIcon'
 import { useSellerStatus } from './hooks/useSellerStatus'
 import { createNavigationHandlers } from './handlers/navigationHandlers'
 import { PageLayout } from '@/components/ui/page-layout'
+import { PaymentResultToast } from '@/components/payments/PaymentResultToast'
 import { PageHeader } from '@/components/ui/page-header'
 
 export default function CreateListing() {
@@ -63,6 +64,10 @@ export default function CreateListing() {
 
   return (
     <PageLayout>
+      <PaymentResultToast
+        successTitle="Payment successful"
+        successDescription="Your listing credits have been added to your account."
+      />
       <PageHeader
         align="center"
         title="Create Listing"

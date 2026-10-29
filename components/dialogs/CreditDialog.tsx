@@ -10,35 +10,25 @@ import {
 } from '@/components/ui/dialog'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { PaymentsUnavailableNotice } from '@/components/dialogs/PaymentsUnavailableNotice'
+import { Loader2 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
+import { startCheckout } from '@/lib/start-checkout'
+import {
+  PAYMENT_PRODUCTS,
+  type PaymentProductKey,
+} from '@/lib/payment-products'
 
 interface Plan {
-  id: string
-  credits: number
-  price: number
+  id: PaymentProductKey
   description: string
 }
 
 const plans: Plan[] = [
-  {
-    id: 'price_1credit',
-    credits: 1,
-    price: 15,
-    description: 'Single listing credit',
-  },
-  {
-    id: 'price_5credits',
-    credits: 5,
-    price: 60,
-    description: 'Best value for regular sellers',
-  },
-  {
-    id: 'price_10credits',
-    credits: 10,
-    price: 100,
-    description: 'Perfect for collection liquidation',
-  },
+  { id: 'credit1', description: 'Single listing credit' },
+  { id: 'credit5', description: 'Best value for regular sellers' },
+  { id: 'credit10', description: 'Perfect for collection liquidation' },
 ]
 
 interface CreditDialogProps {
@@ -54,6 +44,23 @@ export function CreditDialog({
   source,
 }: CreditDialogProps) {
   const router = useRouter()
+  const { toast } = useToast()
+  const [loadingPlan, setLoadingPlan] = useState<PaymentProductKey | null>(null)
+
+  const handlePurchase = async (product: PaymentProductKey) => {
+    setLoadingPlan(product)
+    try {
+      await startCheckout({ product, source })
+    } catch (error) {
+      setLoadingPlan(null)
+      toast({
+        title: 'Could not start checkout',
+        description:
+          error instanceof Error ? error.message : 'Please try again.',
+        variant: 'destructive',
+      })
+    }
+  }
 
   const handleBack = () => {
     if (source === 'profile') {
@@ -82,24 +89,33 @@ export function CreditDialog({
             Choose a credit package to start creating listings
           </DialogDescription>
         </DialogHeader>
-        <PaymentsUnavailableNotice action="purchase credits" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          {plans.map(plan => (
-            <Card key={plan.id} className="p-4 flex flex-col opacity-60">
-              <div className="flex-1">
-                <h3 className="font-semibold text-lg">
-                  {plan.credits} Credit{plan.credits > 1 ? 's' : ''}
-                </h3>
-                <p className="text-2xl font-bold mb-2">€{plan.price}</p>
-                <p className="text-sm text-muted-foreground">
-                  {plan.description}
-                </p>
-              </div>
-              <Button className="mt-4" disabled>
-                Unavailable
-              </Button>
-            </Card>
-          ))}
+          {plans.map(plan => {
+            const { credits, priceCents } = PAYMENT_PRODUCTS[plan.id]
+            return (
+              <Card key={plan.id} className="p-4 flex flex-col">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">
+                    {credits} Credit{credits > 1 ? 's' : ''}
+                  </h3>
+                  <p className="text-2xl font-bold mb-2">€{priceCents / 100}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {plan.description}
+                  </p>
+                </div>
+                <Button
+                  className="mt-4"
+                  onClick={() => handlePurchase(plan.id)}
+                  disabled={loadingPlan !== null}
+                >
+                  {loadingPlan === plan.id && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {loadingPlan === plan.id ? 'Redirecting...' : 'Purchase'}
+                </Button>
+              </Card>
+            )
+          })}
         </div>
         <DialogFooter className="mt-6">
           <Button variant="outline" onClick={handleBack} className="w-full">
