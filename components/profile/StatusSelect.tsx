@@ -31,7 +31,7 @@ export const StatusSelect = ({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          'w-full text-sm border rounded h-9 px-3 bg-white flex items-center sm:justify-start justify-center gap-2 cursor-pointer relative',
+          'w-full text-sm border rounded h-9 px-3 bg-background text-foreground hover:bg-accent flex items-center sm:justify-start justify-center gap-2 cursor-pointer relative',
           className
         )}
       >
@@ -54,14 +54,14 @@ export const StatusSelect = ({
       {open && (
         <>
           <div className="fixed inset-0" onClick={() => setOpen(false)} />
-          <div className="absolute z-10 w-full mt-1 bg-white border rounded-md shadow-lg">
+          <div className="absolute z-10 w-full mt-1 bg-popover text-popover-foreground border rounded-md shadow-lg overflow-hidden">
             {options.map(option => (
               <button
                 key={option.value}
                 type="button"
                 className={cn(
-                  'w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-gray-50',
-                  value === option.value && 'bg-gray-50'
+                  'w-full px-3 py-2 text-sm flex items-center gap-2 hover:bg-accent hover:text-accent-foreground',
+                  value === option.value && 'bg-accent text-accent-foreground'
                 )}
                 onClick={() => {
                   onChange(option.value)

@@ -352,6 +352,22 @@ export const MyListings = ({
                           </Link>
                         )}
 
+                        {!listing.is_featured &&
+                          listing.status === 'active' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setListingToFeature(listing.id)
+                                setFeatureDialogOpen(true)
+                              }}
+                              className="bg-green-50 hover:bg-green-100 text-green-600 hover:text-green-700 border-green-200 w-full sm:w-auto"
+                            >
+                              <Star className="h-4 w-4 mr-2" />
+                              Feature
+                            </Button>
+                          )}
+
                         <Button
                           variant="outline"
                           size="sm"
