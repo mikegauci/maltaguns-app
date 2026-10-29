@@ -41,6 +41,7 @@ interface DataTableProps<TData, TValue> {
   initialColumnVisibility?: VisibilityState
   onCreateNew?: () => void
   createButtonText?: string
+  onRowClick?: (row: TData) => void
 }
 
 export function DataTable<TData, TValue>({
@@ -52,6 +53,7 @@ export function DataTable<TData, TValue>({
   initialColumnVisibility,
   onCreateNew,
   createButtonText = 'Create New',
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const [isMounted, setIsMounted] = useState(false)
   const [sorting, setSorting] = useState<SortingState>([])
@@ -219,7 +221,23 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className="border-border hover:bg-muted/20"
+                  className={`border-border hover:bg-muted/20${onRowClick ? ' cursor-pointer' : ''}`}
+                  onClick={
+                    onRowClick
+                      ? event => {
+                          const target = event.target as HTMLElement
+                          // Ignore portaled content (menus) and interactive controls
+                          if (!event.currentTarget.contains(target)) return
+                          if (
+                            target.closest(
+                              'a, button, input, label, [role="checkbox"], [role="menuitem"]'
+                            )
+                          )
+                            return
+                          onRowClick(row.original)
+                        }
+                      : undefined
+                  }
                 >
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>

@@ -18,6 +18,9 @@ const PROFILE_FIELDS = [
   'is_disabled',
   'notes',
   'license_types',
+  'phone',
+  'address',
+  'birthday',
 ] as const
 
 export async function PATCH(
@@ -50,6 +53,19 @@ export async function PATCH(
       return NextResponse.json(
         { error: 'User profile not found' },
         { status: 404 }
+      )
+    }
+
+    if (
+      'birthday' in body &&
+      !(
+        typeof body.birthday === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(body.birthday)
+      )
+    ) {
+      return NextResponse.json(
+        { error: 'Birthday must be a valid date (YYYY-MM-DD)' },
+        { status: 400 }
       )
     }
 
