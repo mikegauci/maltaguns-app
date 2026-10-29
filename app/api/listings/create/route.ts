@@ -77,7 +77,6 @@ export async function POST(request: Request) {
       images: formattedImages,
       thumbnail: imageUrls[0] || '',
       status: 'active',
-      is_featured: false,
       expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       editable_until: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
     }
