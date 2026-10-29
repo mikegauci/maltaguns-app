@@ -14,6 +14,7 @@ interface HandlerDependencies {
   setListings: (listings: Listing[] | ((prev: Listing[]) => Listing[])) => void
   profile: Profile | null
   setLicenseUploadProgress?: (progress: number) => void
+  refreshPage?: () => void
 }
 
 // Helper: The licenses bucket is private, so the raw stored URL from an
@@ -372,10 +373,12 @@ export function createProfileHandlers(deps: HandlerDependencies) {
                 ).toISOString(),
                 days_until_expiration: 30,
                 is_near_expiration: false,
+                is_expired: false,
               }
             : listing
         )
       )
+      deps.refreshPage?.()
 
       toast({
         title: 'Listing renewed',

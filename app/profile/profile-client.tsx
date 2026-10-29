@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import nextDynamic from 'next/dynamic'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -46,6 +47,7 @@ const EventCreditDialog = nextDynamic(
 
 export default function ProfileClient() {
   const { toast } = useToast()
+  const router = useRouter()
   const { supabase, session, isLoading: authLoading } = useSupabase()
 
   // UI State
@@ -109,6 +111,7 @@ export default function ProfileClient() {
     setListings,
     profile,
     setLicenseUploadProgress,
+    refreshPage: () => router.refresh(),
   })
 
   const contentHandlers = createContentHandlers({
