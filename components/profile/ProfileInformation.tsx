@@ -150,9 +150,23 @@ export const ProfileInformation = ({
                   name="address"
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Address</FormLabel>
+                      <FormLabel>Street Address</FormLabel>
                       <FormControl>
-                        <Input placeholder="123 Main St, Valletta" {...field} />
+                        <Input placeholder="123 Main Street" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Valletta" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -198,9 +212,13 @@ export const ProfileInformation = ({
             </div>
             <div className="md:col-span-2">
               <p className="text-sm font-medium text-muted-foreground">
-                Address
+                Street Address
               </p>
               <p className="text-lg">{profile.address || 'Not provided'}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground">City</p>
+              <p className="text-lg">{profile.city || 'Not provided'}</p>
             </div>
           </div>
         )}

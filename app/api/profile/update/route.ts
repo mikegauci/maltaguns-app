@@ -54,6 +54,7 @@ export async function PATCH(request: Request) {
       birthday: nextBirthday,
       phone: data.phone,
       address: data.address,
+      city: data.city,
     }
 
     if (profile.identity_verified && birthdayChanged) {

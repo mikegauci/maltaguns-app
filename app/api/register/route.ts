@@ -81,6 +81,7 @@ export async function POST(req: Request) {
         birthday: data.birthday,
         phone: data.phone,
         address: data.address,
+        city: data.city,
         is_seller: false,
         is_verified: false,
         license_image: null,

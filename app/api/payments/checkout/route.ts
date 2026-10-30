@@ -23,7 +23,7 @@ export async function POST(request: Request) {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('email, first_name, last_name, phone, address')
+      .select('email, first_name, last_name, phone, address, city')
       .eq('id', user.id)
       .single()
 

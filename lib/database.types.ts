@@ -39,6 +39,7 @@ export interface Database {
           birthday: string
           phone: string | null
           address: string | null
+          city: string | null
           is_seller: boolean
           is_verified: boolean
           is_admin: boolean | null
@@ -70,6 +71,7 @@ export interface Database {
           birthday: string
           phone?: string | null
           address?: string | null
+          city?: string | null
           is_seller?: boolean
           is_verified?: boolean
           is_admin?: boolean | null
@@ -101,6 +103,7 @@ export interface Database {
           birthday?: string
           phone?: string | null
           address?: string | null
+          city?: string | null
           is_seller?: boolean
           is_verified?: boolean
           is_admin?: boolean | null

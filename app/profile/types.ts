@@ -11,7 +11,8 @@ export const profileSchema = z.object({
     message: 'You must be at least 18 years old',
   }),
   phone: z.string().min(1, 'Phone number is required'),
-  address: z.string().min(1, 'Address is required'),
+  address: z.string().min(1, 'Street address is required'),
+  city: z.string().min(1, 'City is required'),
 })
 
 export type ProfileForm = z.infer<typeof profileSchema>

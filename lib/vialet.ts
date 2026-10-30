@@ -100,20 +100,17 @@ export type VialetClientDetails = {
   zip_code?: string
 }
 
-// Malta postcodes look like "SLM 1234" or "VLT1234".
-const MALTA_POSTCODE = /\b([A-Z]{3})\s?(\d{4})\b/i
-
 /**
  * Builds Vialet client details from a profile so the hosted checkout can
- * skip its billing-details step. Addresses are free text ("123 Main St,
- * Valletta"), so the locality is taken from the last comma-separated part.
- * Fields that can't be derived are omitted and Vialet asks for them instead.
+ * skip its billing-details step. Buyers are always in Malta, so the country
+ * is fixed; other empty fields are omitted and Vialet asks for them instead.
  */
 export function buildClientDetails(profile: {
   first_name?: string | null
   last_name?: string | null
   phone?: string | null
   address?: string | null
+  city?: string | null
 }): VialetClientDetails {
   const details: VialetClientDetails = { country: 'MT' }
 
@@ -123,25 +120,14 @@ export function buildClientDetails(profile: {
     .join(' ')
   if (fullName) details.full_name = fullName
 
-  const phone = profile.phone?.trim()
-  if (phone) details.phone = phone
-
-  let address = profile.address?.trim() ?? ''
-  const postcode = address.match(MALTA_POSTCODE)
-  if (postcode) {
-    details.zip_code = `${postcode[1].toUpperCase()} ${postcode[2]}`
-    address = address.replace(postcode[0], '')
-  }
-
-  const parts = address
-    .split(',')
-    .map(part => part.trim())
-    .filter(Boolean)
-  if (parts.length > 1) {
-    details.city = parts.pop()
-    details.street_address = parts.join(', ')
-  } else if (parts.length === 1) {
-    details.street_address = parts[0]
+  const fields = {
+    phone: profile.phone,
+    street_address: profile.address,
+    city: profile.city,
+  } as const
+  for (const [key, value] of Object.entries(fields)) {
+    const trimmed = value?.trim()
+    if (trimmed) details[key as keyof typeof fields] = trimmed
   }
 
   return details

@@ -53,6 +53,7 @@ const step1Fields = [
   'birthday',
   'phone',
   'address',
+  'city',
 ] as const
 
 const registerSchema = z
@@ -91,6 +92,10 @@ const registerSchema = z
       .string()
       .min(5, 'Address must be at least 5 characters')
       .max(200, 'Address must not exceed 200 characters'),
+    city: z
+      .string()
+      .min(2, 'City is required')
+      .max(100, 'City must not exceed 100 characters'),
     contactPreference: z.enum(['email', 'phone', 'both']).default('both'),
     acceptArticleEmails: z.boolean().default(false),
     acceptTerms: z.boolean().refine(val => val === true, {
@@ -116,6 +121,7 @@ const registerDefaultValues: RegisterForm = {
   birthday: '',
   phone: '',
   address: '',
+  city: '',
   contactPreference: 'both',
   acceptArticleEmails: false,
   acceptTerms: false,
@@ -581,14 +587,35 @@ export default function Register() {
                     name="address"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Address</FormLabel>
+                        <FormLabel>Street Address</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="123 Main St, Valletta"
+                            placeholder="123 Main Street"
                             {...field}
                             onChange={e => {
                               field.onChange(e)
                               form.trigger('address')
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Valletta"
+                            {...field}
+                            onChange={e => {
+                              field.onChange(e)
+                              form.trigger('city')
                             }}
                           />
                         </FormControl>

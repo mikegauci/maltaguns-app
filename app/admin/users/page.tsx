@@ -84,6 +84,7 @@ interface User {
   license_types: LicenseTypes | null
   phone: string | null
   address: string | null
+  city: string | null
   birthday: string | null
   contact_preference: string | null
   license_expiry_date: string | null
@@ -151,6 +152,7 @@ function UsersPageComponent() {
     notes: '' as string | null,
     phone: '',
     address: '',
+    city: '',
     birthday: '',
     license_types: createEmptyLicenseTypes(),
   })
@@ -587,6 +589,7 @@ function UsersPageComponent() {
       notes: '',
       phone: '',
       address: '',
+      city: '',
       birthday: '',
       license_types: createEmptyLicenseTypes(),
     })
@@ -614,6 +617,7 @@ function UsersPageComponent() {
       notes: user.notes,
       phone: user.phone || '',
       address: user.address || '',
+      city: user.city || '',
       birthday: normalizeBirthdayForInput(user.birthday),
       license_types: parseLicenseTypes(user.license_types),
     })
@@ -863,6 +867,7 @@ function UsersPageComponent() {
           notes: formData.notes,
           phone: formData.phone.trim() || null,
           address: formData.address.trim() || null,
+          city: formData.city.trim() || null,
           ...(formData.birthday ? { birthday: formData.birthday } : {}),
           license_types: hasAnyLicenseType(formData.license_types)
             ? formData.license_types
@@ -1201,7 +1206,8 @@ function UsersPageComponent() {
                       : null,
                   ],
                   ['Phone', selectedUser.phone],
-                  ['Address', selectedUser.address],
+                  ['Street address', selectedUser.address],
+                  ['City', selectedUser.city],
                   ['Contact preference', selectedUser.contact_preference],
                   [
                     'Licenses',
@@ -1436,7 +1442,7 @@ function UsersPageComponent() {
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-address">Address</Label>
+            <Label htmlFor="edit-address">Street Address</Label>
             <Textarea
               id="edit-address"
               value={formData.address}
@@ -1444,6 +1450,14 @@ function UsersPageComponent() {
                 setFormData({ ...formData, address: e.target.value })
               }
               rows={2}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="edit-city">City</Label>
+            <Input
+              id="edit-city"
+              value={formData.city}
+              onChange={e => setFormData({ ...formData, city: e.target.value })}
             />
           </div>
           <div className="space-y-2">

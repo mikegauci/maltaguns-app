@@ -20,6 +20,7 @@ const PROFILE_FIELDS = [
   'license_types',
   'phone',
   'address',
+  'city',
   'birthday',
 ] as const
 

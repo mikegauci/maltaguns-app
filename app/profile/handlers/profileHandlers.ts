@@ -197,6 +197,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
                 birthday: nextBirthday,
                 phone: data.phone,
                 address: data.address,
+                city: data.city,
                 identity_verified: false,
                 identity_verified_at: null,
                 identity_status: 'Not Started',
@@ -228,6 +229,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
           birthday: nextBirthday,
           phone: data.phone,
           address: data.address,
+          city: data.city,
         })
         .eq('id', profile.id)
 
@@ -242,6 +244,7 @@ export function createProfileHandlers(deps: HandlerDependencies) {
               birthday: nextBirthday,
               phone: data.phone,
               address: data.address,
+              city: data.city,
             }
           : null
       )

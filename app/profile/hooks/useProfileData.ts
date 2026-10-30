@@ -145,6 +145,7 @@ export function useProfileData({
           birthday: normalizeBirthdayForInput(resolvedProfile.birthday),
           phone: resolvedProfile.phone || '',
           address: resolvedProfile.address || '',
+          city: resolvedProfile.city || '',
         })
 
         // Fetch everything else in parallel for better performance
