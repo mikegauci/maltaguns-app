@@ -1,5 +1,10 @@
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
-import { createPurchase, getPurchase, isPurchasePaid } from '@/lib/vialet'
+import {
+  createPurchase,
+  getPurchase,
+  isPurchasePaid,
+  type VialetClientDetails,
+} from '@/lib/vialet'
 import {
   isPaymentProductKey,
   PAYMENT_PRODUCTS,
@@ -16,6 +21,7 @@ const LOG_PREFIX = '[VIALET]'
 type StartCheckoutOptions = {
   userId: string
   email: string
+  clientDetails?: VialetClientDetails
   productKey: PaymentProductKey
   listingId?: string
   /** Site path the buyer returns to, e.g. `/profile`. */
@@ -40,7 +46,15 @@ function parseReference(reference: string | null) {
 export async function startVialetCheckout(
   options: StartCheckoutOptions
 ): Promise<string> {
-  const { userId, email, productKey, listingId, returnPath, baseUrl } = options
+  const {
+    userId,
+    email,
+    clientDetails,
+    productKey,
+    listingId,
+    returnPath,
+    baseUrl,
+  } = options
   const product = PAYMENT_PRODUCTS[productKey]
 
   const description = product.isFeature
@@ -75,6 +89,7 @@ export async function startVialetCheckout(
   try {
     const purchase = await createPurchase({
       email,
+      clientDetails,
       productName: product.name,
       priceCents: product.priceCents,
       reference: buildReference(productKey, listingId),

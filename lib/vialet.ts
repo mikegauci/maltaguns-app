@@ -90,8 +90,66 @@ async function vialetRequest<T>(
   return (await res.json()) as T
 }
 
+/** Optional ClientDetails; any field sent is skipped on Vialet's details step. */
+export type VialetClientDetails = {
+  full_name?: string
+  phone?: string
+  country?: string
+  city?: string
+  street_address?: string
+  zip_code?: string
+}
+
+// Malta postcodes look like "SLM 1234" or "VLT1234".
+const MALTA_POSTCODE = /\b([A-Z]{3})\s?(\d{4})\b/i
+
+/**
+ * Builds Vialet client details from a profile so the hosted checkout can
+ * skip its billing-details step. Addresses are free text ("123 Main St,
+ * Valletta"), so the locality is taken from the last comma-separated part.
+ * Fields that can't be derived are omitted and Vialet asks for them instead.
+ */
+export function buildClientDetails(profile: {
+  first_name?: string | null
+  last_name?: string | null
+  phone?: string | null
+  address?: string | null
+}): VialetClientDetails {
+  const details: VialetClientDetails = { country: 'MT' }
+
+  const fullName = [profile.first_name, profile.last_name]
+    .map(part => part?.trim())
+    .filter(Boolean)
+    .join(' ')
+  if (fullName) details.full_name = fullName
+
+  const phone = profile.phone?.trim()
+  if (phone) details.phone = phone
+
+  let address = profile.address?.trim() ?? ''
+  const postcode = address.match(MALTA_POSTCODE)
+  if (postcode) {
+    details.zip_code = `${postcode[1].toUpperCase()} ${postcode[2]}`
+    address = address.replace(postcode[0], '')
+  }
+
+  const parts = address
+    .split(',')
+    .map(part => part.trim())
+    .filter(Boolean)
+  if (parts.length > 1) {
+    details.city = parts.pop()
+    details.street_address = parts.join(', ')
+  } else if (parts.length === 1) {
+    details.street_address = parts[0]
+  }
+
+  return details
+}
+
 type CreatePurchaseOptions = {
   email: string
+  clientDetails?: VialetClientDetails
   productName: string
   priceCents: number
   reference: string
@@ -110,7 +168,7 @@ export async function createPurchase(
     method: 'POST',
     body: {
       brand_id: brandId,
-      client: { email: options.email },
+      client: { ...options.clientDetails, email: options.email },
       purchase: {
         currency: 'EUR',
         products: [{ name: options.productName, price: options.priceCents }],

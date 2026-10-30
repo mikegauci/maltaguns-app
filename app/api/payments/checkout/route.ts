@@ -3,6 +3,7 @@ import { requireAuthenticatedUser } from '@/lib/api-auth'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { isPaymentProductKey, PAYMENT_PRODUCTS } from '@/lib/payment-products'
 import { startVialetCheckout } from '@/lib/vialet-checkout'
+import { buildClientDetails } from '@/lib/vialet'
 import { FEATURE_RENEW_WITHIN_DAYS } from '@/lib/featured-listings'
 import { listingPublicPath } from '@/lib/listing-slug'
 
@@ -22,7 +23,7 @@ export async function POST(request: Request) {
 
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
-      .select('email')
+      .select('email, first_name, last_name, phone, address')
       .eq('id', user.id)
       .single()
 
@@ -104,6 +105,7 @@ export async function POST(request: Request) {
     const url = await startVialetCheckout({
       userId: user.id,
       email: profile.email,
+      clientDetails: buildClientDetails(profile),
       productKey,
       listingId: product.isFeature ? listingId : undefined,
       returnPath,
