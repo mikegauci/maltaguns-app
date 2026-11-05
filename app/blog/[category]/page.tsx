@@ -14,6 +14,12 @@ import { fetchHelpGuidePostIds } from '@/lib/help-guides.server'
 
 export const revalidate = 30
 
+// No paths are built ahead; each page is rendered on first visit and then
+// served from the ISR cache like the listing pages.
+export function generateStaticParams() {
+  return []
+}
+
 const validCategories = ['news', 'guides'] as const
 
 const categoryToSection: Record<(typeof validCategories)[number], SectionKey> =

@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase/public'
 import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { EstablishmentWithDetails, EstablishmentType } from './types'
 import { getEstablishmentConfig } from './config'
@@ -34,7 +34,6 @@ export const fetchEstablishmentBySlug = cache(
     slug: string
   ): Promise<EstablishmentWithDetails | null> => {
     const config = getEstablishmentConfig(type)
-    const supabase = await createClient()
     const helpGuideIds = await fetchHelpGuidePostIds()
 
     const { data: establishment, error: establishmentError } = await supabase

@@ -8,6 +8,12 @@ import FirearmsCategoryClient from './firearms-category-client'
 
 export const revalidate = 30
 
+// No paths are built ahead; each page is rendered on first visit and then
+// served from the ISR cache like the listing pages.
+export function generateStaticParams() {
+  return []
+}
+
 const VALID_CATEGORIES = Object.keys(firearmsCategories) as Array<
   keyof typeof firearmsCategories
 >
