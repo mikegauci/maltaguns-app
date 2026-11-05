@@ -1,7 +1,6 @@
 import './globals.css'
 import '../styles/design-tokens.css'
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { Oswald, IBM_Plex_Sans } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import QueryProvider from '@/components/providers/QueryProvider'
@@ -10,12 +9,10 @@ import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { GoogleAnalyticsTag } from '@/components/analytics/GoogleAnalyticsTag'
 import { CookieBanner } from '@/components/cookies/CookieBanner'
 import { Toaster } from '@/components/ui/toaster'
-import { AppChrome } from '@/components/layout/AppChrome'
+import { ImpersonationChrome } from '@/components/admin/ImpersonationChrome'
 import SupabaseProvider from '@/components/providers/SupabaseProvider'
-import { ImpersonationBanner } from '@/components/admin/ImpersonationBanner'
-import { getImpersonationState } from '@/lib/impersonation'
 import { getSectionMetadata } from '@/lib/seo'
-import { getAppUrl, isNonProductionHost } from '@/lib/seo-host'
+import { getAppUrl } from '@/lib/seo-host'
 
 const oswald = Oswald({
   subsets: ['latin'],
@@ -31,8 +28,10 @@ const ibmPlexSans = IBM_Plex_Sans({
 
 export async function generateMetadata(): Promise<Metadata> {
   const homeMetadata = await getSectionMetadata('home')
-  const host = (await headers()).get('host')
-  const previewNoIndex = isNonProductionHost(host)
+  // Reading the request host here would make every page render per request.
+  // Previews are noindexed by VERCEL_ENV, and the proxy also sends
+  // X-Robots-Tag on *.vercel.app and localhost.
+  const previewNoIndex = process.env.VERCEL_ENV !== 'production'
 
   return {
     metadataBase: new URL(getAppUrl()),
@@ -52,13 +51,11 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const impersonation = await getImpersonationState()
-
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -69,22 +66,14 @@ export default async function RootLayout({
         />
       </head>
       <body
-        className={`${ibmPlexSans.className} ${oswald.variable} ${ibmPlexSans.variable}${impersonation ? ' pt-10' : ''}`}
+        className={`${ibmPlexSans.className} ${oswald.variable} ${ibmPlexSans.variable}`}
       >
         <GoogleAnalyticsTag />
         <QueryProvider>
           <SupabaseProvider>
             <ThemeProvider>
               <CookieConsentProvider>
-                {impersonation && (
-                  <ImpersonationBanner
-                    adminUsername={impersonation.adminUsername}
-                    targetUsername={impersonation.targetUsername}
-                  />
-                )}
-                <AppChrome impersonation={Boolean(impersonation)}>
-                  {children}
-                </AppChrome>
+                <ImpersonationChrome>{children}</ImpersonationChrome>
                 <CookieBanner />
                 <GoogleAnalytics />
                 <Toaster />

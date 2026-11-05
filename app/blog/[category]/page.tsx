@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase/public'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -40,7 +40,6 @@ export default async function CategoryArchive(props: {
   params: Promise<{ category: string }>
 }) {
   const params = await props.params
-  const supabase = await createClient()
   const category = params.category.toLowerCase()
 
   if (!validCategories.includes(category as (typeof validCategories)[number])) {

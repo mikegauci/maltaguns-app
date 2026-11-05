@@ -1,13 +1,10 @@
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { ListingCtaLink } from './ListingCtaLink'
 import ctaImage from '@/public/maltaguns-hero.jpg'
 
-interface CTASectionProps {
-  isAuthenticated: boolean
-}
-
-export const CTASection = ({ isAuthenticated }: CTASectionProps) => {
+export const CTASection = () => {
   return (
     <section className="relative overflow-hidden border-t border-[var(--home-border)] bg-[var(--home-surface)] py-14 lg:py-20">
       <div className="mx-auto max-w-7xl px-6">
@@ -24,16 +21,7 @@ export const CTASection = ({ isAuthenticated }: CTASectionProps) => {
               active listings across Malta.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
-              <Link
-                href={isAuthenticated ? '/marketplace/create' : '/register'}
-              >
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto rounded-sm bg-[var(--home-brand)] text-white hover:bg-[var(--home-brand-deep)] uppercase tracking-wide text-xs font-semibold"
-                >
-                  {isAuthenticated ? 'Post a listing' : 'Create account'}
-                </Button>
-              </Link>
+              <ListingCtaLink buttonClassName="w-full sm:w-auto rounded-sm bg-[var(--home-brand)] text-white hover:bg-[var(--home-brand-deep)] uppercase tracking-wide text-xs font-semibold" />
               <Link href="/marketplace">
                 <Button
                   size="lg"

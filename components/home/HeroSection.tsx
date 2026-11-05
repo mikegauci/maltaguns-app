@@ -1,14 +1,11 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
+import { ListingCtaLink } from './ListingCtaLink'
 import Image from 'next/image'
 import heroImage from '@/public/maltaguns-hero-2.jpg'
 import { HomeTrustRail } from './HomeTrustRail'
 
-interface HeroSectionProps {
-  isAuthenticated: boolean
-}
-
-export const HeroSection = ({ isAuthenticated }: HeroSectionProps) => {
+export const HeroSection = () => {
   return (
     <section className="relative isolate -mt-[var(--header-height)] min-h-[85dvh] flex flex-col justify-end">
       <div className="absolute inset-0 overflow-hidden">
@@ -48,17 +45,10 @@ export const HeroSection = ({ isAuthenticated }: HeroSectionProps) => {
             listings, find local dealers, and track community events.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-3">
-            <Link
-              href={isAuthenticated ? '/marketplace/create' : '/register'}
-              className="w-full sm:w-auto"
-            >
-              <Button
-                size="lg"
-                className="w-full sm:w-auto rounded-sm bg-[var(--home-brand)] text-white hover:bg-[var(--home-brand-deep)] border-0 font-semibold uppercase tracking-wide text-xs"
-              >
-                {isAuthenticated ? 'Post a listing' : 'Create account'}
-              </Button>
-            </Link>
+            <ListingCtaLink
+              linkClassName="w-full sm:w-auto"
+              buttonClassName="w-full sm:w-auto rounded-sm bg-[var(--home-brand)] text-white hover:bg-[var(--home-brand-deep)] border-0 font-semibold uppercase tracking-wide text-xs"
+            />
             <Link href="/marketplace" className="w-full sm:w-auto">
               <Button
                 variant="secondary"

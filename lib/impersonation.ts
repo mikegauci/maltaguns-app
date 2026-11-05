@@ -2,6 +2,9 @@ import { cookies } from 'next/headers'
 
 export const IMPERSONATION_COOKIE_NAME = 'mg_impersonation'
 export const IMPERSONATION_COOKIE_MAX_AGE = 60 * 60 * 8
+// Display-only copy of the usernames (no tokens) that the browser can read,
+// so the root layout does not read cookies and public pages stay cached.
+export const IMPERSONATION_VIEW_COOKIE_NAME = 'mg_impersonation_view'
 
 export type ImpersonationState = {
   adminId: string
@@ -50,9 +53,24 @@ export async function setImpersonationCookie(
     path: '/',
     maxAge: IMPERSONATION_COOKIE_MAX_AGE,
   })
+  cookieStore.set(
+    IMPERSONATION_VIEW_COOKIE_NAME,
+    JSON.stringify({
+      adminUsername: state.adminUsername,
+      targetUsername: state.targetUsername,
+    }),
+    {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: IMPERSONATION_COOKIE_MAX_AGE,
+    }
+  )
 }
 
 export async function clearImpersonationCookie(): Promise<void> {
   const cookieStore = await cookies()
   cookieStore.delete(IMPERSONATION_COOKIE_NAME)
+  cookieStore.delete(IMPERSONATION_VIEW_COOKIE_NAME)
 }
