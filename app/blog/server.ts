@@ -1,5 +1,5 @@
 import { cache } from 'react'
-import { createClient } from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase/public'
 
 const BLOG_POST_SELECT = `
   id,
@@ -26,7 +26,6 @@ const BLOG_POST_SELECT = `
 
 export const fetchBlogPostBySlug = cache(
   async (category: string, slug: string) => {
-    const supabase = await createClient()
     const { data: post, error } = await supabase
       .from('blog_posts')
       .select(BLOG_POST_SELECT)
@@ -42,7 +41,6 @@ export const fetchBlogPostBySlug = cache(
 
 export const fetchBlogPostMetadata = cache(
   async (category: string, slug: string) => {
-    const supabase = await createClient()
     const { data: post } = await supabase
       .from('blog_posts')
       .select('title, content, featured_image, meta_title, meta_description')

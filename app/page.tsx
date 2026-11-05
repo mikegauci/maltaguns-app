@@ -1,6 +1,5 @@
 import { preload } from 'react-dom'
 import { getImageProps } from 'next/image'
-import { createClient } from '@/lib/supabase/server'
 import {
   HeroSection,
   MarketplaceSection,
@@ -37,15 +36,11 @@ function preloadHeroImage() {
 export default async function Home() {
   preloadHeroImage()
 
-  const supabase = await createClient()
-
-  const [{ data: userData }, homeData, siteSettings] = await Promise.all([
-    supabase.auth.getUser(),
+  const [homeData, siteSettings] = await Promise.all([
     getHomePageData(),
     getSiteSettings(),
   ])
 
-  const isAuthenticated = !!userData.user
   const siteName = siteSettings?.site_title || 'MaltaGuns'
   const siteDescription =
     siteSettings?.site_description ||
@@ -65,7 +60,7 @@ export default async function Home() {
           }),
         ]}
       />
-      <HeroSection isAuthenticated={isAuthenticated} />
+      <HeroSection />
 
       <MarketplaceSection
         featuredListings={homeData.featuredListings}
@@ -84,7 +79,7 @@ export default async function Home() {
 
       <ResourcesSection />
 
-      <CTASection isAuthenticated={isAuthenticated} />
+      <CTASection />
     </div>
   )
 }

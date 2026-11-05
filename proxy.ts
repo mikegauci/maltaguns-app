@@ -112,6 +112,10 @@ export async function proxy(req: NextRequest) {
   }
 }
 
+// Every proxy run is billed as Vercel Function CPU, so files from public/,
+// robots.txt and the sitemap skip it.
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|woff2?|txt|xml|webmanifest)$).*)',
+  ],
 }

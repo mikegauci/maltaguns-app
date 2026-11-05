@@ -7,6 +7,12 @@ import { EstablishmentJsonLd } from '@/app/establishments/EstablishmentJsonLd'
 
 export const revalidate = 30
 
+// No paths are built ahead; each page is rendered on first visit and then
+// served from the ISR cache like the listing pages.
+export function generateStaticParams() {
+  return []
+}
+
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { supabase } from '@/lib/supabase/public'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
@@ -13,6 +13,12 @@ import { applyExcludeHelpGuideIds } from '@/lib/help-guide-utils'
 import { fetchHelpGuidePostIds } from '@/lib/help-guides.server'
 
 export const revalidate = 30
+
+// No paths are built ahead; each page is rendered on first visit and then
+// served from the ISR cache like the listing pages.
+export function generateStaticParams() {
+  return []
+}
 
 const validCategories = ['news', 'guides'] as const
 
@@ -40,7 +46,6 @@ export default async function CategoryArchive(props: {
   params: Promise<{ category: string }>
 }) {
   const params = await props.params
-  const supabase = await createClient()
   const category = params.category.toLowerCase()
 
   if (!validCategories.includes(category as (typeof validCategories)[number])) {
