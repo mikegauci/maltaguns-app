@@ -5,7 +5,7 @@ import {
   fetchPublicEventsForMonth,
 } from '@/lib/public-events-data'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export default async function EventsPage() {
   const initialMonth = format(new Date(), 'yyyy-MM')

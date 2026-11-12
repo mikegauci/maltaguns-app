@@ -6,7 +6,7 @@ import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
 import { JsonLd } from '@/components/seo/JsonLd'
 import { buildBreadcrumbList, buildProductSchema } from '@/lib/seo-jsonld'
 
-export const revalidate = 30
+export const revalidate = 300
 
 // No paths are built ahead; each page is rendered on first visit and then
 // served from the ISR cache like the listing pages.

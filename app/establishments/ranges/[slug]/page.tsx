@@ -5,7 +5,7 @@ import { fetchEstablishmentBySlug } from '@/app/establishments/server'
 import { generateEstablishmentMetadata } from '@/app/establishments/seo'
 import { EstablishmentJsonLd } from '@/app/establishments/EstablishmentJsonLd'
 
-export const revalidate = 30
+export const revalidate = 300
 
 // No paths are built ahead; each page is rendered on first visit and then
 // served from the ISR cache like the listing pages.

@@ -26,6 +26,17 @@ const nextConfig = {
       },
     ]
   },
+  // Preview and alias hosts must not be indexed. Set here, not in the proxy,
+  // so it costs no function time.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: '.*\\.vercel\\.app' }],
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }],
+      },
+    ]
+  },
   experimental: {
     optimizePackageImports: [
       'lucide-react',

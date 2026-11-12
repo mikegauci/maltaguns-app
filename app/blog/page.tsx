@@ -6,7 +6,7 @@ import { PageLayout } from '@/components/ui/page-layout'
 import { getBlogPageData } from '@/lib/public-data'
 import { BlogCreateButton } from '@/components/blog/BlogCreateButton'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export default async function BlogPage() {
   const { posts } = await getBlogPageData()

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { fetchHomePageData } from '@/lib/public-data'
 import { PUBLIC_API_CACHE_CONTROL } from '@/lib/query-selects'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export async function GET() {
   try {

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase/public'
 import { EVENT_CARD_SELECT, PUBLIC_API_CACHE_CONTROL } from '@/lib/query-selects'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export async function GET(req: Request) {
   const url = new URL(req.url)

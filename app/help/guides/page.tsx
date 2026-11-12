@@ -7,7 +7,7 @@ import { fetchHelpGuidesListing } from '@/lib/help-guides.server'
 import { getSectionMetadata } from '@/lib/seo'
 import type { Metadata } from 'next'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export async function generateMetadata(): Promise<Metadata> {
   return getSectionMetadata('help_guides')

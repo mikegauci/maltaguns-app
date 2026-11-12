@@ -4,7 +4,7 @@ import { BLOG_CARD_SELECT, PUBLIC_API_CACHE_CONTROL } from '@/lib/query-selects'
 import { applyExcludeHelpGuideIds } from '@/lib/help-guide-utils'
 import { fetchHelpGuidePostIdsPublic } from '@/lib/help-guides.public'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export async function GET() {
   try {

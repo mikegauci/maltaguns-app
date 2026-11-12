@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { fetchListingBySlug } from '@/app/marketplace/listing/[slug]/server'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export async function GET(_req: Request, props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;

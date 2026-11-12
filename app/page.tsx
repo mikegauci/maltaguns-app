@@ -14,7 +14,7 @@ import { getSiteSettings } from '@/lib/seo'
 import { buildOrganizationSchema, buildWebSiteSchema } from '@/lib/seo-jsonld'
 import heroImage from '@/public/maltaguns-hero-2.jpg'
 
-export const revalidate = 30
+export const revalidate = 300
 
 function preloadHeroImage() {
   const { props } = getImageProps({

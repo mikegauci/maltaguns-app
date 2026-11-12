@@ -8,7 +8,7 @@ import {
 import { buildMetadata, getSiteSettings, truncateDescription } from '@/lib/seo'
 import { fetchHelpGuideBySlug } from '@/lib/help-guides.server'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>

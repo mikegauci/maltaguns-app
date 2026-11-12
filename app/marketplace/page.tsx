@@ -1,7 +1,7 @@
 import { getMarketplacePageData } from '@/lib/public-data'
 import MarketplaceClient from './marketplace-client'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export default async function Marketplace() {
   const data = await getMarketplacePageData()
