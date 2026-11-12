@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { fetchCategoryListings } from '@/lib/category-listings-data'
 import { PUBLIC_API_CACHE_CONTROL } from '@/lib/query-selects'
 
-export const revalidate = 30
+export const revalidate = 300
 
 export async function GET(req: Request) {
   const url = new URL(req.url)

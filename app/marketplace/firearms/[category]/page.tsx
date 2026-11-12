@@ -6,7 +6,7 @@ import {
 import { fetchCategoryListings } from '@/lib/category-listings-data'
 import FirearmsCategoryClient from './firearms-category-client'
 
-export const revalidate = 30
+export const revalidate = 300
 
 // No paths are built ahead; each page is rendered on first visit and then
 // served from the ISR cache like the listing pages.

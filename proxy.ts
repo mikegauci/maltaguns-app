@@ -112,10 +112,29 @@ export async function proxy(req: NextRequest) {
   }
 }
 
-// Every proxy run is billed as Vercel Function CPU, so files from public/,
-// robots.txt and the sitemap skip it.
+// Every proxy run is billed as Vercel Function CPU, so it only runs where it
+// has work to do:
+// 1. Protected and admin pages, to send signed-out visitors to the login page.
+//    Keep these in step with PROTECTED_ROUTE_PREFIXES and isProtectedRoute.
+// 2. Any request carrying the Supabase auth cookie (split into `.0`, `.1`...
+//    when large), to refresh the session.
+// Anonymous visits to public pages never reach it. The noindex header for
+// preview hosts is set in next.config.js. Matcher values must be literals.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|woff2?|txt|xml|webmanifest)$).*)',
+    '/admin/:path*',
+    '/(profile|wishlist|notifications)(.*)',
+    '/(marketplace|events|establishments|blog|retailers)/create(.*)',
+    '/(.*)/edit',
+    {
+      source:
+        '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|woff2?|txt|xml|webmanifest)$).*)',
+      has: [{ type: 'cookie', key: 'sb-buqeowpqufayojbitiqp-auth-token' }],
+    },
+    {
+      source:
+        '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|mp4|woff2?|txt|xml|webmanifest)$).*)',
+      has: [{ type: 'cookie', key: 'sb-buqeowpqufayojbitiqp-auth-token.0' }],
+    },
   ],
 }

@@ -10,7 +10,7 @@ import { fetchBlogPostBySlug } from '@/app/blog/server'
 import { getHelpGuidePublicPath } from '@/lib/help-guide-utils'
 import { isPostAssignedToHelpTab } from '@/lib/help-guides.server'
 
-export const revalidate = 30
+export const revalidate = 300
 
 // No paths are built ahead; each page is rendered on first visit and then
 // served from the ISR cache like the listing pages.
